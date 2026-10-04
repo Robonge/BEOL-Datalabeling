@@ -1,0 +1,31 @@
+{
+  "version": "2026-10-05.draft1",
+  "rules": [
+    {
+      "id": "combo-em-void",
+      "type": "axis_combo",
+      "status": "draft",
+      "severity": "major",
+      "note": "형식 예시다. 불량 모드가 EM이면 물리 현상에 Void를 기대한다. 내용은 도메인 담당자가 정한다.",
+      "when": {"axis": "불량 모드", "value_in": ["EM"]},
+      "expect": {"axis": "물리 현상", "value_in": ["Void"]}
+    },
+    {
+      "id": "title-layer",
+      "type": "title_label",
+      "status": "draft",
+      "severity": "minor",
+      "note": "형식 예시다. 제목의 레이어 표기(M0~M3, V0~V3)가 구조/레이어 라벨에 있는지 본다.",
+      "title_pattern": "(?<![A-Za-z0-9])([MV][0-3])(?![A-Za-z0-9])",
+      "axis": "구조/레이어"
+    },
+    {
+      "id": "synonym-defect-mode",
+      "type": "synonym_suggest",
+      "status": "draft",
+      "severity": "minor",
+      "note": "형식 예시다. 불량 모드 값이 동의어(alias)로 적혔으면 표준값을 제안한다. axis를 빼면 모든 축을 본다.",
+      "axis": "불량 모드"
+    }
+  ]
+}

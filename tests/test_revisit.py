@@ -3,6 +3,7 @@
 모든 값은 가짜다. 원본 파일은 test_pipeline과 같이 read_input 경로로만 읽힌다.
 """
 import contextlib
+import datetime
 import io
 import json
 import os
@@ -15,6 +16,7 @@ import tempfile
 import time
 import unittest
 import uuid
+from unittest import mock
 
 from labelbot import candidates, cli, finals, pipeline, review, revisit, store, taxonomy, util
 from labelbot.mock import MockChatTransport
@@ -345,6 +347,195 @@ class RevisitUnitTest(unittest.TestCase):
         self.assertEqual((n, jl), (0, []))
         self.assertIn("누적 요청: 0건", md)
 
+    # ---- 실행별 재검토 파일 ----
+
+    NOW = datetime.datetime(2026, 10, 5, 9, 8, 7)
+
+    def _run_files(self, runs=(RUN,), now=NOW):
+        out = os.path.join(self.dir, "taxonomy", revisit.REQUESTS_DIRNAME)
+        paths = revisit.write_run_files(out, self.con, self.tax, list(runs), now=now)
+        return out, paths
+
+    def _load_one(self, p):
+        with open(p, encoding="utf-8") as f:
+            return f.read()
+
+    def _load(self, paths):
+        got = {}
+        for p in paths:
+            with open(p, encoding="utf-8") as f:
+                got[os.path.splitext(p)[1]] = f.read()
+        return got[".md"], got[".html"], json.loads(got[".json"])
+
+    def test_requests_dir_next_to_taxonomy(self):
+        ws = _FakeWs(self.dir)
+        ws.taxonomy_path = os.path.join(self.dir, "어딘가", "taxonomy.xlsx")
+        self.assertEqual(revisit.requests_dir(ws), os.path.join(self.dir, "어딘가", "taxonomy_revisit_requests"))
+
+    def test_run_files_created_and_named(self):
+        self.apply([_item()])
+        out, paths = self._run_files()
+        names = sorted(os.listdir(out))
+        self.assertEqual(names, ["taxonomy_revisit_20261005_090807.%s" % e for e in ("html", "json", "md")])
+        for fn in names:
+            self.assertRegex(fn, r"^taxonomy_revisit_\d{8}_\d{6}(_\d+)?\.(md|html|json)$")
+        self.assertEqual(sorted(paths), [os.path.join(out, fn) for fn in names])
+
+    def test_run_files_zero_requests(self):
+        self.apply([])
+        self.apply([_item(cid="c9")])  # NOT_FLAGGED로 버려져 0건
+        out, paths = self._run_files()
+        self.assertEqual(paths, [])
+        self.assertFalse(os.path.exists(out))
+        out, paths = self._run_files(runs=())
+        self.assertEqual(paths, [])
+
+    def test_run_files_only_this_run(self):
+        self.apply([_item(value="이번값-가", memo="이번 메모")])
+        self.apply([_item(value="다른실행값", memo="다른 실행 메모"), _item(cid="c2", reason="OTHER", value=None,
+                                                                   memo="다른 실행 메모")], run=RUN2)
+        out, paths = self._run_files()
+        md, page, doc = self._load(paths)
+        self.assertEqual({r["review_run_id"] for r in doc["requests"]}, {RUN})
+        self.assertEqual(doc["review_run_id"], RUN)
+        for body in (md, page, json.dumps(doc, ensure_ascii=False)):
+            self.assertIn("이번값-가", body)
+            self.assertIn("이번 메모", body)
+            self.assertNotIn("다른실행값", body)
+            self.assertNotIn("다른 실행 메모", body)
+            self.assertNotIn(RUN2, body)
+
+    def test_run_files_paste_rows(self):
+        self.apply([_item(value="새값-가", parent="상위-1", memo="붙여넣기 메모"),
+                    _item(cid="c2", value=" 새값-가 "),                # 같은 (축, 값)은 한 행으로 묶는다
+                    _item(cid="c3", key="예시축B", value="=1+2")])
+        out, paths = self._run_files()
+        md, page, doc = self._load(paths)
+        want = [candidates.paste_row({"kind": "new_value", "content": "예시축A|새값-가", "parent": "상위-1",
+                                      "source": "review"}).split("\t"),
+                candidates.paste_row({"kind": "new_value", "content": "예시축B|=1+2", "parent": None,
+                                      "source": "review"}).split("\t")]
+        self.assertEqual(doc["paste_rows"], want)
+        self.assertEqual(doc["paste_rows"][1][1], "'=1+2")
+        for row in doc["paste_rows"]:
+            self.assertEqual(len(row), 11)
+            self.assertEqual(row[10], "")
+            self.assertEqual(row[3:], [""] * 8)
+        self.assertEqual(doc["paste_requests"], [[1, 2], [3]])
+        self.assertEqual(doc["check_rows"], [])
+        self.assertEqual(doc["columns"], taxonomy.HEADERS["taxonomy"])
+        code = md.split("```\n", 1)[1].split("```", 1)[0].strip("\n").split("\n")
+        self.assertEqual(code, ["\t".join(r) for r in want])
+        self.assertTrue(all(c.count("\t") == 10 for c in code))
+        self.assertIn("확인할 행이 없다.", md)
+        tbody = re.search(r'<table class="sheet paste">.*?<tbody>(.*?)</tbody>', page, re.S).group(1)
+        cells = re.findall(r"<tr>(.*?)</tr>", tbody)
+        self.assertEqual(len(cells), 2)
+        self.assertEqual([len(re.findall(r"<td>", c)) for c in cells], [11, 11])
+        self.assertNotIn("붙여넣기 메모", "".join(code) + tbody)  # 메모는 붙여넣기 칸 밖에만
+
+    def test_run_files_check_block(self):
+        self.tax.axes.append(taxonomy.Axis("탭\t축", "분류", False, False, False, "", "", ""))
+        self.apply([_item(value="값-1"),                                          # 1 시트에 이미 있는 값
+                    _item(cid="c2", value="새값-다", parent="없는상위"),           # 2 시트에 없는 상위값
+                    _item(cid="c3", key="사라진축", value="새값-나"),              # 3 시트에 없는 축
+                    _item(cid="c1", target="new_axis", key="", reason="NEW_AXIS", value="새축"),
+                    _item(cid="c2", target="new_axis", key="", reason="NEW_AXIS", value="예시축B"),
+                    _item(cid="c3", key="탭\t축", value="탭값")])
+        out, paths = self._run_files()
+        md, page, doc = self._load(paths)
+        self.assertEqual(doc["paste_rows"], [])
+        got = {(c["row"][0], c["row"][1]): c["reason"] for c in doc["check_rows"]}
+        self.assertEqual(got, {
+            ("예시축A", "값-1"): "시트에 이미 있는 값",
+            ("예시축A", "새값-다"): "시트에 없는 상위값",
+            ("사라진축", "새값-나"): "시트에 없는 축",
+            ("새축", ""): revisit.NEW_AXIS_CHECK,
+            ("예시축B", ""): "시트에 이미 있는 축",
+            ("탭 축", "탭값"): "칸에 탭·줄바꿈이 있다",
+        })
+        for c in doc["check_rows"]:
+            self.assertEqual(len(c["row"]), 11)
+            self.assertEqual(c["row"][10], "")
+            self.assertTrue(c["requests"])
+        self.assertEqual({r["block"] for r in doc["requests"]}, {"check"})
+        self.assertIn("바로 붙여넣을 행이 없다.", md)
+        code = md.split("```\n", 1)[1].split("```", 1)[0].strip("\n").split("\n")
+        self.assertEqual(len(code), 6)
+        self.assertTrue(all(c.count("\t") == 10 for c in code))
+        self.assertIn("| 시트에 없는 상위값 |", md)
+        self.assertEqual(len(re.findall(r"<tr>", re.search(r'<table class="sheet check">.*?<tbody>(.*?)</tbody>',
+                                                           page, re.S).group(1))), 6)
+
+    def test_run_files_list_only(self):
+        self.apply([_item(reason="AMBIGUOUS_DEF", value=None, related=["값-2"], memo="목록메모A"),
+                    _item(cid="c2", reason="VALUE_OVERLAP", value=None, related=["값-1", "값-2"]),
+                    _item(cid="c3", reason="OTHER", value=None, memo="목록메모B"),
+                    _item(cid="c1", target="question", key="", reason="NEED_QUESTION", value=None, memo="목록메모C"),
+                    _item(cid="c2", target="question", key="Q-COM-001", reason="AMBIGUOUS_DEF", value=None)])
+        out, paths = self._run_files()
+        md, page, doc = self._load(paths)
+        self.assertEqual((doc["paste_rows"], doc["check_rows"]), ([], []))
+        self.assertEqual([r["block"] for r in doc["requests"]], ["list"] * 5)
+        self.assertEqual(sorted(r["reason"] for r in doc["requests"]),
+                         sorted(["AMBIGUOUS_DEF", "VALUE_OVERLAP", "OTHER", "NEED_QUESTION", "AMBIGUOUS_DEF"]))
+        self.assertNotIn("```\n", md.split("## 요청 목록", 1)[0])
+        self.assertNotIn('class="sheet', page)
+        for m in ("목록메모A", "목록메모B", "목록메모C"):
+            self.assertIn(m, md)
+            self.assertIn(m, page)
+        self.assertIn("값-1 ↔ 값-2", md)
+
+    def test_run_files_html_escape_and_no_http(self):
+        self.apply([_item(value="<b>값&", memo="<script>alert(1)</script> HTTP://x.example hTtPs ftp"),
+                    _item(cid="c2", target="new_axis", key="", reason="NEW_AXIS", value="축\"<i>http")])
+        out, paths = self._run_files()
+        md, page, doc = self._load(paths)
+        self.assertIsNone(re.search("http", page, re.I))
+        self.assertNotIn("<script", page.lower())
+        self.assertNotIn("<b>", page)
+        self.assertNotIn("<i>", page)
+        self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", page)
+        self.assertIn("&lt;b&gt;값&amp;", page)
+        self.assertIn("축&quot;&lt;i&gt;", page)
+        self.assertIn('<meta charset="utf-8">', page)
+        self.assertNotIn("src=", page)
+        self.assertNotIn("<link", page)
+        self.assertIn("&lt;script&gt;", md)  # md 메모 인용은 기존 이스케이프 규칙
+        self.assertNotIn("<script>", md)
+        self.assertEqual(doc["requests"][0]["memo"], "<script>alert(1)</script> HTTP://x.example hTtPs ftp")
+
+    def test_run_files_json(self):
+        self.apply([_item(memo="json 메모"), _item(cid="c2", target="new_axis", key="", reason="NEW_AXIS", value="새축")])
+        out, paths = self._run_files()
+        md, page, doc = self._load(paths)
+        self.assertEqual(set(doc), {"kind", "review_run_id", "generated_at", "sheet", "columns", "paste_rows",
+                                    "paste_requests", "check_rows", "requests"})
+        self.assertEqual((doc["kind"], doc["sheet"]), ("taxonomy_revisit", "taxonomy"))
+        self.assertRegex(doc["generated_at"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+        self.assertEqual(len(doc["requests"]), 2)
+        self.assertEqual([r["no"] for r in doc["requests"]], [1, 2])
+        self.assertEqual(doc["requests"][0]["memo"], "json 메모")
+        self.assertEqual(doc["check_rows"][0]["requests"], [2])
+
+    def test_run_files_same_second_no_overwrite(self):
+        self.apply([_item(value="첫값")])
+        out, first = self._run_files()
+        before = {p: self._load_one(p) for p in first}
+        self.apply([_item(value="둘째값")])
+        out, second = self._run_files()
+        self.apply([_item(value="RUN2값")], run=RUN2)
+        out, both = self._run_files(runs=(RUN, RUN2, RUN))
+        for p, body in before.items():
+            with open(p, encoding="utf-8") as f:
+                self.assertEqual(f.read(), body)
+        stems = lambda ps: sorted({os.path.splitext(os.path.basename(p))[0] for p in ps})
+        self.assertEqual(stems(second), ["taxonomy_revisit_20261005_090807_2"])
+        self.assertEqual(stems(both), ["taxonomy_revisit_20261005_090807_3", "taxonomy_revisit_20261005_090807_4"])
+        self.assertEqual(len(os.listdir(out)), 12)
+        self.assertIn("둘째값", self._load(second)[0])
+        self.assertNotIn("둘째값", before[first[0]] + before[first[1]] + before[first[2]])
+
 
 class RevisitIntegrationTest(unittest.TestCase):
     """mock 파이프라인 1회. PipelineTest와 작업 폴더를 공유하지 않는다."""
@@ -353,11 +544,18 @@ class RevisitIntegrationTest(unittest.TestCase):
     def setUpClass(cls):
         cls.w = _Ws()
         cls.ws = cls.w.ws
+        # 이 작업 폴더의 taxonomy_path는 저장소 taxonomy/taxonomy.xlsx다. 실행별 재검토 파일이 저장소에 남지 않도록
+        # 파일 폴더만 임시 작업 폴더 안으로 돌린다(위치 규칙 자체는 단위 테스트가 본다).
+        cls.rv_dir = os.path.join(cls.w.dir, "rvtax", revisit.REQUESTS_DIRNAME)
+        cls._rv_patch = mock.patch.object(revisit, "requests_dir", lambda ws: cls.rv_dir)
+        cls._rv_patch.start()
+        cls.addClassCleanup(cls._rv_patch.stop)
         cls.before = set()
         for root, _, files in os.walk(cls.ws.root):
             cls.before |= {os.path.join(root, f) for f in files}
         with contextlib.redirect_stdout(io.StringIO()):
             cls.run_id, _ = pipeline.run_all(cls.ws, DUMMY_DIR, transport=MockChatTransport(responder))
+        cls.rv_after_run_all = os.path.exists(cls.rv_dir)
         cls.con = store.connect(cls.ws.work_db)
         cls.tax, _ = pipeline.load_taxonomy(cls.ws)
         row = cls.con.execute(
@@ -381,6 +579,10 @@ class RevisitIntegrationTest(unittest.TestCase):
         for fn in os.listdir(inbox):
             if fn.endswith(".json"):
                 os.remove(os.path.join(inbox, fn))
+        shutil.rmtree(self.rv_dir, ignore_errors=True)
+
+    def rv_files(self):
+        return sorted(os.listdir(self.rv_dir)) if os.path.isdir(self.rv_dir) else []
 
     def doc(self, revisits, **kw):
         d = {"kind": "review", "run_id": self.run_id, "corrections": [], "chunk_status": [], "synonyms": [],
@@ -598,6 +800,56 @@ class RevisitIntegrationTest(unittest.TestCase):
         self.assertTrue([p for p in new if p.endswith("taxonomy_revisit.md")])
         self.assertEqual([p for p in new if not p.lower().endswith(util.ALLOWED_EXT)], [])
         self.assertFalse([p for p in new if p.endswith(("-journal", "-wal"))])
+
+    def test_run_files_via_cli_apply(self):
+        self.assertFalse(self.rv_after_run_all)  # run_all은 실행별 파일을 쓰지 않는다
+        mark = "ZZRVF-%s" % uuid.uuid4().hex
+        self.put("review_x.json", self.doc([_item(cid=self.cid, key=self.axis, value="새값-파일", memo=mark),
+                                            _item(cid=self.other, reason="OTHER", key=self.axis, value=None, memo=mark)]))
+        console = self.cli("apply")
+        names = self.rv_files()
+        self.assertEqual(len(names), 3)
+        self.assertEqual({os.path.splitext(n)[1] for n in names}, {".md", ".html", ".json"})
+        for n in names:
+            self.assertRegex(n, r"^taxonomy_revisit_\d{8}_\d{6}(_\d+)?\.(md|html|json)$")
+        self.assertIn("[apply] taxonomy 재검토 요청 파일 3개 → rvtax/taxonomy_revisit_requests/", console)
+        self.assertNotIn(mark, console)
+        self.assertNotIn("새값-파일", console)
+        log = self.ws.path("logs", "labelbot.log")
+        if os.path.isfile(log):
+            self.assertNotIn(mark, self.read("logs", "labelbot.log"))
+        with open(os.path.join(self.rv_dir, [n for n in names if n.endswith(".json")][0]), encoding="utf-8") as f:
+            doc = json.load(f)
+        self.assertEqual(doc["review_run_id"], self.run_id)
+        self.assertEqual([r["memo"] for r in doc["requests"]], [mark, mark])
+        # 같은 파일을 다시 apply하면 같은 초여도 덮어쓰지 않고 새 이름으로 쓴다.
+        self.cli("apply")
+        self.assertEqual(len(self.rv_files()), 6)
+
+    def test_run_files_not_written(self):
+        self.put("review_x.json", self.doc([_item(cid=self.cid, key=self.axis)]))
+        self.cli("apply")
+        self.setUp()  # inbox·파일 폴더 비우기
+        # 레거시 문서(revisits 키 없음): 기존 요청은 그대로지만 파일은 쓰지 않는다.
+        legacy = self.doc([])
+        del legacy["revisits"]
+        self.put("review_y.json", legacy)
+        console = self.cli("apply")
+        self.assertEqual(revisit.count(self.con), 1)
+        self.assertEqual(self.rv_files(), [])
+        self.assertNotIn("재검토 요청 파일", console)
+        self.setUp()
+        # 요청 0건
+        self.put("review_z.json", self.doc([_item(cid=self.unflagged, key=self.axis)]))
+        self.cli("apply")
+        self.assertEqual(self.rv_files(), [])
+        self.setUp()
+        # report 명령
+        self.put("review_w.json", self.doc([_item(cid=self.cid, key=self.axis)]))
+        review.apply_inbox(self.ws, self.con, self.tax)
+        console = self.cli("report")
+        self.assertEqual(self.rv_files(), [])
+        self.assertNotIn("재검토 요청 파일", console)
 
     def _summary(self, ws_dir):
         r = subprocess.run([sys.executable, SUMMARY, "--workspace", ws_dir], stdout=subprocess.PIPE,

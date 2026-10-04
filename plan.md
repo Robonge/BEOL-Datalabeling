@@ -12,7 +12,7 @@
 
 - 사외에서 작성해 GitHub에 올리고, 사내에서 zip으로 내려받아 설치 없이 실행한다(`PRD.md` 3절, 9.1절).
 - 사내 파일은 DRM이 걸려 있다. Python으로 읽어 base64로 저장하는 것이 첫 단계이고, 이후에는 base64만 읽어 메모리에서 디코딩한다(`PRD.md` FR-0).
-- 사내 자료는 코드 폴더 밖 작업 폴더에 둔다(`PRD.md` 9.2절).
+- 사내 자료는 코드 폴더의 `workspaces/` 아래 작업 폴더에 둔다(`PRD.md` 9.2절).
 - taxonomy·질문·동의어는 사람이 Excel에서 고치는 `taxonomy.xlsx` 하나(필수 시트 4개 + 선택 시트 2개)에 두고, 봇은 읽기만 한다. 후보는 `reports/`의 `.md`·`.jsonl` 리포트로 내고 사람이 붙여넣는다(`PRD.md` 6절).
 - 동의어는 `synonyms` 시트에서 치환만 하며, 1차 분류와 3차 라벨링이 같은 시트를 참조한다(`PRD.md` 6.2절).
 - 4차는 "4차 불량 목록 추출"이다(`PRD.md` FR-5). LLM을 부르지 않고 이미 저장된 값만으로 사유 코드 6개를 판정해, 걸린 chunk를 상한 없이 전부 목록으로 내고 검수 화면에 올린다. 사내 정확도는 측정하지 않는다.
@@ -29,7 +29,7 @@
 labelbot/
   __main__.py        명령 진입점
   cli.py             명령과 인자 처리
-  workspace.py       작업 폴더 경로, 코드 폴더 안 지정 거부
+  workspace.py       작업 폴더 경로, workspaces/ 밖 코드 폴더 안 지정 거부
   selfcheck.py       환경 self-check (작업 폴더에 taxonomy.xlsx가 없으면 FAIL), write_roundtrip, 호스트 판정 항목
   probe.py           파일 구조 통계 (본문 미출력)
   ingest.py          0단계: base64 저장, 해시, 실패 목록, 상대 경로와 file_locations 기록. read_input(path, snapshot_dir): 사람 입력 bytes 읽기, 시그니처 확인, inputs/ 보관, 텍스트 인코딩
@@ -54,11 +54,15 @@ labelbot/
   gate.py            M7 게이트 기록 (gate record, reports/gate_<timestamp>.json)
   embed.py           임베딩 (python -m labelbot embed, chunk_embeddings)
   vectorpush.py      Supabase 벡터 적재 (python -m labelbot push-vectors, vector_push_log)
+  cdp.py             표준 라이브러리 DevTools 클라이언트 (headless Edge/Chrome, WebSocket)
+  slideimg.py        슬라이드 미리보기 JPG 렌더 (python -m labelbot slide-images, slide_images/*.b64)
+  slidepush.py       슬라이드 JPG Storage 적재 (python -m labelbot push-slides, slide_image_push_log)
   store.py           작업 DB 스키마와 읽기·쓰기
-  screens/           HTML 화면 템플릿 2개 (compare.html, review.html)
+  screens/           HTML 화면 템플릿 (compare.html, review.html, slides.html + 공유 slide_preview.js·.css)
 prompts/             단계별 프롬프트 (.md)
 docs/supabase_schema.md  Supabase(pgvector) 표 정의 SQL 코드 블록 (.sql 파일은 두지 않는다)
-defaults/taxonomy.xlsx   기본 taxonomy (더미 동의어 포함)
+taxonomy/taxonomy.xlsx   기본 taxonomy (더미 동의어 포함)
+taxonomy/taxonomy_revisit_requests/  apply가 검수 실행마다 쓰는 재검토 파일 taxonomy_revisit_<연월일_시분초>.md·.html·.json (taxonomy 시트 붙여넣기 행, 메모 포함, git 추적)
 dummy pptx files/    사외 검증 샘플 원천 (저장소 상대 경로). 어느 파일이든 쓸 수 있고 ingest 바이트 경로로만 읽는다
 parshing test files/ 사외 검증 입력 폴더(BEOL-labeling 기본 입력). 현재 파일 해시가 사외 전송 허용 목록에 더해진다. 사내 파일 반입 금지
 tests/               단위·통합 테스트, mock 응답
@@ -73,10 +77,10 @@ tools/               개발 전용. labelbot을 import할 수 있지만 labelbot
 PRD.md, plan.md, README.md
 ```
 
-### 작업 폴더(코드 폴더 밖)
+### 작업 폴더(코드 폴더의 `workspaces/` 아래)
 
 ```
-taxonomy.xlsx   사내 taxonomy (필수 시트 4 + 선택 시트 2). 없으면 실행을 거부한다(defaults/taxonomy.xlsx를 작업 폴더로 복사하라고 안내)
+taxonomy.xlsx   사내 taxonomy (필수 시트 4 + 선택 시트 2). 없으면 실행을 거부한다(taxonomy/taxonomy.xlsx를 작업 폴더로 복사하라고 안내)
 pipeline.json   `taxonomy_path`(기본값: 작업 폴더의 `taxonomy.xlsx`), llm 블록(base_url, chat_path, model, api_key_env, auth_header, extra_headers, ca_file, timeout, temperature, max_tokens, response_format_json, internal_host_suffixes), embedding 블록, supabase 블록, flag 블록(`unknown_ratio_min` 기본 0.5, `confidence_min` 기본 0.7), 임계값, 상한값, 알림 기준값, chunk 방식, 화면 chunk당 이미지 상한(기본 4). 키 값은 넣지 않고 환경변수 이름만 둔다
 inputs/         사람 입력(taxonomy.xlsx, 교정 파일)의 base64 보관본 <sha256>.b64
 raw/            원본 파일
@@ -103,12 +107,14 @@ logs/           .log (파일 ID와 사유 코드만)
 | `ingest` | 수집·파싱·chunk만 한다. LLM을 부르지 않는다 | 발급 | M1 |
 | `compare` | 파싱 대조 화면 `screens/compare.html` 생성 | 안 함 | M1 |
 | `review` | `flagged_chunks` 생성, `reports/flagged_*` 작성, 검수 화면 `screens/review.html` 생성(LLM 호출 0회) | 안 함(검수 기준 실행 ID = 최신 또는 `--run`) | M5 |
-| `apply` | `inbox/`의 교정 `.json` 반영(교정 파일별 `SAVEPOINT`), `reports/taxonomy_revisit.*` 재작성 | 안 함(교정 파일의 실행 ID를 쓴다) | M5 |
+| `apply` | `inbox/`의 교정 `.json` 반영(교정 파일별 `SAVEPOINT`), `reports/taxonomy_revisit.*` 재작성, 반영한 검수 실행마다 요청이 있으면 `taxonomy.xlsx` 폴더의 `taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md·.html·.json` 작성 | 안 함(교정 파일의 실행 ID를 쓴다) | M5 |
 | `serve --port <포트>` | 화면 서버(127.0.0.1 전용). `screens/` 제공, 화면의 교정·대조 JSON을 `inbox/`에 저장, 검수 완료 버튼(`POST /inbox/review/done`)이면 교정 저장 뒤 `signals/review_done_<실행ID>.json` 작성 | 안 함 | M5 |
 | `run` | 수집부터 산출·조회 검증·리포트까지 전 단계. `embed`·`push-vectors`는 부르지 않는다 | 발급 | M6 |
 | `report --run <ID>` | 기준선 리포트(분포) 재계산, `reports/taxonomy_revisit.*` 재작성(LLM 호출 0회) | 안 함 | M6 |
 | `embed` | chunk 임베딩, `chunk_embeddings` | 안 함 | M6b |
 | `push-vectors` | Supabase 벡터 적재, `vector_push_log` | 안 함 | M6b |
+| `slide-images` | 슬라이드 근사 미리보기 JPG 렌더(`slide_images/<sha256>.b64`, `slide_images` 표), 산출 `chunks.slide_image` 갱신 | 안 함 | M6c |
+| `push-slides` | 슬라이드 JPG를 Storage 버킷에 올리고 벡터 행 `slide_image_*` 열 기록, `slide_image_push_log` | 안 함 | M6c |
 
 ### ID와 해시 정의
 
@@ -157,7 +163,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 점검 스크립트를 샘플 1(sha256 `1b275ae9efc9…`)과 샘플 2(sha256 `f073be9c9ade…`)에 돌리면 샘플 1은 9장·차트 0, 샘플 2는 4장·차트 1·그룹 도형 0으로 나온다. 샘플은 파일명이 아니라 부록의 sha256으로 찾는다. 샘플 2는 `dummy pptx files/` 폴더의 임의 파일 중 하나이며, 교체하면 이 기준과 M1 기준의 값만 바꾼다. 차트 1은 M1의 `[차트]` 구간 추출(G15)을 검증하는 대상이다.
 - [ ] 점검 스크립트와 로그 출력에 슬라이드 본문 문자열이 하나도 없다(샘플의 제목 문구를 출력에서 검색해 0건).
 - [ ] self-check가 항목별 PASS/FAIL을 내고, LLM 주소가 없을 때 그 항목만 FAIL로 나온다.
-- [ ] 작업 폴더를 코드 폴더 안으로 지정하면 실행이 거부된다.
+- [ ] 작업 폴더를 `workspaces/` 밖의 코드 폴더 안으로 지정하면 실행이 거부된다.
 - [ ] 코드 폴더를 지우고 다시 만들어도 작업 폴더의 파일이 바이트 단위로 그대로다.
 - [ ] 소스 전체가 Python 3.14.2에서 import되고 테스트가 통과한다(사외 구동 기준).
 - [ ] `store.py`가 `meta` 표의 `schema_version`으로 스키마를 관리한다. 이전 버전 스키마의 DB를 열면 열이 추가되고 기존 행이 보존된다.
@@ -221,9 +227,9 @@ logs/           .log (파일 ID와 사유 코드만)
 
 ### M2. taxonomy.xlsx, 동의어 시트, 후보 리포트, 1차 분류
 
-만드는 파일: `ooxml.py`(bytes 기반 xlsx 읽기), `taxonomy.py`, `synonyms.py`, `candidates.py`, `classify.py`, `tests/fixtures/default_taxonomy_rows.jsonl`(커밋된 `defaults/taxonomy.xlsx`에서 만든 기대 행. xlsx가 기준이다), `tests/xlsx_writer.py`(메모리 전용), `tests/fixtures/synthetic_chunks.jsonl`, `tests/gold/gold_labels.jsonl`(초안), `tools/gold_view.py`, `prompts/classify.md`
+만드는 파일: `ooxml.py`(bytes 기반 xlsx 읽기), `taxonomy.py`, `synonyms.py`, `candidates.py`, `classify.py`, `tests/fixtures/default_taxonomy_rows.jsonl`(커밋된 `taxonomy/taxonomy.xlsx`에서 만든 기대 행. xlsx가 기준이다), `tests/xlsx_writer.py`(메모리 전용), `tests/fixtures/synthetic_chunks.jsonl`, `tests/gold/gold_labels.jsonl`(초안), `tools/gold_view.py`, `prompts/classify.md`
 
-테스트 진입점: `taxonomy.parse_bytes(b)`가 파서 진입점이고, `read_input`은 bytes를 읽어 넘기기만 한다. 오류 픽스처와 규칙 테스트는 `tests/xlsx_writer.py`가 메모리에서 만든 bytes를 `parse_bytes`에 넣는다(디스크에 xlsx를 쓰지 않는다). 읽을 위치는 `pipeline.json`의 `taxonomy_path`(기본값: 작업 폴더의 `taxonomy.xlsx`)이고, 통합 테스트는 `taxonomy_path`를 `defaults/taxonomy.xlsx`로 지정해 복사 없이 읽는다. `defaults/taxonomy.xlsx`는 저장소에 이미 있으며 기본 taxonomy의 기준이다. 이 파일에 의존하는 테스트는 `tests/test_defaults_taxonomy.py`와 통합 테스트 모듈로 분리한다. M2의 나머지 테스트는 `parse_bytes`만으로 통과해야 한다.
+테스트 진입점: `taxonomy.parse_bytes(b)`가 파서 진입점이고, `read_input`은 bytes를 읽어 넘기기만 한다. 오류 픽스처와 규칙 테스트는 `tests/xlsx_writer.py`가 메모리에서 만든 bytes를 `parse_bytes`에 넣는다(디스크에 xlsx를 쓰지 않는다). 읽을 위치는 `pipeline.json`의 `taxonomy_path`(기본값: 작업 폴더의 `taxonomy.xlsx`)이고, 통합 테스트는 `taxonomy_path`를 `taxonomy/taxonomy.xlsx`로 지정해 복사 없이 읽는다. `taxonomy/taxonomy.xlsx`는 저장소에 이미 있으며 기본 taxonomy의 기준이다. 이 파일에 의존하는 테스트는 `tests/test_defaults_taxonomy.py`와 통합 테스트 모듈로 분리한다. M2의 나머지 테스트는 `parse_bytes`만으로 통과해야 한다.
 
 완료 기준:
 - [ ] 엑셀에서 값을 추가한 `taxonomy.xlsx`를 읽으면, 코드 수정 없이 다음 분류 프롬프트에 그 값이 들어간다.
@@ -232,8 +238,8 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 시트 누락·머리글 불일치: 필수 시트가 없거나 머리글이 다르면 시트 이름과 기대 머리글을 알려 주고 거부한다. 선택 시트(`files`, `queries`)가 없으면 빈 시트로 처리된다.
 - [ ] 중복 동의어 경고: 같은 동의어가 두 행에 있으면 첫 행을 쓰고 경고하며 실행은 계속된다. 경고에는 시트 이름과 행 번호만 있고 표현은 없다.
 - [ ] 바이트 불변: 실행 전후로 `taxonomy.xlsx`가 바이트 단위로 같다.
-- [ ] 기본본 = jsonl(`tests/test_defaults_taxonomy.py`): 커밋된 `defaults/taxonomy.xlsx`를 `read_input`으로 읽은 행이 `default_taxonomy_rows.jsonl`과 같다. jsonl은 xlsx에서 만든 회귀 기준이며, 부록과 다르면 xlsx가 맞다. Excel에서 저장한 파일이므로 sharedStrings 경로도 함께 검증된다.
-- [ ] xlsx 없을 때 거부: `taxonomy_path`가 가리키는 파일(기본값: 작업 폴더의 `taxonomy.xlsx`)이 없으면 실행이 거부되고 "`defaults/taxonomy.xlsx`를 작업 폴더로 복사하라"고 안내하며, 작업 폴더에는 아무것도 복사되지 않는다. self-check에서는 FAIL 항목이다.
+- [ ] 기본본 = jsonl(`tests/test_defaults_taxonomy.py`): 커밋된 `taxonomy/taxonomy.xlsx`를 `read_input`으로 읽은 행이 `default_taxonomy_rows.jsonl`과 같다. jsonl은 xlsx에서 만든 회귀 기준이며, 부록과 다르면 xlsx가 맞다. Excel에서 저장한 파일이므로 sharedStrings 경로도 함께 검증된다.
+- [ ] xlsx 없을 때 거부: `taxonomy_path`가 가리키는 파일(기본값: 작업 폴더의 `taxonomy.xlsx`)이 없으면 실행이 거부되고 "`taxonomy/taxonomy.xlsx`를 작업 폴더로 복사하라"고 안내하며, 작업 폴더에는 아무것도 복사되지 않는다. self-check에서는 FAIL 항목이다.
 - [ ] 숫자 경계: `Via1`이 "Via12"를, `Metal1`이 "Metal12"를 바꾸지 않는다. "단락"은 Short로, "JGV"는 JHV로, "Metal1"은 M1로 정규화된다(mock 기준 불량 모드 = Short).
 - [ ] 기본 `synonyms` 시트에 허용 목록(JGV) 외 3자 이하 영문 키가 없다.
 - [ ] 시트별 해시: 필수 4개와 선택 2개 시트마다 해시가 나오고, 오른쪽에 추가한 열이나 Excel 재저장(내용 불변)으로는 바뀌지 않으며, 시트가 없으면 빈 시트 해시다.
@@ -424,7 +430,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] `queries` 시트의 채택=Y 행만 조회 검증에 쓰이고, `queries` 시트만 바뀐 재실행에서는 분류·라벨링 호출이 0회다.
 - [ ] mock은 정답표에서 mock 응답을 만들어 저장 결과, 3상태 집계, H5 분모를 확인한다(배관 검증).
 - [ ] `tools/evalgold.py`(개발 전용)가 실제 LLM 결과를 정답표와 대조해 축별 완전 일치율, Jaccard, 혼동 행렬을 `.md`로 낸다. 합격선은 정하지 않는다.
-- [ ] 필수층 미확정이면 실패: 정답표 필수층(합성 픽스처 6개와 파일 4개 18 chunk)에 `confirmed=true`가 하나라도 빠지면 정답표 테스트가 실패한다(skip이 아니다). 커버리지층은 리포트에 확정률만 낸다. 정답표 테스트는 `defaults/taxonomy.xlsx` 의존 테스트처럼 별도 모듈로 분리되어, 확정 전에는 그 모듈만 실패한다.
+- [ ] 필수층 미확정이면 실패: 정답표 필수층(합성 픽스처 6개와 파일 4개 18 chunk)에 `confirmed=true`가 하나라도 빠지면 정답표 테스트가 실패한다(skip이 아니다). 커버리지층은 리포트에 확정률만 낸다. 정답표 테스트는 `taxonomy/taxonomy.xlsx` 의존 테스트처럼 별도 모듈로 분리되어, 확정 전에는 그 모듈만 실패한다.
 - [ ] 정답표 확정 절차: 초안 → 필수층 3 chunk 앵커링 측정(사용자가 초안을 보기 전에 따로 라벨링해 초안과의 일치율을 리포트에 낸다) → 사용자가 `gold_labels.md`에서 틀린 칸을 알려 주면 jsonl에 반영하고 `confirmed=true` → 커버리지층은 나중에 확정한다.
 
 [P0] G16 산출 스키마:
@@ -435,12 +441,12 @@ logs/           .log (파일 ID와 사유 코드만)
 [P0] G17 금지 확장자 전수 검사: 정답표 10개 파일로 `python -m labelbot run`을 mock으로 끝까지 돌리고, `compare`·`review`로 화면 2개를 생성하고, mock 교정 `.json`을 `apply`로 반영한 뒤 검사한다. 실행 전 작업 폴더의 파일 목록(경로, 크기, 수정 시각)을 저장해 두고 새로 생기거나 바뀐 파일만 검사한다. 입력 전용 경로(`taxonomy.xlsx`, `pipeline.json`, `raw/`, `inbox/`)는 명시적으로 제외한다.
 - [ ] 작업 폴더와 `out/`을 재귀로 볼 때 새로 생긴 파일의 확장자가 모두 `CLAUDE.md` 쓰기 규칙의 허용 목록 `.b64 .sqlite .json .jsonl .html .md .log` 안에 있다. 목록 밖이면 파일 목록과 함께 실패한다.
 - [ ] 실행이 끝난 뒤 SQLite 저널 파일(`-journal`, `-wal`)이 남아 있지 않다.
-- [ ] 통합 테스트는 `taxonomy_path`를 `defaults/taxonomy.xlsx`로 지정해 복사 없이 읽으며, 작업 폴더에 `taxonomy.xlsx`를 두지 않는다.
+- [ ] 통합 테스트는 `taxonomy_path`를 `taxonomy/taxonomy.xlsx`로 지정해 복사 없이 읽으며, 작업 폴더에 `taxonomy.xlsx`를 두지 않는다.
 - [ ] 저장소의 `prompts/`에 `.txt` 파일이 0개다(전부 `.md`).
 
 [P0] G16 로그·리포트 비노출 검사, 원본 경로 단일 열기 검사:
 - [ ] 위 통합 실행 뒤 `logs/`, 콘솔 출력, `reports/`(리포트, `alerts.json`, 후보 리포트·taxonomy 재검토 리포트 제외)에서 정답표 파일명, 테스트 폴더명, 입력 루트 경로를 검색하면 0건이다. 재검토 메모(고유 표식)는 `logs/`와 콘솔 출력, 재검토 리포트 밖의 `reports/`에 0건이다. 반면 `work.sqlite`와 산출 SQLite에는 상대 경로와 파일명이 있다.
-- [ ] 통합 실행 동안 테스트가 `builtins.open`과 `io.open`을 감싸 호출을 기록하고, 입력 루트 아래 경로나 입력 전용 파일(`taxonomy.xlsx`, `defaults/taxonomy.xlsx`, `inbox/*.json`)을 연 호출이 모두 `ingest.read_input`에서 나왔는지 호출 스택으로 확인한다. `write_roundtrip`의 임시 파일은 예외다.
+- [ ] 통합 실행 동안 테스트가 `builtins.open`과 `io.open`을 감싸 호출을 기록하고, 입력 루트 아래 경로나 입력 전용 파일(`taxonomy.xlsx`, `taxonomy/taxonomy.xlsx`, `inbox/*.json`)을 연 호출이 모두 `ingest.read_input`에서 나왔는지 호출 스택으로 확인한다. `write_roundtrip`의 임시 파일은 예외다.
 
 [P1] G12 조회 검증:
 - [ ] 결과가 25건이고 정답을 포함하면 K=20 기준 "과다 결과"로 판정된다.
@@ -488,6 +494,20 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] `docs/supabase_schema.md`에 SQL 코드 블록이 있고 저장소에 `.sql` 파일이 0개다.
 - [ ] mock 서버가 오류를 내도 라벨링·산출 단계가 끝까지 간다.
 
+### M6c. 슬라이드 미리보기 JPG와 Storage 적재
+
+상세 계획: `.omc/plans/slide-jpg-supabase.md`. 만드는 파일: `labelbot/cdp.py`, `labelbot/slideimg.py`, `labelbot/slidepush.py`, `labelbot/screens/slides.html`, `labelbot/screens/slide_preview.js`·`.css`(review.html과 공유). 우선순위 P2(검수·라벨에 영향 없음).
+
+[P2] G22 슬라이드 JPG (`python -m labelbot slide-images`): 검수 화면과 같은 근사 미리보기를 headless Edge/Chrome(DevTools `Page.captureScreenshot`, jpeg)으로 슬라이드마다 캡처한다. 결과 base64를 그대로 `slide_images/<jpg_sha256>.b64`에 쓴다(`.jpg` 파일은 쓰지 않는다). `text_hash`·배치 해시·렌더 설정이 같으면 다시 그리지 않는다. pptx가 아니면 `NO_LAYOUT`.
+- [x] 대상 수 = `slide_images` 행 수 + `failures(stage='slide_image')` 수.
+- [x] 모든 `.b64`가 디코딩하면 `FF D8 FF`로 시작하고 sha256이 파일명과 같다. 작업 폴더에 `.jpg` 파일이 0개다.
+- [x] 다시 돌리면 렌더 0건이다. 브라우저가 없으면 `RENDERER_MISSING`으로 남고 다른 단계는 영향을 받지 않는다.
+
+[P2] G23 Storage 적재 (`python -m labelbot push-slides`): `supabase.storage_enabled=true`일 때 `storage_bucket`(기본 `BEOL-labeling`, private)에 `<file_id 앞 16자>/<슬라이드 번호 4자리>.jpg`로 올리고 `beol_chunk_embeddings` 행의 `slide_image_bucket·path·sha256·width·height`를 PATCH한다. `push-vectors` 다음에 부른다. 라벨·`label_hash`는 바꾸지 않는다.
+- [x] 다시 돌리면 업로드 0건이다. 행이 없으면 `ROW_MISSING`, 다음 실행에서 다시 한다.
+- [x] 사외 호스트에서 더미 해시 밖 슬라이드는 `EXTERNAL_NON_DUMMY`로 차단된다.
+- [ ] 실제 Supabase에서 버킷·열 SQL(`docs/supabase_schema.md`)을 실행하고 더미 슬라이드 업로드·행 갱신을 확인한다.
+
 ### M7. 사내 반입과 100개 실행
 
 사내에서 사용자가 진행한다. 순서대로 한다. G-1~G-10은 게이트 항목이며(gap ID G1~G21과 구분하려고 하이픈을 붙인다), 7단계(100개 실행) 전에 모두 PASS여야 한다. 같은 업무 PC에서 Python·메모장·브라우저로 여는 확인은 필요조건일 뿐이다(투명 복호화는 같은 PC의 다른 프로그램에도 해당할 수 있다). 사외로 반출하는 형식의 충분조건은 G-10이다.
@@ -496,7 +516,7 @@ logs/           .log (파일 ID와 사유 코드만)
 2. `pipeline.json`의 `llm`, `embedding`, `supabase` 세 블록을 사내 값으로 바꾼다(`base_url`·`url`, `model`, `internal_host_suffixes`(사내 도메인), 필요하면 `auth_header`, `extra_headers`, `ca_file`, 경로). 사내에서 벡터 DB(Supabase 또는 사내 Postgres + pgvector)를 쓸 수 있는지 확인하고, 쓸 수 없거나 사내 호스트가 아니면 `supabase.enabled`를 false로 둔다. **G-2**: self-check의 호스트 판정 항목과 LLM 항목만 PASS다(호스트 판정 "사내"). 사내 파일로 LLM·임베딩·벡터 적재를 부르는 어떤 단계보다 먼저 한다.
 3. 사내 파일 1개로 `ingest`를 돌려 DRM 해제, base64 저장, 이미지 저장이 되는지 확인한다. **G-3**: 수집 → `.b64` → 디코딩 → 시그니처 검사가 통과한다. **G-4**: 추출 이미지 `.b64`와 `b64/`의 파일을 같은 PC의 메모장으로 열어 base64 평문으로 보인다(필요조건).
 4. 점검 스크립트(`probe`)로 100개 파일의 구조 통계를 본다. 처리하지 못하는 요소가 많으면 사유 코드와 통계를 사외로 전달해 파서를 보강한다.
-5. `defaults/taxonomy.xlsx`를 작업 폴더로 `taxonomy.xlsx`라는 이름으로 복사하고(봇은 복사하지 않는다), `taxonomy` 시트에 제품·세대 값을, `synonyms` 시트에 사내 동의어를, `files` 시트에 맥락 메모와 제외를 적는다. **G-5**: `taxonomy.xlsx`가 `read_input`으로 읽힌다(`ENCRYPTED`나 `NOT_OOXML` 사유 코드가 아니다). 여기서 self-check를 다시 돌려 전 항목 PASS를 확인한다.
+5. `taxonomy/taxonomy.xlsx`를 작업 폴더로 `taxonomy.xlsx`라는 이름으로 복사하고(봇은 복사하지 않는다), `taxonomy` 시트에 제품·세대 값을, `synonyms` 시트에 사내 동의어를, `files` 시트에 맥락 메모와 제외를 적는다. **G-5**: `taxonomy.xlsx`가 `read_input`으로 읽힌다(`ENCRYPTED`나 `NOT_OOXML` 사유 코드가 아니다). 여기서 self-check를 다시 돌려 전 항목 PASS를 확인한다.
 6. 기본본 그대로(승인된 질문은 `Q-COM-001` 하나) 사내 파일 1개로 `run`을 끝까지 돌리고 `compare`·`review`로 화면 2개를 만든다. **G-6**: `screens/*.html`을 브라우저로 열어 내용이 보인다(`review.html`은 불량 목록과 사유 코드 필터가 보인다). **G-7**: `out/labeling.sqlite`를 Python이 아닌 소비자(사내 SQL 도구)에서 열어 조회가 된다. **G-8**: `reports/`의 `.md`·`.json`(`flagged_<실행ID>.jsonl`·`.md` 포함), `alerts.json`, `logs/`의 `.log`, 작업 폴더의 `.jsonl`을 같은 PC의 메모장이나 브라우저로 열어 평문으로 보인다(필요조건). **G-9**: 화면에서 내려받은 `.json`을 `inbox/`에 넣고 `apply`가 성공한다. **G-10**: 사외로 반출하는 형식(기준선 리포트 `.md`, 게이트 기록 `.json`, 필요하면 `.log`)을 실제 반출 경로로 옮긴 뒤, 또는 DRM 에이전트가 없는 PC에서 열어 평문으로 보인다. 이어서 `python -m labelbot gate record`로 항목별 PASS/FAIL을 입력해 `reports/gate_<timestamp>.json`에 남긴다(self-check와 게이트는 실행 ID를 발급하지 않으므로 시각을 쓴다). 경로와 파일명은 넣지 않는다.
 7. 전 단계를 실행한다. 중간에 `reports/candidates.md`의 새 값·질문·동의어 후보를 보고 시트에 붙여넣은 뒤 재실행한다. 라벨 분포 알림이 나오면 원인을 점검한다. 프롬프트를 바꾸는 P1 항목(G7, G14)을 이번 회차에 넣을지 2회차까지 동결할지 기록한다.
 8. 파싱 대조 5개, 검수, 조회 질문 채택(`queries` 시트에 붙여넣고 채택 열을 Y로 둔다)을 한다. 검수 화면은 프롬프트와 taxonomy를 고정하고 마지막 재실행을 끝낸 뒤 생성하며, 그 시점의 실행 ID가 검수 기준 실행 ID다. 검수 중 발견한 동의어는 교정 파일에 담고, `candidates.md`의 "검수 등록" 행을 시트에 붙여넣는다.
@@ -632,7 +652,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
   3. 키는 코드 폴더 루트 `.env`(`OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`)나 셸 환경변수로 넣는다. 셸 값이 우선한다. `.env`는 `.gitignore`로 커밋하지 않고 템플릿 `.env.example`만 커밋한다. `supabase.url`이 비어 있으면 `SUPABASE_URL`을 쓴다.
   4. 의존성: `requirements.txt`는 labelbot 본체용이며 비어 있다(표준 라이브러리만). 사외 PoC SDK(`openai`, `supabase`, `python-dotenv`)는 `requirements-poc.txt`에 두고 labelbot 본체는 import하지 않는다.
   5. 개발 전용 파일 확장자 예외: `.env`, `.env.example`, `requirements*.txt`, `.gitignore`는 사내 데이터를 담지 않는 저장소 파일이므로 허용한다(위 "개발 산출물 확장자 예외는 없다"를 이 파일들에 한해 대체한다). 작업 폴더 금지 확장자 검사(G17)는 그대로다.
-  6. 기본 taxonomy의 기준은 커밋된 `defaults/taxonomy.xlsx`다. 부록과 다르면 xlsx가 맞고, `tests/fixtures/default_taxonomy_rows.jsonl`은 xlsx에서 만든다.
+  6. 기본 taxonomy의 기준은 커밋된 `taxonomy/taxonomy.xlsx`다. 부록과 다르면 xlsx가 맞고, `tests/fixtures/default_taxonomy_rows.jsonl`은 xlsx에서 만든다.
   7. 더미 파일은 저장소의 `dummy pptx files/`에 모두 있다(부록 해시 11개 확인).
   8. pptx·docx가 아닌 형식(pdf, hwp, csv, txt, 이미지 등)은 파싱하지 않고 사유 코드 `UNSUPPORTED_FORMAT`으로 실패 목록에 넣는다.
   9. `apply`는 `compare.html`에서 내려받은 파싱 대조 기록 `.json`도 받아 `work.sqlite`에 저장하고, 기준선 리포트에는 대조 파일 수와 이상 슬라이드 건수만 낸다(PRD 8.3·10.2).
@@ -642,7 +662,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 
 ## 부록. 기본 taxonomy.xlsx 초기 행
 
-- 기준은 커밋된 `defaults/taxonomy.xlsx`다(2026-10-04 결정). 이 부록은 초기 설계 참고용이며, xlsx와 다르면 xlsx가 맞다. M2 실행자는 xlsx를 `read_input`으로 읽어 `tests/fixtures/default_taxonomy_rows.jsonl`을 만들고, 테스트는 xlsx와 jsonl이 같은지 확인한다. 어떤 도구도 xlsx를 디스크에 쓰지 않는다.
+- 기준은 커밋된 `taxonomy/taxonomy.xlsx`다(2026-10-04 결정). 이 부록은 초기 설계 참고용이며, xlsx와 다르면 xlsx가 맞다. M2 실행자는 xlsx를 `read_input`으로 읽어 `tests/fixtures/default_taxonomy_rows.jsonl`을 만들고, 테스트는 xlsx와 jsonl이 같은지 확인한다. 어떤 도구도 xlsx를 디스크에 쓰지 않는다.
 - jsonl은 기본본 회귀 기준이다. 사용자가 xlsx를 고치면 jsonl도 같이 다시 만든다.
 - 1행 머리글은 아래 문자열과 순서가 정확히 같아야 한다(`PRD.md` 6.1절과 같다). 기본본에는 선택 시트 `files`·`queries`를 두지 않아도 되며(없으면 빈 시트), 두는 경우 머리글만 둔다.
 
@@ -794,10 +814,11 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 ## 변경 이력
 
 - 2026-10-04 라벨링 품질 보강(v2) 반영: `.omc/plans/labeling-quality-review-v2.md`의 4절(마일스톤별 반영 제안), 6절(확정 결정), 8절(리스크)과 G21 Supabase 벡터 적재 명세를 반영했다. 반영한 gap ID는 G1, G2, G3, G4(chunk `dup_group`, 파일 `near_dup_group`), G5, G6, G7, G8, G9(G1 안의 N/A 편중 표시), G11, G12, G13, G14, G15, G16, G17, G18, G19, G20, G21이다. 바뀐 곳은 1절(외부 전송 제약), 2절(디렉터리 구조: `metrics.py`, `gate.py`, `embed.py`, `vectorpush.py`, `docs/supabase_schema.md`, `prompts/*.md`, 작업 폴더의 `pipeline.json` 세 블록·`review_gold/`·`gate_<timestamp>.json`), 3절 M0(G18, G19), M1(G16, G4, G15), M2(3상태 기준 수정, G6, G8, G16), M3(G5, G11), M4(재실행 기준 수정, G6, G7, G14), M5(시드·실행 ID 거부·리포트 기준 수정, G3, G2, G13, G16, G1, G8 재판정 형식), M6(재실행 기준 수정, G16, G17, G12, 리포트 요약), 신설 M6b(G20, G21), M7(게이트 G-1~G-10을 끼워 10단계로 다시 매김, 사내 설정 세 블록, 벡터 DB 사용 가능 여부 확인, 완료 기준 추가), 4절 HITL 표(H6 보강, 게이트·벡터 적재 행), 5절 리스크, 6절 검증 단계, 7절(v2 7절 미결 항목과 G21 결정 항목을 기본안과 함께 추가, 준중복 미결 항목 닫음, v2 6절 확정 결정 15개 추가)이다. taxonomy 재설계로 정해진 내용(분류 축 8 + 상태 축 2, `taxonomy.xlsx` 읽기 전용, 화면 2개, 더미 정답표 10개 파일 39 chunk, `tools/evalgold.py`)은 바꾸지 않았다.
-- 2026-10-04 구현 착수 리뷰 반영: 2절에 "명령", "ID와 해시 정의", "작업 DB(work.sqlite) 표"를 추가했다(실행 ID 발급은 `run`·`ingest`, `schema_version`과 추가 전용 마이그레이션, `taxonomy_path`). M2에 `taxonomy.parse_bytes` 진입점과 `defaults/taxonomy.xlsx` 의존 테스트 분리를 적었다. M6b의 `run`·`embed` 관계와 `result_code` 성공 기준 멱등을 고쳤다. 역방향 의존 기준을 옮겼다: M0의 더미 해시 밖 chunk 차단 → M2(M0에는 공용 함수 단위 테스트), M0의 빈 작업 폴더 `run` → M6, M1의 위치 이동 시 분류·라벨링 호출 0회 → M4, M5의 리포트 지표·실패 건수·`report --run`·`evalgold.py`=`report.py` → M6. M1의 "리포트에 적힌다"는 `files` 표로 바꿨다.
+- 2026-10-04 구현 착수 리뷰 반영: 2절에 "명령", "ID와 해시 정의", "작업 DB(work.sqlite) 표"를 추가했다(실행 ID 발급은 `run`·`ingest`, `schema_version`과 추가 전용 마이그레이션, `taxonomy_path`). M2에 `taxonomy.parse_bytes` 진입점과 `taxonomy/taxonomy.xlsx` 의존 테스트 분리를 적었다. M6b의 `run`·`embed` 관계와 `result_code` 성공 기준 멱등을 고쳤다. 역방향 의존 기준을 옮겼다: M0의 더미 해시 밖 chunk 차단 → M2(M0에는 공용 함수 단위 테스트), M0의 빈 작업 폴더 `run` → M6, M1의 위치 이동 시 분류·라벨링 호출 0회 → M4, M5의 리포트 지표·실패 건수·`report --run`·`evalgold.py`=`report.py` → M6. M1의 "리포트에 적힌다"는 `files` 표로 바꿨다.
 - 2026-10-04 4차 단계 단순화: 사용자 결정에 따라 4차를 검수 봇에서 "4차 불량 목록 추출"(`PRD.md` FR-5)로 바꿨다. LLM 호출 없이 사유 코드 6개(`UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED`)로 판정하고, 걸린 chunk를 상한 없이 `flagged_chunks`, `reports/flagged_<실행ID>.jsonl`·`.md`, 검수 화면에 낸다. 뺀 것은 LLM 독립 재판정(`prompts/rejudge.md`, G8 재판정 형식), 표본 추출 전부(G3), `review_snapshot`·`review_actions` 표와 검수 행동 기록(G13), blind 문장, `review_gold/`와 `report --compare-review-gold`, 회차 간 답 재사용(G2 일부), 사내 리포트의 정확도 지표(G1 사내 부분), M7의 합격선 결정과 review_gold 보관이다. 사외 더미 정답표 대조(`tools/evalgold.py`, `labelbot/metrics.py`)는 남기고 `metrics.py`는 M6에서 만든다. 바뀐 곳은 1절, 2절(디렉터리 구조, `pipeline.json`의 `flag` 블록, 명령 표, ID와 해시 정의, 작업 DB 표), 3절 머리말, M4(G7 문구), M5(전면 재작성), M6(리포트 분포 항목, G1 블록), M7(10단계, G-6·G-8 문구, 완료 기준), 4절 H6, 5절 리스크, 6절 검증 단계, 7절(임베딩 용도, 대체된 결정 표시, 새 확정 결정)이다. 백업은 `.omc/backups/plan.pre-flag-step.md`다.
 - 2026-10-04 검수 화면 taxonomy 재검토 요청: 근거는 `.omc/plans/autopilot-impl.md`(8절 Critic 반영 우선)와 `.omc/autopilot/spec.md`다. 검수 화면의 재검토 요청(교정 파일 `revisits`)을 작업 DB `revisit_requests`로 반영하고 `reports/taxonomy_revisit.md`·`.jsonl`로 낸다. 라벨·`label_hash`는 바뀌지 않아 Supabase 재적재가 없다. `apply`는 교정 파일별 `SAVEPOINT`를 둔다. 바뀐 곳은 2절(reports 목록, 명령 표, 작업 DB 표), M5 G16·G2 완료 기준, 로그·리포트 비노출 검사, 4절 H6, 후보 처리 흐름이다.
 - 2026-10-04 2차 검증 질문 생성: 사용자 결정에 따라 2차에 "1차 라벨 검증 질문 생성(LLM)"을 더했다. 승인 질문 매핑은 그대로 두고, 남은 상한만큼 1차 라벨(해당 없음·unknown 제외)마다 O/X 판정 질문을 `prompts/question_gen.md`로 만든다. 질문은 `gen_questions` 표에 남고, 3차 라벨러는 뒷받침=O·반박=X·근거 없음=N/A로 답한다. chunk당 LLM 호출이 2회에서 3회로 늘었다. 바뀐 곳은 2절 디렉터리 구조(`questions.py` 설명), M3(제목, 만드는 파일, 생성 규칙, 완료 기준)다.
 - 2026-10-04 사외 검증 폴더 허용: 사용자 승인에 따라 `parshing test files/`의 현재 파일 해시를 사외 전송 허용 목록(`dummy_hashes.jsonl`)에 더했다(`llm.DUMMY_DIRS`). 이 폴더 파일이 `EXTERNAL_NON_DUMMY`로 막히던 문제를 해결한다. 폴더 단위 허용이므로 이 폴더에 사내 파일을 넣지 않는 것을 운영 규칙으로 둔다. 바뀐 곳은 2절 디렉터리 구조와 M0 G19 사외 전송 조건이다.
 - 2026-10-04 검수 화면 슬라이드 근사 미리보기(B안): 사용자 결정에 따라 렌더링 없이 파서 좌표로 슬라이드 배치를 재구성해 검수 화면에 보여 준다. `pptx_parser.slide_layouts`, `review.py`의 보관본 메모리 재파싱(`layout`·`image_map`), `screens/review.html` 미리보기 카드를 더했다. 바뀐 곳은 M5(P2 항목과 완료 기준 2개)다.
 - 2026-10-04 검수 진행을 검수 반영 스킬로 이동: 사용자 결정에 따라 H6 검수는 `BEOL-labeling-feedback` 스킬이 검수 화면을 띄우고 "검수 완료" 버튼 신호를 기다리는 단계가 됐다(끝났는지 묻지 않는다). H2 대조는 그 스킬이 시작할 때 실행 여부를 묻는다. `BEOL-labeling`은 결과 대시보드만 띄운다. `serve.py`에 `POST /inbox/review/done`(교정 저장 뒤 `signals/review_done_<실행ID>.json`, 건수만)과 `/inbox/status`의 `done` 표시를, `screens/review.html`에 검수 완료 버튼(서버가 `done`을 알릴 때만 보임)을 더했다. 바뀐 곳은 2절 디렉터리 구조(`signals/`)와 명령 표(`serve`), 4절 H2·H6이다.
+- 2026-10-05 실행별 taxonomy 재검토 파일: 사용자 결정에 따라 `apply`가 반영한 검수 실행마다(요청 1건 이상, `revisits` 키 있음) 그 실행의 요청만 담은 `taxonomy/taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`을 쓴다(`revisit.write_run_files`, 같은 이름이면 `_2` 접미). taxonomy 시트 A~K 그대로의 "바로 붙여넣기"(`NO_FIT_VALUE`)·"확인 필요"(이미 있는 값, 없는 상위값·축, `NEW_AXIS` 정의 행) 블록과 엑셀 행 없는 요청 목록으로 나뉜다. 메모가 담기지만 git 추적 대상이며 원격에 올라가도 된다(`PRD.md` 9.2). `report`·`run`은 쓰지 않는다. 바뀐 곳은 2절 디렉터리 구조와 명령 표(`apply`)다.

@@ -108,16 +108,8 @@ mark.s{background:rgba(74,95,168,.16);box-shadow:inset 0 -2px 0 var(--primary);c
 .imgs img:hover{transform:scale(1.04)}
 .slide-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .slide-h h3{margin:0}
-.slide{position:relative;width:100%;container-type:inline-size;background:#FBFCFE;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);overflow:hidden}
+/*__SLIDE_PREVIEW_CSS__*/
 .slide.big{width:min(94vw,150vh);max-height:92vh;cursor:zoom-out}
-.slide .sb{position:absolute;overflow:hidden;line-height:1.18;color:var(--text-strong);white-space:pre-wrap;word-break:break-word;letter-spacing:-0.02em}
-.slide .sb.ttl{font-weight:700}
-.slide .sb.chart{border:1px dashed var(--warning);background:rgba(201,154,59,.06);padding:.4cqw}
-.slide .sb.tbl{border:1px dashed var(--line)}
-.slide .sb.tbl table{border-collapse:collapse;width:100%}
-.slide .sb.tbl td{border:1px solid var(--bg-grid);padding:.15cqw .3cqw;vertical-align:top}
-.slide img.sp{position:absolute;object-fit:contain}
-.slide .sp-ph{position:absolute;display:flex;align-items:center;justify-content:center;border:1px dashed var(--dot);background:rgba(168,189,212,.15);color:var(--text-muted);font-size:1.2cqw}
 .slide-note{font-size:11px;color:var(--text-muted);margin-top:6px}
 .syn{margin-top:10px;border:1px dashed var(--primary-soft);border-radius:var(--radius-sm);padding:8px 10px;background:rgba(107,130,196,.07)}
 .syn .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
@@ -184,6 +176,15 @@ dialog p{margin:0 0 10px;font-size:12.5px;color:var(--text-muted)}
 .zoom{position:fixed;inset:0;background:rgba(30,45,74,.7);display:none;align-items:center;justify-content:center;z-index:50;cursor:zoom-out}
 .zoom.on{display:flex}
 .zoom img{max-width:92vw;max-height:92vh;border-radius:var(--radius-sm);background:var(--bg-base)}
+.zoom .zcap{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);color:#fff;font-size:12px;background:rgba(0,0,0,.45);padding:3px 10px;border-radius:var(--radius-sm)}
+.sibs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.sib-view{display:block;width:100%;max-height:360px;object-fit:contain;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);cursor:zoom-in}
+.sib-cap{font-size:11.5px;color:var(--text-muted);margin:4px 0 8px}
+.sib{flex:0 0 auto;position:relative;padding:0;border:2px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);cursor:pointer}
+.sib img{display:block;height:72px;border-radius:var(--radius-sm)}
+.sib.cur{border-color:var(--primary)}
+.sib .no{position:absolute;left:3px;bottom:3px;font-size:10px;color:#fff;background:rgba(0,0,0,.55);padding:0 4px;border-radius:3px}
+.sib .fl{position:absolute;right:3px;top:3px;width:8px;height:8px;border-radius:50%;background:#e5484d}
 .toast{position:fixed;right:20px;bottom:20px;background:var(--text-strong);color:#EDF1F7;padding:8px 14px;border-radius:var(--radius-sm);font-size:12.5px;opacity:0;transform:translateY(8px);transition:all .32s var(--ease-elastic);pointer-events:none;z-index:60}
 .toast.on{opacity:1;transform:none}
 
@@ -213,6 +214,7 @@ dialog p{margin:0 0 10px;font-size:12.5px;color:var(--text-muted)}
 </dialog>
 
 <script>
+/*__SLIDE_PREVIEW_JS__*/
 const DATA = /*__DATA__*/null;
 
 (function(){
@@ -572,57 +574,68 @@ const DATA = /*__DATA__*/null;
     var ta = document.getElementById("dlgTa"); ta.focus(); ta.select();
   });
   var zoom = document.getElementById("zoom");
-  zoom.addEventListener("click", function(){ zoom.classList.remove("on"); zoom.textContent = ""; });
+  var sibZoom = null;  // 같은 파일 슬라이드 확대 중이면 {list, i}
+  var sibNav = null;   // 지금 검수 중인 chunk의 같은 파일 슬라이드 뷰어 {list, i, show}
+  function closeZoom(){
+    if (sibZoom && sibNav && sibNav.list === sibZoom.list) sibNav.show(sibZoom.i);
+    zoom.classList.remove("on"); zoom.textContent = ""; sibZoom = null;
+  }
+  zoom.addEventListener("click", closeZoom);
+  // ---------- 같은 파일 슬라이드(slide-images JPG) ----------
+  function openSibZoom(list, i){
+    if (!list.length) return;
+    i = (i + list.length) % list.length;
+    sibZoom = {list:list, i:i};
+    zoom.textContent = "";
+    var im = document.createElement("img"); im.src = list[i].src; im.alt = "슬라이드 " + list[i].seq;
+    zoom.appendChild(im);
+    zoom.appendChild(h("div", {class:"zcap mono", text:"p." + list[i].seq + "  ·  " + (i + 1) + " / " + list.length + "  ·  ←/→ 넘기기, Esc 닫기"}));
+    zoom.classList.add("on");
+  }
+  function sibCard(c){
+    var list = (DATA.file_slides || {})[c.file_id] || [];
+    var card = h("div", {class:"card"}, [h("h3", {text:"같은 파일 슬라이드 " + list.length + "장"})]);
+    sibNav = null;
+    if (!list.length){
+      card.appendChild(h("div", {class:"muted", text:"슬라이드 JPG가 없습니다(slide-images 실행 전)."}));
+      return card;
+    }
+    var view = h("img", {class:"sib-view", alt:"", title:"클릭하면 크게 보기", onclick:function(){ openSibZoom(list, sibNav.i); }});
+    var cap = h("div", {class:"sib-cap mono"});
+    var btns = list.map(function(s, i){
+      return h("button", {class:"sib", type:"button", "aria-label":"슬라이드 " + s.seq + " 보기",
+        title: byId[s.chunk_id] ? "불량 chunk" : "", onclick:function(){ sibNav.show(i); }}, [
+        h("img", {src:s.src, alt:"슬라이드 " + s.seq, loading:"lazy"}),
+        h("span", {class:"no mono", text:"p." + s.seq}),
+        byId[s.chunk_id] ? h("span", {class:"fl"}) : null
+      ]);
+    });
+    sibNav = {list:list, i:0, show:function(i){
+      i = (i + list.length) % list.length;
+      sibNav.i = i;
+      view.src = list[i].src; view.alt = "슬라이드 " + list[i].seq;
+      cap.textContent = "p." + list[i].seq + "  ·  " + (i + 1) + " / " + list.length + "  ·  ←/→ 넘기기, 클릭하면 크게 보기";
+      btns.forEach(function(b, j){
+        b.classList.toggle("cur", j === i);
+        if (j === i) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+      });
+      if (btns[i].scrollIntoView) btns[i].scrollIntoView({block:"nearest", inline:"nearest"});
+    }};
+    card.appendChild(view);
+    card.appendChild(cap);
+    card.appendChild(h("div", {class:"sibs"}, btns));
+    var start = list.findIndex(function(s){ return s.seq === c.slide_no; });
+    sibNav.show(start < 0 ? 0 : start);
+    return card;
+  }
   function openZoom(url){
     zoom.textContent = "";
     var im = document.createElement("img"); im.src = url; im.alt = "확대 이미지";
     zoom.appendChild(im); zoom.classList.add("on");
   }
 
-  // ---------- 슬라이드 미리보기(근사 배치) ----------
-  // 파서가 읽은 좌표(EMU)에 텍스트·표·차트 요약·삽입 그림을 놓는다. 글꼴·색·도형 모양은 원본과 다르다.
-  // 글자 크기는 컨테이너 너비 기준 단위(cqw)로 잡아 미리보기 크기가 바뀌어도 비율이 유지된다.
-  function slidePreview(c){
-    var L = c.layout;
-    if (!L || !L.w || !L.h || (!(L.items || []).length && !(L.pics || []).length)) return null;
-    var wPt = L.w / 12700;
-    function pct(v, base){ return (v / base * 100).toFixed(3) + "%"; }
-    function place(el, b){
-      el.style.left = pct(b[0], L.w); el.style.top = pct(b[1], L.h);
-      el.style.width = pct(b[2], L.w); el.style.height = pct(b[3], L.h);
-      return el;
-    }
-    function fs(pt){ return (pt / wPt * 100).toFixed(3) + "cqw"; }
-    var slide = h("div", {class:"slide", style:"aspect-ratio:" + L.w + " / " + L.h, role:"img", "aria-label":"슬라이드 근사 미리보기"});
-    var imap = c.image_map || {};
-    (L.pics || []).forEach(function(p){
-      var url = imap[p.sha];
-      if (url){
-        var im = document.createElement("img"); im.className = "sp"; im.src = url; im.alt = "슬라이드 그림";
-        slide.appendChild(place(im, p.b));
-      } else {
-        slide.appendChild(place(h("div", {class:"sp-ph", text:"그림"}), p.b));
-      }
-    });
-    (L.items || []).forEach(function(it){
-      var el;
-      if (it.k === "table"){
-        el = h("div", {class:"sb tbl"});
-        var tb = h("table");
-        (it.rows || []).forEach(function(r){
-          var tr = h("tr");
-          r.forEach(function(cell){ tr.appendChild(h("td", {text:cell})); });
-          tb.appendChild(tr);
-        });
-        el.appendChild(tb); el.style.fontSize = fs(9);
-      } else {
-        el = h("div", {class:"sb " + (it.k === "chart" ? "chart" : "") + (it.ph === "title" || it.ph === "ctrTitle" ? " ttl" : ""), text:it.t || ""});
-        el.style.fontSize = fs(it.k === "chart" ? 10 : Math.max(6, (it.sz || 1400) / 100));
-      }
-      slide.appendChild(place(el, it.b));
-    });
-    return slide;
-  }
+  // ---------- 슬라이드 미리보기(근사 배치, slide_preview.js) ----------
+  function slidePreview(c){ return SlidePreview.build(c.layout, c.image_map); }
   function openSlideZoom(c){
     var s = slidePreview(c); if (!s) return;
     zoom.textContent = ""; s.classList.add("big");
@@ -1098,6 +1111,37 @@ const DATA = /*__DATA__*/null;
     save(); renderList(); renderDetail(true);
   }
 
+  // ---------- 같은 파일 슬라이드에 같은 라벨 적용 ----------
+  // 대상은 검수 목록(불량 chunk) 안의 같은 파일 chunk뿐이다. apply가 불량 목록 밖 chunk 교정을 받지 않기 때문이다.
+  // 분류 축 값과 두 chunk에 공통인 질문 답만 복사하고, 상태·동의어·재검토 요청은 슬라이드마다 따로 둔다.
+  function sameFileFlagged(c){
+    return chunks.filter(function(x){ return x.file_id === c.file_id && x.chunk_id !== c.chunk_id; });
+  }
+  function applyToSameFile(c){
+    var targets = sameFileFlagged(c);
+    if (!targets.length) return;
+    if (!window.confirm("같은 파일 불량 슬라이드 " + targets.length + "장의 분류 축·질문 답을 이 슬라이드 값으로 덮어씁니다.\n" +
+      "질문은 두 슬라이드에 공통인 것만 바꾸고, 상태·동의어·재검토 요청은 그대로 둡니다.")) return;
+    var srcQ = questionIds(c);
+    targets.forEach(function(t){
+      var e = edits[t.chunk_id] || (edits[t.chunk_id] = {});
+      axes.forEach(function(ax){
+        var v = curAxis(c, ax.name).slice(), b = botAxis(t, ax.name);
+        if (!v.length || (b && sameSet(b.values, v))) delete e["a:" + ax.name];
+        else e["a:" + ax.name] = v;
+      });
+      questionIds(t).forEach(function(qid){
+        if (srcQ.indexOf(qid) < 0) return;
+        var v = curAnswer(c, qid), b = botAnswer(t, qid);
+        if (!v || (b && b.answer === v)) delete e["q:" + qid];
+        else e["q:" + qid] = v;
+      });
+      if (!Object.keys(e).length) delete edits[t.chunk_id];
+    });
+    save(); renderList(); renderDetail(true);
+    toast("같은 파일 " + targets.length + "장에 적용했습니다");
+  }
+
   function questionCard(c, qid){
     var wrap = h("div", {class:"axis"});
     var bot = botAnswer(c, qid), cur = curAnswer(c, qid);
@@ -1156,7 +1200,11 @@ const DATA = /*__DATA__*/null;
     ]));
 
     var st = status[c.chunk_id];
+    var nSame = sameFileFlagged(c).length;
     detailEl.appendChild(h("div", {class:"actions"}, [
+      nSame ? h("button", {class:"btn", type:"button", text:"같은 파일 " + nSame + "장에 이 라벨 적용",
+        title:"검수 목록에 있는 같은 파일 슬라이드에 이 슬라이드의 분류 축 값과 공통 질문 답을 똑같이 넣습니다",
+        onclick:function(){ applyToSameFile(c); }}) : null,
       h("button", {class:"btn" + (st === "confirmed" ? " on-ok" : ""), type:"button", "aria-pressed":String(st === "confirmed"), text:"확인, 이상 없음",
         onclick:function(){ setStatus(c, "confirmed"); }}),
       h("button", {class:"btn" + (st === "undecidable_image" ? " on-img" : ""), type:"button", "aria-pressed":String(st === "undecidable_image"), text:"판단 불가: 정보가 이미지에만 있음",
@@ -1179,6 +1227,7 @@ const DATA = /*__DATA__*/null;
       ]);
       left.appendChild(sc);
     }
+    left.appendChild(sibCard(c));
     var bodyCard = h("div", {class:"card"}, [h("h3", {text:"본문"})]);
     bodyCard.appendChild(textNode(c));
     bodyCard.appendChild(h("div", {class:"legend"}, [
@@ -1256,6 +1305,20 @@ const DATA = /*__DATA__*/null;
   document.addEventListener("keydown", function(ev){
     var t = ev.target && ev.target.tagName;
     if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT" || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    if (zoom.classList.contains("on")){
+      // 확대 중에는 검수 이동(j/k)을 막는다. 같은 파일 슬라이드면 ←/→로 넘긴다.
+      if (ev.key === "Escape") closeZoom();
+      else if (sibZoom && ev.key === "ArrowRight") openSibZoom(sibZoom.list, sibZoom.i + 1);
+      else if (sibZoom && ev.key === "ArrowLeft") openSibZoom(sibZoom.list, sibZoom.i - 1);
+      else return;
+      ev.preventDefault();
+      return;
+    }
+    if (sibNav && (ev.key === "ArrowRight" || ev.key === "ArrowLeft")){
+      sibNav.show(sibNav.i + (ev.key === "ArrowRight" ? 1 : -1));
+      ev.preventDefault();
+      return;
+    }
     if (ev.key === "j") step(1); else if (ev.key === "k") step(-1);
   });
 

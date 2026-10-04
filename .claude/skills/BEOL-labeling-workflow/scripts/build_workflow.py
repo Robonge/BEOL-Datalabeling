@@ -1,7 +1,8 @@
 """BEOL 라벨링 워크플로 HTML 생성: 템플릿에 최신 실행의 건수를 채워 docs/workflow.html로 쓴다.
 
 work.sqlite를 읽기 전용으로 열고 건수·사유 코드·답 분포만 넣는다. 본문·파일명·경로·재검토 메모는 넣지 않는다.
-작업 폴더를 주지 않으면 코드 폴더 옆 261004_BEOL_* 중 work.sqlite가 가장 최근에 바뀐 폴더를 쓴다.
+작업 폴더를 주지 않으면 workspaces/261004_BEOL_*(실행마다 _YYYYMMDD-HHMMSS가 붙은 새 폴더) 중
+work.sqlite가 가장 최근에 바뀐 폴더를 쓴다.
 
 사용: python build_workflow.py [--workspace "<작업 폴더>"] [--run <실행 ID>] [--out "<html 경로>"]
 출력: JSON 한 줄(out, workspace, run_id, 채운 항목 수).
@@ -23,7 +24,7 @@ PLACEHOLDER = "/*__LIVE__*/null"
 
 
 def latest_workspace():
-    cands = [d for d in glob.glob(os.path.join(os.path.dirname(CODE_ROOT), "261004_BEOL_*"))
+    cands = [d for d in glob.glob(os.path.join(CODE_ROOT, "workspaces", "261004_BEOL_*"))
              if os.path.isfile(os.path.join(d, "work.sqlite"))]
     return max(cands, key=lambda d: os.path.getmtime(os.path.join(d, "work.sqlite"))) if cands else None
 
@@ -70,7 +71,18 @@ def live_data(ws, run):
         "revisits_total": (summ.get("revisits") or {}).get("total", 0),
         "pushed_ok": summ.get("pushed_ok"),
         "embeddings": summ.get("embeddings"),
+        "skipped": skipped_count(ws),
+        "ingested_lists": len(glob.glob(os.path.join(CODE_ROOT, "injested-file-list", "*.json"))),
     }
+
+
+def skipped_count(ws):
+    """pipeline.json skip_file_names 건수(중복이라 건너뛴 파일). 파일명은 넣지 않는다."""
+    try:
+        with open(os.path.join(ws, "pipeline.json"), encoding="utf-8") as f:
+            return len(json.load(f).get("skip_file_names") or [])
+    except (OSError, ValueError):
+        return 0
 
 
 def main():

@@ -1,4 +1,4 @@
-"""커밋된 defaults/taxonomy.xlsx 회귀 테스트. xlsx가 기준이고 jsonl은 xlsx에서 만든 기대 행이다."""
+"""커밋된 taxonomy/taxonomy.xlsx 회귀 테스트. xlsx가 기준이고 jsonl은 xlsx에서 만든 기대 행이다."""
 import json
 import os
 import unittest
@@ -8,7 +8,7 @@ from labelbot.ingest import read_input
 from labelbot.synonyms import SynonymTable
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-XLSX_PATH = os.path.join(ROOT, "defaults", "taxonomy.xlsx")
+XLSX_PATH = os.path.join(ROOT, "taxonomy", "taxonomy.xlsx")
 ROWS_PATH = os.path.join(ROOT, "tests", "fixtures", "default_taxonomy_rows.jsonl")
 
 

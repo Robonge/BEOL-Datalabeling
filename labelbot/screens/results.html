@@ -32,12 +32,16 @@ h1{font-size:24px;font-weight:700;letter-spacing:-0.04em;margin:0}
 h2{font-size:15px;font-weight:700;letter-spacing:-0.03em;margin:0 0 4px}
 .desc{color:var(--text-muted);font-size:12px;margin:0 0 14px}
 .card{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
 .kpi{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:14px 16px}
 .kpi .k{color:var(--text-muted);font-size:12px}
 .kpi .v{font-size:28px;font-weight:700;letter-spacing:-0.04em;line-height:1.2}
 .kpi .v small{font-size:13px;font-weight:400;color:var(--text-muted);margin-left:4px}
 .kpi .note{font-size:11.5px;color:var(--text-muted)}
+.kpi.hero{display:flex;gap:14px;align-items:center;border-left:4px solid var(--c)}
+.donut{--p:0;width:64px;height:64px;flex:0 0 64px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),var(--surface-2) 0);display:grid;place-items:center}
+.donut::before{content:"";grid-area:1/1;width:46px;height:46px;border-radius:50%;background:var(--surface)}
+.donut b{grid-area:1/1;z-index:1;font-size:12px;font-family:var(--mono);letter-spacing:-0.03em}
 .alert{display:flex;gap:8px;align-items:flex-start;border-left:3px solid var(--warning);background:#FBF6EC;border-radius:var(--radius-sm);padding:8px 12px;margin-top:8px;font-size:12.5px}
 .alert b{font-weight:700}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-muted);margin-bottom:10px}
@@ -104,6 +108,8 @@ const DATA = /*__DATA__*/null;
   const tip = document.getElementById('tip');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const pct = (n, d) => d ? (100 * n / d).toFixed(1) + '%' : '-';
+  const donut = (ratio, label) => { const t = ratio == null ? '-' : (ratio * 100).toFixed(1) + '%';
+    return `<div class="donut" style="--p:${ratio == null ? 0 : (ratio * 100).toFixed(1)}" role="img" aria-label="${esc(label)} ${t}"><b>${t}</b></div>`; };
   if (!DATA) { app.innerHTML = '<div class="card"><h2>표시할 결과가 없습니다</h2><p class="desc">python -m labelbot dashboard 로 생성하세요.</p></div>'; return; }
 
   function bindTips(root){
@@ -126,9 +132,9 @@ const DATA = /*__DATA__*/null;
   html += `<div class="kpis">
     <div class="kpi"><div class="k">파일</div><div class="v">${k.files}<small>개</small></div><div class="note">실패 파일 ${k.failed_files}</div></div>
     <div class="kpi"><div class="k">chunk</div><div class="v">${k.chunks}<small>개</small></div><div class="note">내용 ${k.content} · 분류 실패 ${k.classify_failed} · 라벨 실패 ${k.label_failed}</div></div>
-    <div class="kpi"><div class="k">불량 chunk (검수 대상)</div><div class="v">${k.flagged}<small>${pct(k.flagged, k.chunks)}</small></div><div class="note">사유 코드 6종 기준</div></div>
-    <div class="kpi"><div class="k">Q-COM-001 미해결 위험 O</div><div class="v">${k.risk_o}<small>${pct(k.risk_o, k.answers)}</small></div><div class="note">답 ${k.answers}개 중</div></div>
-    <div class="kpi"><div class="k">중복 라벨링 비율</div><div class="v">${k.dup_ratio == null ? '-' : (k.dup_ratio*100).toFixed(1) + '%'}</div><div class="note">N/A 비율 ${k.na_ratio == null ? '-' : (k.na_ratio*100).toFixed(1) + '%'}</div></div>
+    <div class="kpi hero" style="--c:var(--danger)">${donut(k.chunks ? k.flagged / k.chunks : null, '불량 chunk 비율')}<div><div class="k">불량 chunk (검수 대상)</div><div class="v">${k.flagged}<small>${pct(k.flagged, k.chunks)}</small></div><div class="note">사유 코드 6종 기준</div></div></div>
+    <div class="kpi"><div class="k">BEOL 관련자료 여부</div><div class="v">${k.risk_o}<small>${pct(k.risk_o, k.answers)}</small></div><div class="note">답 ${k.answers}개 중</div></div>
+    <div class="kpi hero" style="--c:var(${DATA.alerts.some(a => a.condition === 'DUP_LABEL_HIGH') ? '--warning' : '--primary'})">${donut(k.dup_ratio, '중복 라벨링 비율')}<div><div class="k">중복 라벨링 비율</div><div class="v">${k.dup_ratio == null ? '-' : (k.dup_ratio*100).toFixed(1) + '%'}</div><div class="note">N/A 비율 ${k.na_ratio == null ? '-' : (k.na_ratio*100).toFixed(1) + '%'}</div></div></div>
   </div>`;
   if (DATA.alerts.length) {
     html += '<div class="card"><h2>라벨 분포 알림 (H5)</h2>' + DATA.alerts.map(a =>

@@ -2,22 +2,31 @@
 
 입력 파일은 열지 않는다(확장자별 개수만 센다). 원본은 labelbot의 read_input만 연다(CLAUDE.md).
 
+작업 폴더는 실행마다 workspaces/261004_BEOL_<slug>_YYYYMMDD-HHMMSS로 새로 만든다.
+injested-file-list/*.json(이전 실행에서 처리를 마친 파일명)과 입력 파일명을 비교해 중복 건수를 알린다.
+
 사용:
   python init_workspace.py --input "<입력 폴더>" [--workspace "<작업 폴더>"] [--force]
-출력: JSON 한 줄(workspace, launch_name, port, 파일 수, pipeline.json 작성 여부).
+  python init_workspace.py --input "<입력 폴더>" --workspace "<작업 폴더>" --skip-duplicates
+출력: JSON 한 줄(workspace, launch_name, port, 파일 수, pipeline.json 작성 여부, duplicates).
+duplicates에는 건수와 출처 목록 파일만 담는다(파일명은 출력하지 않는다).
 """
 import argparse
+import datetime
+import glob
 import json
 import os
 import re
 import sys
+import unicodedata
 
 CODE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 PREFIX = "261004_BEOL_"
 BASE_PORT = 8770
+LIST_DIR = os.path.join(CODE_ROOT, "injested-file-list")
 
 PIPELINE = {
-    "taxonomy_path": os.path.join(CODE_ROOT, "defaults", "taxonomy.xlsx").replace("\\", "/"),
+    "taxonomy_path": os.path.join(CODE_ROOT, "taxonomy", "taxonomy.xlsx").replace("\\", "/"),
     "input_root": None,
     "llm": {
         "base_url": "https://api.openai.com/v1",
@@ -30,13 +39,45 @@ PIPELINE = {
         "workers": 6,
     },
     "embedding": {"model": "text-embedding-3-small"},
-    "supabase": {"enabled": True, "table": "beol_chunk_embeddings"},
+    # storage_enabled: 슬라이드 JPG를 Storage에 올린다(push-slides). 빠지면 workspace 기본값 False로 적재가 꺼진다.
+    "supabase": {"enabled": True, "table": "beol_chunk_embeddings",
+                 "storage_enabled": True, "storage_bucket": "BEOL-labeling"},
 }
 
 
 def slug(name):
     s = re.sub(r"[^0-9A-Za-z가-힣]+", "-", name).strip("-").lower()
     return s or "input"
+
+
+def nfc(s):
+    return unicodedata.normalize("NFC", s)
+
+
+def input_names(inp):
+    """labelbot ingest._iter_inputs와 같은 규칙으로 입력 파일명(NFC)을 모은다. 파일은 열지 않는다."""
+    names = set()
+    for _, _, files in os.walk(inp):
+        for fn in files:
+            if not (fn.startswith("~$") or fn.startswith(".")):
+                names.add(nfc(fn))
+    return names
+
+
+def find_duplicates(names):
+    """injested-file-list/*.json과 겹치는 파일명과 그 출처 목록 파일."""
+    dup, sources = set(), []
+    for path in sorted(glob.glob(os.path.join(LIST_DIR, "*.json"))):
+        try:
+            with open(path, encoding="utf-8") as f:
+                done = {nfc(n) for n in json.load(f).get("files", [])}
+        except (OSError, ValueError, AttributeError):
+            continue
+        hit = names & done
+        if hit:
+            dup |= hit
+            sources.append(os.path.basename(path))
+    return dup, sources
 
 
 def inside(child, parent):
@@ -84,14 +125,18 @@ def main():
     ap.add_argument("--input", required=True)
     ap.add_argument("--workspace")
     ap.add_argument("--force", action="store_true", help="pipeline.json이 있어도 다시 쓴다")
+    ap.add_argument("--skip-duplicates", action="store_true",
+                    help="injested-file-list와 겹치는 파일명을 pipeline.json skip_file_names에 넣는다")
     a = ap.parse_args()
     inp = os.path.abspath(a.input if os.path.isabs(a.input) else os.path.join(CODE_ROOT, a.input))
     if not os.path.isdir(inp):
         print(json.dumps({"error": "INPUT_NOT_FOUND"}, ensure_ascii=False))
         return 2
     s = slug(os.path.basename(inp.rstrip("\\/")))
-    ws = os.path.abspath(a.workspace or os.path.join(os.path.dirname(CODE_ROOT), PREFIX + s))
-    if inside(ws, CODE_ROOT):
+    wsroot = os.path.join(CODE_ROOT, "workspaces")
+    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    ws = os.path.abspath(a.workspace or os.path.join(wsroot, "%s%s_%s" % (PREFIX, s, stamp)))
+    if inside(ws, CODE_ROOT) and not inside(ws, wsroot):
         print(json.dumps({"error": "WORKSPACE_INSIDE_CODE"}, ensure_ascii=False))
         return 2
     os.makedirs(ws, exist_ok=True)
@@ -104,6 +149,16 @@ def main():
             json.dump(cfg, f, ensure_ascii=False, indent=2)
             f.write("\n")
         wrote = True
+    dup, sources = find_duplicates(input_names(inp))
+    skipped = 0
+    if a.skip_duplicates:
+        with open(cfg_path, encoding="utf-8") as f:
+            cfg = json.load(f)
+        cfg["skip_file_names"] = sorted(dup)
+        with open(cfg_path, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        skipped = len(dup)
     counts = {}
     for _, _, files in os.walk(inp):
         for fn in files:
@@ -114,7 +169,9 @@ def main():
     name = "screens-" + s
     port = upsert_launch(name, BASE_PORT, ws.replace("\\", "/"))
     print(json.dumps({"workspace": ws.replace("\\", "/"), "input": inp.replace("\\", "/"), "pipeline_written": wrote,
-                      "file_counts": counts, "launch_name": name, "port": port}, ensure_ascii=False))
+                      "file_counts": counts, "launch_name": name, "port": port,
+                      "duplicates": {"count": len(dup), "sources": sources}, "skipped": skipped},
+                     ensure_ascii=False))
     return 0
 
 

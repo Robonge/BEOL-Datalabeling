@@ -1,0 +1,17 @@
+{
+  "run_id": "20261004T170250-a1e5",
+  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261005-020234",
+  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "recorded_at": "2026-10-05T02:05:46",
+  "files": [
+    "260827_QQNRU087.69 V1 etch over-etch 20% 축소 평가 불가.pptx",
+    "260831_QDIBC.68 M1 CMP 후 GCIB smoothing 적용 평가 호환.pptx",
+    "260831_RDSVK070.6C V0 Ru overburden CMP slurry 변경 평가 불가.pptx",
+    "260910_RDKEH094.67 M2 clean N2 remote plasma 전처리 적용 평가 조건부.pptx",
+    "260911_QDCAG041.68 M1 CMP down-force 상향 (2.0 → 2.5 psi) 평가 조건부.pptx",
+    "260911_RQPKC078.6D V1 clean post-etch 재증착 residue 제거 chemistry 평가 불가.pptx",
+    "260914_QQRJH.68 M0 RSBM Ru DME chemistry 변경 평가 불가.pptx",
+    "260915_RXFKJ.6C I1 etch TiN SiN dual hardmask 적용 평가 호환.pptx",
+    "260921_QQZRY.6A M2 CMP Cu slurry Low-BTA 적용 평가 호환.pptx"
+  ]
+}

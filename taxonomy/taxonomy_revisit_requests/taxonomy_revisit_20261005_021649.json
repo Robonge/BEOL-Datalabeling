@@ -1,0 +1,102 @@
+{
+  "kind": "taxonomy_revisit",
+  "review_run_id": "20261004T170250-a1e5",
+  "generated_at": "2026-10-04T17:16:49Z",
+  "sheet": "taxonomy",
+  "columns": [
+    "축",
+    "값",
+    "상위값",
+    "다중값",
+    "계층",
+    "중복 알림 제외",
+    "종류",
+    "정의·판정 규칙",
+    "포함 예",
+    "제외 예",
+    "사용 여부"
+  ],
+  "paste_rows": [
+    [
+      "Material",
+      "CMP slurry",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    [
+      "불량 모드",
+      "MinA void",
+      "Open",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  ],
+  "paste_requests": [
+    [
+      1
+    ],
+    [
+      2
+    ]
+  ],
+  "check_rows": [],
+  "requests": [
+    {
+      "review_run_id": "20261004T170250-a1e5",
+      "chunk_id": "1d310b28feb5d277:ppt/slides/slide4.xml",
+      "file_id": "1d310b28feb5d277fcf0123d9eb6a24c7f944680e210c7531a3404a218a6e373",
+      "target": "axis",
+      "key": "Material",
+      "reason": "NO_FIT_VALUE",
+      "proposed": {
+        "value": "CMP slurry",
+        "parent": null
+      },
+      "related_values": [],
+      "memo": "누락된 것 같아",
+      "bot_value": [
+        "해당 없음"
+      ],
+      "human_value": null,
+      "file_sha256": "81dcadcce87bdfc337e66d6b29f9215e067613a16fab4d4b4f490aaa2fd32d04",
+      "applied_at": "2026-10-04T17:16:49Z",
+      "no": 1,
+      "block": "paste"
+    },
+    {
+      "review_run_id": "20261004T170250-a1e5",
+      "chunk_id": "1d310b28feb5d277:ppt/slides/slide4.xml",
+      "file_id": "1d310b28feb5d277fcf0123d9eb6a24c7f944680e210c7531a3404a218a6e373",
+      "target": "axis",
+      "key": "불량 모드",
+      "reason": "NO_FIT_VALUE",
+      "proposed": {
+        "value": "MinA void",
+        "parent": "Open"
+      },
+      "related_values": [],
+      "memo": "Open을 상위단계로 올리기",
+      "bot_value": [
+        "해당 없음"
+      ],
+      "human_value": null,
+      "file_sha256": "81dcadcce87bdfc337e66d6b29f9215e067613a16fab4d4b4f490aaa2fd32d04",
+      "applied_at": "2026-10-04T17:16:49Z",
+      "no": 2,
+      "block": "paste"
+    }
+  ]
+}

@@ -35,7 +35,7 @@ def load_taxonomy(ws):
 
     p = ws.taxonomy_path
     if not os.path.isfile(p):
-        raise PipelineError("taxonomy.xlsx가 없습니다. defaults/taxonomy.xlsx를 작업 폴더로 복사하세요.")
+        raise PipelineError("taxonomy.xlsx가 없습니다. taxonomy/taxonomy.xlsx를 작업 폴더로 복사하세요.")
     try:
         data = ingest.read_input(p, ws.path("inputs"), expect=".xlsx")
     except ingest.InputError as e:

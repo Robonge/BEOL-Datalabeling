@@ -84,12 +84,16 @@ def collect(ws, con, run_id, input_root, only_ext=None, log=None, excluded=()):
     """입력 루트를 훑어 b64 저장과 files·file_locations 기록. 반환: 이번 실행에서 본 file_id 목록.
 
     pipeline.json include_file_ids(파일 ID 접두 목록)가 있으면 그 파일만 수집한다(사외 PoC 범위 제한용).
+    skip_file_names(파일명 목록, 이전 실행과 겹쳐 건너뛰기로 한 파일)는 열지 않고 건너뛴다.
     """
     include = tuple(ws.config.get("include_file_ids") or ())
+    skip_names = {util.nfc(n) for n in ws.config.get("skip_file_names") or ()}
     seen = []
     for full, rel, fname in _iter_inputs(input_root):
         ext = os.path.splitext(fname)[1].lower()
         if only_ext and ext not in only_ext:
+            continue
+        if fname in skip_names:
             continue
         data = read_input(full, None)
         fid = util.sha256_bytes(data)

@@ -6,7 +6,7 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCREENS = os.path.join(os.path.dirname(HERE), "labelbot", "screens")
 PLACEHOLDER = "/*__DATA__*/null"
-FILES = ("compare.html", "review.html")
+FILES = ("compare.html", "review.html", "slides.html")
 
 
 def read(name):
@@ -42,6 +42,28 @@ class ScreenTemplateTests(unittest.TestCase):
             for m in re.finditer(r"localStorage", text):
                 before = text[max(0, m.start() - 200):m.start()]
                 self.assertIn("try", before, name)
+
+    def test_review_has_file_slides(self):
+        text = read("review.html")
+        # 같은 파일 슬라이드 썸네일은 DATA.file_slides를 쓰고, 확대 중에는 j/k 검수 이동을 막는다.
+        self.assertIn("DATA.file_slides", text)
+        self.assertIn("function openSibZoom(list, i)", text)
+        self.assertRegex(text, r'if \(zoom\.classList\.contains\("on"\)\)\{')
+
+    def test_review_has_same_file_apply(self):
+        text = read("review.html")
+        # 같은 파일(불량 목록 안) chunk에 분류 축·공통 질문 답만 복사하고, 확인 창을 거친 뒤 저장한다.
+        m = re.search(r"function sameFileFlagged\(c\)\{(.*?)\n  \}", text, re.S)
+        self.assertIsNotNone(m)
+        self.assertIn("x.file_id === c.file_id", m.group(1))
+        m = re.search(r"function applyToSameFile\(c\)\{(.*?)\n  \}", text, re.S)
+        self.assertIsNotNone(m)
+        body = m.group(1)
+        for s in ("window.confirm", "srcQ.indexOf(qid) < 0", "save();", "curAxis(c, ax.name)", "curAnswer(c, qid)"):
+            self.assertIn(s, body)
+        for s in ("status[", "syns", "revisits"):
+            self.assertNotIn(s, body)
+        self.assertIn("onclick:function(){ applyToSameFile(c); }", text)
 
     def test_review_has_revisits(self):
         text = read("review.html")

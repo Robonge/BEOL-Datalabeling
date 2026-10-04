@@ -27,8 +27,9 @@ Supabase 적재는 이 스킬에서 하지 않는다. 검수 전 라벨이 사�
 
 - 코드 폴더: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
 - 입력 폴더: 인자로 받는다. 없으면 `parshing test files`(코드 폴더 기준 상대 경로, 폴더명 철자 그대로).
-- 작업 폴더: `C:\Users\dltkd\Desktop\261004_BEOL_<입력 폴더 slug>`(코드 폴더 밖). 사용자가 지정하면 그 경로.
-- taxonomy: 저장소의 `defaults/taxonomy.xlsx`를 직접 가리킨다.
+- 작업 폴더: 실행할 때마다 `C:\Users\dltkd\Desktop\261004 BEOL AX day2\workspaces\261004_BEOL_<입력 폴더 slug>_<YYYYMMDD-HHMMSS>`로 새로 만든다(모든 작업은 코드 폴더 안). 사용자가 지정하면 그 경로. 새 폴더라 LLM 캐시가 없으므로 매번 전체를 호출한다(사용자 결정, 2026-10-05).
+- 처리 완료 파일 목록: 코드 폴더의 `injested-file-list/<작업 폴더 이름>.json`(`files`에 처리를 마친 파일명). 실행 전 중복 확인에 쓴다.
+- taxonomy: 저장소의 `taxonomy/taxonomy.xlsx`를 직접 가리킨다.
 - 모델: `gpt-6-sol`(temperature 미전송, `max_completion_tokens`). 키는 코드 폴더 `.env`에서 읽는다.
 
 ## 지켜야 할 것과 이유
@@ -51,31 +52,58 @@ Supabase 적재는 이 스킬에서 하지 않는다. 검수 전 라벨이 사�
 | 4 | 1차 분류 | `[classify] …` 줄 | 40% |
 | 5 | 2차 검증 질문 | `[question] …` 줄 | 55% |
 | 6 | 3차 라벨링 | `[label] …` 줄과 `[run] 완료` | 80% |
-| 7 | 화면 만들기 | `dashboard` 명령 끝 | 85% |
-| 8 | 요약 | `summary.py` 출력 | 90% |
-| 9 | 대시보드 띄우기 | 탭 열기 끝(또는 URL 안내) | 95% |
-| 10 | 검수 대기 | 사용자 안내 출력 | 100% |
+| 7 | 대시보드 띄우기 | 탭 열기 끝(또는 URL 안내) | 95% |
+| 8 | 검수 대기 | 사용자 안내 출력 | 100% |
 
-블록 형식(두 줄, 막대는 10칸이며 채운 칸 = 누적% ÷ 10을 내림한 값):
+절차의 "4. 화면 만들기"와 "5. 요약"은 실행하되 진행 현황에는 milestone으로 넣지 않는다(사용자 결정, 2026-10-05). 둘은 milestone 7 "대시보드 띄우기"를 준비하는 과정으로 보고, 끝나도 블록을 따로 갱신하지 않는다. 화면 만들기가 실패하면(`slide-images` 제외) milestone 7을 `❌`로 표시한다.
+
+블록 형식(제목 줄 + 막대 줄 + 지금 줄 + 세로 목록. 막대는 10칸이며 `🟩` 칸 수 = 누적% ÷ 10을 내림한 값, 나머지는 `⬜`):
 ```
-**진행 현황 · BEOL-labeling** `███████░░░ 70%` (run_id: <RUN 또는 ->)
-✓ 준비 · ✓ 사전 점검 · ✓ 수집·파싱 · ✓ 1차 분류 · ✓ 2차 검증 질문 · ▶ 3차 라벨링 · ○ 화면 만들기 · ○ 요약 · ○ 대시보드 띄우기 · ○ 검수 대기
+**진행 현황 · BEOL-labeling** · run_id: <RUN 또는 ->
+
+🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜ **55%** · 5/8 완료
+
+> ▶️ **지금 6단계 · 3차 라벨링**
+
+- ✅ 1. 준비
+- ✅ 2. 사전 점검
+- ✅ 3. 수집·파싱
+- ✅ 4. 1차 분류 — classify 48/48
+- ✅ 5. 2차 검증 질문
+- ▶️ **6. 3차 라벨링** — 진행 중
+- ⬜ 7. 대시보드 띄우기
+- ⬜ 8. 검수 대기
 ```
-- `✓` 완료, `▶` 진행 중, `○` 대기, `✗` 실패. 진행 중 단계가 있으면 % 옆에 그 단계 출력의 건수 한 마디를 붙일 수 있다(예: `classify 48/48`). 파일명·본문은 넣지 않는다.
-- 3단계 `labelbot run`은 백그라운드로 돌리고, `Monitor`로 출력 파일에서 `^\[(ingest|classify|question|label|run)\]|^\[오류\]` 줄을 감시한다. 줄이 올 때마다 해당 milestone을 `✓`로 바꾸고 다음을 `▶`로 둔 블록을 다시 보여 준다. 실행 중에는 `▶` 단계의 누적%를 바로 앞 단계 값으로 둔다(완료 전에 그 단계 %를 올리지 않는다).
-- 멈추는 경우(점검 FAIL, `[오류]`, `error`)에는 그 milestone을 `✗`로 표시한 블록을 보고 앞에 한 번 보여 주고, 도달한 %를 그대로 둔다.
+- 목록에는 milestone 8개를 번호 순서대로 한 줄에 하나씩 항상 모두 쓴다. 단계를 `·`로 가로로 이어 붙이지 않는다. 제목 줄·막대 줄·지금 줄·목록 사이는 빈 줄로 띄운다.
+- `✅` 완료, `▶️` 진행 중, `⬜` 대기, `❌` 실패. `▶️` 줄은 단계 번호·이름을 굵게 쓰고 `— 진행 중`을 붙인다. 막대 줄의 `N/8 완료`는 `✅` 줄의 수다.
+- 지금 줄(인용 한 줄)에는 `▶️` 단계의 번호와 이름을 굵게 쓴다. 멈췄으면 `> ❌ **N단계 · <이름>에서 멈춤** — <사유 코드>`로, 8단계가 모두 끝났으면 `> ✅ **8단계 모두 완료**`로 쓴다.
+- 단계 줄 끝에는 `—` 뒤에 그 단계 출력의 건수 한 마디나 사유 코드를 붙일 수 있다(예: `— classify 48/48`). 파일명·본문은 넣지 않는다.
+- 3단계 `labelbot run`은 백그라운드로 돌리고, `Monitor`로 출력 파일에서 `^\[(ingest|classify|question|label|run)\]|^\[오류\]` 줄을 감시한다. 줄이 올 때마다 해당 milestone을 `✅`로 바꾸고 다음을 `▶️`로 둔 블록을 다시 보여 준다. 실행 중에는 `▶️` 단계의 누적%를 바로 앞 단계 값으로 둔다(완료 전에 그 단계 %를 올리지 않는다).
+- 멈추는 경우(점검 FAIL, `[오류]`, `error`)에는 그 milestone을 `❌`로 표시한 블록을 보고 앞에 한 번 보여 주고, 도달한 %를 그대로 둔다.
 - 같은 블록을 연속으로 반복하지 않는다. 상태가 바뀔 때만 보여 준다.
 
 ## 절차
 
-`<S>` = `.claude/skills/BEOL-labeling/scripts`, `<WS>` = 작업 폴더, `<IN>` = 입력 폴더. 각 단계가 끝나면 위 "진행 현황 표시"의 블록을 갱신해 보여 준다.
+`<S>` = `.claude/skills/BEOL-labeling/scripts`, `<WS>` = 작업 폴더, `<IN>` = 입력 폴더. milestone이 끝날 때마다 위 "진행 현황 표시"의 블록을 갱신해 보여 준다(절차 4·5는 milestone이 아니므로 갱신하지 않는다).
 
 ### 1. 작업 폴더 준비
 
 ```bash
 python "<S>/init_workspace.py" --input "<IN>"
 ```
-출력 JSON의 `workspace`, `launch_name`, `port`, `file_counts`를 기억한다. `pipeline_written=false`면 기존 설정을 그대로 쓴다(같은 폴더를 다시 돌리면 LLM 캐시 덕분에 바뀐 부분만 호출된다). `file_counts`에 pptx·docx가 아닌 형식이 있으면 그 파일은 `UNSUPPORTED_FORMAT`으로 실패 목록에 들어간다고 미리 알린다. `error`가 나오면 멈추고 보고한다.
+출력 JSON의 `workspace`, `launch_name`, `port`, `file_counts`, `duplicates`를 기억한다. 작업 폴더는 매번 타임스탬프가 붙은 새 폴더다. `pipeline_written=false`면(사용자가 기존 폴더를 지정한 경우) 기존 설정을 그대로 쓴다. `file_counts`에 pptx·docx가 아닌 형식이 있으면 그 파일은 `UNSUPPORTED_FORMAT`으로 실패 목록에 들어간다고 미리 알린다. `error`가 나오면 멈추고 보고한다.
+
+#### 1-1. 중복 작업 확인 (작업 시작 전 필수)
+
+`duplicates.count`가 0이면 그대로 2단계로 간다. 1 이상이면 이번 입력 파일 중 `injested-file-list`에 이미 처리 완료로 기록된 파일명이 있다는 뜻이므로, **2단계로 가기 전에 `AskUserQuestion`으로 묻는다.** 질문에는 중복 건수와 출처 목록 파일(`duplicates.sources`)만 쓰고 파일명은 쓰지 않는다(파일명은 사용자가 목록 파일에서 직접 본다).
+
+| 선택지 | 처리 |
+|---|---|
+| 중복 파일 빼고 진행 | `python "<S>/init_workspace.py" --input "<IN>" --workspace "<WS>" --skip-duplicates`를 실행한다. `pipeline.json`의 `skip_file_names`에 중복 파일명이 들어가고, 수집 단계가 그 파일을 열지 않고 건너뛴다. 출력의 `skipped` 건수를 보고하고 2단계로 간다 |
+| 중복 포함 전체 진행 | 그대로 2단계로 간다 |
+| 중단 | 진행 현황의 준비를 `❌`로 표시하고 멈춘다. 만든 작업 폴더는 지우지 않고 경로만 알린다 |
+
+중복을 빼고 나니 처리할 파일이 0개면(`file_counts` 합계 = `skipped`) 그 사실을 알리고 멈춘다.
 
 ### 2. 사전 점검
 
@@ -91,15 +119,23 @@ python -m labelbot run --workspace "<WS>"
 ```
 LLM 호출은 chunk당 3회(1차 분류·2차 검증 질문 생성·3차 라벨링)이고 6개씩 병렬이라, 파일 10개(chunk 50개 안팎)면 약 4~7분 걸린다. 백그라운드로 실행하고, `Monitor`로 단계 줄을 감시해 milestone 3~6의 진행 현황을 갱신하면서 끝날 때까지 기다린다. `[run] 완료 run_id=...`가 나와야 끝난 것이고, 출력의 `run_id`를 `<RUN>`으로 쓴다.
 
+끝나면 바로 처리 완료 파일 목록을 남긴다.
+```bash
+python "<S>/record_ingested.py" --workspace "<WS>" --run <RUN>
+```
+출력의 `list_file`과 `count`만 보고한다. 이 목록이 다음 실행의 1-1 중복 확인 기준이 된다.
+
 실패 신호는 0이 아닌 종료 코드와 `[오류]`로 시작하는 줄이다. 이때 그 줄을 그대로 보고하고 멈춘다. 개별 chunk 실패는 실행을 멈추지 않고 `failures` 표에 사유 코드로 남으며 5단계 요약에 나온다. `<WS>/logs/labelbot.log`에는 파일 수집·파싱과 LLM 호출(분류·라벨링) 실패만 파일 ID·chunk ID와 사유 코드로 기록되고, 처음 실패가 날 때 생긴다. 파일이 없으면 그런 실패가 없었다는 뜻이다(날짜·담당자 추출 경고는 DB에만 남는다).
 
 ### 4. 화면 만들기 (LLM 호출 0회)
 
 ```bash
 python -m labelbot compare --workspace "<WS>" --run <RUN>
+python -m labelbot slide-images --workspace "<WS>" --run <RUN>
 python -m labelbot review --workspace "<WS>" --run <RUN>
 python -m labelbot dashboard --workspace "<WS>" --run <RUN>
 ```
+`slide-images`를 `review` 앞에 두는 것은 검수 화면의 "같은 파일 슬라이드" 썸네일(JPG) 때문이다. 실패해도(브라우저 없음 등) 멈추지 않는다. `[slide-images]` 줄의 사유 코드만 보고하고 이어 간다. 이 경우 검수 화면에는 썸네일 대신 안내 문구가 나온다.
 
 ### 5. 요약
 
@@ -123,12 +159,19 @@ python "<S>/summary.py" --workspace "<WS>" --run <RUN>
 
 ### 6. 대시보드 띄우기
 
-브라우저 패널에서 `launch_name`으로 화면 서버를 시작하고(`preview_start` name=`<launch_name>`), 결과 대시보드 탭 하나만 연다.
+먼저 `launch_name`으로 화면 서버를 시작한다(`preview_start` name=`<launch_name>`). 서버가 뜨면 앱 안 브라우저 패널에 탭이 하나 자동으로 열리므로 `results.html`로 맞춰 둔다. 그다음 **사용자의 Chrome 웹 브라우저**에서 결과 대시보드를 연다.
 - `http://localhost:<port>/results.html` — 결과 대시보드
+
+Chrome 열기 순서:
+1. Claude in Chrome 도구가 지연 로딩 상태면 `ToolSearch`로 `select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__navigate`를 한 번에 불러온다.
+2. `tabs_context_mcp`로 이미 `localhost:<port>/…` 탭이 있는지 보고, 있으면 그 탭을 `results.html`로 navigate해 재사용한다. 없으면 `tabs_create_mcp`로 새 탭을 만들어 navigate한다. 사용자의 다른 탭은 닫지 않는다.
+3. Claude in Chrome을 쓸 수 없으면(확장 미연결 등) Bash에서 `start chrome "http://localhost:<port>/results.html"`로 Chrome을 직접 연다. 이것도 안 되면 URL을 알려 준다.
+
+열린 탭의 내용은 읽지 않는다(`get_page_text`·`read_page`·스크린샷 금지, 아래 "지켜야 할 것과 이유" 참고). 탭을 열기만 하고 건수와 URL만 보고한다.
 
 검수(`review.html`)·파싱 대조(`compare.html`) 탭은 열지 않는다. `/BEOL-labeling-feedback`이 대조 여부를 물은 뒤 연다. 화면 서버는 `labelbot serve`다(`init_workspace.py`가 launch.json에 등록). 떠 있는 서버는 그대로 두면 feedback이 다시 쓴다.
 
-`preview_start`가 "Port in use by another chat"으로 실패하면, 그 포트의 서버가 예전 `http.server`일 수 있다. 이 경우 대시보드는 보이지만 검수 화면의 inbox 자동 저장과 검수 완료 버튼은 동작하지 않으므로, 그 대화에서 서버를 끄거나 이 대화에서 다시 띄워 달라고 사용자에게 알린다. 새 탭을 열 수 없으면(탭 수 한도 등) 이전 실행의 화면 탭(주소가 `localhost:<포트>/…`인 탭)을 대시보드로 navigate해서 다시 쓴다. 사용자의 다른 탭은 닫지 않는다. 브라우저 패널을 쓸 수 없으면 URL을 알려 준다.
+`preview_start`가 "Port in use by another chat"으로 실패하면, 그 포트의 서버가 예전 `http.server`일 수 있다. 이 경우 대시보드는 보이지만 검수 화면의 inbox 자동 저장과 검수 완료 버튼은 동작하지 않으므로, 그 대화에서 서버를 끄거나 이 대화에서 다시 띄워 달라고 사용자에게 알린다. 앱 브라우저 패널에서 새 탭을 열 수 없으면(탭 수 한도 등) 이전 실행의 화면 탭(주소가 `localhost:<포트>/…`인 탭)을 대시보드로 navigate해서 다시 쓴다. 사용자의 다른 탭은 닫지 않는다. 패널과 Chrome 모두 쓸 수 없으면 URL을 알려 준다.
 
 ### 7. 검수 대기로 넘기기
 

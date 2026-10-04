@@ -72,6 +72,15 @@ TABLES = {
         "id INTEGER PRIMARY KEY AUTOINCREMENT, chunk_id TEXT, model TEXT, text_hash TEXT, "
         "label_hash TEXT, target_host_hash TEXT, pushed_at TEXT, result_code TEXT"
     ),
+    # 슬라이드 근사 미리보기 JPG. bytes는 slide_images/<jpg_sha256>.b64에만 둔다(.jpg로 쓰지 않는다).
+    "slide_images": (
+        "chunk_id TEXT PRIMARY KEY, file_id TEXT, seq INTEGER, jpg_sha256 TEXT, width INTEGER, height INTEGER, "
+        "quality INTEGER, rel_file TEXT, text_hash TEXT, layout_hash TEXT, renderer_version TEXT, created_at TEXT"
+    ),
+    "slide_image_push_log": (
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, chunk_id TEXT, jpg_sha256 TEXT, bucket TEXT, object_path TEXT, "
+        "target_host_hash TEXT, pushed_at TEXT, result_code TEXT"
+    ),
 }
 
 INDEXES = [

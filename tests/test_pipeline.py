@@ -15,7 +15,7 @@ from labelbot.mock import MockChatTransport, MockEmbedTransport
 from labelbot.workspace import CODE_ROOT, Workspace, WorkspaceError
 
 DUMMY_DIR = os.path.join(CODE_ROOT, "dummy pptx files")
-TAXONOMY = os.path.join(CODE_ROOT, "defaults", "taxonomy.xlsx")
+TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.xlsx")
 
 
 def _bucket(text):

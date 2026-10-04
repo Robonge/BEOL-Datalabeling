@@ -5,7 +5,7 @@ import re
 import shutil
 import sqlite3
 
-from labelbot import finals, util
+from labelbot import finals, slideimg, util
 from labelbot.questions import all_questions
 
 SCHEMA = [
@@ -37,6 +37,8 @@ SCHEMA = [
         ("dup_group", "TEXT", "같은 본문 chunk 묶음 ID(없으면 NULL)"),
         ("image_paths", "TEXT", "이미지 파일 경로 JSON 목록(images/<id>.b64)"),
         ("parse_warnings", "TEXT", "파싱 경고 코드 JSON 목록"),
+        ("slide_image", "TEXT", "슬라이드 근사 미리보기 JPG JSON(rel_file=slide_images/<sha256>.b64, sha256, width, height,"
+                                " bucket, object_path). 없으면 NULL"),
     ]),
     ("facet_values", "분류 체계(축과 표준 값)", [
         ("axis", "TEXT", "축 이름"),
@@ -94,6 +96,8 @@ def export(ws, con, run_id, tax):
         os.remove(db_path)
     img_dir = os.path.join(out_dir, "images")
     os.makedirs(img_dir, exist_ok=True)
+    slide_dir = os.path.join(out_dir, "slide_images")
+    bucket = ws.config["supabase"].get("storage_bucket")
     memos = {f.file_id: f.memo for f in tax.files}
     excluded = {f.file_id for f in tax.files if f.exclude}
     files = [f for f in con.execute(
@@ -127,10 +131,16 @@ def export(ws, con, run_id, tax):
                     if not os.path.exists(dst):
                         shutil.copyfile(ws.path(r["rel_file"]), dst)
                     img_paths.append("images/%s.b64" % iid)
+            slide = slideimg.slide_image_meta(con, c["chunk_id"], bucket)
+            if slide:
+                dst = os.path.join(out_dir, slide["rel_file"])
+                if not os.path.exists(dst) and os.path.isfile(ws.path(slide["rel_file"])):
+                    os.makedirs(slide_dir, exist_ok=True)
+                    shutil.copyfile(ws.path(slide["rel_file"]), dst)
             d = labels.get(c["chunk_id"]) or {}
-            out.execute("INSERT INTO chunks VALUES(?,?,?,?,?,?,?,?,?,?)", (
+            out.execute("INSERT INTO chunks VALUES(?,?,?,?,?,?,?,?,?,?,?)", (
                 c["chunk_id"], c["file_id"], c["seq"], d.get("chunk_type"), c["title"], c["text"], c["text_hash"],
-                c["dup_group"], util.dumps(img_paths), c["warnings"]))
+                c["dup_group"], util.dumps(img_paths), c["warnings"], util.dumps(slide) if slide else None))
             for axis, a in (d.get("axes") or {}).items():
                 for v in a["values"]:
                     state = "value" if a["status"] == "value" else v

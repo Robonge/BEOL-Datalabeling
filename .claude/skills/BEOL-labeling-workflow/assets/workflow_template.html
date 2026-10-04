@@ -79,7 +79,7 @@ header.top p{color:var(--text-sub);margin-top:4px}
 .mock-h{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .mock-h h3{margin:0}
 .tag{font-size:10px;font-family:var(--mono);color:var(--text-sub);border:1px solid var(--bg-grid);border-radius:999px;padding:1px 8px;background:var(--bg-base)}
-.mock{display:flex;flex-direction:column;gap:12px}
+.mock{display:flex;flex-direction:column;gap:12px} .mock>*{min-width:0}
 .pager{display:flex;gap:8px;margin-top:16px;justify-content:space-between}
 
 .sm{font-size:11px;color:var(--text-sub)}
@@ -136,7 +136,7 @@ pre.term .ok{color:#7fd1b0} pre.term .w{color:#e3bf72} pre.term .d{color:#8fa4c8
   .layout{grid-template-columns:1fr}
   .rail{position:static;max-height:none;display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
   .zone{min-width:300px;flex:none}
-  .cols,.split{grid-template-columns:1fr}
+  .cols,.split{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:reduce){.rise{animation:none}.btn,.item,.tile,.chunk,.mini{transition:none}}
 </style>
@@ -182,15 +182,20 @@ function nowStr(){return new Date().toTimeString().slice(0,8);}
 
 /* ---------- zones ---------- */
 var ZONES = {
-  A:{name:"BEOL-labeling", cmd:"/BEOL-labeling", start:"준비 · 수집 · 파싱", end:"대시보드를 띄우고 검수 대기에서 멈춤"},
+  A:{name:"BEOL-labeling", cmd:"/BEOL-labeling", start:"준비 · 중복 확인 · 수집 · 파싱", end:"대시보드를 띄우고 검수 대기에서 멈춤"},
   B:{name:"BEOL-labeling-feedback", cmd:"/BEOL-labeling-feedback", start:"대조 여부 질문 · 검수 화면 띄우기 · 사람 검수", end:"검수 완료 버튼 → 반영 · Supabase 적재"}
 };
 
 /* ---------- mocks ---------- */
 function mA1(){
-  return flow(["입력 폴더","작업 폴더 준비","사전 점검","open(path,'rb') → .b64","메모리 파싱 · chunk"]) +
+  return flow(["입력 폴더","타임스탬프 작업 폴더","중복 확인","사전 점검","open(path,'rb') → .b64","메모리 파싱 · chunk"]) +
   '<div>'+term('<span class="d">$ init_workspace.py --input "parshing test files"</span>\n'+
-  '{"file_counts": '+esc(JSON.stringify(LIVE.ext || {}))+', "port": 8770}\n'+
+  '{"workspace": ".../261004_BEOL_parshing-test-files_20261005-143012",\n'+
+  ' "file_counts": '+esc(JSON.stringify(LIVE.ext || {}))+', "port": 8770,\n'+
+  ' "duplicates": {"count": 2, "sources": ["261004_BEOL_..._20261004-231500.json"]}}\n'+
+  '<span class="w">? 이전에 처리한 파일 2건과 이름이 겹칩니다(합성 예시) → 중복 빼고 진행</span>\n'+
+  '<span class="d">$ init_workspace.py --input ... --workspace ... --skip-duplicates</span>\n'+
+  '{"skipped": 2}\n'+
   '<span class="d">$ labelbot selfcheck --probe-llm</span>\n'+
   'taxonomy.xlsx   <span class="ok">PASS</span> 축 10\n'+
   'llm_probe       <span class="ok">PASS</span> gpt-6-sol\n'+
@@ -203,7 +208,7 @@ function mA1(){
     '<tr><td class="mono">.docx</td><td class="mono">'+(e[".docx"]||0)+'</td><td>'+badge("파싱","info")+'</td></tr>'+
     '<tr><td class="mono">그 외</td><td class="mono">'+other+'</td><td>'+badge("UNSUPPORTED","warn")+'</td></tr></table>'; })()+
   '<div class="sm" style="margin-top:6px">디코딩 직후 시그니처 확인(OOXML = <span class="mono">PK\\x03\\x04</span>). 맞지 않으면 사유 코드로 실패 처리합니다.</div></div>'+
-  '<div class="tiles">'+tile(V(LIVE.files_ok),"파일 정상")+tile(V(LIVE.files_failed),"파일 실패")+tile(V(LIVE.chunks),"chunk")+tile(V(LIVE.extract_warn),"추출 경고")+'</div>'+
+  '<div class="tiles">'+tile(V(LIVE.files_ok),"파일 정상")+tile(V(LIVE.files_failed),"파일 실패")+tile(V(LIVE.skipped),"중복 건너뜀")+tile(V(LIVE.chunks),"chunk")+tile(V(LIVE.extract_warn),"추출 경고")+'</div>'+
   '<table class="t"><tr><th>chunk</th><th>슬라이드</th><th>유형</th><th>본문(합성 예시)</th></tr>'+
   '<tr><td class="mono">c_3f9a21</td><td class="mono">4</td><td>'+badge("내용","ok")+'</td><td>[예시] 조건 변경 전후 측정 결과를 비교한 본문</td></tr>'+
   '<tr><td class="mono">c_71be04</td><td class="mono">5</td><td>'+badge("내용","ok")+'</td><td>[예시] 표 형태로 정리한 수치와 담당자 메모</td></tr>'+
@@ -418,26 +423,26 @@ function mB4(){
 
 /* ---------- steps ---------- */
 var STEPS = [
- {z:"A",t:"준비 · 수집 · 파싱",cmd:"init_workspace · selfcheck · run (ingest)",llm:0,who:"bot",
-  lead:"입력 폴더로 작업 폴더를 만들고 환경을 점검한 뒤, 원본을 base64로 보관하고 메모리에서 슬라이드를 파싱해 chunk로 나눕니다.",
-  pts:["작업 폴더 생성 · pipeline.json 기록 · 화면 서버 등록","사전 점검(키 · 모델 · taxonomy · 쓰기 확장자 · Supabase 표). FAIL이면 멈춤","<code>read_input</code> → <code>.b64</code> → <code>BytesIO</code> → OOXML 파싱(DRM 규칙)","같은 파일은 해시로 건너뜀, 실패는 파일 ID와 사유 코드만 기록"],
-  out:["pipeline.json","b64/&lt;sha256&gt;.b64","work.sqlite (files · chunks)","logs/labelbot.log"],mock:mA1},
+ {z:"A",t:"준비 · 중복 확인 · 수집 · 파싱",cmd:"init_workspace · selfcheck · run (ingest)",llm:0,who:"bot",
+  lead:"실행마다 연월일시분초가 붙은 새 작업 폴더를 만들고, 이전에 처리를 마친 파일과 겹치는지 확인한 뒤 환경을 점검하고, 원본을 base64로 보관해 메모리에서 슬라이드를 파싱하고 chunk로 나눕니다.",
+  pts:["작업 폴더 <code>261004_BEOL_&lt;입력&gt;_YYYYMMDD-HHMMSS</code> 생성 · pipeline.json 기록 · 화면 서버 등록","중복 확인: 입력 파일명을 <code>injested-file-list/*.json</code>과 비교(파일은 열지 않음). 겹치면 시작 전에 사용자에게 질문 → 중복 빼고 진행(<code>skip_file_names</code>) · 전체 진행 · 중단","사전 점검(키 · 모델 · taxonomy · 쓰기 확장자 · Supabase 표). FAIL이면 멈춤","<code>read_input</code> → <code>.b64</code> → <code>BytesIO</code> → OOXML 파싱(DRM 규칙)","같은 파일은 해시로 건너뜀, 실패는 파일 ID와 사유 코드만 기록"],
+  out:["workspaces/261004_BEOL_&lt;입력&gt;_&lt;타임스탬프&gt;/","pipeline.json (skip_file_names)","b64/&lt;sha256&gt;.b64","work.sqlite (files · chunks)","logs/labelbot.log"],mock:mA1},
  {z:"A",t:"1차 분류",cmd:"labelbot run (classify)",llm:1,who:"bot",
   lead:"chunk마다 LLM을 1회 불러 유형(내용/비내용)과 10개 축의 값을 고릅니다.",
-  pts:["6개씩 병렬 호출, 같은 입력은 캐시로 0회","taxonomy에 없는 값은 unknown + 새 값 후보","chunk당 호출 1회"],
+  pts:["6개씩 병렬 호출. 실행마다 새 작업 폴더라 캐시 없이 전체 호출","taxonomy에 없는 값은 unknown + 새 값 후보","chunk당 호출 1회"],
   out:["work.sqlite (labels)","reports/candidates.jsonl"],mock:mA4},
  {z:"A",t:"2차 질문 매핑 · 검증 질문 생성",cmd:"labelbot run (map · question_gen)",llm:1,who:"bot",
   lead:"승인된 질문을 규칙으로 매핑하고, 1차 라벨이 맞는지 확인하는 O/X 검증 질문을 LLM이 라벨마다 하나씩 만듭니다.",
-  pts:["승인 질문: 공통 질문 전부 + 축 값에 맞는 카테고리 질문(규칙)","검증 질문: 1차 라벨(해당 없음·unknown 제외)마다 1개, 남은 상한만큼(LLM 1회)","예/아니오 판정 의문문만 허용. 개방형·복합·부정 의문문은 검증기가 거부","6개씩 병렬, 같은 입력은 캐시로 0회"],
+  pts:["승인 질문: 공통 질문 전부 + 축 값에 맞는 카테고리 질문(규칙)","검증 질문: 1차 라벨(해당 없음·unknown 제외)마다 1개, 남은 상한만큼(LLM 1회)","예/아니오 판정 의문문만 허용. 개방형·복합·부정 의문문은 검증기가 거부","6개씩 병렬, 실행마다 전체 호출"],
   out:["prompts/question_gen.md","work.sqlite (gen_questions)","failures (stage question_gen)"],mock:mA5,bind:bA5},
  {z:"A",t:"3차 라벨링",cmd:"labelbot run (label)",llm:1,who:"bot",
   lead:"승인 질문과 검증 질문마다 O/X/N/A와 근거 인용문을 LLM이 답합니다. 검증 질문의 X는 1차 라벨이 본문과 어긋났다는 신호입니다.",
   pts:["chunk당 호출 1회(질문 전부를 한 번에)","Q-GEN: 뒷받침 = O · 반박 = X · 근거 없음일 때만 N/A","인용문이 본문에 없으면 불량 후보","실패는 chunk 단위로만 기록하고 실행은 계속"],
   out:["work.sqlite (labels · answers)"],mock:mA6},
- {z:"A",t:"분포 알림 · 불량 목록 · 후보",cmd:"alerts · review.compute_flags",llm:0,who:"bot",
-  lead:"분포 이상(H5)을 알리고, 사유 코드로 불량 chunk를 뽑고, 후보 리포트를 씁니다.",
-  pts:["H5·H3·H8은 보고만 하고 계속 진행(taxonomy 재검토 요청 리포트도 다음 실행으로)","불량 사유 6종(UNKNOWN_HIGH · LOW_CONFIDENCE · QUOTE_NOT_FOUND · PARSE_WARNING · CLASSIFY_FAILED · LABEL_FAILED)","봇은 taxonomy.xlsx를 고치지 않음"],
-  out:["reports/alerts.json","reports/flagged_&lt;RUN&gt;.jsonl·.md","reports/candidates.md","reports/taxonomy_revisit.md","out/labeling.sqlite","reports/baseline_&lt;RUN&gt;.md"],mock:mA7},
+ {z:"A",t:"분포 알림 · 불량 목록 · 후보 · 처리 목록",cmd:"alerts · review.compute_flags · record_ingested",llm:0,who:"bot",
+  lead:"분포 이상(H5)을 알리고, 사유 코드로 불량 chunk를 뽑고, 후보 리포트를 쓰고, 처리를 마친 파일명을 다음 실행의 중복 확인용 목록으로 남깁니다.",
+  pts:["H5·H3·H8은 보고만 하고 계속 진행(taxonomy 재검토 요청 리포트도 다음 실행으로)","불량 사유 6종(UNKNOWN_HIGH · LOW_CONFIDENCE · QUOTE_NOT_FOUND · PARSE_WARNING · CLASSIFY_FAILED · LABEL_FAILED)","봇은 taxonomy.xlsx를 고치지 않음","<code>[run] 완료</code> 뒤 <code>record_ingested.py</code>가 정상 처리 파일명만 코드 폴더 <code>injested-file-list/</code>에 기록(실패 파일은 다음 실행에서 다시 처리)"],
+  out:["injested-file-list/&lt;작업 폴더 이름&gt;.json","reports/alerts.json","reports/flagged_&lt;RUN&gt;.jsonl·.md","reports/candidates.md","reports/taxonomy_revisit.md","out/labeling.sqlite","reports/baseline_&lt;RUN&gt;.md"],mock:mA7},
  {z:"A",t:"화면 3개 생성 · 대시보드 띄우기",cmd:"compare · review · dashboard · serve",llm:0,who:"bot",
   lead:"결과 대시보드·검수·파싱 대조 화면을 만들고, 결과 대시보드만 띄운 뒤 검수 대기에서 멈춥니다. 검수·대조 화면은 feedback 스킬이 엽니다.",
   pts:["LLM 호출 0회","Supabase에는 아직 올리지 않음(검수 전 라벨 보호)","화면 서버(labelbot serve)를 띄워 두면 feedback 스킬이 그대로 다시 씀"],

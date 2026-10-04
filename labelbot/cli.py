@@ -14,7 +14,7 @@ def _parser():
 
     def add(name, help_text):
         sp = sub.add_parser(name, help=help_text)
-        sp.add_argument("--workspace", required=True, help="작업 폴더(코드 폴더 밖)")
+        sp.add_argument("--workspace", required=True, help="작업 폴더(코드 폴더의 workspaces/ 아래)")
         return sp
 
     sc = add("selfcheck", "환경 점검")
@@ -26,7 +26,9 @@ def _parser():
         sp.add_argument("--input", help="입력 폴더(기본: pipeline.json input_root 또는 작업 폴더 raw/)")
     for name, h in (("compare", "파싱 대조 화면"), ("review", "불량 목록과 검수 화면"), ("report", "기준선 리포트 재계산"),
                     ("dashboard", "결과 대시보드 화면"),
-                    ("embed", "chunk 임베딩"), ("push-vectors", "Supabase 벡터 적재")):
+                    ("embed", "chunk 임베딩"), ("push-vectors", "Supabase 벡터 적재"),
+                    ("slide-images", "슬라이드 미리보기 JPG 렌더(slide_images/*.b64)"),
+                    ("push-slides", "슬라이드 JPG를 Supabase Storage에 올리고 행에 slide_image_* 기록")):
         sp = add(name, h)
         sp.add_argument("--run", help="실행 ID(기본: 최신)")
     ap = add("apply", "inbox/의 교정·대조 .json 반영")
@@ -42,7 +44,7 @@ def main(argv=None):
     try:
         ws = Workspace(args.workspace)
     except WorkspaceError as e:
-        msg = {"WORKSPACE_INSIDE_CODE": "작업 폴더를 코드 폴더 안으로 지정할 수 없습니다."}.get(str(e), str(e))
+        msg = {"WORKSPACE_INSIDE_CODE": "작업 폴더는 코드 폴더의 workspaces/ 아래에만 둘 수 있습니다."}.get(str(e), str(e))
         print("[오류] %s" % msg, file=sys.stderr)
         return 2
     from labelbot.pipeline import Logger, PipelineError, load_taxonomy, run_all, run_ingest, say
@@ -87,7 +89,8 @@ def main(argv=None):
                 from labelbot.pipeline import Ctx
 
                 tax, _ = load_taxonomy(ws)
-                results = review.apply_inbox(ws, con, tax, kind=args.kind)
+                rv_runs = []
+                results = review.apply_inbox(ws, con, tax, kind=args.kind, revisit_runs=rv_runs)
                 if not results:
                     say("[apply] inbox/에 반영할 %s 파일이 없습니다." % ({"review": "검수(review_*.json)", "compare": "파싱 대조(compare_*.json)"}.get(args.kind, ".json")))
                 for sha, code, n, kind, rid in results:
@@ -98,6 +101,12 @@ def main(argv=None):
                 else:
                     revisit.write_reports(ws, con, tax)
                 say("[apply] taxonomy 재검토 요청 누적 %d건 → reports/taxonomy_revisit.md" % revisit.count(con))
+                # 이번 apply에서 반영한 검수 실행별 파일(taxonomy.xlsx 옆 폴더). 요청 0건·revisits 없는 파일은 쓰지 않는다.
+                rv_dir = revisit.requests_dir(ws)
+                written = revisit.write_run_files(rv_dir, con, tax, rv_runs)
+                if written:
+                    say("[apply] taxonomy 재검토 요청 파일 %d개 → %s/%s/" % (
+                        len(written), os.path.basename(os.path.dirname(rv_dir)), os.path.basename(rv_dir)))
             elif args.command == "dashboard":
                 from labelbot import dashboard
 
@@ -120,6 +129,17 @@ def main(argv=None):
                 from labelbot import vectorpush
 
                 vectorpush.push(ws, con, run_id, log=Logger(ws))
+            elif args.command == "slide-images":
+                from labelbot import export, slideimg
+
+                slideimg.render(ws, con, run_id, log=Logger(ws))
+                tax, _ = load_taxonomy(ws)
+                export.export(ws, con, run_id, tax)
+                say("[slide-images] out/labeling.sqlite chunks.slide_image 갱신")
+            elif args.command == "push-slides":
+                from labelbot import slidepush
+
+                slidepush.push(ws, con, run_id, log=Logger(ws))
         finally:
             con.close()
         return 0

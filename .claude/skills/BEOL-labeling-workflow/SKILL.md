@@ -8,7 +8,7 @@ description: BEOL 라벨링 워크플로(입력 → 준비·수집·파싱 → 1
 `docs/workflow.html`을 만든다. 화면 구조(11단계, 스킬 범위 구역, 예시 화면, 인터랙션)는 템플릿 `assets/workflow_template.html`에 있고, 실제 수치는 `scripts/build_workflow.py`가 최신 실행에서 채운다. LLM 호출은 0회다.
 
 ```
-[BEOL-labeling]          1 준비·수집·파싱 → 2 1차 분류 → 3 2차 질문 매핑·검증 질문 생성 → 4 3차 라벨링 → 5 분포 알림·불량 목록·후보 → 6 화면 3개 생성·대시보드 띄우기
+[BEOL-labeling]          1 준비(타임스탬프 작업 폴더)·중복 확인·수집·파싱 → 2 1차 분류 → 3 2차 질문 매핑·검증 질문 생성 → 4 3차 라벨링 → 5 분포 알림·불량 목록·후보·처리 완료 목록 → 6 화면 3개 생성·대시보드 띄우기
 [BEOL-labeling-feedback] (H2 대조 여부 질문 · 검수 화면 띄우기)
                          7 H6 불량 chunk 검수(사람, 슬라이드 근사 미리보기·재검토 요청, 검수 완료 버튼) → 8 H2 파싱 대조(사람, 선택)
                          → 9 교정 모으기·반영 → 10 화면·리포트 재생성 → 11 임베딩·Supabase 적재
@@ -19,7 +19,8 @@ description: BEOL 라벨링 워크플로(입력 → 준비·수집·파싱 → 1
 
 - 코드 폴더: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
 - 출력: `docs/workflow.html`(덮어쓴다). 사용자가 다른 경로를 말하면 `--out`.
-- 작업 폴더: 인자로 받는다. 없으면 이 대화에서 `/BEOL-labeling`이 쓴 작업 폴더, 그것도 없으면 스크립트가 `261004_BEOL_*` 중 `work.sqlite`가 가장 최근에 바뀐 폴더를 고른다.
+- 작업 폴더: 인자로 받는다. 없으면 이 대화에서 `/BEOL-labeling`이 쓴 작업 폴더, 그것도 없으면 스크립트가 `workspaces/261004_BEOL_*`(실행마다 `_YYYYMMDD-HHMMSS`가 붙은 새 폴더) 중 `work.sqlite`가 가장 최근에 바뀐 폴더를 고른다.
+- 중복 확인 기준: 코드 폴더의 `injested-file-list/*.json`(BEOL-labeling이 실행 후 기록). HTML에는 목록 파일 수와 건너뛴 건수(`skip_file_names` 개수)만 넣고 파일명은 넣지 않는다.
 - 디자인: 저장소의 `design.md.md`(BEOL AX 디자인 시스템)를 따른다. `#EDF1F7` 바탕과 48px 그리드, 인디고 그라디언트(148°), 음수 자간, 굵기 400/700, 외부 CDN 없음.
 
 ## 지켜야 할 것과 이유

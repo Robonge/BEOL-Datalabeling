@@ -14,8 +14,8 @@
 {"sheet": "taxonomy", "row": 14, "cells": ["공정 모듈", "", "", "Y", "N", "N", "분류", "공정 단계. Patterning·Material과 독립"]}
 {"sheet": "taxonomy", "row": 15, "cells": ["공정 모듈", "Litho", "", "", "", "", "", "노광·현상·overlay·litho CD", "EUV 노광", "식각 후 CD(→Etch)"]}
 {"sheet": "taxonomy", "row": 16, "cells": ["공정 모듈", "Etch", "", "", "", "", "", "trench·via 식각, hardmask open, strip", "punch-through"]}
-{"sheet": "taxonomy", "row": 17, "cells": ["공정 모듈", "Dep", "", "", "", "", "", "PVD·CVD·ALD, seed, 도금(ECP)", "ALD Ru liner"]}
-{"sheet": "taxonomy", "row": 18, "cells": ["공정 모듈", "CMP", "", "", "", "", "", "금속·barrier 연마", "over-polish"]}
+{"sheet": "taxonomy", "row": 17, "cells": ["공정 모듈", "Metal", "", "", "", "", "", "PVD·CVD·ALD, seed, 도금(ECP), 금속·barrier ", "ALD Ru liner"]}
+{"sheet": "taxonomy", "row": 18, "cells": ["공정 모듈", "CMP", "", "", "", "", "", "CCP, Cu CMP, API, node분리, node미분리", "over-polish, unCMP"]}
 {"sheet": "taxonomy", "row": 19, "cells": ["공정 모듈", "Clean", "", "", "", "", "", "식각·CMP 후 세정", "post-CMP clean"]}
 {"sheet": "taxonomy", "row": 20, "cells": ["제품·세대", "", "", "Y", "N", "N", "분류", "사내 제품·세대 코드."]}
 {"sheet": "taxonomy", "row": 21, "cells": ["제품·세대", "SF1.4", "", "", "", "", "", "", "SF1.4, 1.4나노,KVFI, KVFG"]}
@@ -64,6 +64,12 @@
 {"sheet": "taxonomy", "row": 64, "cells": ["의사결정 상태", "adopted", "", "", "", "", "", "채택"]}
 {"sheet": "taxonomy", "row": 65, "cells": ["의사결정 상태", "rejected", "", "", "", "", "", "기각"]}
 {"sheet": "taxonomy", "row": 66, "cells": ["의사결정 상태", "pending", "", "", "", "", "", "미결", "조건부 채택(→pending)"]}
+{"sheet": "taxonomy", "row": 68, "cells": ["물리 현상", "CD small", "", "", "", "", "", "CD 감소로 인한 어떠한 불량 발생 혹은 수율 개선, ET결과의 차이"]}
+{"sheet": "taxonomy", "row": 69, "cells": ["물리 현상", "CD 산포불량", "", "", "", "", "", "WF map의 CD산포 불량, CD의 3sigma 증가 등"]}
+{"sheet": "taxonomy", "row": 70, "cells": ["공정 모듈", "CVD", "", "", "", "", "", "IMD, HDLK, HCLK, low-k dielectric, PID"]}
+{"sheet": "taxonomy", "row": 71, "cells": ["불량 모드", "MHC"]}
+{"sheet": "taxonomy", "row": 72, "cells": ["불량 모드", "Via Rc high", "MHC", "", "", "", "", "Via 저항 상승, Via Rc 상승"]}
+{"sheet": "taxonomy", "row": 73, "cells": ["불량 모드", "Line R high", "MHC", "", "", "", "", "Line 저항 상승, CMBSRP 저항 상승"]}
 {"sheet": "questions", "row": 1, "cells": ["질문 ID", "문장", "적용 대상", "우선순위"]}
 {"sheet": "questions", "row": 2, "cells": ["Q-COM-001", "이 chunk가 BEOL interconnect 공정에 관련한 내용이 맞는가?", "공통", "1"]}
 {"sheet": "synonyms", "row": 1, "cells": ["동의어", "표준어", "메모"]}

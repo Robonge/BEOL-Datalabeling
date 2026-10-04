@@ -173,7 +173,13 @@ def _template(name):
 def fill_template(name, data):
     # JSON 문자열 안의 '<'는 <와 같은 값이다. 모두 바꿔 </script>·<!-- 가 스크립트를 끊지 못하게 한다.
     js = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
-    return _template(name).replace("/*__DATA__*/null", js, 1)
+    html = _template(name)
+    # 슬라이드 미리보기는 review.html·slides.html이 같이 쓴다. 화면은 단일 파일로 유지한다.
+    # DATA를 넣기 전에 바꿔 본문에 같은 표시가 있어도 건드리지 않는다.
+    for mark, part in (("/*__SLIDE_PREVIEW_CSS__*/", "slide_preview.css"), ("/*__SLIDE_PREVIEW_JS__*/", "slide_preview.js")):
+        if mark in html:
+            html = html.replace(mark, _template(part), 1)
+    return html.replace("/*__DATA__*/null", js, 1)
 
 
 def _data_urls(ws, con, image_ids, limit):
@@ -201,6 +207,27 @@ def _slide_layout(ws, cache, file_id, file_name, part_name):
         except Exception:  # 미리보기는 부가 기능이라 실패해도 검수 화면은 만든다
             cache[file_id] = {}
     return cache[file_id].get(part_name)
+
+
+def _file_slides(ws, con, file_ids):
+    """검수 화면의 '같은 파일 슬라이드'용 JPG data URL. slide-images가 만든 .b64만 읽는다.
+
+    본문이 바뀐(text_hash가 다른) 예전 그림은 뺀다(slidepush와 같은 기준). 파일마다 한 번만 넣는다.
+    """
+    out = {}
+    for fid in file_ids:
+        rows = []
+        for r in con.execute(
+                "SELECT s.chunk_id, s.seq, s.rel_file FROM slide_images s JOIN chunks c ON c.chunk_id=s.chunk_id"
+                " AND c.text_hash=s.text_hash WHERE s.file_id=? ORDER BY s.seq", (fid,)):
+            try:
+                with open(ws.path(r["rel_file"]), encoding="ascii") as f:
+                    b64 = f.read().strip()
+            except (OSError, ValueError):
+                continue
+            rows.append({"seq": r["seq"], "chunk_id": r["chunk_id"], "src": "data:image/jpeg;base64," + b64})
+        out[fid] = rows
+    return out
 
 
 def build_review(ws, con, run_id, tax):
@@ -255,6 +282,7 @@ def build_review(ws, con, run_id, tax):
                  for a in tax.axes if a.active],
         "questions": [{"qid": q.qid, "text": q.text} for q in all_questions(con, tax)],
         "chunks": chunks,
+        "file_slides": _file_slides(ws, con, sorted({c["file_id"] for c in chunks})),
     }
     path = ws.path("screens", "review.html")
     util.write_text(path, fill_template("review.html", data))
@@ -287,10 +315,11 @@ def build_compare(ws, con, run_id):
 
 # ---- 교정 반영 ----------------------------------------------------------------
 
-def apply_inbox(ws, con, tax, kind=None):
+def apply_inbox(ws, con, tax, kind=None, revisit_runs=None):
     """inbox/*.json을 반영한다. 같은 파일을 두 번 반영해도 결과가 같다.
 
     kind('review' 또는 'compare')를 주면 그 종류의 파일만 반영한다.
+    revisit_runs(list)를 주면 revisits 키가 있는 review 파일을 OK로 반영한 검수 실행 ID를 거기에 더한다.
     반환: (교정 파일 sha256 앞 12자, 사유 코드, 반영 건수, 종류, 실행 ID) 목록.
     review 파일에서 버린 재검토 요청이 있으면 같은 파일로 (sha, REVISIT_* 코드, 건수, 종류, 실행 ID) 행을 더한다.
     파일마다 SAVEPOINT로 묶어, 한 파일의 형식 오류가 다른 파일의 반영을 되돌리지 않는다.
@@ -345,6 +374,8 @@ def apply_inbox(ws, con, tax, kind=None):
             continue
         con.execute("RELEASE apply_file")
         results.append((sha[:12], code, n) + tail)
+        if revisit_runs is not None and doc["kind"] == "review" and code == "OK" and "revisits" in doc:
+            revisit_runs.append(doc["run_id"])
         for dc in sorted(drops):
             results.append((sha[:12], dc, drops[dc]) + tail)
     con.commit()

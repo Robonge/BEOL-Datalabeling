@@ -1,0 +1,9 @@
+.slide{position:relative;width:100%;container-type:inline-size;background:#FBFCFE;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);overflow:hidden}
+.slide .sb{position:absolute;overflow:hidden;line-height:1.18;color:var(--text-strong);white-space:pre-wrap;word-break:break-word;letter-spacing:-0.02em}
+.slide .sb.ttl{font-weight:700}
+.slide .sb.chart{border:1px dashed var(--warning);background:rgba(201,154,59,.06);padding:.4cqw}
+.slide .sb.tbl{border:1px dashed var(--line)}
+.slide .sb.tbl table{border-collapse:collapse;width:100%}
+.slide .sb.tbl td{border:1px solid var(--bg-grid);padding:.15cqw .3cqw;vertical-align:top}
+.slide img.sp{position:absolute;object-fit:contain}
+.slide .sp-ph{position:absolute;display:flex;align-items:center;justify-content:center;border:1px dashed var(--dot);background:rgba(168,189,212,.15);color:var(--text-muted);font-size:1.2cqw}

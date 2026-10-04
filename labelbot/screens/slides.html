@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>슬라이드 캡처</title>
+<style>
+:root{
+  --bg-grid:#C8D4E4; --dot:#A8BDD4; --line:#7A9CC0;
+  --text-strong:#1E2D4A; --text-muted:#6F7F99; --warning:#C99A3B;
+  --radius-sm:8px;
+  --font:'Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#FBFCFE;font-family:var(--font);font-size:13.5px;color:var(--text-strong)}
+/*__SLIDE_PREVIEW_CSS__*/
+/* 캡처용: 테두리·둥근 모서리 없이 슬라이드만 */
+.slide{border:0;border-radius:0}
+#stage{position:absolute;left:0;top:0}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+/*__SLIDE_PREVIEW_JS__*/
+// 검수 화면과 같은 미리보기(slide_preview.js)를 고정 폭으로 1장씩 그린다. slideimg.py가 headless 브라우저로 캡처한다.
+const DATA = /*__DATA__*/null;
+(function(){
+  "use strict";
+  var stage = document.getElementById("stage");
+  stage.style.width = ((DATA && DATA.width_px) || 1280) + "px";
+  window.renderOne = function(i){
+    var s = DATA.slides[i];
+    stage.textContent = "";
+    var node = s ? SlidePreview.build(s.layout, s.image_map) : null;
+    if (!node) return Promise.resolve({skip:"NO_LAYOUT"});
+    stage.appendChild(node);
+    var imgs = Array.prototype.slice.call(node.querySelectorAll("img"));
+    return Promise.all(imgs.map(function(im){ return im.decode().catch(function(){}); }))
+      .then(function(){ return document.fonts ? document.fonts.ready : null; })
+      .then(function(){
+        var r = node.getBoundingClientRect();
+        return {chunk_id:s.chunk_id, rect:{x:r.left + window.scrollX, y:r.top + window.scrollY, width:r.width, height:r.height}};
+      });
+  };
+  // 파일마다 다른 값이라 이전 파일의 문서에서 캡처하지 않는다.
+  window.slidesReady = (DATA && DATA.kind === "slides") ? DATA.nonce : null;
+})();
+</script>
+</body>
+</html>

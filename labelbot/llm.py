@@ -139,6 +139,22 @@ def post_json(url, headers, payload, timeout, ca_file=None):
     return _open(req, timeout, ca_file)
 
 
+def post_bytes(url, headers, data, content_type, timeout, ca_file=None):
+    """바이너리 POST(Storage 업로드). 3xx는 실패. 반환: (status, 파싱된 본문 또는 None)."""
+    hdrs = {"Content-Type": content_type}
+    hdrs.update(headers or {})
+    req = urllib.request.Request(url, data=data, headers=hdrs, method="POST")
+    return _open(req, timeout, ca_file)
+
+
+def patch_json(url, headers, payload, timeout, ca_file=None):
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    hdrs = {"Content-Type": "application/json"}
+    hdrs.update(headers or {})
+    req = urllib.request.Request(url, data=data, headers=hdrs, method="PATCH")
+    return _open(req, timeout, ca_file)
+
+
 def get_json(url, headers, timeout, ca_file=None):
     req = urllib.request.Request(url, headers=headers or {}, method="GET")
     return _open(req, timeout, ca_file)

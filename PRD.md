@@ -113,6 +113,8 @@ flowchart TD
 
 임베딩과 벡터 적재(FR-9)는 산출 뒤의 별도 단계다. `run`은 두 명령을 부르지 않는다. 실패해도 라벨링과 산출을 막지 않는다.
 
+슬라이드 미리보기 JPG(`slide-images`)와 그 Storage 적재(`push-slides`)도 같은 성격의 별도 단계다. 검수 화면과 같은 근사 미리보기를 슬라이드(=chunk)마다 JPG로 만들어 `.b64`로 보관하고, Supabase Storage `BEOL-labeling` 버킷에 올린 뒤 벡터 행에 어떤 JPG인지(`slide_image_*`)를 기록한다. 라벨과 `label_hash`는 바꾸지 않는다.
+
 ## 5. 기능 요구사항
 
 ### FR-0. 수집
@@ -278,7 +280,7 @@ taxonomy는 화면이 아니라 `taxonomy.xlsx`를 Excel에서 직접 고친다(
 - `queries`의 조회 ID는 `QRY-` + 8자리 16진수이고, 중복이면 오류다. 기대 정답은 파일 ID나 chunk ID를 `;`로 잇는다. 채택은 Y/N이고 빈칸은 N이다. 사람이 문장을 고쳐도 ID는 붙여넣은 값을 유지한다.
 - 경고와 오류 메시지에는 시트 이름과 행 번호(파일 ID)만 넣고 셀 내용은 넣지 않는다(9.3절).
 - 엑셀은 표준 라이브러리(`zipfile`, `xml.etree`)로 `io.BytesIO` 위에서 읽는다. 읽기 경로는 `read_input` 하나다(FR-0).
-- 저장소에는 `defaults/taxonomy.xlsx`(초기 행은 `plan.md` 부록, 더미 동의어 포함)만 둔다. 작업 폴더에 `taxonomy.xlsx`가 없으면 실행을 거부하고 "`defaults/taxonomy.xlsx`를 작업 폴더로 복사하라"고 안내한다. 봇은 복사하지 않으며, self-check에서는 FAIL 항목이다. 작업 폴더에 `.xlsx`를 쓰지 않는다는 `CLAUDE.md` 규칙 때문이고, 기본본으로 조용히 돌면 제품·세대 값이 없고 동의어도 더미여서 첫 실행 전체가 헛돌기 때문이다.
+- 저장소에는 `taxonomy/taxonomy.xlsx`(초기 행은 `plan.md` 부록, 더미 동의어 포함)만 둔다. 작업 폴더에 `taxonomy.xlsx`가 없으면 실행을 거부하고 "`taxonomy/taxonomy.xlsx`를 작업 폴더로 복사하라"고 안내한다. 봇은 복사하지 않으며, self-check에서는 FAIL 항목이다. 작업 폴더에 `.xlsx`를 쓰지 않는다는 `CLAUDE.md` 규칙 때문이고, 기본본으로 조용히 돌면 제품·세대 값이 없고 동의어도 더미여서 첫 실행 전체가 헛돌기 때문이다.
 - 제품·세대 축의 값은 사내 코드명이므로 사내 작업 폴더의 엑셀에만 추가한다. 기본본에는 이 축의 값이 없다.
 - 값 이름을 바꿀 때는 옛 이름을 `synonyms` 시트에 동의어로 남긴다.
 - 정의를 비운 값(Mx, Vx, JHV, EUV-SAUP, EUV-SET, ArF-SET)과 소속이 정해지지 않은 용어(anneal, hardmask, erosion)는 첫 실행의 후보 리포트로 보강한다.
@@ -287,18 +289,18 @@ taxonomy는 화면이 아니라 `taxonomy.xlsx`를 Excel에서 직접 고친다(
   - 상태 축(결과, 의사결정 상태)과 open_risk 질문의 방향: `data_labeling_4th.html:393-399`
 - taxonomy가 바뀌면 다음 실행에서 영향받는 부분이 다시 처리된다(9.4절).
 
-초기 축은 다음과 같다. 값 초안은 `plan.md` 부록에 한 행씩 펼쳐 적었다.
+축과 값은 다음과 같다(2026-10-05 `taxonomy/taxonomy.xlsx` 기준). 값의 기준은 커밋된 xlsx이고, `plan.md` 부록의 행은 초기 초안이다.
 
 | 축 | 종류 | 초기 값 | 다중값 | 계층 | 중복 알림 |
 |---|---|---|---|---|---|
 | 구조/레이어 | 분류 | M0~M3, Mx, V0~V3, Vx, JHV | Y | N | 대상 |
-| 공정 모듈 | 분류 | Litho, Etch, Dep, CMP, Clean | Y | N | 대상 |
+| 공정 모듈 | 분류 | Litho, Etch, Metal, CMP, Clean, CVD | Y | N | 대상 |
 | 제품·세대 | 분류 | (사내 작업 폴더의 엑셀에서만 채움) | Y | N | 대상 |
 | REMSPC | 분류 | Reticle, Equipment, Materials, Scheme, Process, Controllability | Y | N | 대상 |
 | Patterning | 분류 | EUV-SAUP, EUV-SET, ArF-SET, ArF-LELE | Y | N | 대상 |
 | Material | 분류 | IMD, BM/Liner, Metallization | Y | N | 대상 |
-| 불량 모드 | 분류 | Open, Short, Reliability(> EM, TDDB), Parametric(> Rs 산포) | Y | Y | 대상 |
-| 물리 현상 | 분류 | Void, metal bridge, not open, unCMP, hardmask loss, dishing, CD imbalance | Y | N | 대상 |
+| 불량 모드 | 분류 | Open, Short, Reliability(> EM, TDDB), Parametric(> Rs 산포), MHC(> Via Rc high, Line R high) | Y | Y | 대상 |
+| 물리 현상 | 분류 | Void, metal bridge, not open, unCMP, hardmask loss, dishing, CD imbalance, CD small, CD 산포불량 | Y | N | 대상 |
 | 결과 | 상태 | improved, degraded, neutral, inconclusive | Y | N | 제외 |
 | 의사결정 상태 | 상태 | adopted, rejected, pending | N | N | 대상 아님(단일값이라 집계하지 않는다. 시트의 "중복 알림 제외" 칸은 N) |
 
@@ -311,7 +313,7 @@ taxonomy는 화면이 아니라 `taxonomy.xlsx`를 Excel에서 직접 고친다(
 - 열은 동의어(필수, 본문에 나오는 표현), 표준어(필수, 맞출 표현), 메모(선택)다. 예: 단락 → Short, Metal1 → M1.
 - 본문의 동의어를 표준어로 치환만 한다. 축 범위는 없으며 모든 축에 적용한다. 같은 표현이 축마다 다른 뜻인 경우의 처리는 첫 실행 뒤 필요하면 추가한다.
 - 표준어가 taxonomy 값이면 1차 분류에서 그 값으로 정규화된다. taxonomy 값이 아닌 표준어(예: 전자이동 → EM)도 둘 수 있으며, 이런 항목은 라벨링에서 용어를 해석하는 데만 쓰인다.
-- 저장소의 `defaults/taxonomy.xlsx`에는 더미 동의어를 둔다. 초안은 단락→Short, 단선→Open, 보이드→Void, 전자이동→EM, 일렉트로마이그레이션→EM, 짝짝이→CD imbalance, asymmetry→CD imbalance, JGV→JHV(`data_labeling_4th.html:405`), Metal1→M1, 1st metal→M1, Via1→V1, 디싱→dishing, 브릿지→metal bridge다. `bridge→metal bridge`처럼 표준어가 동의어를 포함하는 항목은 넣지 않는다.
+- 저장소의 `taxonomy/taxonomy.xlsx`에는 더미 동의어를 둔다. 초안은 단락→Short, 단선→Open, 보이드→Void, 전자이동→EM, 일렉트로마이그레이션→EM, 짝짝이→CD imbalance, asymmetry→CD imbalance, JGV→JHV(`data_labeling_4th.html:405`), Metal1→M1, 1st metal→M1, Via1→V1, 디싱→dishing, 브릿지→metal bridge다. `bridge→metal bridge`처럼 표준어가 동의어를 포함하는 항목은 넣지 않는다.
 - 사내 코드명이 들어가므로 사내 동의어는 작업 폴더의 `taxonomy.xlsx`에만 둔다.
 
 **검증과 참조 방식**
@@ -359,7 +361,8 @@ flowchart LR
 - `candidates.md` 맨 위(제목 다음 줄)에 taxonomy 재검토 요청의 누적 건수와 `taxonomy_revisit.md` 링크를 한 줄로 둔다(0건이면 "0건"). 이 한 줄은 `candidates.md`를 쓸 때마다 함께 갱신된다.
 - 봇은 검수 화면의 taxonomy 재검토 요청을 `reports/taxonomy_revisit.md`(사람용)와 `reports/taxonomy_revisit.jsonl`(기계용)로 낸다. 모든 검수 실행의 요청을 실행 ID와 함께 누적하며, 처리됨 판정·숨김·자동 해결 감지는 하지 않는다. 시트에 반영한 요청도 그대로 남고, 지우려면 그 실행의 검수 화면에서 요청을 삭제하고 다시 `apply`한다. 이 리포트는 `candidates.md`를 쓸 때 함께 갱신되므로 `apply`와 `report`가 둘 다 다시 쓴다. `rejected` 시트에는 새 종류를 두지 않는다.
 - `NO_FIT_VALUE` 요청의 제안 값은 taxonomy 시트 A~K 탭 구분 붙여넣기 행으로 `taxonomy_revisit.md`의 코드 블록에 함께 낸다. 시트에서 사라진 축, 시트에 없는 상위값, 시트에 이미 있는 값은 붙여넣으면 오류가 나므로 행만 생략하고 표에 사유를 적으며 요청은 숨기지 않는다. 새 축(`NEW_AXIS`) 제안은 축 정의 행의 일부 열을 사람이 정해야 하므로 붙여넣기 행을 내지 않는다. 봇은 `taxonomy.xlsx`를 고치지 않는다.
-- 후보 리포트와 taxonomy 재검토 리포트는 본문 표현과 사람 메모를 담으므로 작업 폴더 밖으로 내지 않는다(9.2절).
+- `apply`는 반영한 검수 실행마다 그 실행의 요청만 담은 실행별 재검토 파일 `taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`(로컬 시각, 같은 이름이 있으면 `_2` 등 접미)을 `taxonomy.xlsx`가 있는 폴더 아래 `taxonomy_revisit_requests/`(기본 설정에서 저장소 `taxonomy/taxonomy_revisit_requests/`)에 쓴다. 요청이 0건이거나 `revisits` 키가 없는 예전 파일이면 쓰지 않고, `report`와 `run`은 쓰지 않는다. 파일은 taxonomy 시트 A~K 11열 그대로 붙일 수 있는 "바로 붙여넣기" 블록(`NO_FIT_VALUE` 값 행, 사용 여부 빈칸), 사람이 고친 뒤 붙이는 "확인 필요" 블록(시트에 이미 있는 값·없는 상위값·사라진 축, 새 축(`NEW_AXIS`) 정의 행은 D~G가 빈칸이면 파서 오류라 항상 여기), 엑셀 행 없는 요청 목록(`AMBIGUOUS_DEF`·`VALUE_OVERLAP`·`OTHER`·`NEED_QUESTION`)으로 나뉜다. 메모·chunk ID·사유는 블록 밖 목록에만 둔다. md는 탭 구분 코드 블록, html은 머리글을 선택에서 뺀 표, json은 `paste_rows`·`check_rows`·`requests`를 담는다.
+- 후보 리포트와 누적 taxonomy 재검토 리포트(`reports/`)는 본문 표현과 사람 메모를 담으므로 작업 폴더 밖으로 내지 않는다. 실행별 재검토 파일은 예외로 저장소에 쓰고 git 추적 대상이다(9.2절).
 
 ## 7. 규칙
 
@@ -483,15 +486,16 @@ flowchart LR
 
 ### 9.2 저장소와 사내 자료의 분리
 
-- GitHub 저장소에는 코드, 프롬프트, 기본 taxonomy(`defaults/taxonomy.xlsx`), 더미 샘플과 정답표, 문서만 둔다.
-- 사내 `taxonomy.xlsx`(동의어 시트 포함), 사람 입력의 보관본(`inputs/*.b64`), 설정, 원본·base64 파일, 이미지, DB, 화면 파일, 리포트(후보 리포트 포함), 로그는 코드 폴더 밖의 작업 폴더에 둔다. 작업 폴더를 코드 폴더 안으로 지정하면 실행을 거부한다.
-- 후보 리포트와 taxonomy 재검토 리포트는 본문 표현과 사람 메모를 담으므로 작업 폴더 밖으로 내지 않는다.
+- GitHub 저장소에는 코드, 프롬프트, 기본 taxonomy(`taxonomy/taxonomy.xlsx`), 더미 샘플과 정답표, 문서만 둔다.
+- 사내 `taxonomy.xlsx`(동의어 시트 포함), 사람 입력의 보관본(`inputs/*.b64`), 설정, 원본·base64 파일, 이미지, DB, 화면 파일, 리포트(후보 리포트 포함), 로그는 코드 폴더의 `workspaces/` 아래 작업 폴더에 둔다(모든 작업은 코드 폴더 안에서 이뤄진다). `workspaces/`는 `.gitignore`로 커밋에서 뺀다. 작업 폴더를 `workspaces/` 밖의 코드 폴더 안으로 지정하면 실행을 거부한다.
+- 후보 리포트와 누적 taxonomy 재검토 리포트(`reports/taxonomy_revisit.md`·`.jsonl`)는 본문 표현과 사람 메모를 담으므로 작업 폴더 밖으로 내지 않는다.
+- 예외: `apply`가 쓰는 실행별 재검토 파일(`taxonomy/taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`)은 저장소에 두고 git으로 추적한다. 이 파일에는 재검토 메모와 제안 값이 담기며, 원격 저장소에 올라가도 된다는 사용자 결정(2026-10-05)에 따른다.
 - 사람이 만든 입력은 `read_input(path, snapshot_dir)`가 `inputs/<sha256>.b64`로 보관하며 같은 해시는 재사용하고 그대로 둔다. 실행마다 어느 입력을 썼는지 남기고, 다른 단계가 `.b64`만 읽게 하기 위해서다(`CLAUDE.md`).
 - 새 zip으로 코드 폴더를 통째로 바꿔도 작업 폴더는 그대로다.
 
 ### 9.3 보안
 
-- 로그, 오류 메시지, 콘솔 출력, 리포트(후보 리포트·taxonomy 재검토 리포트 제외), `alerts.json`, 교정 파일, 게이트 기록에는 문서 본문, 파일명과 경로, 담당자 이름, 동의어 시트의 표현을 넣지 않고 사유 코드와 파일 ID만 남긴다. 단, 검수 화면의 taxonomy 재검토 메모(500자 이하)는 예외다. 메모는 화면의 브라우저 저장소, 교정 파일과 그 보관본(`inputs/<sha256>.b64`), 로컬 파일로 연 화면의 JSON 저장 파일(Downloads)과 내려받기가 막혔을 때 그 내용을 보여 주는 대체 텍스트 창, `work.sqlite`의 `revisit_requests`, `reports/taxonomy_revisit.md`·`.jsonl`에만 담고, 로그·오류 메시지·콘솔·다른 리포트·클립보드 복사 텍스트에는 넣지 않는다(복사 텍스트에는 메모 건수만 낸다). Downloads의 JSON 저장 파일은 작업 폴더 밖에 있으므로 복사하지 않고 `inbox/`로 이동해 밖에 남기지 않는다. 시트 오류는 시트 이름과 행 번호만 알린다. 사내에서 생긴 오류를 사외로 전달할 때 내용이 섞이지 않게 하기 위해서다. 상대 경로와 파일명은 work.sqlite, 산출 SQLite, 검수 화면 HTML에만 있다. 정답표 10개 파일로 끝까지 돌린 통합 테스트에서 이 대상들에 파일명, 테스트 폴더명, 입력 루트 경로가 0건인지 확인한다.
+- 로그, 오류 메시지, 콘솔 출력, 리포트(후보 리포트·taxonomy 재검토 리포트 제외), `alerts.json`, 교정 파일, 게이트 기록에는 문서 본문, 파일명과 경로, 담당자 이름, 동의어 시트의 표현을 넣지 않고 사유 코드와 파일 ID만 남긴다. 단, 검수 화면의 taxonomy 재검토 메모(500자 이하)는 예외다. 메모는 화면의 브라우저 저장소, 교정 파일과 그 보관본(`inputs/<sha256>.b64`), 로컬 파일로 연 화면의 JSON 저장 파일(Downloads)과 내려받기가 막혔을 때 그 내용을 보여 주는 대체 텍스트 창, `work.sqlite`의 `revisit_requests`, `reports/taxonomy_revisit.md`·`.jsonl`, 실행별 재검토 파일(`taxonomy/taxonomy_revisit_requests/`, git 추적 대상, 9.2절)에만 담고, 로그·오류 메시지·콘솔·다른 리포트·클립보드 복사 텍스트에는 넣지 않는다(복사 텍스트에는 메모 건수만 낸다). Downloads의 JSON 저장 파일은 작업 폴더 밖에 있으므로 복사하지 않고 `inbox/`로 이동해 밖에 남기지 않는다. 시트 오류는 시트 이름과 행 번호만 알린다. 사내에서 생긴 오류를 사외로 전달할 때 내용이 섞이지 않게 하기 위해서다. 상대 경로와 파일명은 work.sqlite, 산출 SQLite, 검수 화면 HTML에만 있다. 정답표 10개 파일로 끝까지 돌린 통합 테스트에서 이 대상들에 파일명, 테스트 폴더명, 입력 루트 경로가 0건인지 확인한다.
 - 원본 경로와 사람 입력을 여는 곳은 `ingest.read_input` 하나다. 통합 테스트는 `builtins.open`과 `io.open`을 감싸, 입력 루트 아래 경로나 입력 전용 파일을 연 호출이 모두 `read_input`에서 나왔는지 확인한다. self-check의 `write_roundtrip` 임시 파일만 예외다.
 - 통합 테스트는 실행 전 작업 폴더의 파일 목록을 저장해 두고, 실행 뒤 새로 생기거나 바뀐 파일(작업 폴더와 `out/` 재귀)의 확장자가 모두 허용 목록 안에 있는지 확인한다. 입력 전용 경로(`taxonomy.xlsx`, `pipeline.json`, `raw/`, `inbox/`)는 제외한다. 실행이 끝난 뒤 SQLite 저널 파일(`-journal`, `-wal`)이 남지 않아야 한다. 사내에서도 한 번 더 돌린다.
 - 외부 호출(LLM, 임베딩, Supabase 적재)의 허용은 사용자가 적는 플래그가 아니라 호스트로 판정한다. 주소의 호스트(소문자)가 `internal_host_suffixes`의 어떤 접미사와 같거나 "." + 접미사로 끝나면 사내로 본다(`corp.com`은 `llm.corp.com`과 맞고 `evilcorp.com`과는 맞지 않는다). 호스트 파싱 실패, 빈 호스트, IP 리터럴처럼 판정이 불확실하면 거부한다. 사내 LLM은 도메인 주소로 호출하므로 IP 리터럴 거부를 유지한다.
@@ -704,7 +708,7 @@ flowchart LR
 4. 사외 검증 샘플은 `dummy pptx files/` 폴더의 파일을 쓰며 어느 파일이든 쓸 수 있다. 테스트와 정답표는 이 폴더를 ingest 바이트 경로로 읽는다. 샘플 2의 구체 선택은 임의이고 바꿀 수 있다.
 5. EUV-SAUP, EUV-SET, ArF-SET는 Patterning 축의 값이다. 이 셋과 JHV의 정의, Mx·Vx의 범위, anneal·hardmask·erosion의 소속은 답을 받지 못해 정의 칸을 비우고, 이에 기대는 정답표 칸은 `unknown`으로 둔다. 첫 실행 뒤 후보 리포트가 이 항목들을 올린다.
 
-계획 결정(사용자 질문 없이 정함): 개발 산출물 확장자 예외는 없다. 기본 `defaults/taxonomy.xlsx`는 Claude가 붙여넣기용 `.md`와 기대값 `.jsonl`로 주고, 사용자가 Excel에 붙여넣어 저장하며, 테스트가 xlsx를 `.jsonl`과 대조한다.
+계획 결정(사용자 질문 없이 정함): 개발 산출물 확장자 예외는 없다. 기본 `taxonomy/taxonomy.xlsx`는 Claude가 붙여넣기용 `.md`와 기대값 `.jsonl`로 주고, 사용자가 Excel에 붙여넣어 저장하며, 테스트가 xlsx를 `.jsonl`과 대조한다.
 
 ### 2026-10-04 라벨링 품질 보강(v2) 반영
 
@@ -759,3 +763,12 @@ flowchart LR
 
 - 사용자 결정: (1) H6 불량 chunk 검수는 검수 반영 스킬(`BEOL-labeling-feedback`)이 검수 화면을 띄우고 기다리는 단계로 둔다. 끝났는지 묻지 않고, 검수 화면의 "검수 완료" 버튼 신호로 반영·적재를 잇는다. (2) H2 파싱 대조는 그 스킬이 시작할 때 실행 여부를 묻고, 하겠다고 하면 검수 화면과 함께 연다. (3) 라벨링 스킬(`BEOL-labeling`)은 결과 대시보드만 띄우고 검수 대기에서 멈춘다.
 - 바뀐 곳: 3.2절 H2·H6, FR-7(화면 서버와 검수 완료 버튼). 새로 둔 것: `POST /inbox/review/done`, 완료 신호 `signals/review_done_<실행ID>.json`(허용 형식 `.json`, 건수만).
+
+### 2026-10-05 실행별 taxonomy 재검토 파일
+
+- 사용자 결정(2026-10-05): `apply`가 반영한 검수 실행마다 그 실행의 재검토 요청을 엑셀에 바로 붙일 수 있는 `taxonomy/taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`으로 쓴다. 이 파일은 메모를 담지만 저장소에 두고 git으로 추적하며 원격 저장소에 올라가도 된다. 누적 리포트(`reports/taxonomy_revisit.*`)는 그대로 작업 폴더에 둔다. 바뀐 곳: 6.3절, 9.2절, 9.3절.
+
+### 2026-10-05 기본 taxonomy 값 변경과 기준 행 갱신
+
+- 사용자가 `taxonomy/taxonomy.xlsx`를 고쳤다(재검토 요청 반영). 공정 모듈: Dep 삭제(의도), Metal·CVD 추가. 불량 모드: MHC 추가(하위 Via Rc high, Line R high). 물리 현상: CD small, CD 산포불량 추가. 6.1절 축 표를 xlsx에 맞췄다.
+- 회귀 기준 `tests/fixtures/default_taxonomy_rows.jsonl`을 새 xlsx에서 다시 만들었다. qabot 테스트는 이 파일로 합성 픽스처를 만들므로, qabot 테스트 데이터는 새 taxonomy에 맞춰 qabot 세션에서 고친다(사용자 결정).

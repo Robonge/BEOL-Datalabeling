@@ -10,3 +10,7 @@ __pycache__/
 # oh-my-claudecode 운영 상태 (프로젝트 스킬만 커밋)
 .omc/*
 !.omc/skills/
+
+# 작업 폴더(사내 자료 b64·DB 포함, 커밋하지 않는다)
+workspaces/
+codebot/out/

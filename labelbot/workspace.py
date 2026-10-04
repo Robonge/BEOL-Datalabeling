@@ -51,7 +51,12 @@ DEFAULT_CONFIG = {
         "batch_size": 100,
         "timeout": 60,
         "ca_file": None,
+        # 슬라이드 JPG를 Storage에 올리고 행에 slide_image_* 열을 채운다(push-slides). 버킷은 private.
+        "storage_enabled": False,
+        "storage_bucket": "BEOL-labeling",
     },
+    # 슬라이드 미리보기 JPG 렌더(slide-images). headless Edge/Chrome의 DevTools 캡처를 쓴다.
+    "render": {"browser_path": None, "jpeg_quality": 85, "width_px": 1280, "timeout": 30},
     "flag": {"unknown_ratio_min": 0.5, "confidence_min": 0.7},
     "alerts": {"na_ratio_max": 0.30, "dup_ratio_min": 0.40},
     "limits": {
@@ -112,14 +117,22 @@ def _is_inside(child, parent):
         return False
 
 
+WORKSPACES_DIR = os.path.join(CODE_ROOT, "workspaces")
+
+
+def is_forbidden_inside_code(path):
+    """코드 폴더 안이면서 workspaces/ 밖이면 True. 작업 폴더는 workspaces/ 아래에만 둘 수 있다."""
+    return _is_inside(path, CODE_ROOT) and not _is_inside(path, WORKSPACES_DIR)
+
+
 class Workspace:
-    SUBDIRS = ("inputs", "raw", "b64", "images", "screens", "inbox", "out", "reports", "logs")
+    SUBDIRS = ("inputs", "raw", "b64", "images", "slide_images", "screens", "inbox", "out", "reports", "logs")
 
     def __init__(self, root, create=True):
         if not root:
             raise WorkspaceError("WORKSPACE_REQUIRED")
         root = os.path.abspath(root)
-        if _is_inside(root, CODE_ROOT):
+        if is_forbidden_inside_code(root):
             raise WorkspaceError("WORKSPACE_INSIDE_CODE")
         self.root = root
         if create:
