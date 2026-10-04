@@ -44,7 +44,10 @@ def _specs(seed):
 
 
 def responder(body, hint):
-    """chunk 본문 해시로 일부 chunk는 1차 분류 축을 빠뜨려 실패시킨다(모집단에 실패 chunk를 넣기 위해서다)."""
+    """chunk 본문 해시로 일부 chunk는 1차 분류 축을 빠뜨려 실패시킨다(모집단에 실패 chunk를 넣기 위해서다).
+    분류·라벨 외 작업(검증 질문 생성 등)은 labelbot mock 기본 응답을 쓴다."""
+    if hint.get("task") not in ("classify", "label"):
+        return MockChatTransport().send(body, hint)
     obj = MockChatTransport._classify(hint) if hint["task"] == "classify" else MockChatTransport._label(hint)
     if hint["task"] == "classify" and int(hashlib.sha256(hint["text"].encode("utf-8")).hexdigest(), 16) % 4 == 0:
         obj["axes"].pop(next(iter(obj["axes"])))
@@ -194,6 +197,47 @@ class AdapterTest(unittest.TestCase):
         self.assertEqual(b.meta["adapter"], "labelbot_ws")
         self.assertIn("llm_cfg", b.meta)
         self.assertIn("limits", b.meta)
+
+    def test_generated_questions_in_snapshot(self):
+        """labelbot 검증 질문(gen_questions)이 스냅샷에 들어가 L1이 모르는 질문으로 보지 않고, judge가 문장을 쓴다."""
+        from qabot.checks import l1_schema
+        from qabot.judge import build_items, render_item
+
+        gen = [q for q in self.bundle.taxonomy["questions"] if q.get("generated")]
+        self.assertTrue(gen)
+        self.assertTrue(all(q["qid"].startswith("Q-GEN-") and q["text"] and len(q["target"]) == 2 for q in gen))
+        recs = [r for r in self.bundle.records if any(k.startswith("Q-GEN-") for k in r.get("answers") or {})]
+        self.assertTrue(recs)
+        tax = model.TaxIndex(self.bundle.taxonomy)
+        sch = policy_mod.validate_schema({})
+        for r in recs:
+            out = l1_schema.evaluate(r, tax, sch)
+            self.assertFalse([i for i in out["issues"] if i["code"] == "L1_UNKNOWN_FIELD"
+                              and (i["field"] or "").startswith("answer:Q-GEN-")])
+        from qabot.engine import RecordTarget
+
+        gen_q = {q["qid"]: q for q in gen}
+        for r in recs:
+            for it in build_items(RecordTarget(r, self.bundle.units.get(r["record_id"])), tax):
+                if it["qid"] in gen_q:
+                    self.assertTrue(it["generated"])
+                    self.assertEqual([it["axis"], it["value"]], list(gen_q[it["qid"]]["target"]))
+                    text = render_item(it, tax)
+                    self.assertIn(gen_q[it["qid"]]["text"].split()[0], text)
+                    self.assertIn("검증 질문", text)
+
+    def test_generated_questions_table_optional(self):
+        """gen_questions 표가 없는 작업 DB(이전 labelbot)도 그대로 읽는다."""
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        dst = os.path.join(tmp, "ws")
+        shutil.copytree(self.root, dst)
+        con = sqlite3.connect(os.path.join(dst, "work.sqlite"))
+        con.execute("DROP TABLE IF EXISTS gen_questions")
+        con.commit()
+        con.close()
+        b = labelbot_ws.load(dst)
+        self.assertFalse([q for q in b.taxonomy["questions"] if q.get("generated")])
 
     def test_run_layers_and_db_unchanged(self):
         pol = policy_mod.validate_policy({"layers": ["L0", "L1", "L2", "L3A"]})

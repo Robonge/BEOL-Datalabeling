@@ -110,6 +110,19 @@ def snapshot(tax):
     }
 
 
+GEN_PREFIX = "Q-GEN-"
+
+
+def generated_questions(con):
+    """labelbot이 1차 라벨마다 만든 O/X 검증 질문(gen_questions 표, 선택). 표가 없으면 빈 목록이다.
+    O는 본문이 그 라벨(축=값)을 뒷받침한다, X는 반박한다는 뜻이다."""
+    cols = {r[1] for r in con.execute("PRAGMA table_info(gen_questions)")}
+    if not {"qid", "axis", "value", "text"} <= cols:
+        return []
+    return [{"qid": r["qid"], "text": r["text"], "target": [r["axis"], r["value"]], "generated": True}
+            for r in con.execute("SELECT qid, axis, value, text FROM gen_questions ORDER BY qid")]
+
+
 def load_taxonomy(ws_root, cfg):
     p = taxonomy_path(ws_root, cfg)
     if not os.path.isfile(p):
@@ -276,6 +289,7 @@ def load(ws_root, labeler_run_id=None):
         run = con.execute("SELECT * FROM runs WHERE run_id=?", (run_id,)).fetchone() if run_id else None
         if run is None:
             raise model.BundleError("LABELER_RUN_NOT_FOUND", run_id)
+        snap["questions"] += generated_questions(con)
         run_sheet_hashes = _json(run["sheet_hashes"], {}) or {}
         label_rows = {}
         for r in con.execute("SELECT * FROM labels WHERE run_id=? ORDER BY id", (run_id,)):

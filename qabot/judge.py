@@ -21,6 +21,8 @@ USER_MARK = "<!-- USER -->"
 JUDGE_VERDICTS = ("supported", "partial", "unsupported")
 LABEL_O = "해당하는 진술이 있다"
 LABEL_X = "이 주제를 다루면서 해당하지 않는다고 밝혔다"
+GEN_LABEL_O = '인용문이 축 "%s"의 값 "%s"를 뒷받침한다'
+GEN_LABEL_X = '인용문이 축 "%s"의 값 "%s"를 반박한다'
 _WS = re.compile(r"\s+")
 
 
@@ -157,8 +159,13 @@ def build_items(target, tax):
             if not quote.strip():
                 continue
             n += 1
-            items.append({"id": "q%d" % n, "kind": "answer", "field": field, "axis": None, "value": None,
-                          "aliases": [], "qid": qid, "answer": a["answer"], "quote": quote})
+            q = tax.questions.get(qid) or {}
+            target = q.get("target") if q.get("generated") else None
+            gen_axis, gen_value = (target[0], target[1]) if isinstance(target, (list, tuple)) and len(target) == 2 \
+                else (None, None)
+            items.append({"id": "q%d" % n, "kind": "answer", "field": field, "axis": gen_axis, "value": gen_value,
+                          "aliases": tax.synonyms_for(gen_value) if gen_value else [], "qid": qid,
+                          "answer": a["answer"], "quote": quote, "generated": bool(gen_value)})
     return items
 
 
@@ -172,6 +179,15 @@ def render_item(it, tax):
         syn = [a for a in it["aliases"] if term_in(a, it["quote"])]
         if syn:
             lines.append("  동의어: %s" % ", ".join("%s → %s" % (a, it["value"]) for a in syn))
+    elif it.get("generated"):
+        # labelbot 검증 질문: O는 라벨을 뒷받침, X는 라벨을 반박한다는 뜻이다
+        q = tax.questions.get(it["qid"]) or {}
+        text = _WS.sub(" ", q.get("text") or "").strip()
+        meaning = GEN_LABEL_O if it["answer"] == "O" else GEN_LABEL_X
+        lines.append('  라벨: 검증 질문 "%s"의 답 "%s"(%s)' % (text, it["answer"], meaning % (it["axis"], it["value"])))
+        d = _WS.sub(" ", tax.definition(it["axis"], it["value"])).strip()
+        if d:
+            lines.append("  라벨 정의: %s" % d)
     else:
         q = tax.questions.get(it["qid"]) or {}
         text = _WS.sub(" ", q.get("text") or it["qid"]).strip()
@@ -181,7 +197,9 @@ def render_item(it, tax):
 
 
 def _hint_item(it):
-    return {k: it[k] for k in ("id", "kind", "axis", "value", "aliases", "qid", "answer", "quote")}
+    out = {k: it[k] for k in ("id", "kind", "axis", "value", "aliases", "qid", "answer", "quote")}
+    out["generated"] = bool(it.get("generated"))
+    return out
 
 
 # ---- judge -----------------------------------------------------------------

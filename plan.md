@@ -84,7 +84,8 @@ b64/            base64 텍스트
 images/         추출 이미지 (.b64)
 work.sqlite     작업 DB (표 목록은 아래 "작업 DB(work.sqlite) 표")
 screens/        생성된 HTML 화면 (이미지는 data URL)
-inbox/          화면에서 내려받은 교정 파일(.json)을 넣는 곳
+inbox/          화면에서 내려받은 교정 파일(.json)을 넣는 곳(화면 서버로 열면 서버가 바로 쓴다)
+signals/        화면 서버가 쓰는 검수 완료 신호 review_done_<실행ID>.json(실행 ID, 시각, 건수만)
 out/            labeling.sqlite, SCHEMA.md, images/
 reports/        기준선 리포트(.md), alerts.json, candidates.jsonl·candidates.md, file_list.md, query_candidates.md, gate_<timestamp>.json, flagged_<실행ID>.jsonl·flagged_<실행ID>.md(4차 불량 목록. chunk ID, 파일 ID, 사유 코드, 수치만), taxonomy_revisit.md·taxonomy_revisit.jsonl(검수 화면의 taxonomy 재검토 요청. 전 실행 누적, 사람 메모 포함)
 logs/           .log (파일 ID와 사유 코드만)
@@ -103,6 +104,7 @@ logs/           .log (파일 ID와 사유 코드만)
 | `compare` | 파싱 대조 화면 `screens/compare.html` 생성 | 안 함 | M1 |
 | `review` | `flagged_chunks` 생성, `reports/flagged_*` 작성, 검수 화면 `screens/review.html` 생성(LLM 호출 0회) | 안 함(검수 기준 실행 ID = 최신 또는 `--run`) | M5 |
 | `apply` | `inbox/`의 교정 `.json` 반영(교정 파일별 `SAVEPOINT`), `reports/taxonomy_revisit.*` 재작성 | 안 함(교정 파일의 실행 ID를 쓴다) | M5 |
+| `serve --port <포트>` | 화면 서버(127.0.0.1 전용). `screens/` 제공, 화면의 교정·대조 JSON을 `inbox/`에 저장, 검수 완료 버튼(`POST /inbox/review/done`)이면 교정 저장 뒤 `signals/review_done_<실행ID>.json` 작성 | 안 함 | M5 |
 | `run` | 수집부터 산출·조회 검증·리포트까지 전 단계. `embed`·`push-vectors`는 부르지 않는다 | 발급 | M6 |
 | `report --run <ID>` | 기준선 리포트(분포) 재계산, `reports/taxonomy_revisit.*` 재작성(LLM 호출 0회) | 안 함 | M6 |
 | `embed` | chunk 임베딩, `chunk_embeddings` | 안 함 | M6b |
@@ -389,6 +391,13 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 한 교정 파일이 `FORMAT_INVALID`여도 파일별 `SAVEPOINT`로 같은 `apply`의 다른 파일 반영은 되돌려지지 않는다.
 - [ ] 재검토 리포트(`reports/taxonomy_revisit.md`·`.jsonl`)는 `candidates.md`를 쓸 때 함께 갱신되고, `candidates.md` 제목 다음 줄에 누적 건수·링크 한 줄이 나온다. `NO_FIT_VALUE` 붙여넣기 행은 시트에서 사라진 축·상위값이나 이미 있는 값이면 생략되고 사유가 표에 적힌다.
 
+[P2] 슬라이드 근사 미리보기(2026-10-04 사용자 결정, B안): 검수 화면에서 불량 chunk의 슬라이드 배치를 근사로 보여 준다. 슬라이드를 이미지로 렌더링하지 않는다(PowerPoint·LibreOffice 렌더링은 `read_input` 단일 진입점·표준 라이브러리 규칙의 예외가 필요해 쓰지 않는다).
+- `pptx_parser.slide_layouts(data)`가 슬라이드 크기(EMU)와 요소별 좌표·내용을 낸다: 텍스트 상자(글·최대 글자 크기·placeholder 종류), 표(셀 글), SmartArt(글), 차트(제목·계열 이름), 삽입 그림(파일 내 sha256과 좌표). 그룹 도형 좌표 변환을 그대로 쓴다.
+- `review`는 작업 폴더의 보관본 `b64/<file_id>.b64`를 메모리에서 다시 파싱해 chunk마다 `layout`과 그림 해시→data URL 대응(`image_map`, `images_per_chunk` 상한)을 넣는다. 원본 경로는 열지 않고, DB 표와 재수집은 바꾸지 않는다. pptx가 아니거나 파싱에 실패하면 미리보기 없이 화면을 만든다.
+- 화면은 요소를 % 좌표로 절대 배치하고 글자 크기는 컨테이너 너비 단위(`cqw`)로 잡는다. "크게 보기"로 확대한다. 글꼴·색·글자 없는 도형·배경·차트 그래프는 원본과 다르다는 안내를 카드에 둔다.
+- [ ] 더미 작업 폴더에서 `review`를 돌리면 불량 chunk 전부에 `layout`이 붙고, `layout.pics`의 그림이 `image_map`에 있으면 그림이 그 좌표에 표시된다(2026-10-04 확인: 11/11 chunk, 그림 18/18).
+- [ ] 미리보기 요소가 슬라이드 영역 밖으로 나가지 않고, 콘솔 오류가 없으며, 템플릿 정적 검사(외부 리소스·`http` 문자열 없음)를 통과한다.
+
 ### M6. 산출, 조회 검증, 재실행
 
 만드는 파일: `export.py`, `querycheck.py`, `report.py`, `tools/evalgold.py`, `labelbot/metrics.py`(`tools/evalgold.py` 전용 지표), `prompts/propose_queries.md`, `prompts/text_to_sql.md`
@@ -519,11 +528,11 @@ logs/           .log (파일 ID와 사유 코드만)
 | # | 사람이 하는 일 | 진행 | 구현 위치 | 마일스톤 |
 |---|---|---|---|---|
 | H1 | 대상 파일 확인, 맥락 메모, 제외, 동의어 제공 | 대기 | `taxonomy.py`(`files`·`synonyms` 시트 읽기), `candidates.py`(`reports/file_list.md` 붙여넣기 행) | M2 |
-| H2 | 파일 5개 파싱 대조 | 계속 | `screens/compare.html` | M1 |
+| H2 | 파일 5개 파싱 대조(선택. 검수 시작 때 실행 여부를 묻고, 하면 검수 화면과 함께 연다) | 계속 | `screens/compare.html`, `BEOL-labeling-feedback` 스킬 | M1 |
 | H3 | 새 값 후보 처리(값·동의어·기각을 엑셀에 붙여넣기) | 계속(처리 전 후보는 `unknown`으로 둔다) | `candidates.py`, `classify.py` | M2 |
 | H4 | 질문 후보 승인(`questions` 시트에 붙여넣기) | 대기 | `candidates.py`, `questions.py` | M3 |
 | H5 | 라벨 분포 알림 확인 | 계속 | `alerts.py`, `label.py`, `report.py` | M4, M6 |
-| H6 | 불량 목록의 chunk 검수. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 동의어 "검수 등록". taxonomy 재검토 요청(`reports/taxonomy_revisit.md`) | 대기 | `screens/review.html`, `review.py`, `candidates.py`, `revisit.py` | M5 |
+| H6 | 불량 목록의 chunk 검수. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 동의어 "검수 등록". taxonomy 재검토 요청(`reports/taxonomy_revisit.md`). 끝나면 "검수 완료" 버튼 → 반영·적재로 이어짐 | 대기(검수 완료 버튼까지) | `screens/review.html`, `review.py`, `candidates.py`, `revisit.py`, `serve.py`, `BEOL-labeling-feedback` 스킬(`wait_review_done.py`) | M5 |
 | H7 | 조회 질문 채택(`queries` 시트) | 대기 | `taxonomy.py`(`queries` 시트 읽기), `candidates.py`(`reports/query_candidates.md`), `querycheck.py` | M6 |
 | H8 | 동의어 후보 승인(`synonyms` 시트에 붙여넣기) | 계속(처리 전 후보는 시트에 넣지 않는다) | `candidates.py` | M2, M4 |
 | 게이트 | 사내 설정 변경(`llm`, `embedding`, `supabase` 블록), 벡터 DB 사용 가능 여부 확인, G-1~G-10 확인과 `gate record` 입력 | 대기(FAIL이면 100개 실행을 시작하지 않는다) | `selfcheck.py`, `gate.py` | M0, M7 |
@@ -790,3 +799,5 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 - 2026-10-04 검수 화면 taxonomy 재검토 요청: 근거는 `.omc/plans/autopilot-impl.md`(8절 Critic 반영 우선)와 `.omc/autopilot/spec.md`다. 검수 화면의 재검토 요청(교정 파일 `revisits`)을 작업 DB `revisit_requests`로 반영하고 `reports/taxonomy_revisit.md`·`.jsonl`로 낸다. 라벨·`label_hash`는 바뀌지 않아 Supabase 재적재가 없다. `apply`는 교정 파일별 `SAVEPOINT`를 둔다. 바뀐 곳은 2절(reports 목록, 명령 표, 작업 DB 표), M5 G16·G2 완료 기준, 로그·리포트 비노출 검사, 4절 H6, 후보 처리 흐름이다.
 - 2026-10-04 2차 검증 질문 생성: 사용자 결정에 따라 2차에 "1차 라벨 검증 질문 생성(LLM)"을 더했다. 승인 질문 매핑은 그대로 두고, 남은 상한만큼 1차 라벨(해당 없음·unknown 제외)마다 O/X 판정 질문을 `prompts/question_gen.md`로 만든다. 질문은 `gen_questions` 표에 남고, 3차 라벨러는 뒷받침=O·반박=X·근거 없음=N/A로 답한다. chunk당 LLM 호출이 2회에서 3회로 늘었다. 바뀐 곳은 2절 디렉터리 구조(`questions.py` 설명), M3(제목, 만드는 파일, 생성 규칙, 완료 기준)다.
 - 2026-10-04 사외 검증 폴더 허용: 사용자 승인에 따라 `parshing test files/`의 현재 파일 해시를 사외 전송 허용 목록(`dummy_hashes.jsonl`)에 더했다(`llm.DUMMY_DIRS`). 이 폴더 파일이 `EXTERNAL_NON_DUMMY`로 막히던 문제를 해결한다. 폴더 단위 허용이므로 이 폴더에 사내 파일을 넣지 않는 것을 운영 규칙으로 둔다. 바뀐 곳은 2절 디렉터리 구조와 M0 G19 사외 전송 조건이다.
+- 2026-10-04 검수 화면 슬라이드 근사 미리보기(B안): 사용자 결정에 따라 렌더링 없이 파서 좌표로 슬라이드 배치를 재구성해 검수 화면에 보여 준다. `pptx_parser.slide_layouts`, `review.py`의 보관본 메모리 재파싱(`layout`·`image_map`), `screens/review.html` 미리보기 카드를 더했다. 바뀐 곳은 M5(P2 항목과 완료 기준 2개)다.
+- 2026-10-04 검수 진행을 검수 반영 스킬로 이동: 사용자 결정에 따라 H6 검수는 `BEOL-labeling-feedback` 스킬이 검수 화면을 띄우고 "검수 완료" 버튼 신호를 기다리는 단계가 됐다(끝났는지 묻지 않는다). H2 대조는 그 스킬이 시작할 때 실행 여부를 묻는다. `BEOL-labeling`은 결과 대시보드만 띄운다. `serve.py`에 `POST /inbox/review/done`(교정 저장 뒤 `signals/review_done_<실행ID>.json`, 건수만)과 `/inbox/status`의 `done` 표시를, `screens/review.html`에 검수 완료 버튼(서버가 `done`을 알릴 때만 보임)을 더했다. 바뀐 곳은 2절 디렉터리 구조(`signals/`)와 명령 표(`serve`), 4절 H2·H6이다.

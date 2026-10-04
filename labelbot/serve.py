@@ -4,7 +4,12 @@
 inbox/<종류>_<실행 ID>.json을 직접 쓴다. 127.0.0.1에만 열고, 같은 출처(이 서버가 낸 화면)의
 JSON 요청만 받는다. 쓰는 형식은 .json뿐이며, 내용을 읽어 반영하는 곳은 여전히
 `apply`의 read_input 한 곳이다. 로그에는 요청 경로와 응답 코드만 남긴다.
+
+검수 화면의 "검수 완료" 버튼은 POST /inbox/review/done을 보낸다. 서버는 같은 방식으로 교정
+파일을 쓴 뒤 signals/review_done_<실행 ID>.json에 완료 신호(실행 ID, 시각, 건수만)를 쓰고,
+BEOL-labeling-feedback 스킬이 이 신호를 보고 반영·적재로 넘어간다.
 """
+import datetime
 import functools
 import http.server
 import json
@@ -22,6 +27,7 @@ _RUN_ID = re.compile(r"^[0-9A-Za-z-]{1,64}$")
 
 class _Handler(http.server.SimpleHTTPRequestHandler):
     inbox = None
+    signals = None
     tmp_dir = None
     lock = None
 
@@ -42,22 +48,36 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        if not self._local_host():
+            return self._json(403, {"ok": False, "code": "HOST_REJECTED"})
         if self.path.split("?")[0] == "/inbox/status":
-            return self._json(200, {"ok": True, "kinds": list(KINDS)})
+            # done: 검수 완료 버튼(POST /inbox/review/done)을 받는 서버라는 표시. 예전 서버에는 없어 버튼이 숨는다.
+            return self._json(200, {"ok": True, "kinds": list(KINDS), "done": True})
         return super().do_GET()
 
+    def do_HEAD(self):
+        if not self._local_host():
+            # HEAD 응답에는 본문을 쓰지 않는다.
+            self.send_response(403)
+            self.send_header("Content-Length", "0")
+            return self.end_headers()
+        return super().do_HEAD()
+
+    def _local_host(self):
+        # Host를 로컬 이름(포트 무관)으로 묶어 DNS 재바인딩으로 들어온 요청을 막는다. Host가 없으면 거절한다.
+        return (self.headers.get("Host") or "").rsplit(":", 1)[0].lower() in ("127.0.0.1", "localhost")
+
     def _same_origin(self):
-        # Host까지 로컬 이름으로 묶어 DNS 재바인딩으로 들어온 요청도 막는다.
-        origin, host = self.headers.get("Origin"), self.headers.get("Host") or ""
-        if host.rsplit(":", 1)[0] not in ("127.0.0.1", "localhost"):
+        if not self._local_host():
             return False
-        return bool(origin) and origin.split("://", 1)[-1] == host
+        origin = self.headers.get("Origin")
+        return bool(origin) and origin.split("://", 1)[-1] == self.headers.get("Host")
 
     def do_POST(self):
-        m = re.match(r"^/inbox/(review|compare)$", self.path.split("?")[0])
-        if not m:
+        m = re.match(r"^/inbox/(review|compare)(/done)?$", self.path.split("?")[0])
+        if not m or (m.group(2) and m.group(1) != "review"):
             return self._json(404, {"ok": False, "code": "NOT_FOUND"})
-        kind = m.group(1)
+        kind, done = m.group(1), bool(m.group(2))
         if not self._same_origin():
             return self._json(403, {"ok": False, "code": "ORIGIN_REJECTED"})
         if not (self.headers.get("Content-Type") or "").startswith("application/json"):
@@ -83,13 +103,34 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         with self.lock:
             util.write_text(tmp, json.dumps(doc, ensure_ascii=False, indent=2) + "\n")
             os.replace(tmp, os.path.join(self.inbox, name))
+            if done:
+                signal = self._write_done_signal(run_id, doc)
+        if done:
+            return self._json(200, {"ok": True, "saved": "inbox/" + name, "signal": "signals/" + signal})
         return self._json(200, {"ok": True, "saved": "inbox/" + name})
+
+    def _write_done_signal(self, run_id, doc):
+        """검수 완료 신호. feedback 스킬이 이 파일을 기다린다. 본문 없이 건수만 쓴다(교정 파일을 쓴 뒤에 쓴다)."""
+        def n(key):
+            v = doc.get(key)
+            return len(v) if isinstance(v, list) else 0
+        sig = {"run_id": run_id, "done_at": datetime.datetime.now().isoformat(timespec="seconds"),
+               "counts": {"edits": n("corrections"), "status": n("chunk_status"), "syns": n("synonyms"),
+                          "revisits": n("revisits")}}
+        name = "review_done_%s.json" % run_id
+        tmp = os.path.join(self.tmp_dir, ".signal_review_done.json")
+        util.write_text(tmp, json.dumps(sig, ensure_ascii=False) + "\n")
+        os.replace(tmp, os.path.join(self.signals, name))
+        return name
 
 
 def make_server(ws_root, port, host="127.0.0.1"):
     inbox = os.path.join(ws_root, "inbox")
+    signals = os.path.join(ws_root, "signals")
     os.makedirs(inbox, exist_ok=True)
-    handler = type("Handler", (_Handler,), {"inbox": inbox, "tmp_dir": ws_root, "lock": threading.Lock()})
+    os.makedirs(signals, exist_ok=True)
+    handler = type("Handler", (_Handler,), {"inbox": inbox, "signals": signals, "tmp_dir": ws_root,
+                                            "lock": threading.Lock()})
     handler = functools.partial(handler, directory=os.path.join(ws_root, "screens"))
     return http.server.ThreadingHTTPServer((host, port), handler)
 

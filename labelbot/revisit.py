@@ -30,6 +30,7 @@ MEMO_REQUIRED = ("OTHER", "NEED_QUESTION")
 MEMO_MAX = 500
 SHORT_MAX = 60
 KEY_MAX = 100
+REVISITS_MAX = 5000  # 파일 하나의 요청 수 상한. 넘으면 파일 전체 FORMAT_INVALID.
 
 NOT_FLAGGED = "REVISIT_CHUNK_NOT_FLAGGED"
 REASON_INVALID = "REVISIT_REASON_INVALID"
@@ -82,7 +83,7 @@ def normalize(item, flagged):
             raise _Invalid(FIELD_INVALID)
         if cid not in flagged:
             raise _Invalid(NOT_FLAGGED)
-        key = _squash(key)
+        key = key.strip()  # 키는 시트 이름과 그대로 맞춰야 하므로 안쪽 공백은 줄이지 않는다.
         if target not in TARGETS or reason not in TARGET_REASONS[rule_key(target, key)]:
             raise _Invalid(REASON_INVALID)
         if len(key) > KEY_MAX or "|" in key:
@@ -151,14 +152,16 @@ def _bot_value(bots, cid, target, key):
 def apply_revisits(con, tax, doc, sha, run_id, flagged, bots, now):
     """그 실행의 요청 전체를 doc["revisits"]로 바꾼다. 반환: (저장 수, {사유 코드: 건수}).
 
-    revisits 키가 없으면(예전 화면 파일) 기존 행을 건드리지 않는다. list가 아니면 ValueError(파일 전체 FORMAT_INVALID).
-    tax는 호출 형태를 맞추려고 받는다(현재 taxonomy에 키가 있는지는 보지 않는다).
+    revisits 키가 없으면(예전 화면 파일) 기존 행을 건드리지 않는다. list가 아니거나 REVISITS_MAX건을 넘으면
+    ValueError(파일 전체 FORMAT_INVALID). tax는 계층 없는 축의 상위값을 버릴 때만 본다(키가 시트에 있는지는 보지 않는다).
     """
     if "revisits" not in doc:
         return 0, {}
     items = doc["revisits"]
     if not isinstance(items, list):
         raise ValueError("REVISITS_NOT_LIST")
+    if len(items) > REVISITS_MAX:
+        raise ValueError("REVISITS_TOO_MANY")
     drops = {}
 
     def drop(code, n=1):
@@ -176,6 +179,10 @@ def apply_revisits(con, tax, doc, sha, run_id, flagged, bots, now):
         if row is None:
             drop(code)
             continue
+        if row["proposed_parent"] is not None and row["target"] == "axis":
+            ax = tax.axis(row["key"])
+            if ax is not None and not ax.hierarchical:
+                row["proposed_parent"] = None  # 계층 없는 축의 상위값은 시트에 넣을 수 없다.
         k = (row["chunk_id"], row["target"], row["key"])
         if k in keep:
             drop(DUPLICATE)
@@ -224,12 +231,17 @@ def rows(con):
 
 # ---- 리포트 ----------------------------------------------------------------
 
+_MD_SPECIAL = re.compile(r"([\\`\[\]!])")
+
+
 def _html(s):
-    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    """HTML 특수문자를 이스케이프하고, md 링크·이미지·코드 표기 문자(\\ ` [ ] !) 앞에 \\를 붙인다."""
+    s = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return _MD_SPECIAL.sub(r"\\\1", s)
 
 
 def _cell(v):
-    """md 표 칸: HTML 특수문자 이스케이프, |는 /, 줄바꿈은 공백."""
+    """md 표 칸: HTML·md 특수문자 이스케이프, |는 /, 줄바꿈은 공백."""
     if v is None or v == "":
         return "-"
     if isinstance(v, list):

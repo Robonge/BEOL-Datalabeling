@@ -6,6 +6,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -148,6 +149,45 @@ class RevisitUnitTest(unittest.TestCase):
         row, code = revisit.normalize(dict(_item(value="  새  값\t가 ", parent=""), key=" 예시축A "), f)
         self.assertEqual((row["proposed_value"], row["proposed_parent"], row["key"]), ("새 값 가", None, "예시축A"))
 
+    def test_key_strip_only(self):
+        f = {"c1"}
+        row, code = revisit.normalize(_item(key=" \t예시  축\tA \n"), f)
+        self.assertIsNone(code)
+        self.assertEqual(row["key"], "예시  축\tA")  # 안쪽 공백은 그대로
+        row, code = revisit.normalize(_item(target="question", key="  Q-COM-001 ", reason="AMBIGUOUS_DEF", value=None), f)
+        self.assertEqual(row["key"], "Q-COM-001")
+        self.assertEqual(revisit.normalize(_item(target="question", key="   ", reason="NEED_QUESTION", value=None,
+                                                 memo="m"), f)[1], None)  # 공백뿐인 키는 빈 키
+        self.assertEqual(revisit.normalize(_item(key=" 축 | 값 "), f), (None, revisit.FIELD_INVALID))
+        self.assertIsNone(revisit.normalize(_item(key=" " + "가" * 100 + " "), f)[1])  # 자른 뒤 100자는 허용
+        self.assertEqual(revisit.normalize(_item(key="가 " * 50 + "가"), f), (None, revisit.FIELD_INVALID))  # 101자
+
+    def test_revisits_max(self):
+        code, n, drops = self.apply([7] * revisit.REVISITS_MAX)
+        self.assertEqual((code, n, drops), ("OK", 0, {revisit.FIELD_INVALID: revisit.REVISITS_MAX}))
+        with self.assertRaises(ValueError):
+            self.apply([_item()] * (revisit.REVISITS_MAX + 1))
+
+    def test_non_hierarchical_parent_dropped(self):
+        self.apply([_item(key="예시축B", value="새값-b", parent="상위-1"),     # 계층 없는 축: 상위값 버림
+                    _item(cid="c2", value="새값-a", parent="상위-1"),          # 계층 축: 유지
+                    _item(cid="c3", key="사라진축", value="새값-z", parent="상위-z")])  # 시트에 없는 축: 유지
+        parents = {r["chunk_id"]: r["proposed_parent"] for r in self.rows()}
+        self.assertEqual(parents, {"c1": None, "c2": "상위-1", "c3": "상위-z"})
+        n, md, jl = self._report()
+        code = md.split("```\n", 1)[1].split("```", 1)[0].strip("\n").split("\n")
+        self.assertIn("\t".join(["예시축B", "새값-b"] + [""] * 9), code)
+        self.assertIn("\t".join(["예시축A", "새값-a", "상위-1"] + [""] * 8), code)
+        self.assertEqual(len(code), 2)
+        self.assertIn("| 예시축B | 새값-b | - | 1 |", md)
+        self.assertEqual({r["chunk_id"]: (r["proposed"] or {}).get("parent") for r in jl}["c1"], None)
+
+    def test_paste_row_formula_quoted(self):
+        self.apply([_item(value="=1+2"), _item(cid="c2", value="@합계", parent="상위-1")])
+        n, md, jl = self._report()
+        code = md.split("```\n", 1)[1].split("```", 1)[0].strip("\n").split("\n")
+        self.assertEqual(sorted(c.split("\t")[1] for c in code), ["'=1+2", "'@합계"])
+
     def test_not_flagged_dropped(self):
         code, n, drops = self.apply([_item(cid="c9"), _item(cid="없는chunk")])
         self.assertEqual((code, n), ("OK", 0))
@@ -256,10 +296,11 @@ class RevisitUnitTest(unittest.TestCase):
         return n, md, jl
 
     def test_reports_format(self):
-        self.apply([_item(value="새값-가", parent="상위-1", memo="첫 줄 | 파이프 <script>\n둘째 줄 & 끝"),
+        self.apply([_item(value="새값-가", parent="상위-1",
+                          memo="첫 줄 | 파이프 <script>\n둘째 줄 & 끝\n[링크](u) ![그림](v) `코드` a\\b"),
                     _item(cid="c2", value="값-1"),  # 시트에 이미 있는 값
                     _item(cid="c3", reason="VALUE_OVERLAP", value=None, related=["값-1", "값-2"]),
-                    _item(cid="c3", target="new_axis", key="", reason="NEW_AXIS", value="새축|이름")])
+                    _item(cid="c3", target="new_axis", key="", reason="NEW_AXIS", value="새축|이름 ![i](w) `c`")])
         self.apply([_item(value="새값-가", parent="상위-1")], run=RUN2)
         n, md, jl = self._report()
         self.assertEqual(n, 5)
@@ -282,6 +323,13 @@ class RevisitUnitTest(unittest.TestCase):
         self.assertNotIn("<script>", md)
         self.assertIn("새축/이름", md)  # 표 칸의 |는 /
         self.assertIn("값-1 ↔ 값-2", md)
+        # md 링크·이미지·코드 표기는 \로 무력화한다(메모 인용과 표 칸 모두, 이중 이스케이프 없이).
+        self.assertIn("  > \\[링크\\](u) \\!\\[그림\\](v) \\`코드\\` a\\\\b", md)
+        self.assertIn("| 새축/이름 \\!\\[i\\](w) \\`c\\` |", md)
+        self.assertNotIn("[링크](u)", md)
+        self.assertNotIn("![i](w)", md)
+        self.assertNotIn("\\\\[", md)
+        self.assertNotIn("\\&", md)
 
     def test_report_missing_axis_or_parent(self):
         self.apply([_item(key="사라진축", value="새값-나"), _item(cid="c2", value="새값-다", parent="없는상위")])
@@ -409,6 +457,72 @@ class RevisitIntegrationTest(unittest.TestCase):
         n = self.con.execute("SELECT COUNT(*) FROM corrections WHERE review_run_id=? AND target_kind='axis'",
                              (self.run_id,)).fetchone()[0]
         self.assertEqual(n, 1)
+
+    def _snapshot(self):
+        corr = [tuple(r) for r in self.con.execute(
+            "SELECT * FROM corrections WHERE review_run_id=? ORDER BY chunk_id, target_kind, target_key", (self.run_id,))]
+        rv = [tuple(r) for r in self.con.execute(
+            "SELECT * FROM revisit_requests WHERE review_run_id=? ORDER BY chunk_id, target_kind, target_key",
+            (self.run_id,))]
+        return corr, rv
+
+    def test_savepoint_rollback_keeps_previous(self):
+        # 첫 문서(교정 + 요청)를 먼저 반영한다.
+        corr = [{"chunk_id": self.cid, "target": "axis", "key": self.axis, "value": ["unknown"]}]
+        self.put("review_ok.json", self.doc([_item(cid=self.cid, key=self.axis, value="롤백전값")], corrections=corr),
+                 age=100)
+        self.assertEqual([r[1] for r in review.apply_inbox(self.ws, self.con, self.tax)], ["OK"])
+        before = self._snapshot()
+        self.assertEqual(len(before[0]), 1)
+        self.assertEqual(len(before[1]), 1)
+        # 같은 실행의 더 새 문서: 교정은 다르고 revisits가 형식 오류다. 첫 문서는 SUPERSEDED, 새 문서만 반영 시도된다.
+        corr2 = [{"chunk_id": self.other, "target": "axis", "key": self.axis, "value": ["다른값"]},
+                 {"chunk_id": self.cid, "target": "axis", "key": self.axis, "value": ["또다른값"]}]
+        self.put("review_bad.json", self.doc("x", corrections=corr2))
+        res = review.apply_inbox(self.ws, self.con, self.tax)
+        self.assertEqual(sorted(r[1] for r in res), ["FORMAT_INVALID", "SUPERSEDED"])
+        self.assertEqual(self._snapshot(), before)
+
+    def test_too_many_revisits_format_invalid(self):
+        self.put("review_x.json", self.doc([None] * (revisit.REVISITS_MAX + 1)))
+        res = review.apply_inbox(self.ws, self.con, self.tax)
+        self.assertEqual([r[1] for r in res], ["FORMAT_INVALID"])
+
+    def test_run_id_invalid(self):
+        mark = "ZZRID-%s" % uuid.uuid4().hex[:8]
+        self.put("review_dict.json", self.doc([], run_id={"id": mark}), age=300)
+        self.put("review_space.json", self.doc([], run_id=mark + " x"), age=200)
+        self.put("review_nl.json", self.doc([], run_id=self.run_id + "\n"), age=100)
+        self.put("review_ok.json", self.doc([_item(cid=self.cid, key=self.axis, value="정상값")]))
+        res = review.apply_inbox(self.ws, self.con, self.tax)
+        self.assertTrue(all(len(r) == 5 for r in res))
+        self.assertEqual(sorted(r[1] for r in res), ["OK"] + ["RUN_ID_INVALID"] * 3)
+        for r in res:
+            if r[1] == "RUN_ID_INVALID":
+                self.assertEqual(r[2:], (0, "review", ""))
+        self.assertEqual([(r[0], r[3]) for r in self.rv_rows()], [(self.cid, "정상값")])
+        console = self.cli("apply")
+        self.assertEqual(console.count("RUN_ID_INVALID"), 3)
+        self.assertNotIn(mark, console)
+
+    def test_data_lt_escaped(self):
+        evil = "앞 <!--<script>x</script> </SCRIPT 뒤"
+        self.con.execute("UPDATE chunks SET text=? WHERE chunk_id=?", (evil, self.cid))
+        try:
+            path, _ = review.build_review(self.ws, self.con, self.run_id, self.tax)
+        finally:
+            self.con.rollback()
+        html = self.read("screens", "review.html")
+        self.assertEqual(len(re.findall(r"<script\b", html, re.I)), 1)
+        self.assertNotIn("<!--", html)
+        m = re.search(r"const DATA = (.*);\n", html)
+        data = json.loads(m.group(1))
+        self.assertEqual([c["text"] for c in data["chunks"] if c["chunk_id"] == self.cid], [evil])
+        # 같은 직렬화를 쓰는 다른 화면도 확인한다.
+        for name in ("compare.html", "results.html"):
+            out = review.fill_template(name, {"text": evil})
+            self.assertEqual(len(re.findall(r"<script\b", out, re.I)), 1, name)
+            self.assertNotIn("<!--", out, name)
 
     def test_cli_apply_no_memo_leak(self):
         mark = "ZZMEMO-%s" % uuid.uuid4().hex

@@ -1,25 +1,25 @@
 ---
 name: BEOL-labeling
-description: BEOL 공정 문서(pptx·docx) 폴더를 labelbot 워크플로로 파싱부터 분류·라벨링까지 돌리고, 파싱 대조·검수·결과 대시보드 화면을 띄운 뒤 사람 검수 대기에서 멈춘다. 사용자가 폴더 경로를 주며 "라벨링 돌려줘", "파싱부터 라벨링까지", "이 폴더 처리해줘", "BEOL 라벨링", "파일럿 돌려줘", "workflow대로 돌려줘"라고 하거나 /BEOL-labeling을 부르면 이 스킬을 쓴다. 기본 입력 폴더는 저장소의 'parshing test files'다. 검수 JSON을 반영하는 일은 BEOL-labeling-feedback이 맡는다.
+description: BEOL 공정 문서(pptx·docx) 폴더를 labelbot 워크플로로 파싱부터 분류·라벨링까지 돌리고, 파싱 대조·검수·결과 대시보드 화면을 만들어 결과 대시보드를 띄운 뒤 사람 검수 대기에서 멈춘다. 사용자가 폴더 경로를 주며 "라벨링 돌려줘", "파싱부터 라벨링까지", "이 폴더 처리해줘", "BEOL 라벨링", "파일럿 돌려줘", "workflow대로 돌려줘"라고 하거나 /BEOL-labeling을 부르면 이 스킬을 쓴다. 기본 입력 폴더는 저장소의 'parshing test files'다. 검수 화면을 띄워 사람 검수를 기다리고 반영·적재하는 일은 BEOL-labeling-feedback이 맡는다.
 ---
 
 # BEOL-labeling: 파싱 → 분류·라벨링 → 검수 대기
 
-labelbot 파이프라인(`plan.md` 워크플로)을 한 폴더에 돌린다. 사람 개입 지점 중 **불량 chunk 검수(H6)에서 멈추고**, 사람이 검수를 마치면 `/BEOL-labeling-feedback`이 이어서 반영·적재한다.
+labelbot 파이프라인(`plan.md` 워크플로)을 한 폴더에 돌린다. 사람 개입 지점 중 **불량 chunk 검수(H6) 앞에서 멈추고**, `/BEOL-labeling-feedback`이 검수 화면을 띄워 사람 검수를 기다린 뒤 반영·적재한다.
 
 ```
-[이 스킬] 준비 → 사전 점검 → 수집·파싱 → 1~3차 분류·라벨링 → 불량 목록 → 화면 3개 → 멈춤(검수 대기)
-[BEOL-labeling-feedback] 대조·검수 JSON 반영 → 화면·리포트 재생성 → 임베딩 → Supabase 적재
+[이 스킬] 준비 → 사전 점검 → 수집·파싱 → 1~3차 분류·라벨링 → 불량 목록 → 화면 3개 만들기 → 대시보드 띄우기 → 멈춤(검수 대기)
+[BEOL-labeling-feedback] H2 대조 여부 질문 → 검수 화면 띄우기 → 사람 검수(검수 완료 버튼) → 반영 → 화면·리포트 재생성 → 임베딩 → Supabase 적재
 ```
 
 ## 사람 개입 지점을 이렇게 다룬다 (사용자 결정, 2026-10-04)
 
 | 지점 | 처리 | 이유 |
 |---|---|---|
-| H2 파싱 대조 | 멈추지 않는다. `compare.html`을 띄워 두고 진행 | 대조는 라벨링과 병행해도 된다(plan.md "계속") |
+| H2 파싱 대조 | 멈추지 않는다. `compare.html`은 만들기만 하고 띄우지 않는다. `/BEOL-labeling-feedback`이 시작할 때 이번에 할지 묻는다 | 대조는 선택이며 라벨링을 막지 않는다(plan.md "계속"). 화면을 여는 책임을 feedback 한 곳에 모은다 |
 | H5 분포 알림 | 요약에 보여 주고 진행 | 알림은 원인 점검용이며 라벨링을 막지 않는다 |
 | H3·H8 새 값·동의어 후보 | 건수와 리포트 위치만 알리고 **이번에 재실행하지 않는다** | 후보는 다음 실행으로 넘긴다. taxonomy 재검토 요청 리포트(`reports/taxonomy_revisit.md`)도 같은 방식으로 다음 실행에 넘긴다. 봇은 taxonomy.xlsx를 고치지 않는다 |
-| H6 불량 chunk 검수(재검토 요청 포함) | **여기서 멈춘다** | 사람 값이 최종 라벨이 되고, Supabase 적재는 검수 후에만 한다. 재검토 요청은 라벨을 바꾸지 않는다 |
+| H6 불량 chunk 검수(재검토 요청 포함) | **이 앞에서 멈춘다.** 검수 화면은 `/BEOL-labeling-feedback`이 띄우고, 사람이 검수 화면의 **검수 완료**를 누르면 그 스킬이 반영·적재로 이어간다 | 사람 값이 최종 라벨이 되고, Supabase 적재는 검수 후에만 한다. 재검토 요청은 라벨을 바꾸지 않는다 |
 
 Supabase 적재는 이 스킬에서 하지 않는다. 검수 전 라벨이 사본에 올라가지 않게 하려는 결정이다.
 
@@ -37,7 +37,7 @@ Supabase 적재는 이 스킬에서 하지 않는다. 검수 전 라벨이 사�
 - 보고에는 건수, 실행 ID, 사유 코드만 쓴다. 본문과 파일명은 화면(HTML) 안에서만 본다.
 - 사외 호스트(OpenAI, Supabase)에는 더미 해시 목록(`tests/gold/dummy_hashes.jsonl`)에 있는 파일만 보낸다. 목록 밖 파일은 labelbot이 그 호출을 막고 `EXTERNAL_NON_DUMMY`를 남긴다. 이것은 정상 동작이므로 우회하지 말고 보고한다.
 - `taxonomy.xlsx`와 `pipeline.json`의 모델·안전 설정을 마음대로 바꾸지 않는다.
-- 재검토 요청의 메모에는 사내 본문이 들어 있을 수 있다. `reports/taxonomy_revisit.md`·`.jsonl`을 Read·Grep·`cat`으로 열지 않고, `revisit_requests`의 `memo`·`proposed_*` 열을 SELECT하지 않으며, 검수 탭을 `get_page_text`·`read_page`·스크린샷으로 읽지 않는다. 건수와 위치만 보고한다.
+- 재검토 요청의 메모에는 사내 본문이 들어 있을 수 있다. `reports/taxonomy_revisit.md`·`.jsonl`을 Read·Grep·`cat`으로 열지 않고, `revisit_requests`는 `COUNT`와 `reason`별 `GROUP BY`만 조회하며(`SELECT *`, `.dump` 금지), inbox JSON과 `inputs/<sha256>.b64`를 열거나 디코딩하지 않고, 검수 탭을 `get_page_text`·`read_page`·스크린샷으로 읽지 않는다. 건수와 위치만 보고한다.
 
 ## 진행 현황 표시
 
@@ -53,13 +53,13 @@ Supabase 적재는 이 스킬에서 하지 않는다. 검수 전 라벨이 사�
 | 6 | 3차 라벨링 | `[label] …` 줄과 `[run] 완료` | 80% |
 | 7 | 화면 만들기 | `dashboard` 명령 끝 | 85% |
 | 8 | 요약 | `summary.py` 출력 | 90% |
-| 9 | 화면 띄우기 | 탭 열기 끝(또는 URL 안내) | 95% |
+| 9 | 대시보드 띄우기 | 탭 열기 끝(또는 URL 안내) | 95% |
 | 10 | 검수 대기 | 사용자 안내 출력 | 100% |
 
 블록 형식(두 줄, 막대는 10칸이며 채운 칸 = 누적% ÷ 10을 내림한 값):
 ```
 **진행 현황 · BEOL-labeling** `███████░░░ 70%` (run_id: <RUN 또는 ->)
-✓ 준비 · ✓ 사전 점검 · ✓ 수집·파싱 · ✓ 1차 분류 · ✓ 2차 검증 질문 · ▶ 3차 라벨링 · ○ 화면 만들기 · ○ 요약 · ○ 화면 띄우기 · ○ 검수 대기
+✓ 준비 · ✓ 사전 점검 · ✓ 수집·파싱 · ✓ 1차 분류 · ✓ 2차 검증 질문 · ▶ 3차 라벨링 · ○ 화면 만들기 · ○ 요약 · ○ 대시보드 띄우기 · ○ 검수 대기
 ```
 - `✓` 완료, `▶` 진행 중, `○` 대기, `✗` 실패. 진행 중 단계가 있으면 % 옆에 그 단계 출력의 건수 한 마디를 붙일 수 있다(예: `classify 48/48`). 파일명·본문은 넣지 않는다.
 - 3단계 `labelbot run`은 백그라운드로 돌리고, `Monitor`로 출력 파일에서 `^\[(ingest|classify|question|label|run)\]|^\[오류\]` 줄을 감시한다. 줄이 올 때마다 해당 milestone을 `✓`로 바꾸고 다음을 `▶`로 둔 블록을 다시 보여 준다. 실행 중에는 `▶` 단계의 누적%를 바로 앞 단계 값으로 둔다(완료 전에 그 단계 %를 올리지 않는다).
@@ -121,24 +121,21 @@ python "<S>/summary.py" --workspace "<WS>" --run <RUN>
 ```
 `failures`에 `EXTERNAL_NON_DUMMY`가 있으면 "더미 해시 목록 밖 파일이라 사외 LLM 호출이 막혔다"고 따로 적는다.
 
-### 6. 화면 띄우기
+### 6. 대시보드 띄우기
 
-브라우저 패널에서 `launch_name`으로 화면 서버를 시작하고(`preview_start` name=`<launch_name>`), 탭 세 개를 연다.
-- `http://localhost:<port>/results.html` — 결과 대시보드(먼저 보여 줄 탭)
-- `http://localhost:<port>/review.html` — 검수 화면(불량 chunk 전부)
-- `http://localhost:<port>/compare.html` — 파싱 대조 화면
+브라우저 패널에서 `launch_name`으로 화면 서버를 시작하고(`preview_start` name=`<launch_name>`), 결과 대시보드 탭 하나만 연다.
+- `http://localhost:<port>/results.html` — 결과 대시보드
 
-화면 서버는 `labelbot serve`다(`init_workspace.py`가 launch.json에 등록). 이 서버로 연 검수·대조 화면은 체크할 때마다 교정 JSON을 **`<WS>\inbox\`에 바로 저장**한다(화면 상단 상태 줄에 "inbox 저장됨 시각"). 그래서 사람은 내려받기·이동을 하지 않아도 된다. `preview_start`가 "Port in use by another chat"으로 실패하면, 그 포트의 서버가 예전 `http.server`일 수 있다. 이 경우 화면은 보이지만 inbox 자동 저장은 되지 않으므로, 그 대화에서 서버를 끄거나 이 대화에서 다시 띄워 달라고 사용자에게 알린다.
+검수(`review.html`)·파싱 대조(`compare.html`) 탭은 열지 않는다. `/BEOL-labeling-feedback`이 대조 여부를 물은 뒤 연다. 화면 서버는 `labelbot serve`다(`init_workspace.py`가 launch.json에 등록). 떠 있는 서버는 그대로 두면 feedback이 다시 쓴다.
 
-새 탭을 열 수 없으면(탭 수 한도 등) 이전 실행의 화면 탭(주소가 `localhost:<포트>/results.html`·`review.html`·`compare.html`인 탭)을 이 화면으로 navigate해서 다시 쓴다. 사용자의 다른 탭은 닫지 않는다. 그래도 세 개를 다 열 수 없으면 대시보드를 우선 열고 나머지는 URL로 알려 준다. 브라우저 패널을 쓸 수 없으면 `<WS>\screens\` 아래 세 파일 경로를 알려 준다(로컬 파일로 바로 열린다).
+`preview_start`가 "Port in use by another chat"으로 실패하면, 그 포트의 서버가 예전 `http.server`일 수 있다. 이 경우 대시보드는 보이지만 검수 화면의 inbox 자동 저장과 검수 완료 버튼은 동작하지 않으므로, 그 대화에서 서버를 끄거나 이 대화에서 다시 띄워 달라고 사용자에게 알린다. 새 탭을 열 수 없으면(탭 수 한도 등) 이전 실행의 화면 탭(주소가 `localhost:<포트>/…`인 탭)을 대시보드로 navigate해서 다시 쓴다. 사용자의 다른 탭은 닫지 않는다. 브라우저 패널을 쓸 수 없으면 URL을 알려 준다.
 
 ### 7. 검수 대기로 넘기기
 
-마지막에 사용자가 할 일을 이 순서로 안내하고 끝낸다.
+마지막에 이렇게 안내하고 끝낸다.
 
-1. 검수 화면에서 불량 chunk를 확인·교정한다. taxonomy가 맞지 않는 축·질문은 재검토 요청으로 남긴다(메모 500자까지, 라벨은 바뀌지 않으며 맞는 값이 없으면 unknown으로 교정한다). 교정할 것이 없으면 이 단계를 건너뛴다.
-2. (선택) 파싱 대조 화면에서 슬라이드마다 이상 여부를 표시한다.
-3. `/BEOL-labeling-feedback`을 부른다. 체크만 해 두면 된다: 화면 서버가 체크할 때마다 `<WS>\inbox\`에 `review_<RUN>.json`·`compare_<RUN>.json`을 저장한다. 화면을 로컬 파일(file://)이나 예전 서버로 열어 Downloads에 내려받았다면, 그 파일도 스킬이 inbox로 옮긴다.
-4. 교정할 것이 없었다면 "검수 완료, 교정 없음"이라고 말하면 바로 적재까지 진행한다.
+1. 대시보드에서 결과를 훑어본다.
+2. `/BEOL-labeling-feedback`을 부른다(또는 "검수 시작"). 그 스킬이 파싱 대조도 할지 묻고, 검수 화면(원하면 대조 화면도)을 띄운다.
+3. 검수 화면에서 불량 chunk n개를 확인·교정하고, 다 끝나면 화면 상단의 **검수 완료**를 누른다. 교정할 것이 없어도 누르면 된다. 누르면 반영·임베딩·Supabase 적재까지 자동으로 이어진다.
 
 검수가 끝나기 전에는 Supabase에 올리지 않는다는 점을 한 줄로 덧붙인다.

@@ -562,5 +562,63 @@ class UnitTest(unittest.TestCase):
             ' {"id": "q1", "verdict": "supported", "reason": "r"}]}', ids), (None, "FORMAT_INVALID"))
 
 
+
+class GeneratedQuestionTest(unittest.TestCase):
+    """labelbot 검증 질문(Q-GEN-*): O는 라벨을 뒷받침, X는 반박한다는 뜻으로 judge에 보낸다."""
+
+    def setUp(self):
+        fx = fixturegen.generate(seed=7, n_files=2)
+        self.bundle = fx.bundle.copy()
+        snap = dict(fx.bundle.taxonomy)
+        snap["questions"] = list(snap["questions"]) + [
+            {"qid": "Q-GEN-aaaaaaaaaa", "text": "이 슬라이드는 단락 불량을 다루는가?", "target": ["불량 모드", "Short"],
+             "generated": True}]
+        self.bundle.taxonomy = snap
+        self.rec = next(r for r in self.bundle.records if r["chunk_type"] == "내용")
+        self.rid = self.rec["record_id"]
+
+    def _answer(self, ans, quote):
+        self.rec["answers"]["Q-GEN-aaaaaaaaaa"] = {"answer": ans, "confidence": 0.8,
+                                                  "evidence": {"quote": quote, "unit_id": None, "start": None,
+                                                               "end": None}}
+        self.bundle.units[self.rid]["text"] += "\n" + quote
+        self.bundle.units[self.rid]["text_canonical"] = None
+
+    def _verdict(self):
+        res, _ = _run(self.bundle.subset([self.rec["file_id"]]))
+        return res.verdict_map()[self.rid]
+
+    def test_render_uses_question_text_and_meaning(self):
+        self._answer("O", "Center 영역 단락 불량 재현 확인")
+        tax = model.TaxIndex(self.bundle.taxonomy)
+        from qabot.engine import RecordTarget
+
+        items = [it for it in judge.build_items(RecordTarget(self.rec, None), tax) if it["qid"] == "Q-GEN-aaaaaaaaaa"]
+        self.assertEqual(len(items), 1)
+        text = judge.render_item(items[0], tax)
+        self.assertIn("이 슬라이드는 단락 불량을 다루는가?", text)
+        self.assertIn('값 "Short"를 뒷받침한다', text)
+        self.assertNotIn("Q-GEN-aaaaaaaaaa", text)
+
+    def test_mock_supports_and_refutes(self):
+        self._answer("O", "Center 영역 단락 불량 재현 확인")
+        v = self._verdict()
+        self.assertFalse([i for i in v["issues"] if i.get("field") == "answer:Q-GEN-aaaaaaaaaa"], v["issues"])
+        self.setUp()
+        self._answer("X", "Center 영역 단락 불량 재현 확인")
+        v = self._verdict()
+        self.assertIn("L3_NOT_SUPPORTED", [i["code"] for i in v["issues"] if i.get("field") == "answer:Q-GEN-aaaaaaaaaa"])
+        self.setUp()
+        self._answer("X", "Center 영역 단락 불량은 관찰되지 않음")
+        v = self._verdict()
+        self.assertFalse([i for i in v["issues"] if i.get("field") == "answer:Q-GEN-aaaaaaaaaa"], v["issues"])
+
+    def test_no_unknown_field_for_generated(self):
+        from qabot.checks import l1_schema
+
+        self._answer("O", "Center 영역 단락 불량 재현 확인")
+        out = l1_schema.evaluate(self.rec, model.TaxIndex(self.bundle.taxonomy), policy.validate_schema({}))
+        self.assertNotIn("L1_UNKNOWN_FIELD", [i["code"] for i in out["issues"]])
+
 if __name__ == "__main__":
     unittest.main()

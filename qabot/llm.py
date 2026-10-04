@@ -9,6 +9,7 @@ from qabot import model
 
 RISK = ("미확인", "추가 확인 필요", "후속 평가 필요", "미검증")
 CLEAR = ("해소됨", "검증 완료", "추가 확인 불필요")
+NEGATION = ("아님", "아니다", "없음", "없다", "미발생", "관찰되지 않")
 
 
 class LLMError(Exception):
@@ -64,6 +65,18 @@ def judge_item(item):
         if any(term_in(t, quote) for t in terms if t):
             return "supported", "인용문에 라벨 값이나 그 동의어가 나온다."
         return "unsupported", "인용문에 라벨 값과 그 동의어가 나오지 않는다."
+    if item.get("generated"):
+        # labelbot 검증 질문: O는 라벨을 뒷받침, X는 반박. 라벨 값(동의어)이 나오고 부정 표현이 있으면 반박으로 본다
+        terms = [item.get("value") or ""] + list(item.get("aliases") or [])
+        mentioned = any(term_in(t, quote) for t in terms if t)
+        refuted = mentioned and any(p in quote for p in NEGATION)
+        if item.get("answer") == "O":
+            if mentioned and not refuted:
+                return "supported", "인용문에 라벨 값이나 그 동의어가 나온다."
+            return "unsupported", "인용문이 라벨 값을 직접 말하지 않거나 부정한다."
+        if refuted:
+            return "supported", "인용문이 라벨 값을 부정하는 표현을 담고 있다."
+        return "unsupported", "인용문에 라벨 값을 부정하는 표현이 없다."
     if item.get("answer") == "O":
         if any(p in quote for p in RISK):
             return "supported", "인용문에 아직 해결되지 않은 위험을 밝히는 표현이 있다."

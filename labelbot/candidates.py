@@ -57,14 +57,22 @@ def grouped(con, tax, run_id):
     return out
 
 
+_FORMULA_START = ("=", "+", "-", "@")
+
+
+def _safe(v):
+    """엑셀에 붙여넣을 때 수식으로 읽히지 않도록 수식 시작 문자 앞에 '를 붙인다."""
+    return "'" + v if v.startswith(_FORMULA_START) else v
+
+
 def paste_row(g):
     a, _, b = g["content"].partition("|")
     if g["kind"] == "new_value":
         # taxonomy 시트 A~K: 축, 값, 상위값, (D~G 비움), 정의, 포함 예, 제외 예, 사용 여부
-        return "\t".join([a, b, g["parent"] or "", "", "", "", "", "", "", "", ""])
+        return "\t".join(_safe(v) for v in [a, b, g["parent"] or "", "", "", "", "", "", "", "", ""])
     if g["kind"] == "synonym":
-        return "\t".join([a, b, "검수 등록" if g["source"] == "review" else "후보"])
-    return g["content"]
+        return "\t".join(_safe(v) for v in [a, b, "검수 등록" if g["source"] == "review" else "후보"])
+    return _safe(g["content"])
 
 
 def write_reports(ctx):

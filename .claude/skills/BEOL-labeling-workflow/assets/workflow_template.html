@@ -164,7 +164,7 @@ pre.term .ok{color:#7fd1b0} pre.term .w{color:#e3bf72} pre.term .d{color:#8fa4c8
 (function(){
 "use strict";
 /* build_workflow.py가 최신 실행의 건수만 채운다(본문·파일명 없음). 비어 있으면 "—"로 표시한다. */
-var LIVE = {"run_id": "20261004T134444-4e55", "generated_at": "2026-10-04 23:31", "ext": {".pptx": 10}, "files_ok": 10, "files_failed": 0, "chunks": 39, "extract_codes": {}, "extract_warn": 0, "classify_failed": 0, "question_failed": 0, "label_failed": 0, "gen_q": 194, "com": {"N/A": 4, "O": 35}, "gen": {"O": 154, "X": 10, "N/A": 30}, "alerts": [{"condition": "NA_RATIO_LOW", "value": 0.1459, "threshold": 0.3}], "flagged_total": 11, "flagged_by": {"QUOTE_NOT_FOUND": 1, "UNKNOWN_HIGH": 7, "LOW_CONFIDENCE": 5}, "cand_new": 4, "cand_syn": 127, "revisits_total": 0, "pushed_ok": 0, "embeddings": 0} || {};
+var LIVE = /*__LIVE__*/null || {};
 var RUN = LIVE.run_id || "-";
 function V(x){ return (x === undefined || x === null) ? "—" : x; }
 function abc(o){ o = o || {}; return {O:o.O||0, X:o.X||0, NA:o["N/A"]||0}; }

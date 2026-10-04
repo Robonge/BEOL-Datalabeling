@@ -171,7 +171,8 @@ def _template(name):
 
 
 def fill_template(name, data):
-    js = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+    # JSON 문자열 안의 '<'는 <와 같은 값이다. 모두 바꿔 </script>·<!-- 가 스크립트를 끊지 못하게 한다.
+    js = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
     return _template(name).replace("/*__DATA__*/null", js, 1)
 
 
@@ -188,6 +189,20 @@ def _data_urls(ws, con, image_ids, limit):
     return out
 
 
+def _slide_layout(ws, cache, file_id, file_name, part_name):
+    """검수 미리보기용 슬라이드 배치. 보관본 .b64를 메모리에서 다시 읽는다(pptx만, 실패하면 None)."""
+    if not (file_name or "").lower().endswith(".pptx"):
+        return None
+    if file_id not in cache:
+        try:
+            from labelbot import ingest, pptx_parser
+
+            cache[file_id] = pptx_parser.slide_layouts(ingest.load_b64(ws, file_id))
+        except Exception:  # 미리보기는 부가 기능이라 실패해도 검수 화면은 만든다
+            cache[file_id] = {}
+    return cache[file_id].get(part_name)
+
+
 def build_review(ws, con, run_id, tax):
     flagged = con.execute("SELECT * FROM flagged_chunks WHERE run_id=?", (run_id,)).fetchall()
     if not flagged and not con.execute("SELECT 1 FROM runs WHERE run_id=?", (run_id,)).fetchone():
@@ -199,11 +214,16 @@ def build_review(ws, con, run_id, tax):
     ids = [r["chunk_id"] for r in flagged]
     bots = finals.bot_labels(con, run_id, ids)
     limit = int(ws.config["limits"]["images_per_chunk"])
+    layouts = {}
     chunks = []
     for f in flagged:
         c = con.execute("SELECT * FROM chunks WHERE chunk_id=?", (f["chunk_id"],)).fetchone()
         fi = con.execute("SELECT file_name, rel_path FROM files WHERE file_id=?", (c["file_id"],)).fetchone()
         reasons = json.loads(f["reason_codes"])
+        imap = {}
+        for iid in json.loads(c["images"] or "[]")[:limit]:
+            for u in _data_urls(ws, con, [iid], 1):
+                imap[iid] = u
         bot = bots.get(f["chunk_id"]) or {"axes": {}, "answers": {}, "extracted": []}
         mapped = list(bot["answers"].keys())
         if not mapped and bot["axes"]:
@@ -212,7 +232,9 @@ def build_review(ws, con, run_id, tax):
             "chunk_id": c["chunk_id"], "file_id": c["file_id"], "file_name": fi["file_name"], "rel_path": fi["rel_path"],
             "slide_no": c["seq"], "dup_group": c["dup_group"], "reason_codes": reasons,
             "unknown_ratio": f["unknown_ratio"], "min_confidence": f["min_confidence"],
-            "title": c["title"], "text": c["text"], "images": _data_urls(ws, con, json.loads(c["images"] or "[]"), limit),
+            "title": c["title"], "text": c["text"], "images": list(imap.values()),
+            "image_map": imap,
+            "layout": _slide_layout(ws, layouts, c["file_id"], fi["file_name"], c["part_name"]),
             "synonym_matches": [{"alias": a, "canonical": b} for a, b in syn.match(c["text"])],
             "classify_failed": "CLASSIFY_FAILED" in reasons, "label_failed": "LABEL_FAILED" in reasons,
             "axes": {k: {"values": v["values"], "evidence": v["evidence"], "confidence": v["confidence"]}
@@ -272,7 +294,11 @@ def apply_inbox(ws, con, tax, kind=None):
     반환: (교정 파일 sha256 앞 12자, 사유 코드, 반영 건수, 종류, 실행 ID) 목록.
     review 파일에서 버린 재검토 요청이 있으면 같은 파일로 (sha, REVISIT_* 코드, 건수, 종류, 실행 ID) 행을 더한다.
     파일마다 SAVEPOINT로 묶어, 한 파일의 형식 오류가 다른 파일의 반영을 되돌리지 않는다.
+    파일마다 RELEASE 시점에 commit된다.
+    run_id가 화면 서버(serve)의 규칙에 맞지 않는 파일은 RUN_ID_INVALID로 건너뛴다(실행 ID 칸은 빈 문자열).
     """
+    from labelbot.serve import _RUN_ID
+
     results, docs = [], []
     inbox = ws.path("inbox")
     names = [fn for fn in os.listdir(inbox) if fn.lower().endswith(".json")]
@@ -289,6 +315,10 @@ def apply_inbox(ws, con, tax, kind=None):
             results.append((sha[:12], "KIND_UNKNOWN", 0, None, None))
             continue
         if kind and doc["kind"] != kind:
+            continue
+        rid = doc.get("run_id")
+        if not isinstance(rid, str) or not _RUN_ID.fullmatch(rid):
+            results.append((sha[:12], "RUN_ID_INVALID", 0, doc["kind"], ""))
             continue
         docs.append((sha, doc))
     # 같은 검수 실행 ID의 교정 파일이 여럿이면 가장 최근 파일 하나가 그 실행의 교정 전체를 대신한다.

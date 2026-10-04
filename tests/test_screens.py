@@ -71,6 +71,22 @@ class ScreenTemplateTests(unittest.TestCase):
         # 메모·제안 값을 콘솔에 남기지 않는다.
         self.assertNotIn("console.", text)
 
+    def test_review_revisit_rules_match_backend(self):
+        text = read("review.html")
+        # 예약어는 taxonomy.norm_key와 같은 정규화(NFKC, 소문자, 공백 제거)로 비교한다.
+        self.assertIn('normalize("NFKC").toLowerCase().replace(/\\s+/g, "")', text)
+        self.assertIn("RV_RESERVED.indexOf(rvNormKey(v))", text)
+        self.assertIn("var RV_KEY_MAX = 100;", text)
+        # 백엔드가 버리는 key('|' 포함, 100자 초과)는 버튼·출력에서 뺀다.
+        m = re.search(r"function rvAllowed\(c, r\)\{(.*?)\n  \}", text, re.S)
+        self.assertIsNotNone(m)
+        self.assertIn('r.key.indexOf("|") >= 0 || rvLen(r.key) > RV_KEY_MAX', m.group(1))
+        # rvFor는 chunk마다 revisits 전체를 훑지 않는다(chunk_id별 캐시).
+        m = re.search(r"function rvFor\(c\)\{(.*?)\n  \}", text, re.S)
+        self.assertIsNotNone(m)
+        self.assertNotIn("revisits.filter", m.group(1))
+        self.assertIn("rvByChunk", m.group(1))
+
     def test_declares_utf8_and_korean(self):
         for name in FILES:
             text = read(name)

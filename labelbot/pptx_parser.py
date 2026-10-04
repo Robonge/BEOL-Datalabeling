@@ -3,6 +3,7 @@
 읽기 순서는 위→아래, 왼쪽→오른쪽(도형 offset의 y, x). 그룹 도형은 자식 좌표를 변환해 펼친다.
 표처럼 배치된 낱개 텍스트 상자는 좌표로 행·열을 복원한다(PRD 7.1).
 """
+import hashlib
 from labelbot import ooxml, textnorm
 from labelbot.ooxml import A, C, DGM, P, R
 
@@ -224,6 +225,7 @@ class _Slide(object):
         self.part = part
         self.items = []
         self.pictures = []
+        self.pic_boxes = []  # (그림 파트, 슬라이드 좌표 box) — 검수 화면 미리보기용
         self.warnings = []
         self.notes = ""
         self.hidden = False
@@ -281,6 +283,9 @@ def _walk(zf, s, parent, tf, rels, layouts, layout):
             rel = rels.get(rid) if rid else None
             if rel and not rel["external"] and rel["target"] not in s.pictures:
                 s.pictures.append(rel["target"])
+            box = _xfrm_box(el.find(P + "spPr/" + A + "xfrm"))
+            if rel and not rel["external"] and box is not None:
+                s.pic_boxes.append((rel["target"], tf(*box)))
         elif tag == P + "contentPart":
             s.warn("UNHANDLED_GRAPHIC")
 
@@ -577,3 +582,40 @@ def parse_pptx(data, cfg):
         _build_unit(i + 1, s, arranged[i], boiler, images[i], limit) for i, s in enumerate(slides)
     ]
     return {"doc": ooxml.core_props(zf), "units": units}
+
+
+def _layout_item(it):
+    if it.kind == "table":
+        return {"k": "table", "rows": [list(r) for r in it.rows]}
+    if it.kind == "chart":
+        c = it.chart or {}
+        return {"k": "chart", "t": "\n".join([c.get("title") or "차트"] + list(c.get("series") or []))}
+    return {"k": it.kind, "t": "\n".join(it.lines), "sz": it.sz, "ph": it.ph}
+
+
+def slide_layouts(data):
+    """검수 화면 미리보기용 슬라이드 배치. 반환: {part_name: {"w","h","items":[...],"pics":[...]}}.
+
+    bytes에서 메모리로만 읽는다(보관본 .b64를 디코딩한 값). 좌표는 EMU, 글자 크기는 1/100 pt다.
+    도형 모양·색·글꼴은 담지 않는 근사 배치다.
+    """
+    zf = ooxml.open_zip(data)
+    parts, (slide_w, slide_h) = slide_parts(zf)
+    layouts = _Layouts(zf)
+    out = {}
+    for part in parts:
+        s = _read_slide(zf, part, layouts)
+        items = []
+        for it in sorted(s.items, key=lambda i: i.order):
+            if it.w <= 0 or it.h <= 0:
+                continue
+            d = _layout_item(it)
+            d["b"] = [int(it.x), int(it.y), int(it.w), int(it.h)]
+            items.append(d)
+        pics = []
+        for target, (x, y, w, h) in s.pic_boxes:
+            raw = ooxml.read_bytes(zf, target)
+            if raw and w > 0 and h > 0:
+                pics.append({"sha": hashlib.sha256(raw).hexdigest(), "b": [int(x), int(y), int(w), int(h)]})
+        out[part] = {"w": slide_w, "h": slide_h, "items": items, "pics": pics}
+    return out
