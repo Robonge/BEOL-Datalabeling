@@ -465,7 +465,7 @@ flowchart LR
 ### 9.1 사내 환경
 
 - 표준 라이브러리만 쓴다. 패키지 설치가 필요 없어야 한다.
-- 사내 Python 버전을 확인하기 전까지는 Python 3.8에서도 도는 문법만 쓴다.
+- Python 3.14.2 기준으로 작성한다(사외 구동 기준). 사내 Python 버전은 사내 반입 시 self-check로 확인한다.
 - 압축을 푼 폴더에서 `python -m labelbot <명령> --workspace <작업 폴더>` 형태로 실행한다.
 - LLM은 OpenAI Chat Completions 호환 API(`urllib.request`, `POST {base_url}{chat_path}`)로 부른다. 지금은 사외 OpenAI API 기준으로 만들고, 사내 반입 후 사용자가 `pipeline.json`을 사내 값으로 고친다. 사내에서 고칠 곳은 `llm`, `embedding`, `supabase` 세 블록이다.
   - `llm` 블록: `base_url`, `chat_path`("/chat/completions"), `model`, `api_key_env`("OPENAI_API_KEY"), `auth_header`("Authorization", 값 형식 "Bearer {key}"), `extra_headers`({}), `ca_file`(null), `timeout`(60), `temperature`(0, null이면 보내지 않는다), `max_tokens`, `response_format_json`(false), `internal_host_suffixes`([]). 모델마다 temperature와 response_format 지원이 다르고 사내 게이트웨이는 다른 인증 헤더·CA·경로를 요구할 수 있으므로 모두 설정 키로 둔다. `internal_host_suffixes`의 기본값이 빈 목록이므로 기본 상태에서는 모든 호스트가 사외로 판정된다. 사내에서 사용자가 사내 도메인을 적는다.
@@ -600,7 +600,7 @@ flowchart LR
 | 중복 라벨링의 정의 | 한 chunk의 같은 축에 값이 두 개 이상 붙은 경우(다중값=Y이고 중복 알림 제외=N인 분류 축만 집계) | 사용자 확인 |
 | 동의어 형식 | `taxonomy.xlsx`의 `synonyms` 시트(6.2절의 열 구성) | 사용자가 제공하는 동의어의 실제 형식을 받아 맞춘다 |
 | 짧은 영문 표현의 일치 규칙 | 치환만 한다. 기본 시트는 허용 목록(JGV) 밖의 3자 이하 영문 키를 두지 않고, 숫자 경계는 gap-fill로 둔다. 단어 경계·충돌·연쇄 검사는 첫 실행 뒤 재검토 | 검수에서 잘못 일치한 사례를 보고 조정 |
-| 사내 Python 버전 | 3.8 이상으로 가정 | self-check |
+| 사내 Python 버전 | 사외 구동 기준 3.14.2로 작성. 사내 버전은 미확인 | self-check |
 | 사내 LLM의 한도 | 모름 | self-check |
 | 이미지 저장 방식 | `.b64`로 저장(`CLAUDE.md`로 확정) | 사내 반입 게이트 G-1~G-10에서 파이프라인이 쓰는 확장자 전부의 DRM 재적용 여부를 확인(FR-8) |
 | 사내 LLM 엔드포인트 | 사외 OpenAI API 기준. `internal_host_suffixes`는 빈 목록 | 사내 반입 후 사용자가 `pipeline.json`의 `llm`·`embedding`·`supabase` 블록을 고친다 |

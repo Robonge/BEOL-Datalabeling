@@ -17,7 +17,7 @@
 - 동의어는 `synonyms` 시트에서 치환만 하며, 1차 분류와 3차 라벨링이 같은 시트를 참조한다(`PRD.md` 6.2절).
 - 4차는 "4차 불량 목록 추출"이다(`PRD.md` FR-5). LLM을 부르지 않고 이미 저장된 값만으로 사유 코드 6개를 판정해, 걸린 chunk를 상한 없이 전부 목록으로 내고 검수 화면에 올린다. 사내 정확도는 측정하지 않는다.
 - `CLAUDE.md`가 우선한다. 원본 경로는 ingest(`read_input`) 한 곳에서만 열고, 봇과 도구는 `.xlsx .csv .txt .pptx` 같은 office·텍스트 확장자를 디스크에 쓰지 않는다. 허용 형식은 `.b64 .sqlite .json .jsonl .html .md .log`다.
-- 표준 라이브러리만 쓰고 Python 3.8 문법 범위를 지킨다. 사외 개발 환경은 Python 3.14.2다.
+- 표준 라이브러리만 쓰고 Python 3.14.2 기준으로 작성한다(사외 구동 기준). 사내 Python 버전은 M7에서 self-check로 확인한다.
 - 사외 검증은 `dummy pptx files/` 폴더의 파일(정답표 필수층과 합성 픽스처)과 LLM mock, 테스트 안에서 띄운 `http.server` mock 서버로 한다.
 - 지금은 사외 OpenAI API 기준으로 만들고, 사내 반입 후 사용자가 `pipeline.json`의 `llm`, `embedding`, `supabase` 세 블록만 고친다. 사내 자료가 사외 호스트로 나가지 않도록 LLM·임베딩·벡터 적재 호출은 모두 `llm.py`의 공용 호스트 판정 함수를 거친다(`internal_host_suffixes`, 더미 해시 목록, 리다이렉트 거부).
 
@@ -155,7 +155,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] self-check가 항목별 PASS/FAIL을 내고, LLM 주소가 없을 때 그 항목만 FAIL로 나온다.
 - [ ] 작업 폴더를 코드 폴더 안으로 지정하면 실행이 거부된다.
 - [ ] 코드 폴더를 지우고 다시 만들어도 작업 폴더의 파일이 바이트 단위로 그대로다.
-- [ ] 소스 전체가 Python 3.8 문법으로 구문 분석된다(`ast.parse`에 `feature_version=(3, 8)` 지정).
+- [ ] 소스 전체가 Python 3.14.2에서 import되고 테스트가 통과한다(사외 구동 기준).
 - [ ] `store.py`가 `meta` 표의 `schema_version`으로 스키마를 관리한다. 이전 버전 스키마의 DB를 열면 열이 추가되고 기존 행이 보존된다.
 
 [P0] G18 selfcheck `write_roundtrip`: 작업 폴더의 임시 하위 폴더에 허용 확장자마다(`.b64 .sqlite .json .jsonl .html .md .log`) 알려진 바이트를 쓰고 다시 읽어 sha256을 비교한 뒤 지운다. `.sqlite`는 `PRAGMA integrity_check`와 SELECT까지 확인한다. 원본 경로를 열지 않으므로 `read_input` 단일 경로 규칙의 예외로 명시한다.
@@ -193,7 +193,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 합성 docx에서 제목 스타일 단위로 chunk가 나뉜다.
 - [ ] `read_input(path, snapshot_dir)`가 `open(path,"rb")`로 읽고 시그니처를 확인하며, `snapshot_dir`이 있으면 `inputs/<sha256>.b64`로 보관하고(같은 해시는 재사용) `None`이면 아무것도 쓰지 않는다. 텍스트 입력은 `utf-8-sig`로 읽고 실패하면 `cp949`로 읽는다.
 - [ ] `dummy pptx files/` 읽기는 보관을 끈다(`snapshot_dir=None`). 저장소나 cwd에 `.b64`가 쌓이지 않는다.
-- [ ] `tests/gold/dummy_hashes.jsonl`(폴더의 `*.pptx` sha256 목록, BytesIO 스크립트로 생성)에 부록의 해시 11개(정답 10 + 준중복 1)가 모두 있다. 이름만 바뀌었으면 표시명만 고치고, 해시가 없으면 같은 커버리지의 다른 파일로 바꾼 뒤 부록을 갱신한다.
+- [ ] `tests/gold/dummy_hashes.jsonl`(폴더의 `*.pptx` sha256 목록, BytesIO 스크립트로 생성)에 부록의 해시 11개(정답 10 + 준중복 1)가 모두 있다. 더미 파일은 저장소의 `dummy pptx files/`에 모두 있다(2026-10-04 확인, pptx 146개).
 - [ ] 대조 화면이 외부 주소를 참조하지 않고(HTML에 `http` 참조 0건), 이상 여부 기록을 파일로 내려받을 수 있다. 이미지는 data URL로 넣고 chunk당 기본 4개까지만 넣는다(설정으로 조정).
 
 [P0] G16 상대 경로와 `file_locations`: ingest가 파일마다 입력 루트 기준 상대 경로(구분자 `/`, NFC)와 파일명을 기록한다. 작업 DB에 `file_locations(file_id, rel_path, file_name, first_seen_run, last_seen_run)`를 두고, files에는 `file_name`과 대표 경로 `rel_path`를 NOT NULL로 둔다. 시그니처 불일치나 `OLE_LEGACY`로 실패한 파일도 기록한다. 입력 루트 절대 경로는 실행 메타에만 한 번 둔다.
@@ -217,9 +217,9 @@ logs/           .log (파일 ID와 사유 코드만)
 
 ### M2. taxonomy.xlsx, 동의어 시트, 후보 리포트, 1차 분류
 
-만드는 파일: `ooxml.py`(bytes 기반 xlsx 읽기), `taxonomy.py`, `synonyms.py`, `candidates.py`, `classify.py`, `defaults/taxonomy.xlsx`(Claude가 부록에서 붙여넣기용 `.md`와 기대 행 `tests/fixtures/default_taxonomy_rows.jsonl`을 만들어 주고, 사용자가 Excel에 붙여넣어 저장한다), `tests/xlsx_writer.py`(메모리 전용), `tests/fixtures/synthetic_chunks.jsonl`, `tests/gold/gold_labels.jsonl`(초안), `tools/gold_view.py`, `prompts/classify.md`
+만드는 파일: `ooxml.py`(bytes 기반 xlsx 읽기), `taxonomy.py`, `synonyms.py`, `candidates.py`, `classify.py`, `tests/fixtures/default_taxonomy_rows.jsonl`(커밋된 `defaults/taxonomy.xlsx`에서 만든 기대 행. xlsx가 기준이다), `tests/xlsx_writer.py`(메모리 전용), `tests/fixtures/synthetic_chunks.jsonl`, `tests/gold/gold_labels.jsonl`(초안), `tools/gold_view.py`, `prompts/classify.md`
 
-테스트 진입점: `taxonomy.parse_bytes(b)`가 파서 진입점이고, `read_input`은 bytes를 읽어 넘기기만 한다. 오류 픽스처와 규칙 테스트는 `tests/xlsx_writer.py`가 메모리에서 만든 bytes를 `parse_bytes`에 넣는다(디스크에 xlsx를 쓰지 않는다). 읽을 위치는 `pipeline.json`의 `taxonomy_path`(기본값: 작업 폴더의 `taxonomy.xlsx`)이고, 통합 테스트는 `taxonomy_path`를 `defaults/taxonomy.xlsx`로 지정해 복사 없이 읽는다. `defaults/taxonomy.xlsx`는 사용자가 Excel로 만들어야 하므로, 이 파일에 의존하는 테스트는 `tests/test_defaults_taxonomy.py`와 통합 테스트 모듈로 분리하고 파일이 없으면 "사용자 작업 대기"로 실패한다. M2의 나머지 테스트는 `parse_bytes`만으로 통과해야 한다.
+테스트 진입점: `taxonomy.parse_bytes(b)`가 파서 진입점이고, `read_input`은 bytes를 읽어 넘기기만 한다. 오류 픽스처와 규칙 테스트는 `tests/xlsx_writer.py`가 메모리에서 만든 bytes를 `parse_bytes`에 넣는다(디스크에 xlsx를 쓰지 않는다). 읽을 위치는 `pipeline.json`의 `taxonomy_path`(기본값: 작업 폴더의 `taxonomy.xlsx`)이고, 통합 테스트는 `taxonomy_path`를 `defaults/taxonomy.xlsx`로 지정해 복사 없이 읽는다. `defaults/taxonomy.xlsx`는 저장소에 이미 있으며 기본 taxonomy의 기준이다. 이 파일에 의존하는 테스트는 `tests/test_defaults_taxonomy.py`와 통합 테스트 모듈로 분리한다. M2의 나머지 테스트는 `parse_bytes`만으로 통과해야 한다.
 
 완료 기준:
 - [ ] 엑셀에서 값을 추가한 `taxonomy.xlsx`를 읽으면, 코드 수정 없이 다음 분류 프롬프트에 그 값이 들어간다.
@@ -228,7 +228,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 시트 누락·머리글 불일치: 필수 시트가 없거나 머리글이 다르면 시트 이름과 기대 머리글을 알려 주고 거부한다. 선택 시트(`files`, `queries`)가 없으면 빈 시트로 처리된다.
 - [ ] 중복 동의어 경고: 같은 동의어가 두 행에 있으면 첫 행을 쓰고 경고하며 실행은 계속된다. 경고에는 시트 이름과 행 번호만 있고 표현은 없다.
 - [ ] 바이트 불변: 실행 전후로 `taxonomy.xlsx`가 바이트 단위로 같다.
-- [ ] 기본본 = jsonl(`tests/test_defaults_taxonomy.py`): 커밋된 `defaults/taxonomy.xlsx`를 `read_input`으로 읽은 행이 `default_taxonomy_rows.jsonl`과 같다(부록의 60행: 축 정의 10, 값 50). 사용자가 Excel에서 저장한 파일이므로 sharedStrings 경로도 함께 검증된다.
+- [ ] 기본본 = jsonl(`tests/test_defaults_taxonomy.py`): 커밋된 `defaults/taxonomy.xlsx`를 `read_input`으로 읽은 행이 `default_taxonomy_rows.jsonl`과 같다. jsonl은 xlsx에서 만든 회귀 기준이며, 부록과 다르면 xlsx가 맞다. Excel에서 저장한 파일이므로 sharedStrings 경로도 함께 검증된다.
 - [ ] xlsx 없을 때 거부: `taxonomy_path`가 가리키는 파일(기본값: 작업 폴더의 `taxonomy.xlsx`)이 없으면 실행이 거부되고 "`defaults/taxonomy.xlsx`를 작업 폴더로 복사하라"고 안내하며, 작업 폴더에는 아무것도 복사되지 않는다. self-check에서는 FAIL 항목이다.
 - [ ] 숫자 경계: `Via1`이 "Via12"를, `Metal1`이 "Metal12"를 바꾸지 않는다. "단락"은 Short로, "JGV"는 JHV로, "Metal1"은 M1로 정규화된다(mock 기준 불량 모드 = Short).
 - [ ] 기본 `synonyms` 시트에 허용 목록(JGV) 외 3자 이하 영문 키가 없다.
@@ -520,7 +520,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 |---|---|---|
 | 사내 파일 구조가 샘플과 달라 파서가 텍스트를 놓친다. | 점검 스크립트 통계와 파싱 대조로 확인한다. 차트 제목·계열·범주는 첫 실행 전에 `[차트]` 구간으로 넣고(G15), 그룹 도형 처리는 통계를 본 뒤 보강한다. | M0, M1, M7 |
 | 사내 오류를 사외로 가져올 수 없다. | 사유 코드형 로그, self-check, mock으로 재현 가능한 테스트. | M0 |
-| 사내 Python이 3.8보다 낮거나 sqlite3가 없다. | self-check에서 먼저 확인한다. 실패하면 구현을 진행하기 전에 대안을 정한다. | M0, M7 |
+| 사내 Python이 사외 기준(3.14.2)보다 낮거나 sqlite3가 없다. | self-check에서 먼저 확인한다. 실패하면 구현을 진행하기 전에 대안을 정한다. | M0, M7 |
 | 추출 이미지나 허용 형식 파일에 DRM이 다시 걸린다. | 이미지를 `.b64`로 저장하고 화면에는 data URL로 넣는다. `write_roundtrip`(G18)과 M7 게이트 G-1~G-10으로 사용하는 확장자 전부를 100개 실행 전에 확인한다. | M0, M1, M7 |
 | `write_roundtrip`과 같은 PC의 확인이 거짓 PASS를 낸다. | 같은 PC의 확인(G-1, G-4, G-6~G-9)은 필요조건으로만 쓰고, 사외로 반출하는 형식은 반출 경로를 거친 뒤나 DRM 에이전트가 없는 PC에서 여는 G-10을 통과해야 진행한다. | M0, M7 |
 | 사외 엔드포인트로 사내 자료가 나간다(LLM, 임베딩, 벡터 적재). | 사용자 신고 플래그가 아니라 호스트(`internal_host_suffixes`)와 더미 해시로 판정하고, 불확실하면 거부하며, 리다이렉트를 따라가지 않는다. 엔드포인트 변경을 사내 파일로 호출하는 단계보다 앞(M7 2단계)에 둔다. | M0, M6b, M7 |
@@ -609,8 +609,8 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 
 ## 부록. 기본 taxonomy.xlsx 초기 행
 
-- 이 부록이 `defaults/taxonomy.xlsx`의 원천이다. M2 실행자가 이 부록에서 `tests/fixtures/default_taxonomy_rows.jsonl`과 붙여넣기용 `.md`(시트별 탭 구분 코드 블록)를 만든다. 사용자가 이를 Excel에 붙여넣어 `defaults/taxonomy.xlsx`로 저장하고, 테스트가 그 파일을 `read_input`으로 읽어 jsonl과 같은지 확인한다. 어떤 도구도 xlsx를 디스크에 쓰지 않는다.
-- 커밋 뒤에는 xlsx가 원본이고, jsonl은 기본본 회귀 기준이다. 기본본을 고칠 때는 jsonl도 같이 고친다.
+- 기준은 커밋된 `defaults/taxonomy.xlsx`다(2026-10-04 결정). 이 부록은 초기 설계 참고용이며, xlsx와 다르면 xlsx가 맞다. M2 실행자는 xlsx를 `read_input`으로 읽어 `tests/fixtures/default_taxonomy_rows.jsonl`을 만들고, 테스트는 xlsx와 jsonl이 같은지 확인한다. 어떤 도구도 xlsx를 디스크에 쓰지 않는다.
+- jsonl은 기본본 회귀 기준이다. 사용자가 xlsx를 고치면 jsonl도 같이 다시 만든다.
 - 1행 머리글은 아래 문자열과 순서가 정확히 같아야 한다(`PRD.md` 6.1절과 같다). 기본본에는 선택 시트 `files`·`queries`를 두지 않아도 되며(없으면 빈 시트), 두는 경우 머리글만 둔다.
 
 | 시트 | A | B | C | D | E | F | G | H | I | J | K |
@@ -747,7 +747,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 - `260127_열 모델링 DFT BTE FEM 결합 프레임워크.pptx`: `f5e20defcbe1f2dc447285c7756484ea7fc523cb0f2dca818d0090c75d37c1cf`
 - `260601_M2 RSBM 배경 목적 Cu 스케일링 한계.pptx`: `c3860dd2e378530c1ccaa7471e82ac904e5ca4b644924578aa73f63e5e74cacf`
 
-- 폴더 재확인 단계: 정답표 초안과 M1 테스트 전에 BytesIO 스크립트로 폴더의 `*.pptx` sha256 목록을 `tests/gold/dummy_hashes.jsonl`(`{"file_id","name"}`)로 만든다. 위 해시 11개(정답 10 + 준중복 1)가 모두 있는지 확인한다. 이름만 바뀌었으면 표시명만 고치고, 해시가 없으면 실행자가 같은 커버리지의 다른 파일로 바꾼 뒤 이 표를 갱신한다.
+- 폴더 재확인 단계: 정답표 초안과 M1 테스트 전에 BytesIO 스크립트로 폴더의 `*.pptx` sha256 목록을 `tests/gold/dummy_hashes.jsonl`(`{"file_id","name"}`)로 만든다. 위 해시 11개(정답 10 + 준중복 1)가 모두 있는지 확인한다. 2026-10-04에 `dummy pptx files/`에서 11개 모두 있음을 확인했다.
 - 층: 필수층은 파일 4개 18 chunk에 합성 6개를 더한 것이고, 커버리지층은 파일 6개 21 chunk다(표의 구분 열).
 - 합성 픽스처 `tests/fixtures/synthetic_chunks.jsonl`(키는 `fixture_id`): SYN-01 "단락" 치환, SYN-02 상위값만(Reliability), SYN-03 결과 엇갈림, SYN-04 채택+기각 혼재, SYN-05 `Via12`/`Metal12` 숫자 경계, SYN-06 평가 없는 배경 문단. 커버리지가 안 되는 값은 SYN-07 이후로 추가하고, 파일 목록은 바꾸지 않는다.
 - 형식 `tests/gold/gold_labels.jsonl`, chunk당 한 줄, `ensure_ascii=False`:
