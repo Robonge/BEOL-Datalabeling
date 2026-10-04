@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>라벨링 결과</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --surface:#F6F8FC; --surface-2:#E4EAF3;
+  --text-strong:#1E2D4A; --text-muted:#6F7F99; --text-footer:#B0BCCC;
+  --danger:#C25450; --warning:#C99A3B; --success:#3B8A6E;
+  --s-value:#4A5FA8; --s-unknown:#eb6834; --s-none:#C9D2DF;
+  --radius-sm:8px; --radius:12px;
+  --ease-elastic:cubic-bezier(0.34,1.56,0.64,1);
+  --font:'Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--bg-base);
+  background-image:linear-gradient(var(--bg-grid) 1px,transparent 1px),linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px);
+  background-size:48px 48px;background-position:-1px -1px;
+  font-family:var(--font);font-size:13.5px;line-height:1.55;letter-spacing:-0.02em;color:var(--text-strong);
+}
+.mono{font-family:var(--mono);letter-spacing:-0.01em}
+.wrap{max-width:1280px;margin:0 auto;padding:28px 24px 64px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+h1{font-size:24px;font-weight:700;letter-spacing:-0.04em;margin:0}
+.sub{color:var(--text-muted);font-size:12px}
+h2{font-size:15px;font-weight:700;letter-spacing:-0.03em;margin:0 0 4px}
+.desc{color:var(--text-muted);font-size:12px;margin:0 0 14px}
+.card{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:14px 16px}
+.kpi .k{color:var(--text-muted);font-size:12px}
+.kpi .v{font-size:28px;font-weight:700;letter-spacing:-0.04em;line-height:1.2}
+.kpi .v small{font-size:13px;font-weight:400;color:var(--text-muted);margin-left:4px}
+.kpi .note{font-size:11.5px;color:var(--text-muted)}
+.alert{display:flex;gap:8px;align-items:flex-start;border-left:3px solid var(--warning);background:#FBF6EC;border-radius:var(--radius-sm);padding:8px 12px;margin-top:8px;font-size:12.5px}
+.alert b{font-weight:700}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-muted);margin-bottom:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.stack-row{display:grid;grid-template-columns:120px 1fr 64px;gap:12px;align-items:center;padding:5px 0}
+.stack-row .lbl{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stack-row .tot{font-size:11.5px;color:var(--text-muted);text-align:right}
+.stack{display:flex;gap:2px;height:18px}
+.seg{height:100%;min-width:2px;position:relative;cursor:default}
+.seg:first-child{border-radius:4px 0 0 4px}.seg:last-child{border-radius:0 4px 4px 0}.seg:only-child{border-radius:4px}
+.seg span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-family:var(--mono);color:#fff}
+.seg.none span{color:var(--text-strong)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.mini{border:1px solid var(--surface-2);border-radius:var(--radius-sm);padding:12px 14px;background:#fff}
+.mini h3{font-size:13px;font-weight:700;margin:0 0 8px;display:flex;justify-content:space-between}
+.mini h3 .sub{font-weight:400}
+.bar-row{display:grid;grid-template-columns:110px 1fr 30px;gap:8px;align-items:center;padding:2px 0;cursor:default}
+.bar-row .lbl{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-row .n{font-family:var(--mono);font-size:11px;color:var(--text-muted);text-align:right}
+.track{height:10px}
+.bar{height:100%;background:var(--s-value);border-radius:0 4px 4px 0;min-width:2px}
+.bar-row:hover .bar{background:var(--primary-deep)}
+.empty{color:var(--text-footer);font-size:12px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+select,input[type=search]{font-family:var(--font);font-size:12.5px;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:6px 10px;background:#fff;color:var(--text-strong)}
+label.chk{font-size:12.5px;display:flex;gap:6px;align-items:center}
+.count{color:var(--text-muted);font-size:12px;margin-left:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-weight:700;color:var(--text-muted);font-size:11.5px;border-bottom:1px solid var(--bg-grid);padding:8px 6px;position:sticky;top:0;background:var(--surface)}
+td{border-bottom:1px solid var(--surface-2);padding:8px 6px;vertical-align:top}
+tr.row{cursor:pointer;transition:background .15s}
+tr.row:hover{background:#fff}
+tr.row.open{background:#fff}
+.chip{display:inline-block;border:1px solid var(--bg-grid);border-radius:999px;padding:0 8px;margin:1px 3px 1px 0;font-size:11px;background:#fff;white-space:nowrap}
+.chip .ax{color:var(--text-muted);margin-right:3px}
+.chip.unk{border-color:var(--s-unknown);color:#A9441A}
+.ans{font-family:var(--mono);font-weight:700;font-size:11.5px;border-radius:6px;padding:0 7px;border:1px solid}
+.ans.O{color:var(--primary-deep);border-color:var(--s-value);background:rgba(74,95,168,.10)}
+.ans.X{color:#A9441A;border-color:var(--s-unknown);background:rgba(235,104,52,.10)}
+.ans.NA{color:var(--text-muted);border-color:var(--bg-grid)}
+.flag{display:inline-block;font-family:var(--mono);font-size:10px;border-radius:5px;padding:0 5px;margin:1px 2px 1px 0;border:1px solid var(--danger);color:var(--danger)}
+.ok{color:var(--success);font-size:11.5px}
+.detail td{background:#fff;padding:14px 16px}
+.det{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px}
+.det pre{white-space:pre-wrap;word-break:break-word;font-family:var(--font);font-size:12.5px;background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius-sm);padding:10px 12px;margin:0;max-height:420px;overflow:auto}
+.det mark{background:rgba(74,95,168,.18);color:inherit;border-radius:3px;padding:0 1px}
+.ev{border-bottom:1px solid var(--surface-2);padding:6px 0;font-size:12px}
+.ev .h{display:flex;justify-content:space-between;gap:8px}
+.ev .q{color:var(--text-muted);margin-top:2px}
+.conf{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
+.tip{position:fixed;pointer-events:none;background:var(--text-strong);color:#fff;font-size:11.5px;padding:6px 9px;border-radius:6px;z-index:10;display:none;max-width:280px}
+.tbl-wrap{max-height:720px;overflow:auto;border:1px solid var(--surface-2);border-radius:var(--radius-sm)}
+footer{color:var(--text-footer);font-size:11px;margin-top:20px}
+@media (max-width:760px){.det{grid-template-columns:1fr}.stack-row{grid-template-columns:90px 1fr 48px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="tip" id="tip"></div>
+<script>
+const DATA = /*__DATA__*/null;
+(function(){
+  const app = document.getElementById('app');
+  const tip = document.getElementById('tip');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const pct = (n, d) => d ? (100 * n / d).toFixed(1) + '%' : '-';
+  if (!DATA) { app.innerHTML = '<div class="card"><h2>표시할 결과가 없습니다</h2><p class="desc">python -m labelbot dashboard 로 생성하세요.</p></div>'; return; }
+
+  function bindTips(root){
+    root.querySelectorAll('[data-tip]').forEach(el => {
+      el.addEventListener('mousemove', e => { tip.textContent = el.dataset.tip; tip.style.display = 'block';
+        tip.style.left = Math.min(e.clientX + 12, innerWidth - 300) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; });
+      el.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+    });
+  }
+
+  function stack(label, parts, total){
+    const segs = parts.filter(p => p.n > 0).map(p =>
+      `<div class="seg ${p.cls}" style="flex:${p.n};background:var(${p.color})" data-tip="${esc(label)} · ${esc(p.name)} ${p.n}건 (${pct(p.n,total)})"><span>${p.n / total >= 0.08 ? p.n : ''}</span></div>`).join('');
+    return `<div class="stack-row"><div class="lbl" title="${esc(label)}">${esc(label)}</div><div class="stack">${segs || '<div class="empty">없음</div>'}</div><div class="tot mono">${total}</div></div>`;
+  }
+
+  const k = DATA.kpi;
+  let html = `<header><div><h1>라벨링 결과</h1><div class="sub">실행 <span class="mono">${esc(DATA.run_id)}</span> · 모델 ${esc(DATA.model)} · 생성 ${esc(DATA.generated_at)}</div></div>
+    <div class="sub">사외 파일럿 · 더미 자료</div></header>`;
+  html += `<div class="kpis">
+    <div class="kpi"><div class="k">파일</div><div class="v">${k.files}<small>개</small></div><div class="note">실패 파일 ${k.failed_files}</div></div>
+    <div class="kpi"><div class="k">chunk</div><div class="v">${k.chunks}<small>개</small></div><div class="note">내용 ${k.content} · 분류 실패 ${k.classify_failed} · 라벨 실패 ${k.label_failed}</div></div>
+    <div class="kpi"><div class="k">불량 chunk (검수 대상)</div><div class="v">${k.flagged}<small>${pct(k.flagged, k.chunks)}</small></div><div class="note">사유 코드 6종 기준</div></div>
+    <div class="kpi"><div class="k">Q-COM-001 미해결 위험 O</div><div class="v">${k.risk_o}<small>${pct(k.risk_o, k.answers)}</small></div><div class="note">답 ${k.answers}개 중</div></div>
+    <div class="kpi"><div class="k">중복 라벨링 비율</div><div class="v">${k.dup_ratio == null ? '-' : (k.dup_ratio*100).toFixed(1) + '%'}</div><div class="note">N/A 비율 ${k.na_ratio == null ? '-' : (k.na_ratio*100).toFixed(1) + '%'}</div></div>
+  </div>`;
+  if (DATA.alerts.length) {
+    html += '<div class="card"><h2>라벨 분포 알림 (H5)</h2>' + DATA.alerts.map(a =>
+      `<div class="alert"><b>⚠ 알림</b><span>${esc(DATA.alert_labels[a.condition] || a.condition)}: 값 ${(a.value*100).toFixed(1)}%, 기준 ${(a.threshold*100).toFixed(0)}%</span></div>`).join('') + '</div>';
+  }
+
+  // 축별 3상태
+  html += `<div class="card"><h2>축별 라벨 상태</h2><p class="desc">chunk마다 축 하나에 값, 해당 없음, unknown 중 무엇이 붙었는지. 막대 위에 마우스를 올리면 건수와 비율이 나온다.</p>
+    <div class="legend"><span><i style="background:var(--s-value)"></i>값</span><span><i style="background:var(--s-unknown)"></i>unknown</span><span><i style="background:var(--s-none)"></i>해당 없음</span></div>`;
+  DATA.axes.forEach(a => {
+    const s = a.states, t = s.value + s.unknown + s.na;
+    html += stack(a.name + (a.active ? '' : ' (비활성)'), [
+      {name:'값', n:s.value, color:'--s-value', cls:''},
+      {name:'unknown', n:s.unknown, color:'--s-unknown', cls:''},
+      {name:'해당 없음', n:s.na, color:'--s-none', cls:'none'}], t);
+  });
+  html += '</div>';
+
+  // 축별 값 분포
+  html += `<div class="card"><h2>축별 값 분포</h2><p class="desc">각 값이 붙은 chunk 수. 다중값 축은 한 chunk가 여러 값에 들어간다.</p><div class="grid">`;
+  DATA.axes.filter(a => a.active).forEach(a => {
+    const vals = a.values.slice().sort((x, y) => y.n - x.n);
+    const max = Math.max(1, ...vals.map(v => v.n));
+    html += `<div class="mini"><h3>${esc(a.name)}<span class="sub">${a.kind}${a.multi ? ' · 다중' : ' · 단일'}</span></h3>` +
+      vals.map(v => `<div class="bar-row" data-tip="${esc(a.name)} = ${esc(v.name)} · ${v.n}건${v.definition ? ' · ' + esc(v.definition) : ''}">
+        <div class="lbl" title="${esc(v.name)}">${esc(v.name)}</div><div class="track"><div class="bar" style="width:${(100*v.n/max).toFixed(1)}%;${v.n ? '' : 'opacity:0'}"></div></div><div class="n">${v.n}</div></div>`).join('') + '</div>';
+  });
+  html += '</div></div>';
+
+  // 질문과 불량 사유
+  html += '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px">';
+  html += `<div class="card" style="margin:0"><h2>질문 답 분포</h2><p class="desc">O: 해당 진술 있음 · X: 다루면서 해당 없다고 밝힘 · N/A: 언급 없음</p>
+    <div class="legend"><span><i style="background:var(--s-value)"></i>O</span><span><i style="background:var(--s-unknown)"></i>X</span><span><i style="background:var(--s-none)"></i>N/A</span></div>`;
+  DATA.questions.forEach(q => {
+    html += stack(q.qid, [{name:'O', n:q.O, color:'--s-value', cls:''}, {name:'X', n:q.X, color:'--s-unknown', cls:''}, {name:'N/A', n:q.NA, color:'--s-none', cls:'none'}], q.O + q.X + q.NA);
+    html += `<p class="desc" style="margin:2px 0 10px">${esc(q.text)}</p>`;
+  });
+  html += '</div>';
+  const rmax = Math.max(1, ...Object.values(DATA.reasons));
+  html += `<div class="card" style="margin:0"><h2>불량 사유</h2><p class="desc">한 chunk에 여러 사유가 걸릴 수 있다. 전체 chunk ${k.chunks}개 대비.</p>` +
+    Object.keys(DATA.reasons).map(c => `<div class="bar-row" style="grid-template-columns:150px 1fr 70px" data-tip="${esc(c)} · ${DATA.reasons[c]}건">
+      <div class="lbl">${esc(DATA.reason_labels[c] || c)}</div><div class="track"><div class="bar" style="width:${(100*DATA.reasons[c]/rmax).toFixed(1)}%;${DATA.reasons[c] ? '' : 'opacity:0'}"></div></div>
+      <div class="n">${DATA.reasons[c]} · ${pct(DATA.reasons[c], k.chunks)}</div></div>`).join('') + '</div>';
+  html += '</div><div style="height:16px"></div>';
+
+  // chunk 목록
+  const axesActive = DATA.axes.filter(a => a.active);
+  html += `<div class="card"><h2>chunk별 라벨</h2><p class="desc">행을 누르면 본문, 축별 근거, 질문 답이 펼쳐진다. 해당 없음은 목록에서 생략한다.</p>
+    <div class="filters">
+      <select id="fFile"><option value="">전체 파일</option>${DATA.files.map(f => `<option value="${esc(f.file_id)}">${esc(f.file_name)} (${f.chunks})</option>`).join('')}</select>
+      <select id="fAxis"><option value="">축 값 전체</option>${axesActive.map(a => `<optgroup label="${esc(a.name)}">${a.values.filter(v => v.n).map(v => `<option value="${esc(a.name)}\u0001${esc(v.name)}">${esc(a.name)} = ${esc(v.name)} (${v.n})</option>`).join('')}<option value="${esc(a.name)}\u0001unknown">${esc(a.name)} = unknown</option></optgroup>`).join('')}</select>
+      <select id="fAns"><option value="">Q-COM-001 전체</option><option>O</option><option>X</option><option>N/A</option></select>
+      <label class="chk"><input type="checkbox" id="fFlag"> 불량만</label>
+      <input type="search" id="fText" placeholder="제목·본문 검색">
+      <span class="count" id="cnt"></span>
+    </div>
+    <div class="tbl-wrap"><table><thead><tr><th style="width:22%">파일 · 슬라이드</th><th style="width:20%">제목</th><th>축 값</th><th style="width:70px">Q-COM-001</th><th style="width:130px">불량 사유</th></tr></thead><tbody id="tb"></tbody></table></div></div>`;
+  html += '<footer>로컬 파일 화면. 외부 주소를 참조하지 않는다. 표시용이며 교정은 검수 화면(review.html)에서 한다.</footer>';
+  app.innerHTML = html;
+  bindTips(app);
+
+  const tb = document.getElementById('tb');
+  const open = new Set();
+  function chips(c){
+    const out = [];
+    axesActive.forEach(a => { const v = c.axes[a.name]; if (!v) return;
+      if (v.status === 'unknown') out.push(`<span class="chip unk"><span class="ax">${esc(a.name)}</span>unknown</span>`);
+      else if (v.status === 'value') v.values.forEach(x => out.push(`<span class="chip"><span class="ax">${esc(a.name)}</span>${esc(x)}</span>`)); });
+    return out.join('') || '<span class="empty">값 없음</span>';
+  }
+  function highlight(text, quotes){
+    let t = esc(text);
+    quotes.filter(q => q && q.length >= 6).forEach(q => {
+      q.split(/\s*(?:…|\.{3,})\s*|\n/).filter(p => p.trim().length >= 6).forEach(p => {
+        const e = esc(p.trim()); const i = t.indexOf(e);
+        if (i >= 0) t = t.slice(0, i) + '<mark>' + e + '</mark>' + t.slice(i + e.length);
+      });
+    });
+    return t;
+  }
+  function detail(c){
+    const evid = axesActive.map(a => { const v = c.axes[a.name]; if (!v || v.status === 'na') return '';
+      return `<div class="ev"><div class="h"><b>${esc(a.name)}: ${esc(v.values.join(', '))}</b><span class="conf">확신도 ${v.confidence == null ? '-' : v.confidence.toFixed(2)}</span></div>${v.evidence ? `<div class="q">“${esc(v.evidence)}”</div>` : ''}</div>`; }).join('');
+    const ans = Object.keys(c.answers).map(q => { const a = c.answers[q];
+      return `<div class="ev"><div class="h"><b>${esc(q)}: <span class="ans ${a.answer === 'N/A' ? 'NA' : a.answer}">${esc(a.answer)}</span></b><span class="conf">확신도 ${a.confidence == null ? '-' : a.confidence.toFixed(2)}</span></div>${a.quote ? `<div class="q">“${esc(a.quote)}”</div>` : ''}</div>`; }).join('');
+    const ext = c.extracted.length ? '<div class="ev"><b>추출 값</b>' + c.extracted.map(e => `<div class="q">${esc(e.item)}: ${esc(e.value)}</div>`).join('') + '</div>' : '';
+    const quotes = Object.values(c.axes).filter(v => v.status === 'value').map(v => v.evidence).concat(Object.values(c.answers).map(a => a.quote));
+    return `<tr class="detail"><td colspan="5"><div class="det"><div><h2 style="font-size:13px">본문</h2><pre>${highlight(c.text, quotes)}</pre></div>
+      <div><h2 style="font-size:13px">분류 근거</h2>${evid || '<div class="empty">값이 붙은 축이 없다</div>'}<h2 style="font-size:13px;margin-top:12px">질문 답</h2>${ans || '<div class="empty">답 없음</div>'}${ext}</div></div></td></tr>`;
+  }
+  function render(){
+    const ff = document.getElementById('fFile').value, fa = document.getElementById('fAxis').value,
+      fq = document.getElementById('fAns').value, fl = document.getElementById('fFlag').checked,
+      ft = document.getElementById('fText').value.trim().toLowerCase();
+    const rows = DATA.chunks.filter(c => {
+      if (ff && c.file_id !== ff) return false;
+      if (fa) { const [ax, val] = fa.split('\u0001'); const v = c.axes[ax]; if (!v) return false;
+        if (val === 'unknown' ? v.status !== 'unknown' : !v.values.includes(val)) return false; }
+      if (fq && !(c.answers['Q-COM-001'] && c.answers['Q-COM-001'].answer === fq)) return false;
+      if (fl && !c.reasons.length) return false;
+      if (ft && !(c.title + '\n' + c.text).toLowerCase().includes(ft)) return false;
+      return true;
+    });
+    document.getElementById('cnt').textContent = rows.length + ' / ' + DATA.chunks.length + ' chunk';
+    tb.innerHTML = rows.map(c => {
+      const a = c.answers['Q-COM-001'];
+      const r = `<tr class="row${open.has(c.chunk_id) ? ' open' : ''}" data-id="${esc(c.chunk_id)}"><td>${esc(c.file_name)}<div class="sub mono">슬라이드 ${c.slide_no} · ${esc(c.chunk_type || '-')}</div></td>
+        <td>${esc(c.title)}</td><td>${chips(c)}</td>
+        <td>${a ? `<span class="ans ${a.answer === 'N/A' ? 'NA' : a.answer}">${esc(a.answer)}</span>` : '<span class="empty">-</span>'}</td>
+        <td>${c.reasons.length ? c.reasons.map(x => `<span class="flag" title="${esc(DATA.reason_labels[x] || x)}">${esc(x)}</span>`).join('') : '<span class="ok">✓ 정상</span>'}</td></tr>`;
+      return r + (open.has(c.chunk_id) ? detail(c) : '');
+    }).join('') || '<tr><td colspan="5" class="empty">조건에 맞는 chunk가 없다</td></tr>';
+  }
+  tb.addEventListener('click', e => { const tr = e.target.closest('tr.row'); if (!tr) return;
+    const id = tr.dataset.id; open.has(id) ? open.delete(id) : open.add(id); render(); });
+  ['fFile', 'fAxis', 'fAns', 'fFlag', 'fText'].forEach(id => document.getElementById(id).addEventListener('input', render));
+  render();
+})();
+</script>
+</body>
+</html>

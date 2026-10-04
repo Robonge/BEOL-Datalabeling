@@ -1,0 +1,59 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "screens-pilot",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8766",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "C:/Users/dltkd/Desktop/261004_BEOL_pilot/screens"
+      ],
+      "port": 8766
+    },
+    {
+      "name": "screens-gold",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "C:/Users/dltkd/Desktop/261004_BEOL_workspace/screens"
+      ],
+      "port": 8765
+    },
+    {
+      "name": "screens-parshing-test-files",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/.claude/skills/BEOL-labeling/scripts/serve_screens.py",
+        "--workspace",
+        "C:/Users/dltkd/Desktop/261004_BEOL_parshing-test-files",
+        "--port",
+        "8770"
+      ],
+      "port": 8770
+    },
+    {
+      "name": "skill-eval-viewer",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8780",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "C:/Users/dltkd/AppData/Local/Temp/claude/C--Users-dltkd-Desktop-261004-BEOL-AX-day2/670b90a3-2b34-438f-be09-b3b6c51cc3d5/scratchpad/BEOL-labeling-workspace/review"
+      ],
+      "port": 8780
+    }
+  ]
+}

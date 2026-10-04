@@ -43,7 +43,7 @@ labelbot/
   candidates.py      후보 집계, reports/ 후보·파일 목록·조회 질문 후보 리포트(탭 구분 붙여넣기 행)
   llm.py             OpenAI 호환 호출, 응답 검증·재시도, 캐시, mock, 공용 호스트 판정·더미 해시 확인·리다이렉트 거부 opener·키 읽기
   classify.py        1차 분류(분류 축 8 + 상태 축 2), 새 값 후보
-  questions.py       2차 질문 후보 생성, 매핑
+  questions.py       2차 질문: 승인 질문 매핑(규칙) + 1차 라벨 검증 질문 생성(LLM), 질문 후보
   label.py           3차 라벨링, 날짜·담당자 추출
   alerts.py          라벨 분포 점검과 사람 알림 (HITL H5)
   review.py          4차 불량 목록 추출, 검수 화면 생성, 교정 반영
@@ -60,6 +60,7 @@ prompts/             단계별 프롬프트 (.md)
 docs/supabase_schema.md  Supabase(pgvector) 표 정의 SQL 코드 블록 (.sql 파일은 두지 않는다)
 defaults/taxonomy.xlsx   기본 taxonomy (더미 동의어 포함)
 dummy pptx files/    사외 검증 샘플 원천 (저장소 상대 경로). 어느 파일이든 쓸 수 있고 ingest 바이트 경로로만 읽는다
+parshing test files/ 사외 검증 입력 폴더(BEOL-labeling 기본 입력). 현재 파일 해시가 사외 전송 허용 목록에 더해진다. 사내 파일 반입 금지
 tests/               단위·통합 테스트, mock 응답
   fixtures/default_taxonomy_rows.jsonl   기본 taxonomy.xlsx 기대 행(기본본 회귀 기준)
   fixtures/synthetic_chunks.jsonl        합성 픽스처 (SYN-01 이후)
@@ -85,7 +86,7 @@ work.sqlite     작업 DB (표 목록은 아래 "작업 DB(work.sqlite) 표")
 screens/        생성된 HTML 화면 (이미지는 data URL)
 inbox/          화면에서 내려받은 교정 파일(.json)을 넣는 곳
 out/            labeling.sqlite, SCHEMA.md, images/
-reports/        기준선 리포트(.md), alerts.json, candidates.jsonl·candidates.md, file_list.md, query_candidates.md, gate_<timestamp>.json, flagged_<실행ID>.jsonl·flagged_<실행ID>.md(4차 불량 목록. chunk ID, 파일 ID, 사유 코드, 수치만)
+reports/        기준선 리포트(.md), alerts.json, candidates.jsonl·candidates.md, file_list.md, query_candidates.md, gate_<timestamp>.json, flagged_<실행ID>.jsonl·flagged_<실행ID>.md(4차 불량 목록. chunk ID, 파일 ID, 사유 코드, 수치만), taxonomy_revisit.md·taxonomy_revisit.jsonl(검수 화면의 taxonomy 재검토 요청. 전 실행 누적, 사람 메모 포함)
 logs/           .log (파일 ID와 사유 코드만)
 ```
 
@@ -101,9 +102,9 @@ logs/           .log (파일 ID와 사유 코드만)
 | `ingest` | 수집·파싱·chunk만 한다. LLM을 부르지 않는다 | 발급 | M1 |
 | `compare` | 파싱 대조 화면 `screens/compare.html` 생성 | 안 함 | M1 |
 | `review` | `flagged_chunks` 생성, `reports/flagged_*` 작성, 검수 화면 `screens/review.html` 생성(LLM 호출 0회) | 안 함(검수 기준 실행 ID = 최신 또는 `--run`) | M5 |
-| `apply` | `inbox/`의 교정 `.json` 반영 | 안 함(교정 파일의 실행 ID를 쓴다) | M5 |
+| `apply` | `inbox/`의 교정 `.json` 반영(교정 파일별 `SAVEPOINT`), `reports/taxonomy_revisit.*` 재작성 | 안 함(교정 파일의 실행 ID를 쓴다) | M5 |
 | `run` | 수집부터 산출·조회 검증·리포트까지 전 단계. `embed`·`push-vectors`는 부르지 않는다 | 발급 | M6 |
-| `report --run <ID>` | 기준선 리포트(분포) 재계산(LLM 호출 0회) | 안 함 | M6 |
+| `report --run <ID>` | 기준선 리포트(분포) 재계산, `reports/taxonomy_revisit.*` 재작성(LLM 호출 0회) | 안 함 | M6 |
 | `embed` | chunk 임베딩, `chunk_embeddings` | 안 함 | M6b |
 | `push-vectors` | Supabase 벡터 적재, `vector_push_log` | 안 함 | M6b |
 
@@ -122,7 +123,7 @@ logs/           .log (파일 ID와 사유 코드만)
 
 ### 작업 DB(work.sqlite) 표
 
-`store.py`(M0)가 스키마를 관리한다. `meta` 표에 `schema_version`을 두고, 마이그레이션은 표·열 추가만 허용한다. 기존 열의 의미 변경과 삭제는 하지 않는다. 산출 SQLite의 facet_labels·answers·extracted_values는 `export`가 `labels`와 `corrections`에서 만든다.
+`store.py`(M0)가 스키마를 관리한다. `meta` 표에 `schema_version`을 두고, 마이그레이션은 표·열 추가만 허용한다. 기존 열의 의미 변경과 삭제는 하지 않는다. 산출 SQLite의 facet_labels·answers·extracted_values는 `export`가 `labels`와 `corrections`에서 만든다. `revisit_requests`는 산출 SQLite에 넣지 않는다.
 
 | 표 | 주요 열 | 처음 만드는 마일스톤 |
 |---|---|---|
@@ -138,6 +139,7 @@ logs/           .log (파일 ID와 사유 코드만)
 | `alerts` | 실행 ID, 조건, 수치, 기준값 | M4 |
 | `flagged_chunks` | `run_id`(검수 기준 실행 ID), `chunk_id`, `reason_codes`, `unknown_ratio`, `min_confidence`, `text_hash` | M5 |
 | `corrections` | 검수 기준 실행 ID, chunk ID, 축·질문 ID, 사람 값, 봇 원답, 검수 상태(재검수 표시 포함), 질문 문장 해시, 교정 파일 sha256, 반영 시각 | M5 |
+| `revisit_requests` | 검수 기준 실행 ID, chunk ID, 대상 종류(`axis`·`question`·`new_axis`), 대상 키, 사유 코드, 제안 값·상위값, 관련 값(JSON), 메모(0~500자), 봇 값, 사람 값, 파일 ID, 교정 파일 sha256, 반영 시각. 기본 키 `(검수 기준 실행 ID, chunk ID, 대상 종류, 대상 키)`. `corrections`와 섞지 않는다(`finals.corrections()`가 그 표 전체를 라벨 교정으로 읽기 때문). 스키마 버전 2 | M5 |
 | `chunk_embeddings` | chunk ID, 모델, 차원, `text_hash`, 벡터(BLOB), 실행 ID | M6b |
 | `vector_push_log` | chunk ID, 모델, `text_hash`, `label_hash`, 대상 호스트 해시, 보낸 시각, `result_code` | M6b |
 
@@ -164,7 +166,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] `.sqlite` 파일을 쓴 뒤 바이트를 훼손하면 그 항목이 FAIL이다.
 - [ ] 출력에 "필요조건일 뿐이며 M7 게이트의 수동 확인이 필요하다"는 문구가 있다.
 
-[P0] G19 LLM 설정과 외부 전송 안전장치: `llm.py`는 OpenAI Chat Completions 호환(`urllib.request`, `POST {base_url}{chat_path}`)이다. `pipeline.json` `llm` 블록의 키와 기본값은 `base_url`, `chat_path`("/chat/completions"), `model`, `api_key_env`("OPENAI_API_KEY"), `auth_header`("Authorization", 값 "Bearer {key}"), `extra_headers`({}), `ca_file`(null), `timeout`(60), `temperature`(0, null이면 보내지 않음), `max_tokens`, `response_format_json`(false), `internal_host_suffixes`([])다. 키 값은 환경변수에서만 읽고 설정 파일, 로그, 캐시 키, DB에 넣지 않는다. 호스트(소문자)가 `internal_host_suffixes`의 접미사와 같거나 "." + 접미사로 끝나면 사내이고, 파싱 실패·빈 호스트·IP 리터럴은 거부한다. 사외 호출은 호출 직전마다 그 호출에 들어가는 chunk의 파일 해시가 모두 `tests/gold/dummy_hashes.jsonl`에 있을 때만 허용하며(taxonomy 조건은 없다), 파일이 0개면 거부한다(self-check의 고정 probe 문장만 예외). 호스트 판정, 더미 해시 확인, 리다이렉트 거부 opener, 키 읽기는 공용 함수 하나로 두고 임베딩(G20)과 벡터 적재(G21)도 같은 함수를 쓴다. 프록시는 `HTTP(S)_PROXY`를 따르되 판정은 `base_url` 기준이다.
+[P0] G19 LLM 설정과 외부 전송 안전장치: `llm.py`는 OpenAI Chat Completions 호환(`urllib.request`, `POST {base_url}{chat_path}`)이다. `pipeline.json` `llm` 블록의 키와 기본값은 `base_url`, `chat_path`("/chat/completions"), `model`, `api_key_env`("OPENAI_API_KEY"), `auth_header`("Authorization", 값 "Bearer {key}"), `extra_headers`({}), `ca_file`(null), `timeout`(60), `temperature`(0, null이면 보내지 않음), `max_tokens`, `response_format_json`(false), `internal_host_suffixes`([])다. 키 값은 환경변수에서만 읽고 설정 파일, 로그, 캐시 키, DB에 넣지 않는다. 호스트(소문자)가 `internal_host_suffixes`의 접미사와 같거나 "." + 접미사로 끝나면 사내이고, 파싱 실패·빈 호스트·IP 리터럴은 거부한다. 사외 호출은 호출 직전마다 그 호출에 들어가는 chunk의 파일 해시가 모두 `tests/gold/dummy_hashes.jsonl` 또는 사외 검증 폴더 `parshing test files/`(저장소 상대 경로, `llm.DUMMY_DIRS`)의 현재 파일 해시에 있을 때만 허용하며(폴더 해시는 프로세스당 한 번 `read_input`으로 계산하고 아무것도 쓰지 않는다. 이 폴더에는 사내 파일을 넣지 않는다)(taxonomy 조건은 없다), 파일이 0개면 거부한다(self-check의 고정 probe 문장만 예외). 호스트 판정, 더미 해시 확인, 리다이렉트 거부 opener, 키 읽기는 공용 함수 하나로 두고 임베딩(G20)과 벡터 적재(G21)도 같은 함수를 쓴다. 프록시는 `HTTP(S)_PROXY`를 따르되 판정은 `base_url` 기준이다.
 - [ ] mock 서버가 받은 요청에서 `temperature: null`이면 temperature 키가 없고 0이면 0이 있다. `response_format_json`이 true일 때만 `response_format`이 있다.
 - [ ] `auth_header`, `extra_headers`, `chat_path`, `timeout`을 바꾸면 mock 서버가 받은 헤더·경로가 그에 맞게 바뀐다.
 - [ ] 테스트 키 문자열을 작업 폴더 전체와 DB에서 검색하면 0건이다.
@@ -183,7 +185,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 샘플 2의 3번 슬라이드 표에서 `브릿지 저항` 행이 `FAIL`과 같은 줄에 나온다.
 - [ ] 문구 "본 자료의 모든 데이터는 내부 테스트용 더미"가 어떤 chunk에도 없다.
 - [ ] 샘플 1의 chunk에는 `[노트]` 구간이 있고, 샘플 2의 chunk에는 없다(노트 4개가 숫자뿐이어서 버려진다).
-- [ ] 샘플 2에서 추출 이미지 0개다(이미지 참조가 없다). 샘플 1은 고유 대상 17개 중 장식 규칙 적용 후 값이며, 값은 M1 구현 시 확정한다.
+- [ ] 샘플 2에서 추출 이미지 0개다(이미지 참조가 없다). 샘플 1은 고유 대상 17개 중 장식 규칙(최소 크기 미만, 여러 슬라이드 반복) 적용 후 1개다(2026-10-04 M1 구현 실측).
 - [ ] 샘플 2의 파일 단위 작성자가 문서 속성에서 "공정 AI팀"으로 읽힌다.
 - [ ] 준중복 파일(sha256 `c3860dd2e378…`)은 샘플 1과 슬라이드 XML 9개가 같지만 바이트 해시가 달라 별도 파일로 처리되어 `files` 표에 따로 행이 있다.
 - [ ] base64를 디코딩한 바이트의 해시가 원본과 같다.
@@ -267,15 +269,28 @@ logs/           .log (파일 ID와 사유 코드만)
 [P0] G19 1차 분류의 외부 전송 차단:
 - [ ] 사외 호스트 설정에서 더미 해시 밖 파일의 chunk가 들어가는 1차 분류 호출은 그 호출만 0회로 막히고 사유 코드가 `failures`에 남는다.
 
-### M3. 질문 후보와 매핑
+### M3. 질문 후보와 매핑, 검증 질문 생성
 
-만드는 파일: `questions.py`, `prompts/propose_questions.md`
+만드는 파일: `questions.py`, `prompts/propose_questions.md`, `prompts/question_gen.md`
+
+2차는 두 갈래다. (1) 승인된 질문을 규칙으로 매핑한다(아래 기존 기준). (2) 1차 분류가 붙인 라벨의 진위를 검증하는 O/X 질문을 LLM이 chunk마다 만든다(2026-10-04 사용자 결정).
+
+검증 질문 생성 규칙(`prompts/question_gen.md`):
+- 대상은 1차 라벨 중 `해당 없음`·`unknown`을 뺀 (축, 값)이며, 활성 축 순서대로 상한(`limits.questions_per_chunk`에서 승인 질문 수를 뺀 수)까지 라벨마다 정확히 하나 만든다.
+- 질문은 예/아니오로 답하는 한 문장의 판정 의문문이다. 본문이 라벨을 뒷받침하면 O, 반박하거나 다른 값을 말하면 X가 되게 쓴다. 라벨 값과 정의를 질문에 구체적으로 쓴다.
+- 개방형("왜·어떻게·무엇·얼마나"), 복합("A이고 B인가?"), 부정 의문문, 제목만으로 답이 정해지는 질문은 금지한다. 물음표로 끝나야 한다. 검증기가 대상 누락·중복·목록 밖 대상·물음표 없음·개방형 단어를 거부한다(`NOT_YES_NO`, `UNKNOWN_TARGET`, `QUESTION_MISSING`).
+- 질문 ID는 `Q-GEN-` + sha256(chunk_id|축|값) 앞 10자리이고, 우선순위는 50(승인 질문 뒤)이다. 문구는 작업 DB `gen_questions` 표에 남고 검수 화면·산출 `questions` 표·대시보드가 이 표에서 문구를 찾는다.
+- 생성 실패는 `failures`에 stage `question_gen`과 사유 코드로 남고, 그 chunk는 승인 질문만으로 3차를 진행한다.
+- 3차 라벨러는 `Q-GEN-` 질문에 대해 본문이 라벨을 뒷받침하면 O, 반박하면 X, 근거가 전혀 없을 때만 N/A로 답한다(`prompts/label.md`). X는 1차 라벨이 본문과 어긋났다는 뜻이며 대시보드에 `Q-GEN-*` 합산 행으로 나온다.
+- LLM 호출은 chunk당 3회(1차 분류, 2차 검증 질문 생성, 3차 라벨링)이며 같은 입력은 캐시로 0회다.
 
 완료 기준:
 - [ ] 후보 생성 전후로 승인된 질문의 내용이 같고, 새로 생긴 질문은 모두 후보 상태다.
 - [ ] chunk에 매핑된 질문은 승인된 공통 질문 전부와, 그 chunk의 축 값에 해당하는 승인된 카테고리별 질문뿐이다.
 - [ ] 매핑된 질문 수가 상한을 넘으면 우선순위 순으로 잘린다. [P0] G5: 우선순위는 숫자가 작을수록 먼저 들어가고(1이 가장 먼저), 같으면 질문 ID 오름차순이다. 카테고리 질문이 10개 매핑되는 mock chunk에서 `Q-COM-001`(우선순위 1)이 남고 8개로 잘린다. 우선순위 2와 9인 질문이 경합하면 2가 남는다. 잘린 횟수가 질문별로 리포트에 나온다.
-- [ ] 승인된 질문이 0개면 `run`의 3차 라벨링이 LLM을 호출하지 않고 안내와 함께 끝난다.
+- [ ] 승인 질문과 검증 질문이 모두 0개면 `run`의 3차 라벨링이 LLM을 호출하지 않고 안내와 함께 끝난다.
+- [ ] 검증 질문은 (축, 값)마다 정확히 하나이고 모두 물음표로 끝나며 개방형 단어가 없다. mock 실행에서 `[question] 검증 질문 n개 생성`이 나오고 `gen_questions` 표와 3차 답의 `Q-GEN-` 질문 ID가 일치한다.
+- [ ] 같은 입력으로 재실행하면 검증 질문 생성 호출이 0회다.
 - [ ] 질문 후보가 `reports/candidates.md`에 `questions` 시트의 열 순서(질문 ID, 문장, 적용 대상, 우선순위)대로 탭 구분 행으로 나오고, 사람이 시트에 붙여넣고 재실행하면 매핑된다.
 
 [P1] G11 분류 교정의 전파: 검수에서 분류를 교정하면 그 chunk의 2차를 다시 하고 3차를 chunk 단위로 다시 호출한다. 매핑이 해제된 답 중 사람이 교정하거나 확인한 답은 보존한다.
@@ -357,6 +372,9 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] "확인, 이상 없음"으로 기록한 건이 검수 상태에 "사람이 확인"으로 남는다.
 - [ ] 검수 화면에서 `synonyms` 시트와 일치한 본문 표현이 표시된다.
 - [ ] 검수 화면에서 본문 표현을 골라 표준어를 지정한 교정 파일(`.json`)을 반영하면, `reports/candidates.md`에 출처 "검수 등록" 행으로 맨 앞에 나오고 `taxonomy.xlsx`는 바이트 단위로 그대로다.
+- [ ] 검수 화면에서 남긴 재검토 요청(축·질문·새 축 제안·필요한 질문 제안, 사유 코드, 제안 값)이 교정 파일(`.json`)의 `revisits` 배열에 담기고, 화면에서 삭제한 요청은 배열에서 빠진다.
+- [ ] 축에 `NO_FIT_VALUE` 요청이 있는데 현재 값이 `unknown`이 아니면 "unknown으로 교정" 안내가 나온다. 재검토 요청 자체는 라벨을 바꾸지 않는다.
+- [ ] 재검토 메모는 500자까지만 입력되고, 클립보드 복사 텍스트에는 메모 대신 건수만 나온다.
 
 [P0] G2 교정 반영(`apply`):
 - [ ] `flagged_chunks`가 없는 실행 ID의 교정 파일은 반영이 거부된다.
@@ -364,6 +382,12 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 같은 교정 파일을 두 번 반영해도 DB 내용이 같다.
 - [ ] 교정 파일을 반영하면 최종 라벨이 사람 값이 되고, 전체를 재실행해도 그대로이며, `corrections`에 봇 원답이 남는다.
 - [ ] 재실행 뒤에도 원래 실행 ID의 교정 파일이 반영된다.
+- [ ] `flagged_chunks`에 없는 chunk의 재검토 요청은 `REVISIT_CHUNK_NOT_FLAGGED`로 버려지고, 알 수 없거나 허용 행렬 밖인 대상·사유 조합은 `REVISIT_REASON_INVALID`, 형식·필수 칸 오류는 `REVISIT_FIELD_INVALID`, 한 문서 안의 같은 키는 `REVISIT_DUPLICATE`(뒤 항목 저장), 500자 초과 메모는 `REVISIT_MEMO_TRUNCATED`(잘라서 저장)로 건수만 보고된다. 버린 항목이 있어도 같은 파일의 교정 반영은 유지된다.
+- [ ] 같은 교정 파일을 두 번 반영해도 결과가 같고(`revisit_requests`가 DELETE 후 INSERT), 그 실행의 요청은 최신 파일의 `revisits`가 통째로 대신한다.
+- [ ] revisit 반영 전후에 `final_labels`와 `label_hash`가 같고 `push-vectors`가 다시 보내는 행이 0이다.
+- [ ] `revisits` 키가 없는 예전 교정 파일은 그 실행의 기존 재검토 요청을 건드리지 않고, 빈 배열은 전부 취소한다.
+- [ ] 한 교정 파일이 `FORMAT_INVALID`여도 파일별 `SAVEPOINT`로 같은 `apply`의 다른 파일 반영은 되돌려지지 않는다.
+- [ ] 재검토 리포트(`reports/taxonomy_revisit.md`·`.jsonl`)는 `candidates.md`를 쓸 때 함께 갱신되고, `candidates.md` 제목 다음 줄에 누적 건수·링크 한 줄이 나온다. `NO_FIT_VALUE` 붙여넣기 행은 시트에서 사라진 축·상위값이나 이미 있는 값이면 생략되고 사유가 표에 적힌다.
 
 ### M6. 산출, 조회 검증, 재실행
 
@@ -406,7 +430,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 저장소의 `prompts/`에 `.txt` 파일이 0개다(전부 `.md`).
 
 [P0] G16 로그·리포트 비노출 검사, 원본 경로 단일 열기 검사:
-- [ ] 위 통합 실행 뒤 `logs/`, 콘솔 출력, `reports/`(리포트, `alerts.json`, 후보 리포트 제외)에서 정답표 파일명, 테스트 폴더명, 입력 루트 경로를 검색하면 0건이다. 반면 `work.sqlite`와 산출 SQLite에는 상대 경로와 파일명이 있다.
+- [ ] 위 통합 실행 뒤 `logs/`, 콘솔 출력, `reports/`(리포트, `alerts.json`, 후보 리포트·taxonomy 재검토 리포트 제외)에서 정답표 파일명, 테스트 폴더명, 입력 루트 경로를 검색하면 0건이다. 재검토 메모(고유 표식)는 `logs/`와 콘솔 출력, 재검토 리포트 밖의 `reports/`에 0건이다. 반면 `work.sqlite`와 산출 SQLite에는 상대 경로와 파일명이 있다.
 - [ ] 통합 실행 동안 테스트가 `builtins.open`과 `io.open`을 감싸 호출을 기록하고, 입력 루트 아래 경로나 입력 전용 파일(`taxonomy.xlsx`, `defaults/taxonomy.xlsx`, `inbox/*.json`)을 연 호출이 모두 `ingest.read_input`에서 나왔는지 호출 스택으로 확인한다. `write_roundtrip`의 임시 파일은 예외다.
 
 [P1] G12 조회 검증:
@@ -499,7 +523,7 @@ logs/           .log (파일 ID와 사유 코드만)
 | H3 | 새 값 후보 처리(값·동의어·기각을 엑셀에 붙여넣기) | 계속(처리 전 후보는 `unknown`으로 둔다) | `candidates.py`, `classify.py` | M2 |
 | H4 | 질문 후보 승인(`questions` 시트에 붙여넣기) | 대기 | `candidates.py`, `questions.py` | M3 |
 | H5 | 라벨 분포 알림 확인 | 계속 | `alerts.py`, `label.py`, `report.py` | M4, M6 |
-| H6 | 불량 목록의 chunk 검수. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 동의어 "검수 등록" | 대기 | `screens/review.html`, `review.py`, `candidates.py` | M5 |
+| H6 | 불량 목록의 chunk 검수. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 동의어 "검수 등록". taxonomy 재검토 요청(`reports/taxonomy_revisit.md`) | 대기 | `screens/review.html`, `review.py`, `candidates.py`, `revisit.py` | M5 |
 | H7 | 조회 질문 채택(`queries` 시트) | 대기 | `taxonomy.py`(`queries` 시트 읽기), `candidates.py`(`reports/query_candidates.md`), `querycheck.py` | M6 |
 | H8 | 동의어 후보 승인(`synonyms` 시트에 붙여넣기) | 계속(처리 전 후보는 시트에 넣지 않는다) | `candidates.py` | M2, M4 |
 | 게이트 | 사내 설정 변경(`llm`, `embedding`, `supabase` 블록), 벡터 DB 사용 가능 여부 확인, G-1~G-10 확인과 `gate record` 입력 | 대기(FAIL이면 100개 실행을 시작하지 않는다) | `selfcheck.py`, `gate.py` | M0, M7 |
@@ -512,7 +536,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 - 3차 라벨링 답 중 N/A 비율이 30% 이하다.
 - 분류 축 중 다중값=Y이고 중복 알림 제외=N인 축의 라벨 40% 이상이 중복 라벨링(한 chunk의 같은 축에 값이 두 개 이상)이다. 분모와 분자에서 `unknown`과 `해당 없음`을 뺀다.
 
-후보 처리 흐름(`PRD.md` 6절): 사람이 만든 `taxonomy.xlsx`로 실행 → 봇이 후보 리포트(`reports/candidates.md` 등)를 낸다(H3·H4·H6·H8) → 사람이 보고 엑셀에 붙여넣는다 → 재실행하면 바뀐 시트 해시에 따라 영향받는 chunk만 재처리된다. 봇은 엑셀을 수정하지 않는다.
+후보 처리 흐름(`PRD.md` 6절): 사람이 만든 `taxonomy.xlsx`로 실행 → 봇이 후보 리포트(`reports/candidates.md` 등)를 낸다(H3·H4·H6·H8) → 사람이 보고 엑셀에 붙여넣는다 → 재실행하면 바뀐 시트 해시에 따라 영향받는 chunk만 재처리된다. 재검토 리포트(`reports/taxonomy_revisit.md`)도 사람이 보고 엑셀을 고친다(처리됨 판정 없이 전 실행 누적). 봇은 엑셀을 수정하지 않는다.
 
 ## 5. 리스크와 대응
 
@@ -763,3 +787,6 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 - 2026-10-04 라벨링 품질 보강(v2) 반영: `.omc/plans/labeling-quality-review-v2.md`의 4절(마일스톤별 반영 제안), 6절(확정 결정), 8절(리스크)과 G21 Supabase 벡터 적재 명세를 반영했다. 반영한 gap ID는 G1, G2, G3, G4(chunk `dup_group`, 파일 `near_dup_group`), G5, G6, G7, G8, G9(G1 안의 N/A 편중 표시), G11, G12, G13, G14, G15, G16, G17, G18, G19, G20, G21이다. 바뀐 곳은 1절(외부 전송 제약), 2절(디렉터리 구조: `metrics.py`, `gate.py`, `embed.py`, `vectorpush.py`, `docs/supabase_schema.md`, `prompts/*.md`, 작업 폴더의 `pipeline.json` 세 블록·`review_gold/`·`gate_<timestamp>.json`), 3절 M0(G18, G19), M1(G16, G4, G15), M2(3상태 기준 수정, G6, G8, G16), M3(G5, G11), M4(재실행 기준 수정, G6, G7, G14), M5(시드·실행 ID 거부·리포트 기준 수정, G3, G2, G13, G16, G1, G8 재판정 형식), M6(재실행 기준 수정, G16, G17, G12, 리포트 요약), 신설 M6b(G20, G21), M7(게이트 G-1~G-10을 끼워 10단계로 다시 매김, 사내 설정 세 블록, 벡터 DB 사용 가능 여부 확인, 완료 기준 추가), 4절 HITL 표(H6 보강, 게이트·벡터 적재 행), 5절 리스크, 6절 검증 단계, 7절(v2 7절 미결 항목과 G21 결정 항목을 기본안과 함께 추가, 준중복 미결 항목 닫음, v2 6절 확정 결정 15개 추가)이다. taxonomy 재설계로 정해진 내용(분류 축 8 + 상태 축 2, `taxonomy.xlsx` 읽기 전용, 화면 2개, 더미 정답표 10개 파일 39 chunk, `tools/evalgold.py`)은 바꾸지 않았다.
 - 2026-10-04 구현 착수 리뷰 반영: 2절에 "명령", "ID와 해시 정의", "작업 DB(work.sqlite) 표"를 추가했다(실행 ID 발급은 `run`·`ingest`, `schema_version`과 추가 전용 마이그레이션, `taxonomy_path`). M2에 `taxonomy.parse_bytes` 진입점과 `defaults/taxonomy.xlsx` 의존 테스트 분리를 적었다. M6b의 `run`·`embed` 관계와 `result_code` 성공 기준 멱등을 고쳤다. 역방향 의존 기준을 옮겼다: M0의 더미 해시 밖 chunk 차단 → M2(M0에는 공용 함수 단위 테스트), M0의 빈 작업 폴더 `run` → M6, M1의 위치 이동 시 분류·라벨링 호출 0회 → M4, M5의 리포트 지표·실패 건수·`report --run`·`evalgold.py`=`report.py` → M6. M1의 "리포트에 적힌다"는 `files` 표로 바꿨다.
 - 2026-10-04 4차 단계 단순화: 사용자 결정에 따라 4차를 검수 봇에서 "4차 불량 목록 추출"(`PRD.md` FR-5)로 바꿨다. LLM 호출 없이 사유 코드 6개(`UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED`)로 판정하고, 걸린 chunk를 상한 없이 `flagged_chunks`, `reports/flagged_<실행ID>.jsonl`·`.md`, 검수 화면에 낸다. 뺀 것은 LLM 독립 재판정(`prompts/rejudge.md`, G8 재판정 형식), 표본 추출 전부(G3), `review_snapshot`·`review_actions` 표와 검수 행동 기록(G13), blind 문장, `review_gold/`와 `report --compare-review-gold`, 회차 간 답 재사용(G2 일부), 사내 리포트의 정확도 지표(G1 사내 부분), M7의 합격선 결정과 review_gold 보관이다. 사외 더미 정답표 대조(`tools/evalgold.py`, `labelbot/metrics.py`)는 남기고 `metrics.py`는 M6에서 만든다. 바뀐 곳은 1절, 2절(디렉터리 구조, `pipeline.json`의 `flag` 블록, 명령 표, ID와 해시 정의, 작업 DB 표), 3절 머리말, M4(G7 문구), M5(전면 재작성), M6(리포트 분포 항목, G1 블록), M7(10단계, G-6·G-8 문구, 완료 기준), 4절 H6, 5절 리스크, 6절 검증 단계, 7절(임베딩 용도, 대체된 결정 표시, 새 확정 결정)이다. 백업은 `.omc/backups/plan.pre-flag-step.md`다.
+- 2026-10-04 검수 화면 taxonomy 재검토 요청: 근거는 `.omc/plans/autopilot-impl.md`(8절 Critic 반영 우선)와 `.omc/autopilot/spec.md`다. 검수 화면의 재검토 요청(교정 파일 `revisits`)을 작업 DB `revisit_requests`로 반영하고 `reports/taxonomy_revisit.md`·`.jsonl`로 낸다. 라벨·`label_hash`는 바뀌지 않아 Supabase 재적재가 없다. `apply`는 교정 파일별 `SAVEPOINT`를 둔다. 바뀐 곳은 2절(reports 목록, 명령 표, 작업 DB 표), M5 G16·G2 완료 기준, 로그·리포트 비노출 검사, 4절 H6, 후보 처리 흐름이다.
+- 2026-10-04 2차 검증 질문 생성: 사용자 결정에 따라 2차에 "1차 라벨 검증 질문 생성(LLM)"을 더했다. 승인 질문 매핑은 그대로 두고, 남은 상한만큼 1차 라벨(해당 없음·unknown 제외)마다 O/X 판정 질문을 `prompts/question_gen.md`로 만든다. 질문은 `gen_questions` 표에 남고, 3차 라벨러는 뒷받침=O·반박=X·근거 없음=N/A로 답한다. chunk당 LLM 호출이 2회에서 3회로 늘었다. 바뀐 곳은 2절 디렉터리 구조(`questions.py` 설명), M3(제목, 만드는 파일, 생성 규칙, 완료 기준)다.
+- 2026-10-04 사외 검증 폴더 허용: 사용자 승인에 따라 `parshing test files/`의 현재 파일 해시를 사외 전송 허용 목록(`dummy_hashes.jsonl`)에 더했다(`llm.DUMMY_DIRS`). 이 폴더 파일이 `EXTERNAL_NON_DUMMY`로 막히던 문제를 해결한다. 폴더 단위 허용이므로 이 폴더에 사내 파일을 넣지 않는 것을 운영 규칙으로 둔다. 바뀐 곳은 2절 디렉터리 구조와 M0 G19 사외 전송 조건이다.

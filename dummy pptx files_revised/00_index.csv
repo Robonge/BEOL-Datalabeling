@@ -1,0 +1,51 @@
+﻿No,Title,Lot ID,Material,Layer,Process,CD metric,평가목적,판정,Slides,WF 매수
+1,SF0.7 KVFG RDOME086.63 ET results,RDOME086.63,Ru,M1,RSBM,ATOI,M1 RSBM oxide HM 적용 평가,조건부,3,7
+2,SF0.7 KVIP RXAJY071.65 ET results,RXAJY071.65,Ru,V0,BM,ACI,V0 BM (TaN) skip — Ru barrier-less fill 평가,불가,4,6
+3,SF2X RDSVK070.6C ET results,RDSVK070.6C,Ru,V0,CMP,ATOI,V0 Ru overburden CMP slurry 변경 평가,불가,5,4
+4,SF0.7 KVIP RXYFL018.61 ET results,RXYFL018.61,Ru,V1,etch,ACI,V1 etch pillar ESL 삽입 평가,조건부,4,6
+5,SF1.0 RDVRL.66 ET results,RDVRL.66,Cu,M3,CMP,ATOI,M3 CMP barrier slurry 선택비 변경 평가,조건부,4,5
+6,KVKB QDTTJ.67 ET results,QDTTJ.67,Cu,M3,etch,AASI,M3 etch MHM PVD 신규 chamber 호환 평가,조건부,2,5
+7,SF2 KVED QQLDY.6C ET results,QQLDY.6C,Ru,M1,CMP,AASI,M1 CMP Ru touch-up polish 시간 증가 평가,호환,4,8
+8,SF0.7 KVKA RQRWM.6D ET results,RQRWM.6D,Cu,M2,etch,ATOI,M2 etch MHM PVD 신규 chamber 호환 평가,호환,6,8
+9,SF2 QDJDP.6C ET results,QDJDP.6C,Cu,M2,etch,AMI,M2 etch MHM PVD 신규 chamber 호환 평가,조건부,6,8
+10,KVED QDSDI.1 ET results,QDSDI.1,Cu,M1,CMP,AMI,M1 CMP pad conditioner 변경 평가,조건부,2,8
+11,QQCGA.6A ET results,QQCGA.6A,Cu,F4,BM,ATOI,F4 BM TaN 박막화 (2.0 → 1.4 nm) 평가,호환,6,4
+12,SF2X KVED RDMWS.69 ET results,RDMWS.69,Ru,M0,RSBM,AMI,M0 RSBM oxide HM 적용 평가,조건부,4,5
+13,KVKA QDCAG041.68 ET results,QDCAG041.68,Cu,M1,CMP,AMI,M1 CMP down-force 상향 (2.0 → 2.5 psi) 평가,조건부,4,4
+14,SF2X RQYVB.6C ET results,RQYVB.6C,Ru,M1,RSBM,AASI,M1 RSBM plasma cutoff 8 s 적용 평가,조건부,4,4
+15,SF2 QQLWB.65 ET results,QQLWB.65,Cu,F4,BM,AMI,F4 BM Co liner 적용 평가,불가,3,9
+16,KVKB RXMJR091.6E ET results,RXMJR091.6E,Cu,M2,clean,ACI,M2 post-CMP clean chemistry 변경 (alkaline → organic acid) 평가,조건부,2,7
+17,SF1.0 KVKB RXIXE044.63 ET results,RXIXE044.63,Cu,V1,etch,ACI,V1 etch over-etch 20% 축소 평가,조건부,2,8
+18,SF0.7 QQUIX.6D ET results,QQUIX.6D,Cu,M2,BM,AASI,M2 BM Co liner 적용 평가,조건부,2,5
+19,SF1.0 KVFG QXPEB.6E ET results,QXPEB.6E,Ru,M0,RSBM,ATOI,M0 RSBM segmented etch-clean 적용 평가,호환,6,6
+20,SF2X QXWFM016.67 ET results,QXWFM016.67,Ru,M0,clean,ACI,M0 clean RuO4 재증착 제거 chemistry 변경 평가,불가,5,5
+21,QDXNT.6D ET results,QDXNT.6D,Cu,F4,clean,ACI,F4 clean brush 압력 하향 평가,불가,4,5
+22,SF2X KVKB RDWKJ058.63 ET results,RDWKJ058.63,Ru,M0,clean,ATOI,M0 clean O2-free in-situ clean 적용 평가,조건부,3,6
+23,SF0.7 KVKB QXFOL.64 ET results,QXFOL.64,Ru,M1,clean,ACI,M1 clean RuO4 재증착 제거 chemistry 변경 평가,불가,3,6
+24,SF1.0 RDUXK.69 ET results,RDUXK.69,Cu,F4,CMP,AASI,F4 CMP Cu slurry Low-BTA 적용 평가,불가,4,9
+25,SF2 KVFG RQFQP.6B ET results,RQFQP.6B,Ru,M1,RSBM,ATOI,M1 RSBM pattern inversion 단계 생략 평가,호환,5,9
+26,SF1.0 KVFG QXSZC.1 ET results,QXSZC.1,Ru,V0,CMP,ACI,V0 CMP Ru touch-up polish 시간 증가 평가,호환,2,6
+27,SF2X KVKA QXHLD056.6E ET results,QXHLD056.6E,Cu,F4,CMP,ATOI,F4 CMP pad conditioner 변경 평가,불가,6,8
+28,SF2X KVFG RXQVN013.6B ET results,RXQVN013.6B,Cu,F4,clean,AMI,F4 clean DIO3 rinse 추가 평가,호환,3,5
+29,SF1.0 KVIP QXNYS.67 ET results,QXNYS.67,Cu,V1,etch,ATOI,V1 etch CHF3 유량 +15% 변경 평가,불가,5,7
+30,SF1.0 KVIP RXIKI082.68 ET results,RXIKI082.68,Ru,M1,BM,ATOI,M1 BM (TaN) skip — Ru barrier-less fill 평가,호환,6,5
+31,KVED QDIVY090.6C ET results,QDIVY090.6C,Cu,M1,etch,ATOI,M1 etch MHM 두께 24 nm 적용 평가,호환,6,7
+32,SF1.0 KVED QDNWU082.62 ET results,QDNWU082.62,Ru,V1,BM,ATOI,V1 BM ALD Ru seed 박막화 평가,호환,4,7
+33,SF1.0 KVED QXCPS020.6A ET results,QXCPS020.6A,Cu,I1,etch,ACI,I1 etch MHM 두께 24 nm 적용 평가,호환,6,5
+34,SF2 RQQNJ070.6B ET results,RQQNJ070.6B,Cu,M3,CMP,AASI,M3 CMP down-force 상향 (2.0 → 2.5 psi) 평가,조건부,4,9
+35,KVKA QQKKK058.63 ET results,QQKKK058.63,Cu,I2,etch,AMI,I2 etch CHF3 유량 +15% 변경 평가,호환,4,8
+36,SF1.0 KVKB QDTTX037.6D ET results,QDTTX037.6D,Ru,V1,etch,ATOI,V1 etch Ru ALE 적용 평가,불가,4,9
+37,SF2X KVFG QDVIE.6E ET results,QDVIE.6E,Cu,M2,CMP,AASI,M2 CMP barrier slurry 선택비 변경 평가,조건부,2,6
+38,SF0.7 KVED QQZRY.6A ET results,QQZRY.6A,Cu,M2,CMP,ACI,M2 CMP Cu slurry Low-BTA 적용 평가,호환,6,4
+39,KVED QQTBG043.61 ET results,QQTBG043.61,Cu,M2,BM,AMI,M2 BM TaN 박막화 (2.0 → 1.4 nm) 평가,호환,5,6
+40,SF2 KVFG QXONS022.6A ET results,QXONS022.6A,Ru,M0,clean,ATOI,M0 clean RuO4 재증착 제거 chemistry 변경 평가,불가,3,4
+41,SF1.0 KVKB QDPTA.6A ET results,QDPTA.6A,Ru,I1,etch,AASI,I1 etch pillar ESL 삽입 평가,불가,2,8
+42,SF1.0 KVED RDLUU.69 ET results,RDLUU.69,Ru,I1,etch,ATOI,I1 etch pillar ESL 삽입 평가,호환,2,7
+43,SF0.7 KVKB QQNRU087.69 ET results,QQNRU087.69,Cu,V1,etch,AASI,V1 etch over-etch 20% 축소 평가,불가,4,5
+44,SF0.7 KVFG RXVMV022.6B ET results,RXVMV022.6B,Ru,M0,RSBM,ATOI,M0 RSBM oxide HM 적용 평가,불가,6,5
+45,SF2X KVIP QQRJH.68 ET results,QQRJH.68,Ru,M0,RSBM,ATOI,M0 RSBM Ru DME chemistry 변경 평가,불가,4,9
+46,QQAIS.66 ET results,QQAIS.66,Ru,M1,RSBM,ACI,M1 RSBM plasma cutoff 8 s 적용 평가,호환,4,4
+47,SF2X KVKA QQRPP042.6E ET results,QQRPP042.6E,Ru,M1,RSBM,AASI,M1 RSBM Ru DME chemistry 변경 평가,조건부,2,5
+48,SF2X KVIP QDHOO093.6B ET results,QDHOO093.6B,Ru,V1,BM,ACI,V1 BM TiN adhesion layer 0.5 nm 적용 평가,호환,2,5
+49,KVKA QDGTZ080.61 ET results,QDGTZ080.61,Cu,M3,clean,ACI,M3 clean DIO3 rinse 추가 평가,불가,3,7
+50,SF1.0 KVKB RQAKV.1 ET results,RQAKV.1,Ru,V0,CMP,AASI,V0 Ru overburden CMP slurry 변경 평가,조건부,3,6

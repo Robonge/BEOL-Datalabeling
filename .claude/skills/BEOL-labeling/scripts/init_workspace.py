@@ -1,0 +1,122 @@
+"""BEOL-labeling 작업 폴더 준비: pipeline.json 작성과 화면 서버(.claude/launch.json) 등록.
+
+입력 파일은 열지 않는다(확장자별 개수만 센다). 원본은 labelbot의 read_input만 연다(CLAUDE.md).
+
+사용:
+  python init_workspace.py --input "<입력 폴더>" [--workspace "<작업 폴더>"] [--force]
+출력: JSON 한 줄(workspace, launch_name, port, 파일 수, pipeline.json 작성 여부).
+"""
+import argparse
+import json
+import os
+import re
+import sys
+
+CODE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+PREFIX = "261004_BEOL_"
+BASE_PORT = 8770
+
+PIPELINE = {
+    "taxonomy_path": os.path.join(CODE_ROOT, "defaults", "taxonomy.xlsx").replace("\\", "/"),
+    "input_root": None,
+    "llm": {
+        "base_url": "https://api.openai.com/v1",
+        "model": "gpt-6-sol",
+        "temperature": None,
+        "max_tokens": None,
+        "max_tokens_param": "max_completion_tokens",
+        "response_format_json": True,
+        "timeout": 180,
+        "workers": 6,
+    },
+    "embedding": {"model": "text-embedding-3-small"},
+    "supabase": {"enabled": True, "table": "beol_chunk_embeddings"},
+}
+
+
+def slug(name):
+    s = re.sub(r"[^0-9A-Za-z가-힣]+", "-", name).strip("-").lower()
+    return s or "input"
+
+
+def inside(child, parent):
+    child, parent = os.path.normcase(os.path.realpath(child)), os.path.normcase(os.path.realpath(parent))
+    try:
+        return os.path.commonpath([child, parent]) == parent
+    except ValueError:
+        return False
+
+
+def serve_args(ws, port):
+    """labelbot serve: screens/를 보여 주고 검수·대조 JSON을 inbox/에 바로 쓴다."""
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "serve_screens.py").replace("\\", "/")
+    return [script, "--workspace", ws, "--port", str(port)]
+
+
+def upsert_launch(name, port, ws):
+    path = os.path.join(CODE_ROOT, ".claude", "launch.json")
+    data = {"version": "0.0.1", "configurations": []}
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    confs = data.setdefault("configurations", [])
+    conf = next((c for c in confs if c.get("name") == name), None)
+    if conf is None:
+        used = {c.get("port") for c in confs}
+        while port in used:
+            port += 1
+        conf = {"name": name, "runtimeExecutable": "python", "runtimeArgs": [], "port": port}
+        confs.append(conf)
+    port = conf.get("port", port)
+    args = serve_args(ws, port)
+    # 예전 http.server 등록도 serve로 바꾼다(포트는 유지).
+    if conf.get("runtimeArgs") != args or conf.get("runtimeExecutable") != "python":
+        conf["runtimeExecutable"], conf["runtimeArgs"] = "python", args
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+    return port
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--input", required=True)
+    ap.add_argument("--workspace")
+    ap.add_argument("--force", action="store_true", help="pipeline.json이 있어도 다시 쓴다")
+    a = ap.parse_args()
+    inp = os.path.abspath(a.input if os.path.isabs(a.input) else os.path.join(CODE_ROOT, a.input))
+    if not os.path.isdir(inp):
+        print(json.dumps({"error": "INPUT_NOT_FOUND"}, ensure_ascii=False))
+        return 2
+    s = slug(os.path.basename(inp.rstrip("\\/")))
+    ws = os.path.abspath(a.workspace or os.path.join(os.path.dirname(CODE_ROOT), PREFIX + s))
+    if inside(ws, CODE_ROOT):
+        print(json.dumps({"error": "WORKSPACE_INSIDE_CODE"}, ensure_ascii=False))
+        return 2
+    os.makedirs(ws, exist_ok=True)
+    cfg_path = os.path.join(ws, "pipeline.json")
+    wrote = False
+    if a.force or not os.path.isfile(cfg_path):
+        cfg = json.loads(json.dumps(PIPELINE))
+        cfg["input_root"] = inp.replace("\\", "/")
+        with open(cfg_path, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        wrote = True
+    counts = {}
+    for _, _, files in os.walk(inp):
+        for fn in files:
+            ext = os.path.splitext(fn)[1].lower() or "(없음)"
+            counts[ext] = counts.get(ext, 0) + 1
+    screens = os.path.join(ws, "screens").replace("\\", "/")
+    os.makedirs(screens, exist_ok=True)
+    name = "screens-" + s
+    port = upsert_launch(name, BASE_PORT, ws.replace("\\", "/"))
+    print(json.dumps({"workspace": ws.replace("\\", "/"), "input": inp.replace("\\", "/"), "pipeline_written": wrote,
+                      "file_counts": counts, "launch_name": name, "port": port}, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

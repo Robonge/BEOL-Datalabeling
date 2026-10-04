@@ -59,7 +59,7 @@
 | H3 | 1차 분류 후 | 봇이 올린 새 값 후보를 보고 값으로 쓸지, 동의어로 쓸지, 기각할지 정해 `taxonomy.xlsx`에 붙여넣는다. 기각한 후보는 `rejected` 시트에 적는다. | `reports/candidates.md`, `taxonomy.xlsx` | 계속(처리 전 후보는 `unknown`으로 둔다) |
 | H4 | 2차 질문 후보 생성 후 | 질문 후보를 보고 승인할 것을 `questions` 시트에 붙여넣고, 필요하면 문장을 고친다. 승인된 질문이 없으면 3차를 시작하지 않는다(FR-3). | `reports/candidates.md`, `taxonomy.xlsx`(`questions` 시트) | 대기 |
 | H5 | 라벨링 중·후 | 라벨 분포가 아래 조건에 걸리면 알림을 받고, 프롬프트·질문·taxonomy·동의어 시트를 점검한다. | 콘솔 경고, 알림 파일, 기준선 리포트 | 계속 |
-| H6 | 라벨링 후 | 불량 목록의 chunk를 검수한다. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 검수 중 발견한 동의어는 교정 파일(`.json`)에 담기고, 후보 리포트의 "검수 등록" 행으로 나온다. | 검수 화면 | 대기 |
+| H6 | 라벨링 후 | 불량 목록의 chunk를 검수한다. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 검수 중 발견한 동의어는 교정 파일(`.json`)에 담기고, 후보 리포트의 "검수 등록" 행으로 나온다. taxonomy가 내용을 담지 못하는 축·질문은 재검토 요청(사유 코드, 제안 값, 메모 500자)으로 남기며, `reports/taxonomy_revisit.md`로 나온다. | 검수 화면, `reports/taxonomy_revisit.md` | 대기 |
 | H7 | 산출 후 | 봇이 `reports/query_candidates.md`에 올린 조회 질문 후보 중 검증에 쓸 질문을 `queries` 시트에 붙여넣고 채택 열을 Y로 둔다. | `reports/query_candidates.md`, `taxonomy.xlsx`(`queries` 시트) | 대기 |
 | H8 | 1차 분류 후, 라벨링 후 | 봇이 올린 동의어 후보를 보고 승인할 것을 `synonyms` 시트에 붙여넣는다. 시트에 옮긴 동의어는 다음 실행부터 쓰인다(6.2절). | `reports/candidates.md`, `taxonomy.xlsx`(`synonyms` 시트) | 계속(처리 전 후보는 시트에 넣지 않는다) |
 
@@ -219,14 +219,14 @@ flowchart TD
 
 두 화면 모두 서버 없이 파일을 열어 쓰고, 표시할 데이터와 이미지(data URL)는 HTML 파일 안에 들어 있다. 화면에서 한 작업은 `.json` 파일로 내려받아 `inbox/`에 넣고 `apply` 명령으로 적용한다. 내려받기가 막힌 환경을 위해 같은 내용을 텍스트로 복사하는 방법도 둔다.
 
-taxonomy는 화면이 아니라 `taxonomy.xlsx`를 Excel에서 직접 고친다(6.1절). 화면에서 하는 일은 파싱 확인과 검수 교정뿐이다.
+taxonomy는 화면이 아니라 `taxonomy.xlsx`를 Excel에서 직접 고친다(6.1절). 화면에서 하는 일은 파싱 확인, 검수 교정, taxonomy 재검토 요청뿐이다(시트 수정은 여전히 Excel에서 한다).
 
 | 화면 | 하는 일 |
 |---|---|
 | 파싱 대조 화면 | 파일별로 슬라이드 순서대로 제목, 본문, 표, 노트, 이미지 목록을 보여준다. 원본과 비교해 슬라이드마다 이상 여부와 메모를 기록한다. |
-| 검수 화면 | `review` 명령이 만든 불량 목록(`flagged_chunks`) 전부를 상한 없이 올린다. 사유 코드가 많이 겹친 순으로 정렬하고, chunk마다 사유 코드와 수치(`unknown_ratio`, `min_confidence`)를 보여주며, 사유 코드별 필터를 둔다. `dup_group`이 같은 chunk는 묶어서 보여 주되 교정은 chunk별로 한다. chunk 본문(근거 인용 강조), 이미지, 분류 결과(값, `해당 없음`, `unknown`의 3상태와 계층 값), 질문별 답과 확신도, 추출된 날짜·담당자, 대표 상대 경로, 파일명과 슬라이드 번호를 보여준다. 축 값마다 `taxonomy` 시트의 정의·판정 규칙을 함께 보여준다. 본문에서 `synonyms` 시트와 일치한 표현을 표시한다. 답과 분류를 교정하고, "확인, 이상 없음"과 "판단 불가: 정보가 이미지에만 있음"을 기록할 수 있다. 본문 표현을 골라 표준어를 지정하면 교정 파일에 담겨, 후보 리포트의 "검수 등록" 행으로 나온다. 진행 상황은 브라우저에 자동 저장한다. chunk당 표시하는 이미지 수에 상한(기본 4개, 설정으로 조정)을 둔다. |
+| 검수 화면 | `review` 명령이 만든 불량 목록(`flagged_chunks`) 전부를 상한 없이 올린다. 사유 코드가 많이 겹친 순으로 정렬하고, chunk마다 사유 코드와 수치(`unknown_ratio`, `min_confidence`)를 보여주며, 사유 코드별 필터를 둔다. `dup_group`이 같은 chunk는 묶어서 보여 주되 교정은 chunk별로 한다. chunk 본문(근거 인용 강조), 이미지, 분류 결과(값, `해당 없음`, `unknown`의 3상태와 계층 값), 질문별 답과 확신도, 추출된 날짜·담당자, 대표 상대 경로, 파일명과 슬라이드 번호를 보여준다. 축 값마다 `taxonomy` 시트의 정의·판정 규칙을 함께 보여준다. 본문에서 `synonyms` 시트와 일치한 표현을 표시한다. 답과 분류를 교정하고, "확인, 이상 없음"과 "판단 불가: 정보가 이미지에만 있음"을 기록할 수 있다. 본문 표현을 골라 표준어를 지정하면 교정 파일에 담겨, 후보 리포트의 "검수 등록" 행으로 나온다. 축·질문마다 taxonomy 재검토 요청을 남길 수 있다(사유 코드 `NO_FIT_VALUE`·`AMBIGUOUS_DEF`·`VALUE_OVERLAP`·`NEED_QUESTION`·`NEW_AXIS`·`OTHER`, 제안 값, 메모 500자). 새 축 제안과 필요한 질문 제안도 같은 방식이며, 저장한 요청은 삭제(취소)할 수 있다. 축에 `NO_FIT_VALUE` 요청이 있는데 값이 `unknown`이 아니면 "맞는 값이 없다면 unknown으로 교정하세요" 안내를 보여준다. 재검토 요청은 라벨을 바꾸지 않는다. 진행 상황은 브라우저에 자동 저장한다. chunk당 표시하는 이미지 수에 상한(기본 4개, 설정으로 조정)을 둔다. |
 
-교정 파일에는 검수 화면을 만든 실행 ID가 들어간다. `apply`는 그 실행 ID의 `flagged_chunks`가 있으면 이후에 재실행했더라도 반영하고, 없으면 그 교정 파일을 거부한다. 그 뒤 본문(`text_hash`)이나 질문 문장이 바뀐 chunk의 교정은 반영하되 재검수 대상으로 표시한다. 같은 파일을 여러 번 반영해도 결과가 같다. 교정이 반영되면 사람 값이 최종 라벨이 되고 봇 원답은 `corrections`에 남는다. 라벨이 바뀐 chunk만 `label_hash`가 달라져 Supabase에 다시 올라간다(FR-9). 교정 파일에는 경로와 파일명을 넣지 않는다.
+교정 파일에는 검수 화면을 만든 실행 ID가 들어간다. `apply`는 그 실행 ID의 `flagged_chunks`가 있으면 이후에 재실행했더라도 반영하고, 없으면 그 교정 파일을 거부한다. 그 뒤 본문(`text_hash`)이나 질문 문장이 바뀐 chunk의 교정은 반영하되 재검수 대상으로 표시한다. 같은 파일을 여러 번 반영해도 결과가 같다. 교정이 반영되면 사람 값이 최종 라벨이 되고 봇 원답은 `corrections`에 남는다. 라벨이 바뀐 chunk만 `label_hash`가 달라져 Supabase에 다시 올라간다(FR-9). 교정 파일에는 경로와 파일명을 넣지 않는다. 재검토 요청은 라벨과 `label_hash`를 바꾸지 않으므로 Supabase 재적재가 없다. 교정 파일의 `revisits` 배열이 있으면 그 실행의 요청 전체를 대신하고(빈 배열이면 전부 취소), 키가 없는 예전 파일은 그 실행의 요청을 건드리지 않는다. 같은 `(chunk, 대상, 키)`는 1건이며, 불량 목록 밖 chunk와 형식이 틀린 요청은 사유 코드(`REVISIT_*`)와 건수만 보고하고 버린다. 요청 항목 하나가 잘못되어도 같은 파일의 교정 반영은 유지되고, 교정 파일 하나가 `FORMAT_INVALID`여도 파일별 `SAVEPOINT`로 다른 파일의 반영은 되돌리지 않는다.
 
 ### FR-8. 점검 도구
 
@@ -244,7 +244,7 @@ taxonomy는 화면이 아니라 `taxonomy.xlsx`를 Excel에서 직접 고친다(
 - **임베딩 저장**: `chunk_embeddings(chunk_id, model, dim, text_hash, vector, run_id)`이며 벡터는 float32로 직렬화한 BLOB이다. `text_hash`와 `model`이 같으면 다시 호출하지 않는다. 모델마다 차원이 다르므로 모델이 다른 벡터는 같은 조회에서 섞지 않고, 모델을 바꾸면 그 모델로 다시 만든다.
 - **적재 호출**: `push-vectors`는 `urllib`로 `POST {url}/rest/v1/{table}`을 부르며, 헤더는 `apikey`, `Authorization: Bearer`, `Prefer: resolution=merge-duplicates`이고 chunk ID와 모델 기준으로 upsert한다. `batch_size`개씩 묶어 보내고, 리다이렉트는 따라가지 않는다. 키는 `supabase.key_env`가 가리키는 환경변수에서만 읽고 설정, 로그, 캐시, DB에 넣지 않는다. 모델이 다른 벡터를 같은 표에 섞어 올리려 하면 거부한다. 보낼 대상이 0개면 호출이 0회다.
 - **보내는 열**: chunk ID, 파일 ID(sha256), chunk 순번, 모델, 차원, 벡터, chunk 본문, 확정 라벨(JSON 값), 실행 ID. 파일명과 경로는 보내지 않는다. 확정 라벨은 검수 교정이 있으면 교정 값, 없으면 봇 값이다.
-- **사외 전송 조건**: `supabase.url`의 호스트를 LLM 호출과 같은 방식으로 판정한다. 호스트가 `internal_host_suffixes`에 맞지 않으면 사외이고, 사외에는 파일 해시가 더미 해시 목록(`tests/gold/dummy_hashes.jsonl`)에 있는 chunk만 보낸다. 나머지 chunk는 보내지 않고 사유 코드를 남긴다. 판정이 불확실하면 보내지 않는다.
+- **사외 전송 조건**: `supabase.url`의 호스트를 LLM 호출과 같은 방식으로 판정한다. 호스트가 `internal_host_suffixes`에 맞지 않으면 사외이고, 사외에는 파일 해시가 더미 해시 목록(`tests/gold/dummy_hashes.jsonl` 또는 사외 검증 폴더 `parshing test files/`(저장소 상대 경로, `llm.DUMMY_DIRS`)의 현재 파일 해시)에 있는 chunk만 보낸다. 나머지 chunk는 보내지 않고 사유 코드를 남긴다. 판정이 불확실하면 보내지 않는다.
 - **멱등**: 작업 DB에 `vector_push_log(chunk_id, model, text_hash, label_hash, target_host_hash, pushed_at, result_code)`를 둔다. `label_hash`는 `{축 ID: 정렬한 값 목록, 질문 ID: 답}`만 넣어 키 순으로 정렬한 JSON의 sha256이며 확신도, 근거, 검수 상태, 시각은 넣지 않는다(정의는 `plan.md` 2절 "ID와 해시 정의"). 라벨 실패 chunk는 적재하지 않는다. 같은 대상 호스트에 같은 chunk ID·모델·`text_hash`·`label_hash`가 이미 성공으로 기록되어 있으면 다시 보내지 않으므로, 같은 내용으로 재실행하면 호출이 0회다. 검수 교정으로 확정 라벨이 바뀌면 `label_hash`가 달라지므로 그 chunk만 다시 올린다(upsert). 이 표에도 본문, 파일명, 키를 넣지 않는다.
 - **Supabase 표 정의**: 표 이름, 열, pgvector 차원(임베딩 모델 차원과 같아야 한다), 충돌 키는 저장소의 `docs/supabase_schema.md`에 SQL 코드 블록으로 둔다. `.sql`은 `CLAUDE.md` 쓰기 규칙의 허용 목록에 없으므로 `.md`로 쓴다. 봇은 Supabase 표를 만들거나 지우지 않는다.
 
@@ -354,7 +354,10 @@ flowchart LR
 - 후보마다 대상 시트의 열 순서에 맞춘 탭 구분 붙여넣기 행을 `candidates.md`의 코드 블록 안에 함께 낸다. 사람은 이 행을 복사해 해당 시트에 붙여넣는다.
 - `rejected` 시트에 적힌 후보는 리포트에 올리지 않는다.
 - 새 파일 목록은 `reports/file_list.md`에, 조회 질문 후보는 `reports/query_candidates.md`에 같은 방식(탭 구분 붙여넣기 행)으로 낸다.
-- 후보 리포트는 본문 표현을 담으므로 작업 폴더 밖으로 내지 않는다(9.2절).
+- `candidates.md` 맨 위(제목 다음 줄)에 taxonomy 재검토 요청의 누적 건수와 `taxonomy_revisit.md` 링크를 한 줄로 둔다(0건이면 "0건"). 이 한 줄은 `candidates.md`를 쓸 때마다 함께 갱신된다.
+- 봇은 검수 화면의 taxonomy 재검토 요청을 `reports/taxonomy_revisit.md`(사람용)와 `reports/taxonomy_revisit.jsonl`(기계용)로 낸다. 모든 검수 실행의 요청을 실행 ID와 함께 누적하며, 처리됨 판정·숨김·자동 해결 감지는 하지 않는다. 시트에 반영한 요청도 그대로 남고, 지우려면 그 실행의 검수 화면에서 요청을 삭제하고 다시 `apply`한다. 이 리포트는 `candidates.md`를 쓸 때 함께 갱신되므로 `apply`와 `report`가 둘 다 다시 쓴다. `rejected` 시트에는 새 종류를 두지 않는다.
+- `NO_FIT_VALUE` 요청의 제안 값은 taxonomy 시트 A~K 탭 구분 붙여넣기 행으로 `taxonomy_revisit.md`의 코드 블록에 함께 낸다. 시트에서 사라진 축, 시트에 없는 상위값, 시트에 이미 있는 값은 붙여넣으면 오류가 나므로 행만 생략하고 표에 사유를 적으며 요청은 숨기지 않는다. 새 축(`NEW_AXIS`) 제안은 축 정의 행의 일부 열을 사람이 정해야 하므로 붙여넣기 행을 내지 않는다. 봇은 `taxonomy.xlsx`를 고치지 않는다.
+- 후보 리포트와 taxonomy 재검토 리포트는 본문 표현과 사람 메모를 담으므로 작업 폴더 밖으로 내지 않는다(9.2절).
 
 ## 7. 규칙
 
@@ -433,6 +436,7 @@ flowchart LR
 | alerts | 실행 ID, H5 조건, 수치, 기준값 |
 | flagged_chunks | 불량 목록. 실행 ID, chunk ID, 사유 코드 목록(JSON), `unknown_ratio`, `min_confidence`, `text_hash`(FR-5) |
 | corrections | 교정 이력(검수 화면의 실행 ID, chunk, 축·질문, 사람 값, 그때의 봇 원답, 검수 상태, 교정 파일 해시, 반영 시각) |
+| revisit_requests | taxonomy 재검토 요청(검수 화면의 실행 ID, chunk, 대상 종류(`axis`·`question`·`new_axis`), 키, 사유 코드, 제안 값·상위값, 관련 값, 메모 500자 이하, 그때의 봇 값·사람 교정 값, 파일 ID, 교정 파일 해시, 반영 시각). 라벨 교정 표 `corrections`와 섞지 않으며 산출 SQLite에는 넣지 않는다 |
 | chunk_embeddings | chunk ID, 모델, 차원, 본문 해시(`text_hash`), 벡터(리틀 엔디언 float32 BLOB), 실행 ID. 기본 키 `(chunk_id, model)`(FR-9) |
 | vector_push_log | chunk ID, 모델, 본문 해시(`text_hash`), 확정 라벨 해시(`label_hash`), 대상 호스트 해시(`target_host_hash`), 보낸 시각, 결과 코드(FR-9) |
 
@@ -479,17 +483,17 @@ flowchart LR
 
 - GitHub 저장소에는 코드, 프롬프트, 기본 taxonomy(`defaults/taxonomy.xlsx`), 더미 샘플과 정답표, 문서만 둔다.
 - 사내 `taxonomy.xlsx`(동의어 시트 포함), 사람 입력의 보관본(`inputs/*.b64`), 설정, 원본·base64 파일, 이미지, DB, 화면 파일, 리포트(후보 리포트 포함), 로그는 코드 폴더 밖의 작업 폴더에 둔다. 작업 폴더를 코드 폴더 안으로 지정하면 실행을 거부한다.
-- 후보 리포트는 본문 표현을 담으므로 작업 폴더 밖으로 내지 않는다.
+- 후보 리포트와 taxonomy 재검토 리포트는 본문 표현과 사람 메모를 담으므로 작업 폴더 밖으로 내지 않는다.
 - 사람이 만든 입력은 `read_input(path, snapshot_dir)`가 `inputs/<sha256>.b64`로 보관하며 같은 해시는 재사용하고 그대로 둔다. 실행마다 어느 입력을 썼는지 남기고, 다른 단계가 `.b64`만 읽게 하기 위해서다(`CLAUDE.md`).
 - 새 zip으로 코드 폴더를 통째로 바꿔도 작업 폴더는 그대로다.
 
 ### 9.3 보안
 
-- 로그, 오류 메시지, 콘솔 출력, 리포트(후보 리포트 제외), `alerts.json`, 교정 파일, 게이트 기록에는 문서 본문, 파일명과 경로, 담당자 이름, 동의어 시트의 표현을 넣지 않고 사유 코드와 파일 ID만 남긴다. 시트 오류는 시트 이름과 행 번호만 알린다. 사내에서 생긴 오류를 사외로 전달할 때 내용이 섞이지 않게 하기 위해서다. 상대 경로와 파일명은 work.sqlite, 산출 SQLite, 검수 화면 HTML에만 있다. 정답표 10개 파일로 끝까지 돌린 통합 테스트에서 이 대상들에 파일명, 테스트 폴더명, 입력 루트 경로가 0건인지 확인한다.
+- 로그, 오류 메시지, 콘솔 출력, 리포트(후보 리포트·taxonomy 재검토 리포트 제외), `alerts.json`, 교정 파일, 게이트 기록에는 문서 본문, 파일명과 경로, 담당자 이름, 동의어 시트의 표현을 넣지 않고 사유 코드와 파일 ID만 남긴다. 단, 검수 화면의 taxonomy 재검토 메모(500자 이하)는 예외다. 메모는 화면의 브라우저 저장소, 교정 파일과 그 보관본(`inputs/<sha256>.b64`), 로컬 파일로 연 화면의 JSON 저장 파일(Downloads), `work.sqlite`의 `revisit_requests`, `reports/taxonomy_revisit.md`·`.jsonl`에만 담고, 로그·오류 메시지·콘솔·다른 리포트·클립보드 복사 텍스트에는 넣지 않는다(복사 텍스트에는 메모 건수만 낸다). Downloads의 JSON 저장 파일은 작업 폴더 밖에 있으므로 복사하지 않고 `inbox/`로 이동해 밖에 남기지 않는다. 시트 오류는 시트 이름과 행 번호만 알린다. 사내에서 생긴 오류를 사외로 전달할 때 내용이 섞이지 않게 하기 위해서다. 상대 경로와 파일명은 work.sqlite, 산출 SQLite, 검수 화면 HTML에만 있다. 정답표 10개 파일로 끝까지 돌린 통합 테스트에서 이 대상들에 파일명, 테스트 폴더명, 입력 루트 경로가 0건인지 확인한다.
 - 원본 경로와 사람 입력을 여는 곳은 `ingest.read_input` 하나다. 통합 테스트는 `builtins.open`과 `io.open`을 감싸, 입력 루트 아래 경로나 입력 전용 파일을 연 호출이 모두 `read_input`에서 나왔는지 확인한다. self-check의 `write_roundtrip` 임시 파일만 예외다.
 - 통합 테스트는 실행 전 작업 폴더의 파일 목록을 저장해 두고, 실행 뒤 새로 생기거나 바뀐 파일(작업 폴더와 `out/` 재귀)의 확장자가 모두 허용 목록 안에 있는지 확인한다. 입력 전용 경로(`taxonomy.xlsx`, `pipeline.json`, `raw/`, `inbox/`)는 제외한다. 실행이 끝난 뒤 SQLite 저널 파일(`-journal`, `-wal`)이 남지 않아야 한다. 사내에서도 한 번 더 돌린다.
 - 외부 호출(LLM, 임베딩, Supabase 적재)의 허용은 사용자가 적는 플래그가 아니라 호스트로 판정한다. 주소의 호스트(소문자)가 `internal_host_suffixes`의 어떤 접미사와 같거나 "." + 접미사로 끝나면 사내로 본다(`corp.com`은 `llm.corp.com`과 맞고 `evilcorp.com`과는 맞지 않는다). 호스트 파싱 실패, 빈 호스트, IP 리터럴처럼 판정이 불확실하면 거부한다. 사내 LLM은 도메인 주소로 호출하므로 IP 리터럴 거부를 유지한다.
-- 사외 호스트로의 전송 조건은 하나다. 그 호출(또는 적재 묶음)에 들어가는 chunk가 속한 파일의 해시가 모두 `tests/gold/dummy_hashes.jsonl`에 있어야 한다. LLM·임베딩 호출은 호출 직전마다 확인하고 조건에 맞지 않으면 그 호출만 0회로 막고 사유 코드를 남긴다. Supabase 적재는 더미 해시 chunk만 골라 보낸다(FR-9). 들어가는 파일이 0개인 호출(빈 작업 폴더, 파일 없이 만든 프롬프트)도 사외로 보내지 않으며, self-check의 고정 probe 문장만 예외다. taxonomy 내용은 조건으로 두지 않는다.
+- 사외 호스트로의 전송 조건은 하나다. 그 호출(또는 적재 묶음)에 들어가는 chunk가 속한 파일의 해시가 모두 `tests/gold/dummy_hashes.jsonl` 또는 사외 검증 폴더 `parshing test files/`(저장소 상대 경로, `llm.DUMMY_DIRS`)의 현재 파일 해시에 있어야 한다. `parshing test files/`는 사외 검증 전용이며 사내 파일을 넣지 않는다(2026-10-04 사용자 승인). LLM·임베딩 호출은 호출 직전마다 확인하고 조건에 맞지 않으면 그 호출만 0회로 막고 사유 코드를 남긴다. Supabase 적재는 더미 해시 chunk만 골라 보낸다(FR-9). 들어가는 파일이 0개인 호출(빈 작업 폴더, 파일 없이 만든 프롬프트)도 사외로 보내지 않으며, self-check의 고정 probe 문장만 예외다. taxonomy 내용은 조건으로 두지 않는다.
 - 호스트 판정, 더미 해시 확인, 리다이렉트 거부, 키 읽기는 `llm.py`의 공용 함수 하나로 두고 LLM, 임베딩, Supabase 적재가 함께 쓴다. `urllib`는 리다이렉트를 따라가지 않는 opener로 부르며 3xx 응답은 호출 실패로 처리하므로, 새 호스트로 헤더와 본문이 가지 않는다. 프록시는 `HTTP(S)_PROXY` 환경변수를 따르되 호스트 판정은 프록시가 아니라 설정한 주소 기준이다.
 - 엔드포인트를 사내 값으로 바꾸는 일은 사내 파일로 LLM을 부르는 어떤 단계보다 먼저 한다(`plan.md` M7).
 - 조회 검증의 SQL은 읽기 전용 연결에서 단일 SELECT 문만 실행한다.
@@ -725,6 +729,13 @@ flowchart LR
   16. Supabase 적재를 범위에 넣는다. 로컬 `chunk_embeddings`가 원본이고 Supabase(Postgres + pgvector) 표는 사본이다. 지금은 사외 Supabase 기준으로 쓰고, 사내에서 사용자가 `supabase` 블록을 바꾼다. 검색·RAG·graph는 만들지 않는다.
 - 미결로 12절에 올린 것: 임베딩을 산출 DB에 넣을지(기본안: `work.sqlite`에만), 임베딩의 용도(기본안: 보관과 적재만), 사내에서 쓸 벡터 DB(기본안: 사외 Supabase 기준, 사내에서 사용자가 변경).
 
+### 2026-10-04 검수 화면 taxonomy 재검토 요청
+
+- 근거: 구현 계획 `.omc/plans/autopilot-impl.md`(8절 Critic 반영이 우선), 기술 spec `.omc/autopilot/spec.md`. 저장소 루트 `CLAUDE.md`가 우선한다.
+- 사용자 확정 결정: (1) 리포트는 별도 `reports/taxonomy_revisit.md`·`.jsonl`이고 `candidates.md` 맨 위에는 건수·링크 한 줄만 둔다. (2) 처리됨 판정·숨김·자동 해결 감지는 없고 모든 실행의 요청을 실행 ID와 함께 누적하며, `rejected` 시트에 종류를 추가하지 않는다. (3) 메모는 500자까지 허용하고 9.3절에 예외 조항을 둔다. 로그·콘솔에는 메모를 넣지 않고, 재검토 리포트는 작업 폴더 밖으로 내지 않는다.
+- 바뀐 곳: 3.2절 H6, FR-7(화면 표와 교정 반영 설명), 6.3절, 8.2절(작업 DB 표 `revisit_requests`), 9.2절, 9.3절.
+- 재검토 요청은 라벨과 `label_hash`를 바꾸지 않아 Supabase 재적재가 없다. 봇은 `taxonomy.xlsx`를 고치지 않고 붙여넣기 행만 낸다.
+
 ### 2026-10-04 4차 단계 단순화
 
 - 근거: 사용자 결정(2026-10-04). 백업(수정 전 원본): `.omc/backups/PRD.pre-flag-step.md`. `plan.md`는 같은 명세로 따로 고친다.
@@ -740,3 +751,4 @@ flowchart LR
 - 새로 둔 것: 작업 DB 표 `flagged_chunks(run_id, chunk_id, reason_codes, unknown_ratio, min_confidence, text_hash)`, `reports/flagged_<실행ID>.jsonl`, `reports/flagged_<실행ID>.md`, `pipeline.json`의 `flag` 블록.
 - 뺀 것: LLM 독립 재판정(신호 3, 재판정 프롬프트, 재판정 원답, 재판정 형식, 9.5절 호출 수의 재판정 몫), 표본 추출 전부(무작위 50, 의심 50 = 상위 40 + 무작위 10, 1회 100개 상한, 표본 층, 포함확률, 시드, 의심 풀 추정식, 재추출 비율), 실패 목록 20건 표시 상한, `review_snapshot`(→ `flagged_chunks`), `review_gold/`와 `review_gold_<실행ID>.jsonl`, `report --compare-review-gold`, 회차 간 답 재사용, 사내 리포트의 정확도 지표 전부(일치율, 혼동 행렬, precision/recall, Jaccard, bootstrap·Wilson 구간, 신호별 적중률, 의심 풀 precision 추정, 확신도 구간별 정답률, 실패 포함·제외 지표, 평가자 간 일치도), 검수 행동 기록(체류 시간, 10초 미만 확인 비율)과 `review_actions`, blind 관련 문장, 기준선 리포트의 합격선 관련 문장.
 - 이전 항목에 남은 과거 결정(gap-fill 1·7, v2 확정 결정 2·3·5)은 지우지 않고 "4차 단계 단순화로 대체됨"을 덧붙였다.
+- 2026-10-04 사외 검증 폴더 허용: `parshing test files/`의 현재 파일 해시를 사외 전송 허용 목록에 더했다(사용자 승인). 이 폴더에는 사내 파일을 넣지 않는다.

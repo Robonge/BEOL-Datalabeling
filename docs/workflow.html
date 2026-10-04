@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BEOL 라벨링 워크플로</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4; --primary-mid:#4A6BAF;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --dot:#A8BDD4; --line:#7A9CC0;
+  --text-strong:#1E2D4A; --text-sub:#5B6B86; --text-muted:#9DAABF; --text-footer:#B0BCCC;
+  --danger:#C25450; --warning:#C99A3B; --success:#3B8A6E;
+  --ease:cubic-bezier(0.34,1.56,0.64,1); --radius:12px; --radius-sm:8px;
+  --font:'Pretendard','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic','Inter',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg-base)}
+body{
+  min-height:100vh; font-family:var(--font); font-weight:400; font-size:14px; line-height:1.65;
+  letter-spacing:-0.02em; color:var(--text-strong); background-color:var(--bg-base);
+  background-image:
+    linear-gradient(to right, rgba(200,212,228,.5) 0.4px, transparent 0.4px),
+    linear-gradient(to bottom, rgba(200,212,228,.5) 0.4px, transparent 0.4px);
+  background-size:48px 48px;
+}
+#bg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.mono,code{font-family:var(--mono);letter-spacing:-0.01em}
+code{font-size:12px;color:var(--primary-deep);background:var(--bg-base);border-radius:4px;padding:0 4px}
+b,strong,h1,h2,h3{font-weight:700}
+button{font:inherit;letter-spacing:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+header.top{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:28px 24px 8px;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
+header.top h1{font-size:26px;letter-spacing:-0.055em;line-height:1.2}
+header.top p{color:var(--text-sub);margin-top:4px}
+.grow{flex:1}
+.btn{border:1px solid var(--bg-grid);background:rgba(255,255,255,.7);border-radius:var(--radius-sm);padding:8px 14px;transition:all .28s var(--ease)}
+.btn:hover{transform:translateY(-2px);border-color:var(--primary);box-shadow:0 8px 20px rgba(53,70,144,.14)}
+.btn.primary{color:#fff;border-color:transparent;background:linear-gradient(148deg,#4A5FA8 0%,#354690 100%)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+
+.layout{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:16px 24px 64px;display:grid;grid-template-columns:292px 1fr;gap:24px;align-items:start}
+.rail{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:4px}
+.zone{margin-bottom:14px;border-radius:var(--radius);border:1px dashed var(--line);padding:10px 8px 8px;background:rgba(237,241,247,.78)}
+.zone.H{border-style:dotted;border-color:var(--text-muted)}
+.zone h3{font-size:13px;letter-spacing:-0.048em;padding:0 6px;display:flex;align-items:center;gap:6px}
+.zone .rng{font-size:11px;color:var(--text-sub);padding:2px 6px 8px;line-height:1.45}
+.zone .rng em{font-style:normal;color:var(--primary);font-weight:700}
+.dotc{width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.zone.H .dotc{background:var(--warning)}
+.zone.B .dotc{background:var(--primary-soft)}
+.item{width:100%;text-align:left;display:flex;gap:10px;align-items:center;border:1px solid transparent;background:transparent;border-radius:var(--radius-sm);padding:7px 8px;margin-top:2px;transition:all .28s var(--ease)}
+.item:hover{background:rgba(255,255,255,.75);transform:translateX(3px)}
+.item .no{flex:none;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-family:var(--mono);color:var(--primary-deep);background:rgba(74,95,168,.12)}
+.item .tt{flex:1;line-height:1.35;font-size:13px}
+.item .sb{display:block;font-size:11px;color:var(--text-sub)}
+.item.on{background:#fff;border-color:var(--primary);box-shadow:0 8px 20px rgba(53,70,144,.14)}
+.item.on .no{color:#fff;background:linear-gradient(148deg,#4A5FA8,#354690)}
+.item.human .no{background:rgba(201,154,59,.18);color:#7a5a14}
+.item.human.on .no{background:var(--warning);color:#fff}
+
+.stage{min-width:0}
+.card{background:#fff;border:1px solid var(--bg-grid);border-radius:var(--radius);box-shadow:0 2px 8px rgba(53,70,144,.06);padding:18px 20px}
+.hero{color:#fff;border:0;background:linear-gradient(148deg,#4A5FA8 0%,#354690 100%);position:relative;overflow:hidden}
+.hero.H{background:linear-gradient(148deg,#6B82C4 0%,#4A6BAF 100%)}
+.hero .crumb{font-size:12px;opacity:.82}
+.hero h2{font-size:24px;letter-spacing:-0.048em;margin:2px 0 6px;line-height:1.25}
+.hero p{opacity:.92;max-width:760px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chip{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.14);font-family:var(--mono)}
+.cols{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,8fr);gap:16px;margin-top:16px;align-items:start}
+.card h3{font-size:13px;letter-spacing:-0.048em;margin-bottom:6px}
+.card h3:not(:first-child){margin-top:16px}
+.card ul{list-style:none}
+.card li{position:relative;padding:3px 0 3px 14px;color:var(--text-strong)}
+.card li::before{content:"";position:absolute;left:0;top:12px;width:5px;height:5px;border-radius:50%;background:var(--primary-soft)}
+.card li.f{font-family:var(--mono);font-size:12px;color:var(--primary-deep)}
+.mock-h{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.mock-h h3{margin:0}
+.tag{font-size:10px;font-family:var(--mono);color:var(--text-sub);border:1px solid var(--bg-grid);border-radius:999px;padding:1px 8px;background:var(--bg-base)}
+.mock{display:flex;flex-direction:column;gap:12px}
+.pager{display:flex;gap:8px;margin-top:16px;justify-content:space-between}
+
+.sm{font-size:11px;color:var(--text-sub)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}
+.tile{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:10px 12px;background:var(--bg-base);transition:all .28s var(--ease)}
+.tile:hover{transform:translateY(-3px);border-color:var(--primary);box-shadow:0 8px 20px rgba(53,70,144,.14)}
+.tile .n{font-size:22px;font-weight:700;letter-spacing:-0.055em;line-height:1.15;font-family:var(--mono)}
+.tile .l{font-size:11px;color:var(--text-sub)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);padding:1px 8px;border-radius:999px;border:1px solid var(--bg-grid);background:#fff;white-space:nowrap}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--text-muted)}
+.badge.ok{border-color:var(--success);color:var(--success)} .badge.ok::before{background:var(--success)}
+.badge.warn{border-color:var(--warning);color:#7a5a14} .badge.warn::before{background:var(--warning)}
+.badge.bad{border-color:var(--danger);color:var(--danger)} .badge.bad::before{background:var(--danger)}
+.badge.info{border-color:var(--primary-soft);color:var(--primary-deep)} .badge.info::before{background:var(--primary)}
+table.t{width:100%;border-collapse:collapse;font-size:12.5px}
+table.t th{text-align:left;font-weight:700;font-size:11px;color:var(--text-sub);padding:4px 8px;border-bottom:1px solid var(--bg-grid)}
+table.t td{padding:6px 8px;border-bottom:1px solid rgba(200,212,228,.55);vertical-align:top}
+pre.term{background:#1E2D4A;color:#DCE5F3;border-radius:var(--radius-sm);padding:12px 14px;font-family:var(--mono);font-size:11.5px;line-height:1.7;overflow:auto;white-space:pre;letter-spacing:-0.01em}
+pre.term .ok{color:#7fd1b0} pre.term .w{color:#e3bf72} pre.term .d{color:#8fa4c8}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.flow .p{font-family:var(--mono);font-size:11px;border:1px solid var(--bg-grid);background:var(--bg-base);border-radius:var(--radius-sm);padding:4px 8px}
+.flow .a{color:var(--line)}
+.gauge{position:relative;height:10px;border-radius:5px;background:var(--bg-base);border:1px solid var(--bg-grid);margin:6px 0 2px}
+.gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(148deg,#6B82C4,#4A5FA8)}
+.gauge u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--danger);text-decoration:none}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.chunk{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:10px 12px;background:#fff;transition:all .28s var(--ease)}
+.chunk:hover{border-color:var(--primary);transform:translateY(-2px)}
+.chunk .q{font-size:12.5px;color:var(--text-sub);background:var(--bg-base);border-radius:6px;padding:6px 8px;margin:6px 0}
+.seg{display:inline-flex;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);overflow:hidden}
+.seg button{border:0;background:#fff;padding:4px 12px;font-family:var(--mono);font-size:12px;transition:background .2s}
+.seg button+button{border-left:1px solid var(--bg-grid)}
+.seg button.on{color:#fff;background:linear-gradient(148deg,#4A5FA8,#354690)}
+.mini{font-size:12px;padding:4px 10px;border:1px solid var(--bg-grid);background:#fff;border-radius:var(--radius-sm);transition:all .28s var(--ease)}
+.mini:hover{border-color:var(--primary);transform:translateY(-2px)}
+.mini.on{border-color:var(--success);color:var(--success)}
+.mini.on.w{border-color:var(--warning);color:#7a5a14}
+.mini.on.d{border-color:var(--danger);color:var(--danger)}
+.status{font-size:11px;font-family:var(--mono);color:var(--success)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--bg-grid);background:#fff;border-radius:999px;padding:3px 12px;font-size:12px;transition:all .28s var(--ease)}
+.tabs button.on{color:#fff;border-color:transparent;background:linear-gradient(148deg,#4A5FA8,#354690)}
+.browser{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);overflow:hidden;background:var(--bg-base)}
+.browser .bar{display:flex;gap:6px;align-items:center;padding:6px 10px;background:#fff;border-bottom:1px solid var(--bg-grid);font-family:var(--mono);font-size:11px;color:var(--text-sub)}
+.browser .bar i{width:8px;height:8px;border-radius:50%;background:var(--bg-grid)}
+.browser .body{padding:12px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.branch{border:1px dashed var(--line);border-radius:var(--radius-sm);padding:10px 12px;background:var(--bg-base)}
+.branch b{display:block;font-size:12px;margin-bottom:2px}
+.foot{position:relative;z-index:1;text-align:center;font-size:11px;color:var(--text-footer);padding:0 0 24px}
+.rise{animation:rise .36s var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr}
+  .rail{position:static;max-height:none;display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
+  .zone{min-width:300px;flex:none}
+  .cols,.split{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.rise{animation:none}.btn,.item,.tile,.chunk,.mini{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+
+<header class="top">
+  <div>
+    <h1>BEOL 라벨링 워크플로</h1>
+    <p>pptx 입력부터 파싱 · 라벨링 · 사람 검수 · 피드백 · 적재까지. LLM은 chunk당 3회(1차 분류 · 2차 검증 질문 생성 · 3차 라벨링). 단계를 눌러 산출물과 예시 화면을 확인합니다.</p>
+  </div>
+  <div class="grow"></div>
+  <span class="tag" id="runtag"></span>
+  <button class="btn primary" id="play" type="button">▶ 전체 흐름 재생</button>
+</header>
+
+<main class="layout">
+  <nav class="rail" id="rail" aria-label="워크플로 단계"></nav>
+  <section class="stage" id="stage" aria-live="polite"></section>
+</main>
+<p class="foot">예시 화면의 chunk 본문과 값은 합성 예시이며 실제 파일 내용이 아닙니다. 건수·알림·사유 코드는 실제 실행 결과(run_id 위 표기)입니다.</p>
+
+<script>
+(function(){
+"use strict";
+var RUN = "20261004T123310-72d8";
+document.getElementById("runtag").textContent = "run " + RUN;
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];});}
+function tile(n,l){return '<div class="tile"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>';}
+function badge(t,k){return '<span class="badge '+(k||'')+'">'+t+'</span>';}
+function flow(a){return '<div class="flow">'+a.map(function(x,i){return (i?'<span class="a">→</span>':'')+'<span class="p">'+x+'</span>';}).join('')+'</div>';}
+function term(lines){return '<pre class="term">'+lines+'</pre>';}
+function browser(url,body){return '<div class="browser"><div class="bar"><i></i><i></i><i></i><span style="margin-left:6px">'+url+'</span></div><div class="body">'+body+'</div></div>';}
+function nowStr(){return new Date().toTimeString().slice(0,8);}
+
+/* ---------- zones ---------- */
+var ZONES = {
+  A:{name:"BEOL-labeling", cmd:"/BEOL-labeling", start:"준비 · 수집 · 파싱", end:"검수 대기에서 멈춤"},
+  H:{name:"사람 작업 (스킬 밖)", cmd:"브라우저 화면", start:"화면에서 체크", end:"inbox에 자동 저장"},
+  B:{name:"BEOL-labeling-feedback", cmd:"/BEOL-labeling-feedback", start:"교정 모으기 · 반영", end:"Supabase 적재"}
+};
+
+/* ---------- mocks ---------- */
+function mA1(){
+  return flow(["입력 폴더","작업 폴더 준비","사전 점검","open(path,'rb') → .b64","메모리 파싱 · chunk"]) +
+  '<div>'+term('<span class="d">$ init_workspace.py --input "parshing test files"</span>\n'+
+  '{"file_counts": {".pptx": 11}, "port": 8770}\n'+
+  '<span class="d">$ labelbot selfcheck --probe-llm</span>\n'+
+  'taxonomy.xlsx   <span class="ok">PASS</span> 축 10\n'+
+  'llm_probe       <span class="ok">PASS</span> gpt-6-sol\n'+
+  'write_roundtrip <span class="ok">PASS</span> 7종\n'+
+  'supabase_table  <span class="ok">PASS</span>\n'+
+  '<span class="ok">결과: 전 항목 PASS</span>')+'</div>'+
+  '<div><table class="t" style="margin-top:4px"><tr><th>확장자</th><th>파일</th><th>처리</th></tr>'+
+  '<tr><td class="mono">.pptx</td><td class="mono">11</td><td>'+badge("파싱","ok")+'</td></tr>'+
+  '<tr><td class="mono">.docx</td><td class="mono">0</td><td>'+badge("파싱","info")+'</td></tr>'+
+  '<tr><td class="mono">그 외</td><td class="mono">0</td><td>'+badge("UNSUPPORTED","warn")+'</td></tr></table>'+
+  '<div class="sm" style="margin-top:6px">디코딩 직후 시그니처 확인(OOXML = <span class="mono">PK\\x03\\x04</span>). 맞지 않으면 사유 코드로 실패 처리합니다.</div></div>'+
+  '<div class="tiles">'+tile("11","파일(정상 11)")+tile("48","chunk")+tile("0","새로 파싱")+tile("24","추출 경고")+'</div>'+
+  '<table class="t"><tr><th>chunk</th><th>슬라이드</th><th>유형</th><th>본문(합성 예시)</th></tr>'+
+  '<tr><td class="mono">c_3f9a21</td><td class="mono">4</td><td>'+badge("내용","ok")+'</td><td>[예시] 조건 변경 전후 측정 결과를 비교한 본문</td></tr>'+
+  '<tr><td class="mono">c_71be04</td><td class="mono">5</td><td>'+badge("내용","ok")+'</td><td>[예시] 표 형태로 정리한 수치와 담당자 메모</td></tr>'+
+  '<tr><td class="mono">c_a0d5c8</td><td class="mono">1</td><td>'+badge("비내용","info")+'</td><td>[예시] 표지 · 목차</td></tr></table>'+
+  '<div class="row"><span class="sm">추출 경고 <span class="mono">extract:UNPARSED_DATE</span> 24건은 날짜 값만 저장하지 않은 것이며 라벨에는 영향이 없습니다.</span>'+badge("UNPARSED_DATE ×24","warn")+'</div>';
+}
+function mA4(){
+  var ax=[["구조/레이어","M1",".92"],["공정 모듈","Etch",".88"],["제품·세대","(예) 세대 A",".74"],["REMSPC","unknown","—"],["Patterning","SADP",".81"],["Material","Cu",".90"],["불량 모드","Short",".69"],["물리 현상","(예) 잔막 부족",".77"]];
+  var rows=ax.map(function(a){return '<tr><td>'+a[0]+'</td><td>'+(a[1]==="unknown"?badge("unknown","warn"):'<span class="mono">'+a[1]+'</span>')+'</td><td class="mono">'+a[2]+'</td></tr>';}).join('');
+  return '<div class="row">'+badge("chunk_type: 내용","ok")+'<span class="sm">분류 축 8 + 상태 축 2(결과 · 의사결정 상태)</span></div>'+
+  '<table class="t"><tr><th>축</th><th>값(예시)</th><th>확신도</th></tr>'+rows+'</table>'+
+  '<div class="sm">실제 결과: chunk 48개 중 분류 실패 0, 비내용 0. 값이 taxonomy에 없으면 <span class="mono">unknown</span>으로 두고 후보로 기록합니다.</div>';
+}
+var GENQ=[
+  {ax:"구조/레이어",v:"M1",q:"이 chunk는 M1 배선층의 공정 조건이나 결과를 다루는가?"},
+  {ax:"공정 모듈",v:"Etch",q:"이 chunk의 실험·결과는 Etch 공정 단계에서 나온 것인가?"},
+  {ax:"Material",v:"Cu",q:"이 chunk에서 다루는 배선 재료는 Cu인가?"},
+  {ax:"불량 모드",v:"Short",q:"이 chunk는 배선 간 Short 불량을 보고하는가?"}
+];
+var BADQ=[
+  {q:"Etch 조건이 왜 바뀌었는가?",code:"NOT_YES_NO",why:"개방형(왜)"},
+  {q:"M1이고 Cu 재료인가?",code:"NOT_YES_NO",why:"두 가지를 한 번에 물음"},
+  {q:"이 chunk는 Short 불량을 다룬다",code:"NOT_YES_NO",why:"물음표 없음"},
+  {q:"(Material=Cu 질문 누락)",code:"QUESTION_MISSING",why:"라벨마다 하나씩"}
+];
+var gq=0;
+function mA5(){
+  var rows=GENQ.map(function(g,i){
+    return '<tr data-g="'+i+'" style="cursor:pointer'+(i===gq?';background:rgba(74,95,168,.08)':'')+'"><td><span class="mono">'+g.ax+' = '+g.v+'</span></td><td>'+g.q+'</td><td class="mono">Q-GEN-'+["3f9a21c0e1","8b72d4a90f","c1e05b7733","5d0a9e61b2"][i]+'</td></tr>';
+  }).join('');
+  var g=GENQ[gq];
+  return flow(["1차 라벨(해당 없음·unknown 제외)","question_gen 프롬프트","LLM 1회","검증기","gen_questions 표"])+
+  '<div class="split"><div class="branch"><b>① 승인 질문 매핑 (규칙)</b><span class="mono">Q-COM-001</span> '+badge("승인","ok")+'<div class="sm" style="margin-top:4px">공통 질문 전부 + 축 값에 맞는 카테고리 질문</div></div>'+
+  '<div class="branch"><b>② 검증 질문 생성 (LLM)</b>남은 상한(8 − 승인 수)만큼 라벨마다 1개 '+badge("O/X 판정","info")+'<div class="sm" style="margin-top:4px">뒷받침 = O · 반박 = X</div></div></div>'+
+  '<table class="t"><tr><th>검증 대상 라벨</th><th>생성된 질문(예시)</th><th>질문 ID</th></tr>'+rows+'</table>'+
+  '<div class="chunk"><div class="row"><span class="mono">'+g.ax+' = '+g.v+'</span><span class="sm">3차에서 이렇게 판정됩니다</span></div>'+
+  '<div class="split" style="margin-top:6px"><div class="q" style="margin:0">'+badge("O","ok")+' 본문이 '+g.v+' 라벨을 뒷받침 → 1차 라벨 유지</div>'+
+  '<div class="q" style="margin:0">'+badge("X","bad")+' 본문이 반박하거나 다른 값 → 1차 라벨 의심</div></div></div>'+
+  '<div><div class="sm" style="margin-bottom:4px">검증기가 거부하는 질문(다시 요청)</div><div class="flow">'+
+  BADQ.map(function(b){return '<span class="p" title="'+b.why+'">'+b.q+' <span style="color:var(--danger)">'+b.code+'</span></span>';}).join('')+'</div></div>'+
+  '<div class="sm">질문 행을 눌러 판정 기준을 확인하세요. 질문 문구는 합성 예시입니다. 생성 실패 시 <span class="mono">question_gen</span> 사유 코드를 남기고 승인 질문만으로 3차를 진행합니다.</div>';
+}
+function bA5(root){
+  root.addEventListener("click",function(e){var tr=e.target.closest("tr[data-g]"); if(!tr) return; gq=+tr.getAttribute("data-g");
+    root.querySelector(".mock").innerHTML=mA5();});
+}
+function mA6(){
+  var C=251.3, o=34/48*C, x=1/48*C, n=13/48*C;
+  var svg='<svg viewBox="0 0 120 120" width="132" height="132" role="img" aria-label="Q-COM-001 답 분포 O 34, X 1, N/A 13"><g transform="rotate(-90 60 60)" fill="none" stroke-width="16">'+
+  '<circle cx="60" cy="60" r="40" stroke="#3B8A6E" stroke-dasharray="'+o+' '+C+'" stroke-dashoffset="0"/>'+
+  '<circle cx="60" cy="60" r="40" stroke="#C25450" stroke-dasharray="'+x+' '+C+'" stroke-dashoffset="'+(-o)+'"/>'+
+  '<circle cx="60" cy="60" r="40" stroke="#A8BDD4" stroke-dasharray="'+n+' '+C+'" stroke-dashoffset="'+(-(o+x))+'"/></g>'+
+  '<text x="60" y="58" text-anchor="middle" font-size="18" font-weight="700" fill="#1E2D4A">48</text><text x="60" y="74" text-anchor="middle" font-size="9" fill="#5B6B86">chunk</text></svg>';
+  return '<div class="row" style="justify-content:flex-start;gap:20px">'+svg+'<div><div class="sm" style="margin-bottom:4px">Q-COM-001 답 분포(실제)</div>'+
+  '<div class="flow"><span class="badge ok">O 34</span><span class="badge bad">X 1</span><span class="badge">N/A 13</span></div></div></div>'+
+  '<div class="sm">위 분포는 검증 질문 도입 전 실행(run '+RUN+')의 실제 값입니다.</div>'+
+  '<table class="t"><tr><th>질문</th><th>답</th><th>근거 인용(합성 예시)</th><th>확신도</th></tr>'+
+  '<tr><td class="mono">Q-COM-001</td><td>'+badge("O","ok")+'</td><td>"[예시] 조건 변경 후 수율이 회복됐다"</td><td class="mono">.86</td></tr>'+
+  '<tr><td class="mono">Q-GEN · 구조/레이어=M1</td><td>'+badge("O","ok")+'</td><td>"[예시] M1 trench 깊이 조건 비교"</td><td class="mono">.91</td></tr>'+
+  '<tr><td class="mono">Q-GEN · 불량 모드=Short</td><td>'+badge("X","bad")+'</td><td>"[예시] 불량 유형은 Open으로 확인"</td><td class="mono">.83</td></tr>'+
+  '<tr><td class="mono">Q-GEN · Material=Cu</td><td>'+badge("N/A","")+'</td><td class="sm">근거 없음</td><td class="mono">.55</td></tr></table>'+
+  '<div class="chunk"><div class="row"><span class="mono">X = 1차 라벨이 본문과 어긋남</span>'+badge("불량 모드=Short 의심","warn")+'</div>'+
+  '<div class="sm" style="margin-top:4px">검증 질문 X는 1차 분류 오류 신호이며 대시보드 <span class="mono">Q-GEN-*</span> 합산 행으로 모입니다. O·X에는 본문 인용이 필수이고, 인용이 본문에 없으면 <span class="mono">QUOTE_NOT_FOUND</span>로 4차 불량 목록에 올라갑니다.</div></div>';
+}
+function gauge(label,val,thr,note){
+  return '<div><div class="row"><span>'+label+'</span><span class="mono">'+val+' <span class="sm">(기준 '+thr+')</span></span></div><div class="gauge"><i style="width:'+(val*100)+'%"></i><u style="left:'+(thr*100)+'%"></u></div><div class="sm">'+note+'</div></div>';
+}
+function mA7(){
+  return gauge("NA_RATIO_LOW",0.2708,0.3,"N/A 비율이 30% 이하이면 알림 "+badge("알림","warn"))+
+  gauge("DUP_LABEL_HIGH",0.5568,0.4,"다중값 축의 중복 라벨 40% 이상이면 알림 "+badge("알림","warn"))+
+  '<div class="sm">H5 알림은 원인 점검용이며 라벨링은 끝까지 돌았습니다.</div>'+
+  '<div class="tiles">'+tile("12","불량 chunk")+tile("9","QUOTE_NOT_FOUND")+tile("3","LOW_CONFIDENCE")+tile("26 · 83","새 값 · 동의어 후보")+'</div>'+
+  '<div class="flow"><span class="p">reports/flagged_'+RUN.slice(0,8)+'….md</span><span class="p">reports/candidates.md</span><span class="p">reports/baseline_….md</span><span class="p">out/labeling.sqlite</span></div>'+
+  '<div class="sm">후보(H3·H8)는 건수만 알리고 이번에 재실행하지 않습니다. 사람이 <span class="mono">taxonomy.xlsx</span>에 붙여넣으면 다음 실행에 반영됩니다.</div>';
+}
+function mA8(){
+  var tabs=[["results","결과 대시보드","results.html"],["review","검수 화면","review.html"],["compare","파싱 대조","compare.html"]];
+  return '<div class="tabs" id="a8tabs">'+tabs.map(function(t,i){return '<button type="button" data-t="'+t[0]+'" class="'+(i?'':'on')+'">'+t[1]+'</button>';}).join('')+'</div>'+
+  '<div id="a8view"></div>'+
+  '<div class="sm">화면 서버 <span class="mono">labelbot serve</span>가 <span class="mono">screens/</span>를 제공하고, 검수·대조 화면의 체크를 <span class="mono">inbox/</span>에 바로 저장합니다.</div>';
+}
+function a8view(t){
+  if(t==="results") return browser("localhost:8770/results.html",'<div class="tiles">'+tile("48","chunk")+tile("12","불량")+tile("34","O")+tile("1","X")+tile("13","N/A")+'</div><div class="gauge" style="margin-top:10px"><i style="width:70.8%"></i></div><div class="sm">축별 값 분포 · 질문별 O/X/N/A · H5 알림</div>'+
+    '<table class="t" style="margin-top:8px"><tr><th>질문</th><th>O</th><th>X</th><th>N/A</th></tr><tr><td class="mono">Q-COM-001</td><td class="mono">34</td><td class="mono">1</td><td class="mono">13</td></tr>'+
+    '<tr><td class="mono">Q-GEN-* <span class="sm">검증 질문 합산(예시)</span></td><td class="mono">—</td><td class="mono" style="color:var(--danger)">—</td><td class="mono">—</td></tr></table>'+
+    '<div class="sm">Q-GEN-* 행의 X 수가 1차 라벨과 본문이 어긋난 건수입니다. 새 방식으로 다시 실행하면 채워집니다.</div>');
+  if(t==="review") return browser("localhost:8770/review.html",'<div class="row"><b>검수 · 불량 chunk 12개</b><span class="status">체크하면 작업 폴더 inbox에 자동 저장</span></div><div class="chunk" style="margin-top:8px"><div class="row"><span class="mono">c_3f9a21</span>'+badge("QUOTE_NOT_FOUND","bad")+'</div><div class="q">[예시] 근거 인용과 본문을 나란히 비교</div></div>');
+  return browser("localhost:8770/compare.html",'<div class="row"><b>파싱 대조 · 슬라이드 원본 vs 추출 결과</b><span class="sm">이상 여부 표시(선택)</span></div><div class="split" style="margin-top:8px"><div class="chunk"><div class="sm">원본 슬라이드(이미지)</div><div style="height:46px"></div></div><div class="chunk"><div class="sm">파서가 읽은 텍스트</div><div style="height:46px"></div></div></div>');
+}
+
+/* H6 검수 (interactive) */
+var rv = {items:[
+  {id:"c_3f9a21",r:"QUOTE_NOT_FOUND",bot:"O",key:"Q-COM-001",q:"[예시] 공통 질문 Q-COM-001"},
+  {id:"c_71be04",r:"LOW_CONFIDENCE",bot:"X",key:"Q-GEN-5d0a9e61b2",q:"검증 질문: 이 chunk는 배선 간 Short 불량을 보고하는가? (1차 라벨 불량 모드=Short)"},
+  {id:"c_a0d5c8",r:"QUOTE_NOT_FOUND",bot:"O",key:"Q-GEN-3f9a21c0e1",q:"검증 질문: 이 chunk는 M1 배선층의 공정 조건이나 결과를 다루는가?"}],ans:{},st:{}};
+function rvJSON(){
+  var corr=[],cs=[];
+  rv.items.forEach(function(it){
+    if(rv.ans[it.id]&&rv.ans[it.id]!==it.bot) corr.push({chunk_id:it.id,target:"answer",key:it.key,value:rv.ans[it.id],status:"corrected"});
+    if(rv.st[it.id]) cs.push({chunk_id:it.id,status:rv.st[it.id]});
+  });
+  return JSON.stringify({kind:"review",run_id:RUN,corrections:corr,chunk_status:cs,synonyms:[],revisits:[]},null,2);
+}
+function mH1(){
+  var cards=rv.items.map(function(it){
+    var cur=rv.ans[it.id]||it.bot;
+    return '<div class="chunk" data-id="'+it.id+'"><div class="row"><span class="mono">'+it.id+' · '+it.key+'</span>'+badge(it.r,"bad")+'</div>'+
+    '<div class="q">'+it.q+'<br><span class="sm">봇 답 '+it.bot+' · 근거 인용과 chunk 본문을 비교해 맞는지 판단합니다</span></div>'+
+    '<div class="row"><div class="seg">'+["O","X","N/A"].map(function(v){return '<button type="button" data-a="'+v+'" class="'+(v===cur?'on':'')+'">'+v+'</button>';}).join('')+'</div>'+
+    '<div style="display:flex;gap:6px"><button type="button" class="mini '+(rv.st[it.id]==="confirmed"?'on':'')+'" data-s="confirmed">확인, 이상 없음</button>'+
+    '<button type="button" class="mini w '+(rv.st[it.id]==="undecidable_image"?'on':'')+'" data-s="undecidable_image">판단 불가(이미지)</button></div></div></div>';
+  }).join('');
+  return '<div class="browser"><div class="bar"><i></i><i></i><i></i><span style="margin-left:6px">localhost:8770/review.html</span><span class="grow"></span><span class="status" id="h1st">체크하면 작업 폴더 inbox에 자동 저장</span></div><div class="body" style="display:flex;flex-direction:column;gap:8px">'+cards+'</div></div>'+
+  '<div class="sm">직접 눌러 보세요. 체크할 때마다 아래 JSON이 <span class="mono">inbox/review_'+RUN.slice(0,15)+'….json</span>에 저장되는 형태가 바뀝니다.</div>'+
+  '<pre class="term" id="h1json">'+esc(rvJSON())+'</pre>';
+}
+function bH1(root){
+  root.addEventListener("click",function(e){
+    var card=e.target.closest(".chunk[data-id]"); if(!card) return;
+    var id=card.getAttribute("data-id"), a=e.target.getAttribute("data-a"), s=e.target.getAttribute("data-s");
+    if(a) rv.ans[id]=a;
+    else if(s) rv.st[id]=(rv.st[id]===s?undefined:s);
+    else return;
+    var j=root.querySelector("#h1json"), st=root.querySelector("#h1st");
+    var list=root.querySelector(".browser .body");
+    var tmp=document.createElement("div"); tmp.innerHTML=mH1();
+    list.innerHTML=tmp.querySelector(".browser .body").innerHTML;
+    j=root.querySelector("#h1json"); j.textContent=rvJSON();
+    root.querySelector("#h1st").textContent="inbox 저장됨 "+nowStr();
+  });
+}
+
+/* H2 대조 (interactive) */
+var cm={items:[{id:"c_3f9a21",n:4},{id:"c_71be04",n:5},{id:"c_a0d5c8",n:7}],m:{}};
+function cmJSON(){
+  var marks=[]; cm.items.forEach(function(it){ if(cm.m[it.id]) marks.push({chunk_id:it.id,status:cm.m[it.id],memo:""}); });
+  return JSON.stringify({kind:"compare",run_id:RUN,marks:marks},null,2);
+}
+function mH2(){
+  var cards=cm.items.map(function(it){
+    return '<div class="chunk" data-id="'+it.id+'"><div class="row"><span class="mono">'+it.id+' · 슬라이드 '+it.n+'</span><div class="seg">'+
+    '<button type="button" data-m="ok" class="'+(cm.m[it.id]==="ok"?'on':'')+'">이상 없음</button>'+
+    '<button type="button" data-m="issue" class="'+(cm.m[it.id]==="issue"?'on':'')+'">이상 있음</button></div></div>'+
+    '<div class="split" style="margin-top:8px"><div class="q" style="margin:0">원본 슬라이드(이미지 자리)</div><div class="q" style="margin:0">[예시] 파서가 읽어 낸 텍스트</div></div></div>';
+  }).join('');
+  var done=Object.keys(cm.m).filter(function(k){return cm.m[k];}).length;
+  return '<div class="browser"><div class="bar"><i></i><i></i><i></i><span style="margin-left:6px">localhost:8770/compare.html</span><span class="grow"></span><span class="status" id="h2st">표시한 슬라이드 '+done+'/'+cm.items.length+'</span></div><div class="body" style="display:flex;flex-direction:column;gap:8px">'+cards+'</div></div>'+
+  '<div class="sm">대조는 선택이며 라벨링을 막지 않습니다. 이상 있음으로 표시한 슬라이드는 파서 보강 대상입니다.</div>'+
+  '<pre class="term" id="h2json">'+esc(cmJSON())+'</pre>';
+}
+function bH2(root){
+  root.addEventListener("click",function(e){
+    var m=e.target.getAttribute("data-m"), card=e.target.closest(".chunk[data-id]"); if(!m||!card) return;
+    var id=card.getAttribute("data-id"); cm.m[id]=(cm.m[id]===m?undefined:m);
+    var tmp=document.createElement("div"); tmp.innerHTML=mH2();
+    root.querySelector(".browser").innerHTML=tmp.querySelector(".browser").innerHTML;
+    root.querySelector("#h2json").textContent=cmJSON();
+  });
+}
+
+function mB1(){
+  return flow(["inbox 확인","(없으면) Downloads 이동 · 탭 저장","labelbot apply","work.sqlite 교정"])+
+  '<div class="split"><div class="branch"><b>교정 파일 모으기</b>화면 서버 자동 저장분을 그대로 쓰고, 없으면 Downloads의 이번 실행 파일을 이름만 바꿔 옮깁니다. "교정 없음"이면 건너뜁니다.</div>'+
+  '<div class="branch"><b>교정 반영</b>JSON은 <span class="mono">read_input</span> 한 곳에서만 읽고, 같은 실행의 최신 검수 파일 하나가 교정 전체를 대신합니다.</div></div>'+
+  term('<span class="d">$ collect_inbox.py --run '+RUN+'</span>\n{"moved": {"review": 0, "compare": 0}, "inbox": {"review": <span class="ok">1</span>, "compare": <span class="ok">1</span>}}\n'+
+  '<span class="d">$ labelbot apply --kind review</span>\n[apply] review 파일 9c1e4b07a2d3 run_id='+RUN+': <span class="ok">OK</span> (n건)\n[apply] compare 파일 41ab90c7f2e1 run_id='+RUN+': <span class="ok">OK</span> (n건)')+
+  '<table class="t"><tr><th>코드</th><th>뜻</th></tr>'+
+  '<tr><td>'+badge("OK","ok")+'</td><td>반영됨</td></tr>'+
+  '<tr><td>'+badge("SUPERSEDED","info")+'</td><td>같은 실행의 더 최근 검수 파일이 있어 건너뜀(정상)</td></tr>'+
+  '<tr><td>'+badge("NO_FLAGGED_FOR_RUN","warn")+'</td><td>그 실행의 검수 목록이 없음 → 사용자 확인 후 반영 안 함</td></tr>'+
+  '<tr><td>'+badge("FORMAT_INVALID","bad")+'</td><td>형식 오류 → 화면에서 다시 저장</td></tr></table>'+
+  '<div class="flow"><span class="p">봇 라벨 O</span><span class="a">→</span><span class="p" style="border-color:var(--primary);color:var(--primary-deep)">사람 값 X (최종)</span></div>'+
+  '<div class="sm">사람 값이 최종 라벨입니다. 검수 중 등록한 동의어는 <span class="mono">reports/candidates.md</span>의 "검수 등록" 행으로만 나옵니다.</div>';
+}
+var b3on=false;
+function mB3(){
+  var o=b3on?32:34, x=b3on?3:1, n=13;
+  return '<div class="row"><div class="tabs" id="b3tabs"><button type="button" data-v="0" class="'+(b3on?'':'on')+'">봇 라벨(실제)</button><button type="button" data-v="1" class="'+(b3on?'on':'')+'">교정 반영 후(O→X 2건 가정)</button></div></div>'+
+  '<div class="tiles">'+tile(o,"O")+tile(x,"X")+tile(n,"N/A")+tile(b3on?"2":"0","사람 교정")+'</div>'+
+  term('<span class="d">$ python -m labelbot review    --run '+RUN+'</span>\n<span class="d">$ python -m labelbot dashboard --run '+RUN+'</span>\n<span class="d">$ python -m labelbot report    --run '+RUN+'</span>\nLLM 호출 0회 · 대시보드는 확정 라벨(사람 교정 우선)로 다시 그려집니다')+
+  '<div class="sm">두 번째 탭은 교정 결과를 보여 주기 위한 가정 값입니다.</div>';
+}
+function mB4(){
+  return flow(["확정 라벨 텍스트","embed","text-embedding-3-small · 1536차원","push-vectors","Supabase"])+
+  term('<span class="d">beol_chunk_embeddings (행 예시)</span>\n{ "chunk_id": "c_3f9a21",\n  "run_id": "'+RUN+'",\n  "labels": { "구조/레이어": ["M1"], "Q-COM-001": "X" },\n  "embedding": [0.012, -0.044, … 1536개] }')+
+  '<table class="t"><tr><th>출력</th><th>뜻</th></tr>'+
+  '<tr><td>'+badge("전송","ok")+'</td><td>라벨이 새로 바뀐 chunk만 올림(이미 올린 chunk는 건너뜀)</td></tr>'+
+  '<tr><td>'+badge("EXTERNAL_NON_DUMMY","warn")+'</td><td>더미 해시 목록 밖 파일은 사외 호출을 차단(정상 동작)</td></tr></table>'+
+  '<div class="row"><span class="sm">현재 누적 적재</span>'+badge("0 chunk · 검수 전","info")+'</div>';
+}
+
+/* ---------- steps ---------- */
+var STEPS = [
+ {z:"A",t:"준비 · 수집 · 파싱",cmd:"init_workspace · selfcheck · run (ingest)",llm:0,who:"bot",
+  lead:"입력 폴더로 작업 폴더를 만들고 환경을 점검한 뒤, 원본을 base64로 보관하고 메모리에서 슬라이드를 파싱해 chunk로 나눕니다.",
+  pts:["작업 폴더 생성 · pipeline.json 기록 · 화면 서버 등록","사전 점검(키 · 모델 · taxonomy · 쓰기 확장자 · Supabase 표). FAIL이면 멈춤","<code>read_input</code> → <code>.b64</code> → <code>BytesIO</code> → OOXML 파싱(DRM 규칙)","같은 파일은 해시로 건너뜀, 실패는 파일 ID와 사유 코드만 기록"],
+  out:["pipeline.json","b64/&lt;sha256&gt;.b64","work.sqlite (files · chunks)","logs/labelbot.log"],mock:mA1},
+ {z:"A",t:"1차 분류",cmd:"labelbot run (classify)",llm:1,who:"bot",
+  lead:"chunk마다 LLM을 1회 불러 유형(내용/비내용)과 10개 축의 값을 고릅니다.",
+  pts:["6개씩 병렬 호출, 같은 입력은 캐시로 0회","taxonomy에 없는 값은 unknown + 새 값 후보","chunk당 호출 1회"],
+  out:["work.sqlite (labels)","reports/candidates.jsonl"],mock:mA4},
+ {z:"A",t:"2차 질문 매핑 · 검증 질문 생성",cmd:"labelbot run (map · question_gen)",llm:1,who:"bot",
+  lead:"승인된 질문을 규칙으로 매핑하고, 1차 라벨이 맞는지 확인하는 O/X 검증 질문을 LLM이 라벨마다 하나씩 만듭니다.",
+  pts:["승인 질문: 공통 질문 전부 + 축 값에 맞는 카테고리 질문(규칙)","검증 질문: 1차 라벨(해당 없음·unknown 제외)마다 1개, 남은 상한만큼(LLM 1회)","예/아니오 판정 의문문만 허용. 개방형·복합·부정 의문문은 검증기가 거부","6개씩 병렬, 같은 입력은 캐시로 0회"],
+  out:["prompts/question_gen.md","work.sqlite (gen_questions)","failures (stage question_gen)"],mock:mA5,bind:bA5},
+ {z:"A",t:"3차 라벨링",cmd:"labelbot run (label)",llm:1,who:"bot",
+  lead:"승인 질문과 검증 질문마다 O/X/N/A와 근거 인용문을 LLM이 답합니다. 검증 질문의 X는 1차 라벨이 본문과 어긋났다는 신호입니다.",
+  pts:["chunk당 호출 1회(질문 전부를 한 번에)","Q-GEN: 뒷받침 = O · 반박 = X · 근거 없음일 때만 N/A","인용문이 본문에 없으면 불량 후보","실패는 chunk 단위로만 기록하고 실행은 계속"],
+  out:["work.sqlite (labels · answers)"],mock:mA6},
+ {z:"A",t:"분포 알림 · 불량 목록 · 후보",cmd:"alerts · review.compute_flags",llm:0,who:"bot",
+  lead:"분포 이상(H5)을 알리고, 사유 코드로 불량 chunk를 뽑고, 후보 리포트를 씁니다.",
+  pts:["H5·H3·H8은 보고만 하고 계속 진행","불량 사유 6종(UNKNOWN_HIGH · LOW_CONFIDENCE · QUOTE_NOT_FOUND · PARSE_WARNING · CLASSIFY_FAILED · LABEL_FAILED)","봇은 taxonomy.xlsx를 고치지 않음"],
+  out:["reports/alerts.json","reports/flagged_&lt;RUN&gt;.jsonl·.md","reports/candidates.md","reports/taxonomy_revisit.md","out/labeling.sqlite","reports/baseline_&lt;RUN&gt;.md"],mock:mA7},
+ {z:"A",t:"화면 3개 생성 · 띄우기",cmd:"compare · review · dashboard · serve",llm:0,who:"bot",
+  lead:"결과 대시보드·검수·파싱 대조 화면을 만들고 브라우저에 띄운 뒤 검수 대기에서 멈춥니다.",
+  pts:["LLM 호출 0회","Supabase에는 아직 올리지 않음(검수 전 라벨 보호)","체크는 inbox에 자동 저장되도록 서버로 서빙"],
+  out:["screens/results.html","screens/review.html","screens/compare.html"],mock:mA8,bind:function(root){
+    var v=root.querySelector("#a8view"); v.innerHTML=a8view("results");
+    root.querySelector("#a8tabs").addEventListener("click",function(e){var t=e.target.getAttribute("data-t"); if(!t) return;
+      [].forEach.call(root.querySelectorAll("#a8tabs button"),function(b){b.classList.toggle("on",b===e.target);}); v.innerHTML=a8view(t);});
+  }},
+ {z:"H",t:"H6 불량 chunk 검수",cmd:"review.html (브라우저)",llm:0,who:"human",
+  lead:"사람이 불량 chunk의 봇 답을 확인·교정합니다. 사람 값이 최종 라벨이 됩니다.",
+  pts:["답 교정, '확인, 이상 없음', '판단 불가(이미지)', 동의어 등록","체크할 때마다 inbox에 JSON 자동 저장","교정할 것이 없으면 건너뛰어도 됨"],
+  out:["inbox/review_&lt;RUN&gt;.json"],mock:mH1,bind:bH1},
+ {z:"H",t:"H2 파싱 대조 (선택)",cmd:"compare.html (브라우저)",llm:0,who:"human",
+  lead:"원본 슬라이드와 파서가 읽은 텍스트를 비교해 이상 여부를 표시합니다. 라벨링을 막지 않는 선택 단계입니다.",
+  pts:["슬라이드별 이상 없음 / 이상 있음","이상 슬라이드는 파서 보강 대상"],
+  out:["inbox/compare_&lt;RUN&gt;.json"],mock:mH2,bind:bH2},
+ {z:"B",t:"교정 모으기 · 반영",cmd:"collect_inbox.py · labelbot apply",llm:0,who:"bot",
+  lead:"inbox의 검수·대조 JSON을 모아(없으면 Downloads나 브라우저 탭에서 가져와) 사람 교정과 대조 기록을 작업 DB에 반영합니다.",
+  pts:["서버 자동 저장분 우선, Downloads는 이번 실행 파일만 이름 바꾸기로 이동","브라우저 탭 저장은 매번 사용자 확인","JSON을 여는 곳은 <code>read_input</code> 한 곳, 두 번 반영해도 결과 동일","사람 값이 최종 라벨"],
+  out:["inbox/review_&lt;RUN&gt;.json · compare_&lt;RUN&gt;.json","work.sqlite (corrections · compare_marks · revisit_requests)","reports/candidates.md (검수 등록 행)","reports/taxonomy_revisit.md (재검토 요청)"],mock:mB1},
+ {z:"B",t:"화면 · 리포트 재생성",cmd:"review · dashboard · report",llm:0,who:"bot",
+  lead:"사람 교정이 반영된 확정 라벨로 화면과 기준선 리포트를 다시 만듭니다.",
+  pts:["LLM 호출 0회","results 탭을 새로고침해 바뀐 대시보드 확인"],
+  out:["screens/review.html","screens/results.html","reports/baseline_&lt;RUN&gt;.md"],mock:mB3,bind:function(root){
+    var t=root.querySelector("#b3tabs"); if(!t) return;
+    t.addEventListener("click",function(e){var v=e.target.getAttribute("data-v"); if(v===null) return; b3on=v==="1";
+      var tmp=document.createElement("div"); tmp.innerHTML=mB3(); root.querySelector(".mock").innerHTML=tmp.innerHTML; bindStep(root);});
+  }},
+ {z:"B",t:"임베딩 · Supabase 적재",cmd:"labelbot embed · push-vectors",llm:0,who:"bot",
+  lead:"확정 라벨 chunk를 임베딩해 Supabase 사본에 올립니다. 이 단계만 임베딩 API를 부릅니다.",
+  pts:["이미 만든 벡터면 호출 0회","사람 교정이 우선인 확정 라벨로 적재","실패는 사유 코드로 남고 반영 결과에는 영향 없음"],
+  out:["work.sqlite (chunk_embeddings · vector_push_log)","Supabase beol_chunk_embeddings"],mock:mB4}
+];
+
+/* ---------- render ---------- */
+var rail=document.getElementById("rail"), stage=document.getElementById("stage"), cur=0, timer=null;
+function buildRail(){
+  var html="", last="";
+  STEPS.forEach(function(s,i){
+    if(s.z!==last){
+      if(last) html+='</div>';
+      var z=ZONES[s.z];
+      html+='<div class="zone '+s.z+'"><h3><span class="dotc"></span>'+z.name+'</h3><div class="rng"><em>시작</em> '+z.start+' → <em>끝</em> '+z.end+'</div>';
+      last=s.z;
+    }
+    html+='<button type="button" class="item '+(s.who==="human"?'human':'')+'" data-i="'+i+'"><span class="no">'+(i+1)+'</span><span class="tt">'+s.t+'<span class="sb">'+(s.who==="human"?'사람':'봇')+' · LLM '+s.llm+'회</span></span></button>';
+  });
+  rail.innerHTML=html+'</div>';
+}
+function bindStep(root){ var s=STEPS[cur]; if(s.bind) s.bind(root); }
+function show(i,scroll){
+  cur=Math.max(0,Math.min(STEPS.length-1,i));
+  var s=STEPS[cur], z=ZONES[s.z];
+  [].forEach.call(rail.querySelectorAll(".item"),function(b,k){b.classList.toggle("on",k===cur); if(k===cur&&scroll!==false) b.scrollIntoView({block:"nearest",behavior:"smooth"});});
+  stage.innerHTML=
+   '<article class="card hero '+s.z+' rise"><div class="crumb">'+z.name+' · '+z.cmd+' · 단계 '+(cur+1)+'/'+STEPS.length+'</div>'+
+   '<h2>'+s.t+'</h2><p>'+s.lead+'</p>'+
+   '<div class="chips"><span class="chip">'+s.cmd+'</span><span class="chip">LLM '+s.llm+'회</span><span class="chip">'+(s.who==="human"?'사람 개입':'봇 자동')+'</span></div></article>'+
+   '<div class="cols rise">'+
+   '<section class="card"><h3>하는 일</h3><ul>'+s.pts.map(function(p){return '<li>'+p+'</li>';}).join('')+'</ul>'+
+   '<h3>산출물</h3><ul>'+s.out.map(function(o){return '<li class="f">'+o+'</li>';}).join('')+'</ul></section>'+
+   '<section class="card"><div class="mock-h"><h3>예시 화면 · 출력</h3><span class="tag">합성 예시</span></div><div class="mock" id="mockroot">'+s.mock()+'</div></section></div>'+
+   '<div class="pager"><button type="button" class="btn" id="prev"'+(cur===0?' disabled':'')+'>← 이전</button><button type="button" class="btn primary" id="next"'+(cur===STEPS.length-1?' disabled':'')+'>다음 →</button></div>';
+  bindStep(document.getElementById("mockroot").parentNode);
+  document.getElementById("prev").onclick=function(){stop();show(cur-1);};
+  document.getElementById("next").onclick=function(){stop();show(cur+1);};
+}
+rail.addEventListener("click",function(e){var b=e.target.closest(".item"); if(!b) return; stop(); show(+b.getAttribute("data-i"));});
+document.addEventListener("keydown",function(e){
+  if(/INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||"")) return;
+  if(e.key==="ArrowDown"||e.key==="j"){stop();show(cur+1);} else if(e.key==="ArrowUp"||e.key==="k"){stop();show(cur-1);}
+});
+var playBtn=document.getElementById("play");
+function stop(){ if(timer){clearInterval(timer);timer=null;} playBtn.textContent="▶ 전체 흐름 재생"; }
+playBtn.onclick=function(){
+  if(timer){stop();return;}
+  playBtn.textContent="■ 재생 중지"; show(0);
+  timer=setInterval(function(){ if(cur>=STEPS.length-1){stop();return;} show(cur+1); },2400);
+};
+buildRail(); show(0,false);
+
+/* ---------- 배경 도트 (반발 · 잔상 · 별자리) ---------- */
+(function(){
+  var c=document.getElementById("bg"), x=c.getContext("2d"), W,H,dots=[],mouse={x:-999,y:-999},trail=[];
+  var still=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function size(){
+    var d=window.devicePixelRatio||1; W=innerWidth; H=innerHeight; c.width=W*d; c.height=H*d; x.setTransform(d,0,0,d,0,0);
+    dots=[]; for(var i=24;i<W+48;i+=48) for(var j=24;j<H+48;j+=48) dots.push({ox:i,oy:j,x:i,y:j,vx:0,vy:0,f:0});
+  }
+  addEventListener("resize",size); size();
+  addEventListener("mousemove",function(e){mouse.x=e.clientX;mouse.y=e.clientY;trail.push({x:e.clientX,y:e.clientY,a:28}); if(trail.length>60) trail.shift();});
+  function frame(){
+    x.clearRect(0,0,W,H);
+    var near=[];
+    for(var i=0;i<dots.length;i++){
+      var d=dots[i], dx=d.ox-mouse.x, dy=d.oy-mouse.y, dist=Math.sqrt(dx*dx+dy*dy)||1, f=dist<140?(1-dist/140):0;
+      var tx=d.ox+(dx/dist)*f*38, ty=d.oy+(dy/dist)*f*38;
+      d.vx=(d.vx+(tx-d.x)*0.14)*0.78; d.vy=(d.vy+(ty-d.y)*0.14)*0.78; d.x+=d.vx; d.y+=d.vy; d.f=f;
+      var mdx=d.x-mouse.x, mdy=d.y-mouse.y; if(mdx*mdx+mdy*mdy<110*110) near.push(d);
+      x.beginPath(); x.arc(d.x,d.y,1.3+f*1.8,0,6.2832); x.fillStyle="rgba(168,189,212,"+(0.45+f*0.5)+")"; x.fill();
+    }
+    x.lineWidth=0.7;
+    for(var a=0;a<near.length;a++) for(var b=a+1;b<near.length;b++){
+      var ex=near[a].x-near[b].x, ey=near[a].y-near[b].y, dd=Math.sqrt(ex*ex+ey*ey);
+      if(dd<76){ x.strokeStyle="rgba(122,156,192,"+(0.55*(1-dd/76))+")"; x.beginPath(); x.moveTo(near[a].x,near[a].y); x.lineTo(near[b].x,near[b].y); x.stroke(); }
+    }
+    for(var t=trail.length-1;t>=0;t--){ var p=trail[t]; p.a--; if(p.a<=0){trail.splice(t,1);continue;}
+      x.beginPath(); x.arc(p.x,p.y,3+p.a*0.12,0,6.2832); x.fillStyle="rgba(90,130,190,"+(p.a/28*0.18)+")"; x.fill(); }
+    requestAnimationFrame(frame);
+  }
+  if(still){ x.fillStyle="rgba(168,189,212,.5)"; dots.forEach(function(d){x.beginPath();x.arc(d.x,d.y,1.3,0,6.2832);x.fill();}); } else frame();
+})();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>검수 화면</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4; --primary-mid:#4A6BAF;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --surface:#F6F8FC; --surface-2:#E4EAF3;
+  --dot:#A8BDD4; --line:#7A9CC0;
+  --text-strong:#1E2D4A; --text-muted:#6F7F99; --text-footer:#B0BCCC;
+  --danger:#C25450; --warning:#C99A3B; --success:#3B8A6E;
+  --radius-sm:8px; --radius:12px;
+  --ease-elastic:cubic-bezier(0.34,1.56,0.64,1);
+  --font:'Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:var(--font); font-size:13.5px; line-height:1.55; letter-spacing:-0.02em; font-weight:400;
+  color:var(--text-strong); background-color:var(--bg-base);
+  background-image:
+    linear-gradient(to right, rgba(200,212,228,.5) 0.5px, transparent 0.5px),
+    linear-gradient(to bottom, rgba(200,212,228,.5) 0.5px, transparent 0.5px);
+  background-size:48px 48px;
+}
+b,strong,h1,h2,h3,h4{font-weight:700}
+h1,h2,h3,h4{margin:0}
+button,input,textarea,select{font:inherit;letter-spacing:inherit;color:inherit}
+.mono{font-family:var(--mono);letter-spacing:-0.01em}
+.muted{color:var(--text-muted)}
+.warnc{color:#A97C1F}
+
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh}
+.bar{display:flex;align-items:center;gap:18px;padding:10px 20px;border-bottom:1px solid var(--bg-grid);background:rgba(237,241,247,.92);flex-wrap:wrap}
+.bar h1{font-size:18px;letter-spacing:-0.055em}
+.bar .meta{font-size:11.5px;color:var(--text-muted)}
+.bar .sp{flex:1}
+.bar .stat{font-size:12px;color:var(--text-muted)}
+.bar .stat b{color:var(--text-strong)}
+.cols{display:grid;grid-template-columns:344px 1fr;min-height:0}
+.list{border-right:1px solid var(--bg-grid);display:flex;flex-direction:column;min-height:0;background:rgba(237,241,247,.7)}
+.filters{padding:10px 12px;border-bottom:1px solid var(--bg-grid)}
+.filters .lbl{font-size:11px;color:var(--text-muted);margin-bottom:6px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{
+  border:1px solid var(--bg-grid);background:transparent;border-radius:999px;padding:2px 10px;font-size:11.5px;cursor:pointer;
+  transition:all .28s var(--ease-elastic);white-space:nowrap;
+}
+.chip:hover{transform:translateY(-1px);border-color:var(--primary)}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#EDF1F7}
+.chip .n{font-family:var(--mono);margin-left:5px;opacity:.75}
+.items{overflow:auto;padding:8px 10px 30px;flex:1}
+.grp{border-left:3px solid var(--primary-soft);margin:6px 0;padding-left:6px;border-radius:2px;background:rgba(107,130,196,.06)}
+.grp .gh{font-size:10.5px;color:var(--primary);padding:3px 4px 1px}
+.item{
+  display:block;width:100%;text-align:left;border:1px solid transparent;background:var(--surface);border-radius:var(--radius-sm);
+  padding:8px 10px;margin:4px 0;cursor:pointer;transition:all .28s var(--ease-elastic);
+}
+.item:hover{transform:translateX(2px);border-color:var(--bg-grid)}
+.item.on{border-color:var(--primary);box-shadow:0 5px 16px rgba(53,70,144,.14)}
+.item .l1{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text-muted)}
+.item .l1 .id{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .l2{font-weight:700;font-size:13px;margin:2px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tags{display:flex;gap:4px;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:9.5px;letter-spacing:-0.01em;border:1px solid var(--bg-grid);border-radius:5px;padding:0 5px;color:var(--text-muted)}
+.tag.hard{border-color:var(--danger);color:var(--danger)}
+.tag.soft{border-color:var(--warning);color:#A97C1F}
+.mark{font-size:10.5px;font-weight:700;border-radius:999px;padding:0 7px;border:1px solid}
+.mark.ok{color:var(--success);border-color:var(--success)}
+.mark.img{color:var(--primary);border-color:var(--primary)}
+.mark.fix{color:var(--primary-deep);border-color:var(--primary-soft);background:rgba(107,130,196,.14)}
+.mark.rv{color:#8a6718;border-color:var(--warning);background:rgba(201,154,59,.1)}
+
+.detail{overflow:auto;min-height:0;padding:18px 24px 60px}
+.dh{margin-bottom:12px}
+.dh h2{font-size:20px;letter-spacing:-0.055em;word-break:break-all}
+.dh .path{font-size:11.5px;color:var(--text-muted);word-break:break-all}
+.dh .metrics{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.metric{font-size:12px}
+.metric .k{color:var(--text-muted);margin-right:5px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 14px}
+.btn{
+  border:1px solid var(--bg-grid);background:var(--surface);border-radius:var(--radius-sm);padding:6px 12px;cursor:pointer;font-weight:700;font-size:12.5px;
+  transition:all .28s var(--ease-elastic);
+}
+.btn:hover{transform:translateY(-2px);border-color:var(--primary);box-shadow:0 6px 16px rgba(53,70,144,.14)}
+.btn:focus-visible,.chip:focus-visible,.item:focus-visible,.opt:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.btn.primary{background:linear-gradient(148deg,#4A5FA8 0%,#354690 100%);color:#EDF1F7;border-color:var(--primary-deep)}
+.btn.sm{padding:3px 9px;font-size:11.5px}
+.btn.on-ok{border-color:var(--success);color:var(--success);background:rgba(59,138,110,.1)}
+.btn.on-img{border-color:var(--primary);color:var(--primary-deep);background:rgba(74,95,168,.12)}
+
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:13px 15px;margin-bottom:14px;box-shadow:0 2px 8px rgba(53,70,144,.06)}
+.card h3{font-size:14px;letter-spacing:-0.048em;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.sec{font-size:11px;color:var(--text-muted);margin:0 0 6px}
+.text{white-space:pre-wrap;word-break:break-word;line-height:1.7;max-height:420px;overflow:auto;padding-right:4px}
+mark{background:none;color:inherit;border-radius:3px;padding:0 1px}
+mark.q{background:rgba(201,154,59,.28);box-shadow:inset 0 -2px 0 var(--warning)}
+mark.s{background:rgba(74,95,168,.16);box-shadow:inset 0 -2px 0 var(--primary);cursor:help}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--text-muted);margin-top:8px}
+.legend mark{padding:0 6px}
+.imgs{display:flex;gap:8px;flex-wrap:wrap}
+.imgs img{height:92px;max-width:170px;object-fit:contain;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);cursor:zoom-in;transition:transform .28s var(--ease-elastic)}
+.imgs img:hover{transform:scale(1.04)}
+.syn{margin-top:10px;border:1px dashed var(--primary-soft);border-radius:var(--radius-sm);padding:8px 10px;background:rgba(107,130,196,.07)}
+.syn .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.syn select,.syn input{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--bg-base);min-width:0}
+.synlist{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.synlist .it{display:flex;gap:8px;align-items:center;font-size:12px}
+.x{border:0;background:none;cursor:pointer;color:var(--danger);font-weight:700;padding:0 4px}
+.rvbadge{font-size:10.5px;font-weight:700;color:#8a6718;border:1px solid var(--warning);background:rgba(201,154,59,.1);border-radius:999px;padding:0 7px}
+.rvwrap{margin-top:6px}
+.rvbox{margin-top:8px;border:1px dashed var(--warning);border-radius:var(--radius-sm);padding:8px 10px;background:rgba(201,154,59,.06)}
+.rvbox .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.rvbox .row:first-child{margin-top:0}
+.rvbox .k{font-size:11px;color:var(--text-muted)}
+.rvbox select,.rvbox input,.rvbox textarea{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--bg-base);min-width:0}
+.rvbox textarea{width:100%;height:72px;resize:vertical;line-height:1.5}
+.rvbox .cnt{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
+.rvnote{font-size:12px;color:#8a6718;border:1px dashed var(--warning);border-radius:var(--radius-sm);padding:5px 9px;margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.axis{padding:10px 0;border-top:1px dashed var(--bg-grid)}
+.axis:first-of-type{border-top:0;padding-top:0}
+.axhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.axhead b{font-size:13.5px}
+.badge{font-size:10px;border:1px solid var(--bg-grid);border-radius:5px;padding:0 5px;color:var(--text-muted)}
+.axdef{font-size:11.5px;color:var(--text-muted);margin:1px 0 6px}
+.botline{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;margin-bottom:3px}
+.botline .k{color:var(--text-muted);font-size:11px}
+.v{display:inline-block;font-size:12px;border-radius:6px;padding:0 8px;border:1px solid var(--primary);background:rgba(74,95,168,.12);color:var(--primary-deep);cursor:help}
+.v.na{border-color:var(--line);background:transparent;color:var(--text-muted)}
+.v.unk{border:1px dashed var(--warning);background:rgba(201,154,59,.1);color:#8a6718}
+.ev{font-size:12px;color:var(--text-strong);border-left:2px solid var(--warning);padding-left:8px;margin:3px 0;word-break:break-word}
+.conf{font-family:var(--mono);font-size:11px}
+.defs{margin:4px 0 6px;font-size:11.5px}
+.defs summary{cursor:pointer;color:var(--primary)}
+.defs dl{margin:6px 0 0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px}
+.defs dt{font-weight:700}
+.defs dd{margin:0;color:var(--text-muted)}
+.defs dt.botv{color:var(--primary-deep)}
+.edit{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.edit .k{font-size:11px;color:var(--text-muted);margin-right:2px}
+.opt{
+  border:1px solid var(--bg-grid);background:transparent;border-radius:var(--radius-sm);padding:2px 10px;cursor:pointer;font-size:12px;
+  transition:all .28s var(--ease-elastic);
+}
+.opt:hover{transform:translateY(-1px);border-color:var(--primary)}
+.opt[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#EDF1F7;font-weight:700}
+.opt.sp{border-style:dashed}
+.opt.sp[aria-pressed="true"]{background:var(--text-strong);border-color:var(--text-strong)}
+.changed{font-size:10.5px;color:var(--primary-deep);font-weight:700;border:1px solid var(--primary-soft);background:rgba(107,130,196,.14);border-radius:999px;padding:0 7px}
+.qhead{display:flex;gap:8px;align-items:baseline}
+.qhead .qid{font-size:11px;color:var(--primary)}
+.ans{font-family:var(--mono);font-size:12px;font-weight:700;border:1px solid var(--primary);border-radius:6px;padding:0 8px;background:rgba(74,95,168,.12);color:var(--primary-deep)}
+.note{font-size:12px;color:var(--text-muted);border:1px dashed var(--bg-grid);border-radius:var(--radius-sm);padding:5px 9px;margin-bottom:8px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{border:1px solid var(--bg-grid);padding:4px 8px;text-align:left;vertical-align:top;word-break:break-word}
+th{background:var(--surface-2);font-weight:700}
+.emptystate{max-width:520px;margin:14vh auto;text-align:center;color:var(--text-muted)}
+.emptystate h2{color:var(--text-strong);font-size:22px;letter-spacing:-0.055em;margin-bottom:8px}
+
+dialog{border:1px solid var(--bg-grid);border-radius:var(--radius);background:var(--surface);color:var(--text-strong);width:min(640px,92vw);padding:18px}
+dialog::backdrop{background:rgba(30,45,74,.35)}
+dialog textarea{width:100%;height:240px;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:10px;font-family:var(--mono);font-size:12px;background:var(--bg-base);letter-spacing:-0.01em}
+dialog h3{margin-bottom:6px;font-size:16px}
+dialog p{margin:0 0 10px;font-size:12.5px;color:var(--text-muted)}
+.zoom{position:fixed;inset:0;background:rgba(30,45,74,.7);display:none;align-items:center;justify-content:center;z-index:50;cursor:zoom-out}
+.zoom.on{display:flex}
+.zoom img{max-width:92vw;max-height:92vh;border-radius:var(--radius-sm);background:var(--bg-base)}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--text-strong);color:#EDF1F7;padding:8px 14px;border-radius:var(--radius-sm);font-size:12.5px;opacity:0;transform:translateY(8px);transition:all .32s var(--ease-elastic);pointer-events:none;z-index:60}
+.toast.on{opacity:1;transform:none}
+
+@media (max-width:1180px){ .two{grid-template-columns:1fr} }
+@media (max-width:860px){
+  .app{height:auto}
+  .cols{grid-template-columns:1fr}
+  .list{border-right:0;border-bottom:1px solid var(--bg-grid)}
+  .items{max-height:260px}
+  .detail{padding:14px 14px 60px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="zoom" id="zoom" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status"></div>
+<dialog id="dlg">
+  <h3>JSON 텍스트</h3>
+  <p id="dlgP"></p>
+  <textarea id="dlgTa" readonly aria-label="내보내기 JSON"></textarea>
+  <div class="row" style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" id="dlgSel" type="button">전체 선택</button>
+    <button class="btn primary" id="dlgClose" type="button">닫기</button>
+  </div>
+</dialog>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+(function(){
+  "use strict";
+  var root = document.getElementById("root");
+
+  function h(tag, attrs, kids){
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs){
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else if (k.slice(0,2) === "on") e.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function(c){ if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("on");
+    clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("on"); }, 2200);
+  }
+
+  if (!DATA || DATA.kind !== "review"){
+    root.appendChild(h("div", {class:"emptystate"}, [
+      h("h2", {text:"표시할 데이터가 없습니다"}),
+      h("p", {text:"이 화면은 labelbot review 명령이 불량 목록을 채워 넣은 뒤에 사용합니다. 검수 대상 데이터가 비어 있습니다."})
+    ]));
+    return;
+  }
+
+  var SPECIAL = ["해당 없음", "unknown", "판단 불가"];
+  var ANSWERS = ["O", "X", "N/A", "판단 불가"];
+  var COM_Q = "Q-COM-001";
+  var flag = DATA.flag || {};
+  var reasonLabels = DATA.reason_labels || {};
+  var axes = DATA.axes || [];
+  var qtext = {};
+  (DATA.questions || []).forEach(function(q){ qtext[q.qid] = q.text; });
+  var chunks = DATA.chunks || [];
+  var byId = {};
+  chunks.forEach(function(c){ byId[c.chunk_id] = c; });
+
+  // ---------- state ----------
+  var KEY = "labelbot_review_" + DATA.run_id;
+  var edits = {};     // chunk_id -> {"a:axis": [..], "q:qid": "O"}
+  var status = {};    // chunk_id -> confirmed | undecidable_image
+  var syns = [];      // {chunk_id, alias, canonical}
+  var revisits = [];  // {chunk_id, target, key, reason, proposed, related_values, memo}
+  var rvDraft = null; // 열려 있는 재검토 요청 폼의 초안(저장 버튼을 누를 때만 revisits에 반영)
+  var activeReasons = {};
+  var onlyTodo = false;
+  var onlyRevisit = false;
+  var selId = null;
+  var pendingAlias = "";
+
+  // taxonomy 재검토 요청: DATA에 규칙이 없으면(예전 화면 데이터) 기능을 숨긴다.
+  var RV_REASONS = DATA.revisit_reasons || null;
+  var RV_RULES = DATA.revisit_rules || null;
+  var rvOn = !!(RV_REASONS && RV_RULES);
+  var RV_MEMO_MAX = DATA.revisit_memo_max || 500;
+  var RV_SHORT_MAX = DATA.revisit_short_max || 60;
+  var RV_RESERVED = ["해당없음", "unknown", "n/a", "na"];
+
+  function load(){
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      if (o.edits) edits = o.edits;
+      if (o.status) status = o.status;
+      if (o.syns) syns = o.syns;
+      if (Array.isArray(o.revisits)) revisits = o.revisits.filter(function(r){ return r && typeof r === "object"; });
+    } catch(e){}
+  }
+  var saveT = null;
+  function save(){
+    clearTimeout(saveT);
+    saveT = setTimeout(function(){
+      try { window.localStorage.setItem(KEY, JSON.stringify({edits:edits, status:status, syns:syns, revisits:revisits})); } catch(e){}
+      inboxSave();
+    }, 150);
+  }
+  function hasState(){
+    return Object.keys(edits).length > 0 || Object.keys(status).length > 0 || syns.length > 0 || revisits.length > 0;
+  }
+
+  // ---------- inbox 자동 저장(labelbot serve로 열었을 때만) ----------
+  var inboxOn = false, inboxEl = null;
+  function setInbox(msg, bad){
+    if (!inboxEl) return;
+    inboxEl.textContent = msg;
+    inboxEl.style.color = bad ? "var(--danger)" : "";
+  }
+  function inboxCheck(){
+    if (location.protocol === "file:" || !window.fetch) return;
+    fetch("inbox/status", {cache:"no-store"}).then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(o){
+        if (!o || !o.ok) return;
+        inboxOn = true;
+        setInbox("체크하면 작업 폴더 inbox에 자동 저장");
+        if (hasState()) inboxSave();
+      }).catch(function(){});
+  }
+  function inboxSave(){
+    if (!inboxOn) return Promise.resolve(false);
+    return fetch("inbox/review", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(buildOutput())})
+      .then(function(r){
+        if (!r.ok) throw new Error(String(r.status));
+        setInbox("inbox 저장됨 " + new Date().toTimeString().slice(0, 8));
+        return true;
+      })
+      .catch(function(){ setInbox("inbox 저장 실패: JSON 저장 버튼으로 내려받으세요", true); return false; });
+  }
+
+  // ---------- bot values / corrections ----------
+  function botAxis(c, name){
+    if (c.classify_failed) return null;
+    var a = c.axes && c.axes[name];
+    return a && a.values && a.values.length ? a : null;
+  }
+  function botAnswer(c, qid){
+    if (c.label_failed) return null;
+    var a = c.answers && c.answers[qid];
+    return a && a.answer ? a : null;
+  }
+  function sameSet(a, b){
+    if (a.length !== b.length) return false;
+    var x = a.slice().sort(), y = b.slice().sort();
+    for (var i = 0; i < x.length; i++) if (x[i] !== y[i]) return false;
+    return true;
+  }
+  function curAxis(c, name){
+    var e = edits[c.chunk_id];
+    if (e && e["a:" + name]) return e["a:" + name];
+    var b = botAxis(c, name);
+    return b ? b.values.slice() : [];
+  }
+  function curAnswer(c, qid){
+    var e = edits[c.chunk_id];
+    if (e && e["q:" + qid]) return e["q:" + qid];
+    var b = botAnswer(c, qid);
+    return b ? b.answer : "";
+  }
+  function chunkCorrections(c){
+    var out = [], e = edits[c.chunk_id] || {};
+    axes.forEach(function(ax){
+      var v = e["a:" + ax.name];
+      if (!v || !v.length) return;
+      var b = botAxis(c, ax.name);
+      if (!b || !sameSet(b.values, v)) out.push({chunk_id:c.chunk_id, target:"axis", key:ax.name, value:v.slice(), status:"corrected"});
+    });
+    questionIds(c).forEach(function(qid){
+      var v = e["q:" + qid];
+      if (!v) return;
+      var b = botAnswer(c, qid);
+      if (!b || b.answer !== v) out.push({chunk_id:c.chunk_id, target:"answer", key:qid, value:v, status:"corrected"});
+    });
+    return out;
+  }
+  function questionIds(c){
+    if (c.classify_failed) return [COM_Q];
+    var seen = {}, out = [];
+    (c.mapped_questions || []).forEach(function(q){ if (!seen[q]){ seen[q] = 1; out.push(q); } });
+    return out;
+  }
+
+  // ---------- taxonomy 재검토 요청: 규칙·검증 ----------
+  function axisByName(name){
+    for (var i = 0; i < axes.length; i++) if (axes[i].name === name) return axes[i];
+    return null;
+  }
+  function rvReasonsFor(target, key){
+    if (!rvOn) return [];
+    var k = target === "question" && key === "" ? "question_blank" : target;
+    return (RV_RULES[k] || []).slice();
+  }
+  function rvLabel(r){ return (RV_REASONS && RV_REASONS[r]) || r; }
+  function rvIndex(cid, target, key){
+    for (var i = 0; i < revisits.length; i++){
+      var r = revisits[i];
+      if (r.chunk_id === cid && r.target === target && r.key === key) return i;
+    }
+    return -1;
+  }
+  // 현재 화면 데이터 기준으로 유효한 대상인가(taxonomy가 바뀐 뒤 남은 오래된 항목을 거른다)
+  function rvAllowed(c, r){
+    if (!rvOn || !c || typeof r.key !== "string") return false;
+    if (rvReasonsFor(r.target, r.key).indexOf(r.reason) < 0) return false;
+    if (r.target === "axis") return !!axisByName(r.key);
+    if (r.target === "question") return r.key === "" || questionIds(c).indexOf(r.key) >= 0;
+    return r.target === "new_axis" && r.key === "";
+  }
+  function rvFor(c){
+    return revisits.filter(function(r){ return r.chunk_id === c.chunk_id && rvAllowed(c, r); });
+  }
+  function rvExisting(c, target, key){
+    var i = rvIndex(c.chunk_id, target, key);
+    return i >= 0 && rvAllowed(c, revisits[i]) ? revisits[i] : null;
+  }
+  function rvNorm(s){ return String(s === null || s === undefined ? "" : s).replace(/\s+/g, " ").trim(); }
+  function rvLen(s){ return Array.from(s).length; }
+  // 초안(또는 저장된 항목)을 출력 형태로 정규화한다. 사유에 쓰지 않는 칸은 비운다.
+  function rvItem(d){
+    var rel = d.related_values || d.rel || [];
+    var r = {chunk_id:d.chunk_id, target:d.target, key:d.key, reason:d.reason, proposed:null, related_values:[],
+      memo:String(d.memo || "").replace(/\r\n?/g, "\n").trim()};
+    if (d.reason === "NO_FIT_VALUE" || d.reason === "NEW_AXIS"){
+      var p = d.proposed || {value:d.value, parent:d.parent};
+      var parent = d.reason === "NO_FIT_VALUE" ? rvNorm(p.parent) : "";
+      r.proposed = {value:rvNorm(p.value), parent:parent || null};
+    } else if (d.reason === "VALUE_OVERLAP"){
+      r.related_values = [rvNorm(rel[0]), rvNorm(rel[1])];
+    } else if (d.reason === "AMBIGUOUS_DEF" && d.target === "axis" && rvNorm(rel[0])){
+      r.related_values = [rvNorm(rel[0])];
+    }
+    return r;
+  }
+  // 문제가 없으면 "", 있으면 토스트에 띄울 안내(입력한 값은 넣지 않는다)
+  function rvCheck(r){
+    if (rvReasonsFor(r.target, r.key).indexOf(r.reason) < 0) return "재검토 사유를 고르세요";
+    if (r.proposed){
+      var v = r.proposed.value;
+      if (!v) return r.reason === "NEW_AXIS" ? "제안할 축 이름을 입력하세요" : "제안 값을 입력하세요";
+      if (rvLen(v) > RV_SHORT_MAX || (r.proposed.parent && rvLen(r.proposed.parent) > RV_SHORT_MAX)) return "제안 값은 " + RV_SHORT_MAX + "자 이하로 입력하세요";
+      if (RV_RESERVED.indexOf(v.toLowerCase().replace(/\s+/g, "")) >= 0) return "해당 없음·unknown·N/A는 제안 값으로 쓸 수 없습니다";
+    }
+    if (r.reason === "VALUE_OVERLAP"){
+      if (!r.related_values[0] || !r.related_values[1]) return "겹치는 값 두 개를 고르세요";
+      if (r.related_values[0] === r.related_values[1]) return "서로 다른 값 두 개를 고르세요";
+    }
+    if ((r.reason === "OTHER" || r.reason === "NEED_QUESTION") && !r.memo) return "이 사유는 메모가 필요합니다";
+    if (rvLen(r.memo) > RV_MEMO_MAX) return "메모는 " + RV_MEMO_MAX + "자 이하로 입력하세요";
+    return "";
+  }
+  function rvOutput(){
+    var out = [];
+    revisits.forEach(function(x){
+      var c = byId[x.chunk_id];
+      if (!c || !rvAllowed(c, x)) return;
+      var r = rvItem(x);
+      if (!rvCheck(r)) out.push(r);
+    });
+    return out;
+  }
+
+  function buildOutput(){
+    var corr = [], cs = [];
+    chunks.forEach(function(c){
+      chunkCorrections(c).forEach(function(x){ corr.push(x); });
+      if (status[c.chunk_id]) cs.push({chunk_id:c.chunk_id, status:status[c.chunk_id]});
+    });
+    var sy = syns.filter(function(s){ return byId[s.chunk_id]; }).map(function(s){
+      return {chunk_id:s.chunk_id, alias:s.alias, canonical:s.canonical};
+    });
+    var out = {kind:"review", run_id:DATA.run_id, corrections:corr, chunk_status:cs, synonyms:sy};
+    // 재검토 규칙이 없는 예전 화면 데이터에서는 키를 빼서, apply가 기존 요청을 지우지 않게 한다.
+    if (rvOn) out.revisits = rvOutput();
+    return out;
+  }
+
+  // ---------- export ----------
+  function download(){
+    var name = "review_" + DATA.run_id + ".json";
+    if (inboxOn){
+      inboxSave().then(function(ok){
+        if (ok) toast("작업 폴더 inbox/" + name + "에 저장했습니다"); else fileDownload(name);
+      });
+      return;
+    }
+    fileDownload(name);
+  }
+  function fileDownload(name){
+    var text = JSON.stringify(buildOutput(), null, 2);
+    try {
+      var blob = new Blob([text], {type:"application/json"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+      toast(name + " 내려받기를 시작했습니다");
+    } catch(e){
+      showText(text, "내려받기가 막혔습니다. 아래 텍스트를 복사해 " + name + " 파일로 저장하세요.");
+    }
+  }
+  function showText(text, msg){
+    var dlg = document.getElementById("dlg"), ta = document.getElementById("dlgTa");
+    document.getElementById("dlgP").textContent = msg || "";
+    ta.value = text;
+    try { dlg.showModal(); } catch(e){ dlg.setAttribute("open", ""); }
+    ta.focus(); ta.select();
+  }
+  function copyText(){
+    // 클립보드·텍스트 창에는 재검토 메모·제안 값을 싣지 않고 건수만 둔다.
+    // revisits 키를 빼므로 이 텍스트를 반영해도 그 실행의 기존 재검토 요청은 그대로 남는다.
+    var o = buildOutput(), nRv = 0;
+    if (o.revisits){ nRv = o.revisits.length; delete o.revisits; o.revisit_count = nRv; }
+    var text = JSON.stringify(o, null, 2);
+    var done = "텍스트로 복사했습니다" + (nRv ? " (재검토 요청 " + nRv + "건은 빠짐: JSON 저장으로 전달)" : "");
+    function fallback(){ showText(text, "자동 복사가 막혀 있습니다. 텍스트를 선택해 복사(Ctrl+C)하세요." + (nRv ? " 재검토 요청 " + nRv + "건은 이 텍스트에 없으니 JSON 저장으로 전달하세요." : "")); }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ toast(done); }, fallback);
+        return;
+      }
+    } catch(e){}
+    try {
+      var tmp = document.createElement("textarea"); tmp.value = text;
+      tmp.style.position = "fixed"; tmp.style.opacity = "0";
+      document.body.appendChild(tmp); tmp.select();
+      var ok = document.execCommand("copy");
+      document.body.removeChild(tmp);
+      if (ok) toast(done); else fallback();
+    } catch(e){ fallback(); }
+  }
+  document.getElementById("dlgClose").addEventListener("click", function(){
+    var d = document.getElementById("dlg"); try { d.close(); } catch(e){ d.removeAttribute("open"); }
+  });
+  document.getElementById("dlgSel").addEventListener("click", function(){
+    var ta = document.getElementById("dlgTa"); ta.focus(); ta.select();
+  });
+  var zoom = document.getElementById("zoom");
+  zoom.addEventListener("click", function(){ zoom.classList.remove("on"); zoom.textContent = ""; });
+  function openZoom(url){
+    zoom.textContent = "";
+    var im = document.createElement("img"); im.src = url; im.alt = "확대 이미지";
+    zoom.appendChild(im); zoom.classList.add("on");
+  }
+
+  // ---------- list ----------
+  function reasonCodes(){
+    var order = Object.keys(reasonLabels), cnt = {};
+    chunks.forEach(function(c){ (c.reason_codes || []).forEach(function(r){ cnt[r] = (cnt[r] || 0) + 1; if (order.indexOf(r) < 0) order.push(r); }); });
+    return order.map(function(r){ return {code:r, n:cnt[r] || 0}; });
+  }
+  function isTouched(c){
+    return !!status[c.chunk_id] || chunkCorrections(c).length > 0;
+  }
+  function visibleChunks(){
+    var codes = Object.keys(activeReasons).filter(function(k){ return activeReasons[k]; });
+    var arr = chunks.filter(function(c){
+      if (onlyTodo && isTouched(c)) return false;
+      if (onlyRevisit && !rvFor(c).length) return false;
+      if (!codes.length) return true;
+      return (c.reason_codes || []).some(function(r){ return codes.indexOf(r) >= 0; });
+    });
+    arr.sort(function(a, b){
+      var d = (b.reason_codes || []).length - (a.reason_codes || []).length;
+      if (d) return d;
+      return a.chunk_id < b.chunk_id ? -1 : a.chunk_id > b.chunk_id ? 1 : 0;
+    });
+    // cluster dup groups at the position of their first member
+    var out = [], used = {};
+    arr.forEach(function(c){
+      if (used[c.chunk_id]) return;
+      if (c.dup_group){
+        var members = arr.filter(function(x){ return x.dup_group === c.dup_group; });
+        members.forEach(function(m){ used[m.chunk_id] = 1; });
+        out.push({group:c.dup_group, items:members});
+      } else { used[c.chunk_id] = 1; out.push({group:null, items:[c]}); }
+    });
+    return out;
+  }
+  function flat(blocks){ var f = []; blocks.forEach(function(b){ b.items.forEach(function(c){ f.push(c); }); }); return f; }
+
+  function tagFor(code){
+    var hard = code === "CLASSIFY_FAILED" || code === "LABEL_FAILED";
+    return h("span", {class:"tag" + (hard ? " hard" : (code === "UNKNOWN_HIGH" || code === "LOW_CONFIDENCE" ? " soft" : "")), title:reasonLabels[code] || code, text:code});
+  }
+  function itemEl(c){
+    var fix = chunkCorrections(c).length;
+    var mk = [];
+    if (status[c.chunk_id] === "confirmed") mk.push(h("span", {class:"mark ok", text:"확인"}));
+    if (status[c.chunk_id] === "undecidable_image") mk.push(h("span", {class:"mark img", text:"이미지"}));
+    if (fix) mk.push(h("span", {class:"mark fix", text:"교정 " + fix}));
+    var nrv = rvFor(c).length;
+    if (nrv) mk.push(h("span", {class:"mark rv", text:"재검토 " + nrv}));
+    var b = h("button", {class:"item" + (c.chunk_id === selId ? " on" : ""), type:"button", "data-id":c.chunk_id, "aria-current": c.chunk_id === selId ? "true" : false,
+      onclick:function(){ select(c.chunk_id); }}, [
+      h("div", {class:"l1"}, [h("span", {class:"id mono", text:c.chunk_id}), h("span", {class:"mono", text:"p." + c.slide_no})].concat(mk)),
+      h("div", {class:"l2", text:c.title || c.file_name}),
+      h("div", {class:"tags"}, (c.reason_codes || []).map(tagFor))
+    ]);
+    return b;
+  }
+
+  var listEl, itemsEl, filtersEl, detailEl, statEl;
+
+  function renderFilters(){
+    filtersEl.textContent = "";
+    filtersEl.appendChild(h("div", {class:"lbl", text:"사유 코드로 거르기 (여러 개 선택 시 하나라도 해당)"}));
+    var chips = h("div", {class:"chips", role:"group", "aria-label":"사유 코드 필터"});
+    var anyOn = Object.keys(activeReasons).some(function(k){ return activeReasons[k]; });
+    chips.appendChild(h("button", {class:"chip" + (!anyOn ? " on" : ""), type:"button", "aria-pressed":String(!anyOn),
+      onclick:function(){ activeReasons = {}; renderList(); ensureSel(); renderDetail(); }}, ["전체", h("span", {class:"n", text:String(chunks.length)})]));
+    reasonCodes().forEach(function(r){
+      var on = !!activeReasons[r.code];
+      chips.appendChild(h("button", {class:"chip" + (on ? " on" : ""), type:"button", title:reasonLabels[r.code] || r.code, "aria-pressed":String(on),
+        onclick:function(){ activeReasons[r.code] = !activeReasons[r.code]; renderList(); ensureSel(); renderDetail(); }},
+        [r.code, h("span", {class:"n", text:String(r.n)})]));
+    });
+    filtersEl.appendChild(chips);
+    filtersEl.appendChild(h("div", {class:"chips", style:"margin-top:8px"}, [
+      h("button", {class:"chip" + (onlyTodo ? " on" : ""), type:"button", "aria-pressed":String(onlyTodo),
+        onclick:function(){ onlyTodo = !onlyTodo; renderList(); ensureSel(); renderDetail(); }, text:"처리 전만 보기"}),
+      rvOn ? h("button", {class:"chip" + (onlyRevisit ? " on" : ""), type:"button", "aria-pressed":String(onlyRevisit),
+        onclick:function(){ onlyRevisit = !onlyRevisit; renderList(); ensureSel(); renderDetail(); }},
+        ["재검토 요청 있음", h("span", {class:"n", text:String(chunks.filter(function(c){ return rvFor(c).length > 0; }).length)})]) : null
+    ]));
+  }
+  function renderList(){
+    var y = itemsEl.scrollTop;
+    renderFilters();
+    itemsEl.textContent = "";
+    var blocks = visibleChunks(), total = 0;
+    blocks.forEach(function(b){
+      total += b.items.length;
+      if (b.group && b.items.length > 1){
+        var g = h("div", {class:"grp"}, [h("div", {class:"gh mono", text:"중복 묶음 " + b.group + " · " + b.items.length + "건 (교정은 chunk별)"})]);
+        b.items.forEach(function(c){ g.appendChild(itemEl(c)); });
+        itemsEl.appendChild(g);
+      } else b.items.forEach(function(c){ itemsEl.appendChild(itemEl(c)); });
+    });
+    if (!total) itemsEl.appendChild(h("div", {class:"note", text:"조건에 맞는 chunk가 없습니다."}));
+    itemsEl.scrollTop = y;
+    renderStat();
+  }
+  function renderStat(){
+    var nCorr = 0, nStat = 0;
+    chunks.forEach(function(c){ nCorr += chunkCorrections(c).length; if (status[c.chunk_id]) nStat++; });
+    statEl.textContent = "";
+    statEl.appendChild(h("span", {class:"stat"}, ["불량 ", h("b", {text:String(chunks.length)}), " · 교정 ", h("b", {text:String(nCorr)}),
+      " · 판정 ", h("b", {text:String(nStat)}), " · 동의어 ", h("b", {text:String(syns.length)}),
+      rvOn ? " · 재검토 " : null, rvOn ? h("b", {text:String(rvOutput().length)}) : null]));
+  }
+  function ensureSel(){
+    var f = flat(visibleChunks());
+    if (!f.length){ selId = null; return; }
+    if (!selId || !f.some(function(c){ return c.chunk_id === selId; })) selId = f[0].chunk_id;
+    renderList2();
+  }
+  function renderList2(){ // refresh highlighting only
+    var items = itemsEl.querySelectorAll(".item");
+    for (var i = 0; i < items.length; i++){
+      var on = items[i].getAttribute("data-id") === selId;
+      items[i].classList.toggle("on", on);
+    }
+  }
+  function select(id){
+    if (rvDraft && rvDraft.chunk_id !== id){
+      if (rvDraft.dirty) toast("저장하지 않은 재검토 요청 초안을 닫았습니다");
+      rvDraft = null;
+    }
+    selId = id; pendingAlias = "";
+    renderList2(); renderDetail(true);
+  }
+
+  // ---------- body text with highlights ----------
+  function esc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+  function findAll(text, needle, all){
+    var res = [];
+    if (!needle) return res;
+    var i = text.indexOf(needle);
+    if (i < 0){
+      try {
+        var m = new RegExp(esc(needle.trim()).replace(/\s+/g, "\\s+")).exec(text);
+        if (m) res.push([m.index, m.index + m[0].length]);
+      } catch(e){}
+      return res;
+    }
+    while (i >= 0){
+      res.push([i, i + needle.length]);
+      if (!all) break;
+      i = text.indexOf(needle, i + needle.length);
+    }
+    return res;
+  }
+  function quotePieces(q){
+    return String(q || "").split(/…|\.\.\./).map(function(x){ return x.trim(); }).filter(function(x){ return x.length >= 2; });
+  }
+  function textNode(c){
+    var text = c.text || "";
+    var type = new Array(text.length), info = new Array(text.length), i;
+    for (i = 0; i < text.length; i++) type[i] = 0;
+    var quotes = [];
+    if (!c.classify_failed) Object.keys(c.axes || {}).forEach(function(k){ quotes.push(c.axes[k].evidence); });
+    if (!c.label_failed){
+      Object.keys(c.answers || {}).forEach(function(k){ quotes.push(c.answers[k].quote); });
+      (c.extracted || []).forEach(function(x){ quotes.push(x.quote); });
+    }
+    quotes.forEach(function(q){
+      quotePieces(q).forEach(function(p){
+        findAll(text, p, false).forEach(function(r){ for (var j = r[0]; j < r[1]; j++) type[j] = 1; });
+      });
+    });
+    var aliases = [];
+    (c.synonym_matches || []).forEach(function(s){ aliases.push({alias:s.alias, canonical:s.canonical}); });
+    syns.forEach(function(s){ if (s.chunk_id === c.chunk_id) aliases.push({alias:s.alias, canonical:s.canonical}); });
+    aliases.forEach(function(s){
+      findAll(text, s.alias, true).forEach(function(r){ for (var j = r[0]; j < r[1]; j++){ type[j] = 2; info[j] = s.canonical; } });
+    });
+    var el = h("div", {class:"text", id:"bodytext", tabindex:"0", "aria-label":"chunk 본문"});
+    var start = 0;
+    for (i = 1; i <= text.length; i++){
+      if (i === text.length || type[i] !== type[start] || info[i] !== info[start]){
+        var seg = text.slice(start, i);
+        if (type[start] === 0) el.appendChild(document.createTextNode(seg));
+        else if (type[start] === 1) el.appendChild(h("mark", {class:"q", text:seg}));
+        else el.appendChild(h("mark", {class:"s", title:"표준어: " + info[start], text:seg}));
+        start = i;
+      }
+    }
+    if (!text.length) el.appendChild(h("span", {class:"muted", text:"(본문 없음)"}));
+    el.addEventListener("mouseup", onSelect);
+    el.addEventListener("keyup", onSelect);
+    return el;
+  }
+  var synBox = null;
+  function onSelect(){
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed) return;
+    var bt = document.getElementById("bodytext");
+    if (!bt || !bt.contains(sel.anchorNode) || !bt.contains(sel.focusNode)) return;
+    var s = sel.toString().replace(/\s+/g, " ").trim();
+    if (s.length < 2 || s.length > 60) return;
+    pendingAlias = s;
+    renderSynBox();
+  }
+  function allValueNames(){
+    var out = [];
+    axes.forEach(function(ax){ (ax.values || []).forEach(function(v){ out.push({axis:ax.name, name:v.name}); }); });
+    return out;
+  }
+  function renderSynBox(){
+    if (!synBox) return;
+    var c = byId[selId];
+    synBox.textContent = "";
+    if (pendingAlias){
+      var sel = h("select", {"aria-label":"표준어 선택"});
+      sel.appendChild(h("option", {value:"", text:"표준어 선택…"}));
+      axes.forEach(function(ax){
+        var og = h("optgroup", {label:ax.name});
+        (ax.values || []).forEach(function(v){ og.appendChild(h("option", {value:v.name, text:v.name})); });
+        sel.appendChild(og);
+      });
+      var free = h("input", {type:"text", placeholder:"또는 직접 입력", "aria-label":"표준어 직접 입력", size:"16"});
+      var add = h("button", {class:"btn sm primary", type:"button", text:"동의어 등록", onclick:function(){
+        var canon = (free.value || "").trim() || sel.value;
+        if (!canon){ toast("표준어를 고르거나 입력하세요"); return; }
+        if (!syns.some(function(x){ return x.chunk_id === c.chunk_id && x.alias === pendingAlias && x.canonical === canon; }))
+          syns.push({chunk_id:c.chunk_id, alias:pendingAlias, canonical:canon});
+        pendingAlias = ""; save(); renderList(); renderDetail(true);
+      }});
+      var cancel = h("button", {class:"btn sm", type:"button", text:"취소", onclick:function(){ pendingAlias = ""; renderSynBox(); }});
+      synBox.appendChild(h("div", {}, ["선택한 표현  ", h("b", {text:"«" + pendingAlias + "»"})]));
+      synBox.appendChild(h("div", {class:"row"}, [sel, free, add, cancel]));
+    } else {
+      synBox.appendChild(h("div", {class:"muted", text:"본문에서 표현을 드래그해 선택하면 표준어를 지정해 동의어로 등록할 수 있습니다."}));
+    }
+    var mine = syns.filter(function(s){ return s.chunk_id === c.chunk_id; });
+    if (mine.length){
+      var list = h("div", {class:"synlist"});
+      mine.forEach(function(s){
+        list.appendChild(h("div", {class:"it"}, [
+          h("span", {class:"mono", text:s.alias}), "→", h("b", {text:s.canonical}),
+          h("button", {class:"x", type:"button", "aria-label":"동의어 삭제", text:"삭제", onclick:function(){
+            syns.splice(syns.indexOf(s), 1); save(); renderList(); renderDetail(true);
+          }})
+        ]));
+      });
+      synBox.appendChild(list);
+    }
+  }
+
+  // ---------- axis & question editors ----------
+  function valueDef(ax, name){
+    var v = null;
+    (ax.values || []).forEach(function(x){ if (x.name === name) v = x; });
+    return v;
+  }
+  function defText(v){
+    if (!v) return "";
+    var t = v.definition || "";
+    if (v.include) t += (t ? "\n" : "") + "포함: " + v.include;
+    if (v.exclude) t += (t ? "\n" : "") + "제외: " + v.exclude;
+    return t;
+  }
+  function confEl(x){
+    if (x === null || x === undefined) return h("span", {class:"conf muted", text:"확신도 -"});
+    var low = flag.confidence_min !== undefined && x < flag.confidence_min;
+    return h("span", {class:"conf" + (low ? " warnc" : ""), title: low ? "기준 " + flag.confidence_min + " 미만" : "", text:"확신도 " + Number(x).toFixed(2)});
+  }
+  function botChip(ax, name){
+    var cls = "v" + (name === "해당 없음" ? " na" : name === "unknown" ? " unk" : "");
+    var d = defText(valueDef(ax, name));
+    var tip = name === "unknown" ? "unknown: 본문에서 판단할 근거를 찾지 못함" : name === "해당 없음" ? "해당 없음: 이 축이 이 chunk에 적용되지 않음" : d;
+    return h("span", {class:cls, title:tip, text:name});
+  }
+
+  // ---------- taxonomy 재검토 요청: 입력 폼 ----------
+  // renderDetail은 클릭마다 전체를 다시 그리므로, 열린 폼은 rvDraft에 두고 다시 그릴 때 그대로 되살린다.
+  function rvIsOpen(c, target, key){
+    return !!rvDraft && rvDraft.chunk_id === c.chunk_id && rvDraft.target === target && rvDraft.key === key;
+  }
+  function rvOpen(c, target, key){
+    if (rvIsOpen(c, target, key)){ rvDraft = null; renderDetail(true); return; }
+    if (rvDraft && rvDraft.dirty) toast("저장하지 않은 재검토 요청 초안을 닫았습니다");
+    var r = rvExisting(c, target, key), reasons = rvReasonsFor(target, key);
+    rvDraft = {chunk_id:c.chunk_id, target:target, key:key,
+      reason:r && reasons.indexOf(r.reason) >= 0 ? r.reason : reasons[0],
+      value:r && r.proposed ? r.proposed.value || "" : "", parent:r && r.proposed ? r.proposed.parent || "" : "",
+      rel:r ? (r.related_values || []).slice() : [], memo:r ? r.memo || "" : "", dirty:false, focus:true};
+    renderDetail(true);
+  }
+  function rvSave(){
+    var r = rvItem(rvDraft), msg = rvCheck(r);
+    if (msg){ toast(msg); return; }
+    var i = rvIndex(r.chunk_id, r.target, r.key);
+    if (i >= 0) revisits[i] = r; else revisits.push(r);
+    rvDraft = null;
+    save(); renderList(); renderDetail(true);
+    toast("재검토 요청을 저장했습니다");
+  }
+  function rvDelete(cid, target, key){
+    var i = rvIndex(cid, target, key);
+    if (i >= 0) revisits.splice(i, 1);
+    rvDraft = null;
+    save(); renderList(); renderDetail(true);
+    toast("재검토 요청을 삭제했습니다");
+  }
+  function rvButton(c, target, key, label, style){
+    var open = rvIsOpen(c, target, key), has = !!rvExisting(c, target, key);
+    return h("button", {class:"btn sm", type:"button", style:style || null, "aria-expanded":String(open),
+      text:open ? label + " 닫기" : has ? label + " 수정" : label,
+      onclick:function(){ rvOpen(c, target, key); }});
+  }
+  function rvBadge(c, target, key){
+    var r = rvExisting(c, target, key);
+    return r ? h("span", {class:"rvbadge", text:"재검토 요청됨 · " + rvLabel(r.reason)}) : null;
+  }
+  // 열린 폼, 그리고 NO_FIT_VALUE 요청이 있는데 unknown으로 교정하지 않은 축의 안내. 보일 것이 없으면 null.
+  function rvPanel(c, target, key, ax, withBadge){
+    var kids = [], r = rvExisting(c, target, key);
+    if (withBadge && r) kids.push(rvBadge(c, target, key));
+    if (target === "axis" && ax && r && r.reason === "NO_FIT_VALUE"){
+      var cur = curAxis(c, ax.name);
+      if (!(cur.length === 1 && cur[0] === "unknown")){
+        kids.push(h("div", {class:"rvnote"}, [
+          h("span", {text:"맞는 값이 없다면 이 축을 unknown으로 교정하세요. 재검토 요청은 라벨을 바꾸지 않습니다."}),
+          h("button", {class:"btn sm", type:"button", text:"unknown으로 교정", onclick:function(){ toggleAxis(c, ax, "unknown", true); }})
+        ]));
+      }
+    }
+    if (rvIsOpen(c, target, key)) kids.push(rvForm(c, ax));
+    return kids.length ? h("div", {}, kids) : null;
+  }
+  function rvForm(c, ax){
+    var d = rvDraft;
+    var reasons = rvReasonsFor(d.target, d.key);
+    if (reasons.indexOf(d.reason) < 0) d.reason = reasons[0];
+    var values = ax ? (ax.values || []).map(function(v){ return v.name; }) : [];
+    var box = h("div", {class:"rvbox", role:"group", "aria-label":"taxonomy 재검토 요청 입력"});
+    function valueSelect(i, label, emptyText){
+      var s = h("select", {"aria-label":label});
+      s.appendChild(h("option", {value:"", text:emptyText}));
+      values.forEach(function(n){ s.appendChild(h("option", {value:n, text:n})); });
+      s.value = values.indexOf(d.rel[i] || "") >= 0 ? d.rel[i] : "";
+      s.addEventListener("change", function(){ d.rel[i] = s.value; d.dirty = true; });
+      return s;
+    }
+    function paint(focusReason){
+      box.textContent = "";
+      var rs;
+      if (reasons.length > 1){
+        rs = h("select", {"aria-label":"재검토 사유"});
+        reasons.forEach(function(r){ rs.appendChild(h("option", {value:r, text:rvLabel(r)})); });
+        rs.value = d.reason;
+        rs.addEventListener("change", function(){ d.reason = rs.value; d.dirty = true; paint(true); });
+      } else rs = h("b", {text:rvLabel(d.reason)});
+      box.appendChild(h("div", {class:"row"}, [h("span", {class:"k", text:"사유"}), rs]));
+
+      var fields = null;
+      if (d.reason === "NO_FIT_VALUE" || d.reason === "NEW_AXIS"){
+        var isAxis = d.reason === "NEW_AXIS";
+        var inp = h("input", {type:"text", size:"24", maxlength:String(RV_SHORT_MAX),
+          placeholder:isAxis ? "제안할 축 이름(필수)" : "제안 값(필수)", "aria-label":isAxis ? "제안할 축 이름" : "제안 값"});
+        inp.value = d.value || "";
+        inp.addEventListener("input", function(){ d.value = inp.value; d.dirty = true; });
+        fields = h("div", {class:"row"}, [h("span", {class:"k", text:isAxis ? "축 이름" : "제안 값"}), inp]);
+        if (!isAxis && ax && ax.hierarchical){
+          var ps = h("select", {"aria-label":"상위값"});
+          ps.appendChild(h("option", {value:"", text:"상위값 없음"}));
+          values.forEach(function(n){ ps.appendChild(h("option", {value:n, text:n})); });
+          ps.value = values.indexOf(d.parent || "") >= 0 ? d.parent : "";
+          ps.addEventListener("change", function(){ d.parent = ps.value; d.dirty = true; });
+          fields.appendChild(h("span", {class:"k", text:"상위값"}));
+          fields.appendChild(ps);
+        }
+      } else if (d.reason === "VALUE_OVERLAP"){
+        fields = h("div", {class:"row"}, [h("span", {class:"k", text:"겹치는 값"}),
+          valueSelect(0, "겹치는 값 1", "값 1 선택…"), "↔", valueSelect(1, "겹치는 값 2", "값 2 선택…")]);
+      } else if (d.reason === "AMBIGUOUS_DEF" && d.target === "axis" && values.length){
+        fields = h("div", {class:"row"}, [h("span", {class:"k", text:"모호한 값"}), valueSelect(0, "정의가 모호한 값", "축 전체(값 선택 안 함)")]);
+      }
+      if (fields) box.appendChild(fields);
+
+      var need = d.reason === "OTHER" || d.reason === "NEED_QUESTION";
+      var ta = h("textarea", {maxlength:String(RV_MEMO_MAX), "aria-label":"재검토 메모",
+        placeholder:need ? "메모(필수)" : "메모(선택)"});
+      ta.value = d.memo || "";
+      var cnt = h("span", {class:"cnt"});
+      function count(){ cnt.textContent = rvLen(ta.value) + "/" + RV_MEMO_MAX; }
+      ta.addEventListener("input", function(){ d.memo = ta.value; d.dirty = true; count(); });
+      count();
+      box.appendChild(h("div", {class:"row"}, [ta]));
+      var has = rvIndex(d.chunk_id, d.target, d.key) >= 0;
+      box.appendChild(h("div", {class:"row"}, [
+        h("button", {class:"btn sm primary", type:"button", text:"요청 저장", onclick:rvSave}),
+        has ? h("button", {class:"btn sm", type:"button", text:"요청 삭제", onclick:function(){ rvDelete(d.chunk_id, d.target, d.key); }}) : null,
+        h("button", {class:"btn sm", type:"button", text:"닫기", onclick:function(){ rvDraft = null; renderDetail(true); }}),
+        cnt,
+        h("span", {class:"muted", text:"재검토 요청은 라벨을 바꾸지 않습니다."})
+      ]));
+      if (focusReason && rs.focus) rs.focus();
+    }
+    paint(false);
+    if (d.focus){
+      d.focus = false;
+      setTimeout(function(){ var f = box.querySelector("select,input,textarea"); if (f) f.focus(); }, 0);
+    }
+    return box;
+  }
+
+  function axisCard(c, ax){
+    var wrap = h("div", {class:"axis"});
+    var multi = !!ax.multi;
+    var cur = curAxis(c, ax.name);
+    var bot = botAxis(c, ax.name);
+    var edited = edits[c.chunk_id] && edits[c.chunk_id]["a:" + ax.name];
+    var changed = edited && edited.length && (!bot || !sameSet(bot.values, edited));
+    wrap.appendChild(h("div", {class:"axhead"}, [
+      h("b", {text:ax.name}), h("span", {class:"badge", text:ax.kind}), h("span", {class:"badge", text:multi ? "복수 선택" : "단일 선택"}),
+      changed ? h("span", {class:"changed", text:"교정됨"}) : null, rvBadge(c, "axis", ax.name)
+    ]));
+    if (ax.definition) wrap.appendChild(h("div", {class:"axdef", text:ax.definition}));
+
+    if (!c.classify_failed){
+      var line = h("div", {class:"botline"}, [h("span", {class:"k", text:"봇"})]);
+      if (bot){
+        bot.values.forEach(function(v){ line.appendChild(botChip(ax, v)); });
+        line.appendChild(confEl(bot.confidence));
+      } else line.appendChild(h("span", {class:"muted", text:"봇 값 없음"}));
+      wrap.appendChild(line);
+      if (bot && bot.evidence) wrap.appendChild(h("div", {class:"ev", text:bot.evidence}));
+    }
+
+    if ((ax.values || []).length){
+      var botSet = bot ? bot.values : [];
+      var dl = h("dl");
+      ax.values.forEach(function(v){
+        dl.appendChild(h("dt", {class:botSet.indexOf(v.name) >= 0 ? "botv" : "", text:(v.parent ? v.parent + " › " : "") + v.name}));
+        dl.appendChild(h("dd", {text:defText(v).replace(/\n/g, " / ")}));
+      });
+      wrap.appendChild(h("details", {class:"defs"}, [h("summary", {text:"값 정의·판정 규칙 보기 (" + ax.values.length + ")"}), dl]));
+    }
+
+    var ed = h("div", {class:"edit", role:"group", "aria-label":ax.name + " 교정"}, [h("span", {class:"k", text:"교정"})]);
+    function opt(name, special){
+      var on = cur.indexOf(name) >= 0;
+      var v = valueDef(ax, name);
+      return h("button", {class:"opt" + (special ? " sp" : ""), type:"button", "aria-pressed":String(on),
+        title: special ? "" : defText(v), text:(v && v.parent ? v.parent + " › " : "") + name,
+        onclick:function(){ toggleAxis(c, ax, name, special); }});
+    }
+    (ax.values || []).forEach(function(v){ ed.appendChild(opt(v.name, false)); });
+    SPECIAL.forEach(function(s){ ed.appendChild(opt(s, true)); });
+    wrap.appendChild(ed);
+    if (rvOn) wrap.appendChild(h("div", {class:"rvwrap"}, [rvButton(c, "axis", ax.name, "taxonomy 재검토 요청"), rvPanel(c, "axis", ax.name, ax, false)]));
+    return wrap;
+  }
+  function toggleAxis(c, ax, name, special){
+    var e = edits[c.chunk_id] || (edits[c.chunk_id] = {});
+    var cur = curAxis(c, ax.name).slice(), has = cur.indexOf(name) >= 0, next;
+    if (special || !ax.multi) next = has ? [] : [name];
+    else {
+      cur = cur.filter(function(x){ return SPECIAL.indexOf(x) < 0; });
+      next = has ? cur.filter(function(x){ return x !== name; }) : cur.concat([name]);
+    }
+    var bot = botAxis(c, ax.name);
+    if (bot && sameSet(bot.values, next)) delete e["a:" + ax.name];
+    else e["a:" + ax.name] = next;
+    if (!Object.keys(e).length) delete edits[c.chunk_id];
+    save(); renderList(); renderDetail(true);
+  }
+
+  function questionCard(c, qid){
+    var wrap = h("div", {class:"axis"});
+    var bot = botAnswer(c, qid), cur = curAnswer(c, qid);
+    var edited = edits[c.chunk_id] && edits[c.chunk_id]["q:" + qid];
+    var changed = edited && (!bot || bot.answer !== edited);
+    wrap.appendChild(h("div", {class:"qhead"}, [
+      h("span", {class:"qid mono", text:qid}), changed ? h("span", {class:"changed", text:"교정됨"}) : null, rvBadge(c, "question", qid)
+    ]));
+    wrap.appendChild(h("div", {style:"margin:2px 0 6px", text:qtext[qid] || "(질문 문장 없음)"}));
+    if (!c.label_failed){
+      var line = h("div", {class:"botline"}, [h("span", {class:"k", text:"봇"})]);
+      if (bot){ line.appendChild(h("span", {class:"ans", text:bot.answer})); line.appendChild(confEl(bot.confidence)); }
+      else line.appendChild(h("span", {class:"muted", text:"봇 답 없음"}));
+      wrap.appendChild(line);
+      if (bot && bot.quote) wrap.appendChild(h("div", {class:"ev", text:bot.quote}));
+    }
+    var ed = h("div", {class:"edit", role:"group", "aria-label":qid + " 교정"}, [h("span", {class:"k", text:"교정"})]);
+    ANSWERS.forEach(function(a){
+      ed.appendChild(h("button", {class:"opt" + (a === "판단 불가" ? " sp" : ""), type:"button", "aria-pressed":String(cur === a), text:a,
+        onclick:function(){
+          var e = edits[c.chunk_id] || (edits[c.chunk_id] = {});
+          var b = botAnswer(c, qid);
+          var next = cur === a ? "" : a;
+          if (!next || (b && b.answer === next)) delete e["q:" + qid]; else e["q:" + qid] = next;
+          if (!Object.keys(e).length) delete edits[c.chunk_id];
+          save(); renderList(); renderDetail(true);
+        }}));
+    });
+    wrap.appendChild(ed);
+    if (rvOn) wrap.appendChild(h("div", {class:"rvwrap"}, [rvButton(c, "question", qid, "taxonomy 재검토 요청"), rvPanel(c, "question", qid, null, false)]));
+    return wrap;
+  }
+
+  // ---------- detail ----------
+  function renderDetail(keep){
+    var y = detailEl.scrollTop;
+    detailEl.textContent = "";
+    var c = byId[selId];
+    if (!c){
+      detailEl.appendChild(h("div", {class:"emptystate"}, [h("h2", {text:"검수할 chunk가 없습니다"}), h("p", {text:"필터를 바꾸거나 해제해 보세요."})]));
+      return;
+    }
+    var unkWarn = c.unknown_ratio !== null && c.unknown_ratio !== undefined && flag.unknown_ratio_min !== undefined && c.unknown_ratio >= flag.unknown_ratio_min;
+    var confWarn = c.min_confidence !== null && c.min_confidence !== undefined && flag.confidence_min !== undefined && c.min_confidence < flag.confidence_min;
+    function num(x){ return x === null || x === undefined ? "-" : Number(x).toFixed(2); }
+    detailEl.appendChild(h("div", {class:"dh"}, [
+      h("h2", {text:c.file_name}),
+      h("div", {class:"path mono", text:c.rel_path + "  ·  슬라이드 " + c.slide_no + "  ·  " + c.chunk_id + (c.dup_group ? "  ·  중복 묶음 " + c.dup_group : "")}),
+      h("div", {class:"metrics"}, [
+        h("div", {class:"tags"}, (c.reason_codes || []).map(function(r){
+          var t = tagFor(r); t.textContent = r + " · " + (reasonLabels[r] || ""); t.style.fontSize = "10.5px"; return t;
+        })),
+        h("span", {class:"metric"}, [h("span", {class:"k", text:"unknown 비율"}), h("b", {class:"mono" + (unkWarn ? " warnc" : ""), text:num(c.unknown_ratio)})]),
+        h("span", {class:"metric"}, [h("span", {class:"k", text:"최소 확신도"}), h("b", {class:"mono" + (confWarn ? " warnc" : ""), text:num(c.min_confidence)})])
+      ])
+    ]));
+
+    var st = status[c.chunk_id];
+    detailEl.appendChild(h("div", {class:"actions"}, [
+      h("button", {class:"btn" + (st === "confirmed" ? " on-ok" : ""), type:"button", "aria-pressed":String(st === "confirmed"), text:"확인, 이상 없음",
+        onclick:function(){ setStatus(c, "confirmed"); }}),
+      h("button", {class:"btn" + (st === "undecidable_image" ? " on-img" : ""), type:"button", "aria-pressed":String(st === "undecidable_image"), text:"판단 불가: 정보가 이미지에만 있음",
+        onclick:function(){ setStatus(c, "undecidable_image"); }}),
+      h("button", {class:"btn", type:"button", text:"다음 ▸ (j)", onclick:function(){ step(1); }}),
+      h("button", {class:"btn", type:"button", text:"◂ 이전 (k)", onclick:function(){ step(-1); }})
+    ]));
+
+    // left column
+    var left = h("div");
+    var bodyCard = h("div", {class:"card"}, [h("h3", {text:"본문"})]);
+    bodyCard.appendChild(textNode(c));
+    bodyCard.appendChild(h("div", {class:"legend"}, [
+      h("span", {}, [h("mark", {class:"q", text:"근거"}), " 근거 인용"]),
+      h("span", {}, [h("mark", {class:"s", text:"동의어"}), " 동의어 일치 (마우스를 올리면 표준어)"])
+    ]));
+    synBox = h("div", {class:"syn"});
+    bodyCard.appendChild(synBox);
+    left.appendChild(bodyCard);
+
+    if (c.images && c.images.length){
+      var ic = h("div", {class:"card"}, [h("h3", {text:"이미지 " + c.images.length + "개"})]);
+      var box = h("div", {class:"imgs"});
+      c.images.forEach(function(u, i){
+        var im = document.createElement("img"); im.src = u; im.alt = "이미지 " + (i + 1);
+        im.addEventListener("click", function(){ openZoom(u); });
+        box.appendChild(im);
+      });
+      ic.appendChild(box); left.appendChild(ic);
+    }
+    if (!c.label_failed && c.extracted && c.extracted.length){
+      var tb = h("table"), thead = h("thead"), tr0 = h("tr");
+      ["항목", "값", "근거"].forEach(function(t){ tr0.appendChild(h("th", {text:t})); });
+      thead.appendChild(tr0); tb.appendChild(thead);
+      var tbody = h("tbody");
+      c.extracted.forEach(function(x){
+        var tr = h("tr"); tr.appendChild(h("td", {text:x.item})); tr.appendChild(h("td", {text:x.value})); tr.appendChild(h("td", {text:x.quote || ""}));
+        tbody.appendChild(tr);
+      });
+      tb.appendChild(tbody);
+      left.appendChild(h("div", {class:"card"}, [h("h3", {text:"추출된 날짜·담당자"}), tb]));
+    }
+
+    // right column
+    var right = h("div");
+    var axCard = h("div", {class:"card"}, [h("h3", {}, ["분류 · 상태 축",
+      rvOn ? rvButton(c, "new_axis", "", "새 축 제안", "margin-left:auto") : null])]);
+    var naPanel = rvOn ? rvPanel(c, "new_axis", "", null, true) : null;
+    if (naPanel) axCard.appendChild(naPanel);
+    if (c.classify_failed) axCard.appendChild(h("div", {class:"note", text:"1차 분류가 실패했습니다. 봇 값 없이 판정 칸만 표시합니다."}));
+    axes.forEach(function(ax){ axCard.appendChild(axisCard(c, ax)); });
+    if (!axes.length) axCard.appendChild(h("div", {class:"muted", text:"축 정의가 없습니다."}));
+    right.appendChild(axCard);
+
+    var qids = questionIds(c);
+    var qCard = h("div", {class:"card"}, [h("h3", {}, ["질문별 답",
+      rvOn ? rvButton(c, "question", "", "필요한 질문 제안", "margin-left:auto") : null])]);
+    var nqPanel = rvOn ? rvPanel(c, "question", "", null, true) : null;
+    if (nqPanel) qCard.appendChild(nqPanel);
+    if (c.classify_failed) qCard.appendChild(h("div", {class:"note", text:"분류 실패 chunk는 질문 " + COM_Q + "만 판정합니다."}));
+    if (c.label_failed) qCard.appendChild(h("div", {class:"note", text:"3차 라벨링이 실패했습니다. 봇 답 없이 판정 칸만 표시합니다."}));
+    qids.forEach(function(q){ qCard.appendChild(questionCard(c, q)); });
+    if (!qids.length) qCard.appendChild(h("div", {class:"muted", text:"이 chunk에 매핑된 질문이 없습니다."}));
+    right.appendChild(qCard);
+
+    detailEl.appendChild(h("div", {class:"two"}, [left, right]));
+    renderSynBox();
+    if (keep) detailEl.scrollTop = y; else detailEl.scrollTop = 0;
+  }
+  function setStatus(c, s){
+    if (status[c.chunk_id] === s) delete status[c.chunk_id]; else status[c.chunk_id] = s;
+    save(); renderList(); renderDetail(true);
+  }
+  function step(d){
+    var f = flat(visibleChunks());
+    var i = -1;
+    f.forEach(function(c, k){ if (c.chunk_id === selId) i = k; });
+    var n = f[i + d];
+    if (n){
+      select(n.chunk_id);
+      var el = itemsEl.querySelector('.item[data-id="' + n.chunk_id.replace(/"/g, '\\"') + '"]');
+      if (el && el.scrollIntoView) el.scrollIntoView({block:"nearest"});
+    }
+  }
+  document.addEventListener("keydown", function(ev){
+    var t = ev.target && ev.target.tagName;
+    if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT" || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    if (ev.key === "j") step(1); else if (ev.key === "k") step(-1);
+  });
+
+  function init(){
+    load();
+    statEl = h("div");
+    filtersEl = h("div", {class:"filters"});
+    itemsEl = h("div", {class:"items", role:"list", "aria-label":"불량 chunk 목록"});
+    listEl = h("aside", {class:"list"}, [filtersEl, itemsEl]);
+    detailEl = h("main", {class:"detail"});
+    root.appendChild(h("div", {class:"app"}, [
+      h("header", {class:"bar"}, [
+        h("h1", {text:"검수"}),
+        h("div", {class:"meta mono", text:"실행 " + DATA.run_id + "  ·  생성 " + (DATA.generated_at || "-") + "  ·  기준 unknown ≥ " + (flag.unknown_ratio_min !== undefined ? flag.unknown_ratio_min : "-") + ", 확신도 < " + (flag.confidence_min !== undefined ? flag.confidence_min : "-")}),
+        h("div", {class:"sp", style:"flex:1"}),
+        statEl,
+        inboxEl = h("span", {class:"meta", role:"status"}),
+        h("button", {class:"btn primary", type:"button", text:"JSON 저장", onclick:download}),
+        h("button", {class:"btn", type:"button", text:"텍스트로 복사", onclick:copyText})
+      ]),
+      h("div", {class:"cols"}, [listEl, detailEl])
+    ]));
+    var f = flat(visibleChunks());
+    selId = f.length ? f[0].chunk_id : null;
+    renderList(); renderDetail();
+    inboxCheck();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

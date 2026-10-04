@@ -1,0 +1,20 @@
+{
+  "version": "2026-10-04.1",
+  "content_chunk_type": "내용",
+  "chunk_types": ["내용", "표지", "목차", "참고문헌"],
+  "answers": ["O", "X", "N/A"],
+  "axis_status": ["value", "na", "unknown"],
+  "confidence": {"min": 0, "max": 1, "nullable": true},
+  "extracted_items": {"date": {"format": "date"}, "person": {}, "lot_id": {"format": "lot_id"}},
+  "rules": {"evidence_required_for_value": true, "quote_required_for_ox": true,
+            "all_active_axes_required": true},
+  "formats": {
+    "date": {"pattern": "^\\d{4}-\\d{2}(-\\d{2})?$", "normalizer": "date_iso",
+             "applies_to": {"extracted": "date"}, "enabled": true},
+    "layer": {"pattern": "^(M|V)(\\d{1,2}|x)$|^JHV$", "normalizer": "pattern_case",
+              "applies_to": {"axis": "구조/레이어"}, "enabled": true},
+    "lot_id": {"pattern": "^(R[A-Z]{4,5}|Q[A-Z]{4}0\\d{2})(\\.\\d{2})?$", "normalizer": "pattern_case",
+               "applies_to": {"extracted": "lot_id"}, "enabled": true,
+               "common_second_letters": ["D", "Q", "X"]}
+  }
+}
