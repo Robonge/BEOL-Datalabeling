@@ -1,0 +1,12 @@
+# 비밀값 (템플릿 .env.example만 커밋한다)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+
+# oh-my-claudecode 운영 상태 (프로젝트 스킬만 커밋)
+.omc/*
+!.omc/skills/

@@ -1,0 +1,12 @@
+# ============================================================
+# [사외 구동 기준] labelbot 런타임 의존성
+# ============================================================
+# labelbot 본체는 표준 라이브러리만 사용한다(CLAUDE.md, PRD 9.1).
+# 따라서 런타임 의존성은 0개이며, 아래 명령은 아무것도 설치하지 않고 성공한다.
+#
+#   pip install -r requirements.txt
+#
+# 사외 PoC에서 쓰는 SDK(OpenAI, Supabase, dotenv)는 requirements-poc.txt에 있다.
+#   pip install -r requirements-poc.txt
+#
+# 사내 반입본은 설치 없이 실행한다(python -m labelbot <명령> --workspace <작업 폴더>).

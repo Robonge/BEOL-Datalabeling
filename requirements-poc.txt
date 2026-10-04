@@ -1,0 +1,14 @@
+# ============================================================
+# [사외 구동 기준] 사외 PoC 전용 의존성
+# ============================================================
+# 사외 개발 PC(Python 3.14)에서 OpenAI·Supabase 연동 PoC를 돌릴 때만 설치한다.
+# labelbot 본체(사내 반입 경로)는 이 패키지들을 import하지 않는다.
+# 사내 반입본에는 필요 없으며, 사내에서 설치하지 않는다.
+#
+#   pip install -r requirements-poc.txt
+#
+# 키는 .env(또는 셸 환경변수)의 OPENAI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY로 넣는다.
+
+openai>=1.40
+supabase>=2.0
+python-dotenv>=1.0
