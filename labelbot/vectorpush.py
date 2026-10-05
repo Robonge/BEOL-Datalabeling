@@ -5,26 +5,18 @@ vector_push_log로 멱등을 보장한다. 같은 대상 호스트에 같은 chu
 """
 from labelbot import finals, store, util
 from labelbot.embed import run_chunks, unpack
-from labelbot.llm import CallFailed, SendBlocked, check_send, host_hash, post_json, read_key
+from labelbot.llm import CallFailed, SendBlocked, SupabaseSinkBase, check_send, host_hash, post_json, read_key
 
 
-class SupabaseSink:
-    def __init__(self, url, cfg, key):
-        self.base = url.rstrip("/")
-        self.cfg = cfg
-        self.key = key
-
+class SupabaseSink(SupabaseSinkBase):
     @property
     def endpoint(self):
         return "%s/rest/v1/%s?on_conflict=chunk_id,model" % (self.base, self.cfg["table"])
 
     def send(self, rows):
-        hdrs = {
-            "apikey": self.key,
-            "Authorization": "Bearer " + self.key,
-            "Prefer": "resolution=merge-duplicates,return=minimal",
-        }
-        post_json(self.endpoint, hdrs, rows, self.cfg.get("timeout") or 60, self.cfg.get("ca_file"))
+        hdrs = self._hdrs()
+        hdrs["Prefer"] = "resolution=merge-duplicates,return=minimal"
+        post_json(self.endpoint, hdrs, rows, self.timeout, self.ca_file)
 
     @staticmethod
     def row(c, model, vec, labels, run_id):

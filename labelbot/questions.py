@@ -6,7 +6,6 @@
 """
 from labelbot import prompts, util
 from labelbot.llm import CallFailed, SendBlocked
-from labelbot.store import add_failure
 from labelbot.taxonomy import Question
 
 GEN_PREFIX = "Q-GEN-"
@@ -103,8 +102,7 @@ def generate_questions(ctx, chunk, axes, limit):
     try:
         obj = ctx.chat.chat_json(messages, [chunk["file_id"]], _gen_validator(targets), hint=hint)
     except (CallFailed, SendBlocked) as e:
-        add_failure(ctx.con, ctx.run_id, "question_gen", chunk["chunk_id"], e.reason_code)
-        ctx.log("question_gen", chunk["chunk_id"], e.reason_code)
+        ctx.fail("question_gen", chunk["chunk_id"], e.reason_code)
         return []
     by_key = {(q["axis"], q["value"]): str(q["text"]).strip() for q in obj["questions"]}
     out, now, ver = [], util.now_iso(), prompts.version("question_gen")

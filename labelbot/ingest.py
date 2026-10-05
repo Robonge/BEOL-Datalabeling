@@ -65,11 +65,11 @@ def b64_path(ws, file_id):
 
 
 def load_b64(ws, file_id):
-    with open(b64_path(ws, file_id), "r", encoding="ascii") as f:
-        return base64.b64decode(f.read())
+    return util.read_b64(b64_path(ws, file_id))
 
 
-def _iter_inputs(root):
+def iter_inputs(root):
+    """입력 루트의 파일을 (전체 경로, 상대 경로(NFC, /), 파일명(NFC))로 정렬해 낸다. 파일은 열지 않는다."""
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames.sort()
         for fn in sorted(filenames):
@@ -78,6 +78,9 @@ def _iter_inputs(root):
             full = os.path.join(dirpath, fn)
             rel = util.nfc(os.path.relpath(full, root).replace(os.sep, "/"))
             yield full, rel, util.nfc(fn)
+
+
+_iter_inputs = iter_inputs  # 예전 이름(.claude 스킬 문서가 참조한다)
 
 
 def collect(ws, con, run_id, input_root, only_ext=None, log=None, excluded=()):
@@ -89,7 +92,7 @@ def collect(ws, con, run_id, input_root, only_ext=None, log=None, excluded=()):
     include = tuple(ws.config.get("include_file_ids") or ())
     skip_names = {util.nfc(n) for n in ws.config.get("skip_file_names") or ()}
     seen = []
-    for full, rel, fname in _iter_inputs(input_root):
+    for full, rel, fname in iter_inputs(input_root):
         ext = os.path.splitext(fname)[1].lower()
         if only_ext and ext not in only_ext:
             continue
@@ -139,14 +142,6 @@ def collect(ws, con, run_id, input_root, only_ext=None, log=None, excluded=()):
             seen.append(fid)
     con.commit()
     return seen
-
-
-def first_seen_rel_path(con, file_id):
-    r = con.execute(
-        "SELECT rel_path FROM file_locations WHERE file_id=? ORDER BY first_seen_run, rel_path LIMIT 1",
-        (file_id,),
-    ).fetchone()
-    return r[0] if r else None
 
 
 def parse_files(ws, con, run_id, file_ids, log=None):

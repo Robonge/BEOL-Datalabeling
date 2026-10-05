@@ -19,7 +19,7 @@ import threading
 
 from labelbot import ingest, util
 from labelbot.llm import SendBlocked, check_send
-from labelbot.workspace import CODE_ROOT
+from labelbot.workspace import CODE_ROOT, is_inside
 
 RULES_FILENAME = "labeling_rules.json"
 NA, UNKNOWN = "해당 없음", "unknown"
@@ -293,14 +293,6 @@ class Feedback(object):
 
 # ---- 읽기 ------------------------------------------------------------------------
 
-def _inside(child, parent):
-    child, parent = os.path.normcase(os.path.realpath(child)), os.path.normcase(os.path.realpath(parent))
-    try:
-        return os.path.commonpath([child, parent]) == parent
-    except ValueError:
-        return False
-
-
 def _rules_for_run(doc, tax, cap):
     """켜진 유효 규칙 → 단계(_stage) 붙인 목록과 형식 오류 수. 축 규칙은 활성 축과 taxonomy 값만 받는다."""
     axes = {a.name: a for a in tax.active_axes()}
@@ -349,7 +341,7 @@ def _resolve_examples(ws, entries, chat, active):
     for src in sorted(by_src):
         group = by_src[src]
         db = os.path.join(root, src, "work.sqlite")
-        if not _inside(db, root) or not os.path.isfile(db):
+        if not is_inside(db, root) or not os.path.isfile(db):
             skip("EXAMPLE_SOURCE_GONE", len(group))
             continue
         try:

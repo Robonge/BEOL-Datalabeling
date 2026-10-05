@@ -20,7 +20,6 @@ HEADERS = collections.OrderedDict(
     ]
 )
 REQUIRED = ("taxonomy", "questions", "synonyms", "rejected")
-OPTIONAL = ("files", "queries")
 
 KINDS = ("분류", "상태")
 COMMON_TARGET = "공통"

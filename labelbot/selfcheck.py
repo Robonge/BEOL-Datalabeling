@@ -66,6 +66,26 @@ def run(ws, probe_llm=False, out=print):
         item("workspace_writable", True)
     except OSError:
         item("workspace_writable", False)
+    _check_taxonomy(ws, item)
+    llm = ws.config["llm"]
+    suffixes = llm.get("internal_host_suffixes")
+    item("llm_config", bool(llm.get("base_url") and llm.get("model")), "model=%s" % (llm.get("model") or "(없음)"))
+    item("llm_key_env", llm.get("transport") == "mock" or bool(read_key(llm.get("api_key_env"))), llm.get("api_key_env") or "")
+    _check_hosts(ws, llm, suffixes, item, out)
+    rt = write_roundtrip(ws.root)
+    for ext in EXTS:
+        item("write_roundtrip %s" % ext, rt[ext])
+    out("  write_roundtrip은 필요조건일 뿐이며 M7 게이트의 수동 확인이 필요하다.")
+    if probe_llm and llm.get("transport") != "mock":
+        _probe_llm(ws, llm, item)
+    if ws.config["supabase"].get("enabled"):
+        _check_supabase(ws, suffixes, item, out)
+    failed = [n for n, ok in items if not ok]
+    out("결과: %s" % ("전 항목 PASS" if not failed else "FAIL %d개" % len(failed)))
+    return not failed, items
+
+
+def _check_taxonomy(ws, item):
     tax_ok, detail = os.path.isfile(ws.taxonomy_path), ""
     if tax_ok:
         try:
@@ -78,11 +98,10 @@ def run(ws, probe_llm=False, out=print):
     else:
         detail = "taxonomy/taxonomy.xlsx를 작업 폴더로 복사하세요"
     item("taxonomy.xlsx", tax_ok, detail)
-    llm = ws.config["llm"]
-    suffixes = llm.get("internal_host_suffixes")
+
+
+def _check_hosts(ws, llm, suffixes, item, out):
     llm_url = (llm.get("base_url") or "").rstrip("/") + llm.get("chat_path", "")
-    item("llm_config", bool(llm.get("base_url") and llm.get("model")), "model=%s" % (llm.get("model") or "(없음)"))
-    item("llm_key_env", llm.get("transport") == "mock" or bool(read_key(llm.get("api_key_env"))), llm.get("api_key_env") or "")
     for name, url in (("host_llm", llm_url),
                       ("host_embedding", (ws.config["embedding"].get("base_url") or "") + ws.config["embedding"].get("path", "")),
                       ("host_supabase", ws.supabase_url())):
@@ -91,53 +110,51 @@ def run(ws, probe_llm=False, out=print):
             continue
         cls = host_class(url, suffixes)
         item(name, cls != "uncertain", {"internal": "사내", "external": "사외", "uncertain": "불확실"}[cls])
-    rt = write_roundtrip(ws.root)
-    for ext in EXTS:
-        item("write_roundtrip %s" % ext, rt[ext])
-    out("  write_roundtrip은 필요조건일 뿐이며 M7 게이트의 수동 확인이 필요하다.")
-    if probe_llm and llm.get("transport") != "mock":
-        from labelbot import store
-        from labelbot.llm import ChatClient
 
-        con = store.connect(ws.work_db)
-        try:
-            client = ChatClient(llm, con)
-            obj = client.chat_json([{"role": "user", "content": PROBE_SENTENCE}], [], lambda o: (o.get("ok") is True, "PROBE"), probe=True)
-            item("llm_probe", bool(obj))
-        except (CallFailed, SendBlocked) as e:
-            item("llm_probe", False, e.reason_code)
-        finally:
-            con.close()
+
+def _probe_llm(ws, llm, item):
+    from labelbot import store
+    from labelbot.llm import ChatClient
+
+    con = store.connect(ws.work_db)
+    try:
+        client = ChatClient(llm, con)
+        obj = client.chat_json([{"role": "user", "content": PROBE_SENTENCE}], [], lambda o: (o.get("ok") is True, "PROBE"), probe=True)
+        item("llm_probe", bool(obj))
+    except (CallFailed, SendBlocked) as e:
+        item("llm_probe", False, e.reason_code)
+    finally:
+        con.close()
+
+
+def _check_supabase(ws, suffixes, item, out):
+    """supabase.enabled일 때만 부른다. 키, 표, slide_image_* 열, Storage 버킷을 확인한다."""
     sb = ws.config["supabase"]
-    if sb.get("enabled"):
-        key = read_key(sb.get("key_env"))
-        item("supabase_key_env", bool(key), sb.get("key_env") or "")
-        if key and ws.supabase_url() and host_class(ws.supabase_url(), suffixes) != "uncertain":
-            base = ws.supabase_url().rstrip("/")
-            hdrs = {"apikey": key, "Authorization": "Bearer " + key}
-            timeout = sb.get("timeout") or 60
+    key = read_key(sb.get("key_env"))
+    item("supabase_key_env", bool(key), sb.get("key_env") or "")
+    if key and ws.supabase_url() and host_class(ws.supabase_url(), suffixes) != "uncertain":
+        base = ws.supabase_url().rstrip("/")
+        hdrs = {"apikey": key, "Authorization": "Bearer " + key}
+        timeout = sb.get("timeout") or 60
+        try:
+            get_json("%s/rest/v1/%s?select=chunk_id&limit=1" % (base, sb["table"]), hdrs, timeout, sb.get("ca_file"))
+            item("supabase_table", True, sb["table"])
+        except CallFailed as e:
+            item("supabase_table", False, e.reason_code)
+        # push-slides가 쓰는 slide_image_* 열과 Storage 버킷을 미리 확인한다(docs/supabase_schema.md).
+        if sb.get("storage_enabled"):
+            bucket = sb.get("storage_bucket") or "BEOL-labeling"
             try:
-                get_json("%s/rest/v1/%s?select=chunk_id&limit=1" % (base, sb["table"]), hdrs, timeout, sb.get("ca_file"))
-                item("supabase_table", True, sb["table"])
+                get_json("%s/rest/v1/%s?select=slide_image_path&limit=1" % (base, sb["table"]), hdrs, timeout,
+                         sb.get("ca_file"))
+                item("supabase_slide_columns", True, "slide_image_*")
             except CallFailed as e:
-                item("supabase_table", False, e.reason_code)
-            # push-slides가 쓰는 slide_image_* 열과 Storage 버킷을 미리 확인한다(docs/supabase_schema.md).
-            if sb.get("storage_enabled"):
-                bucket = sb.get("storage_bucket") or "BEOL-labeling"
-                try:
-                    get_json("%s/rest/v1/%s?select=slide_image_path&limit=1" % (base, sb["table"]), hdrs, timeout,
-                             sb.get("ca_file"))
-                    item("supabase_slide_columns", True, "slide_image_*")
-                except CallFailed as e:
-                    item("supabase_slide_columns", False, e.reason_code)
-                try:
-                    get_json("%s/storage/v1/bucket/%s" % (base, urllib.parse.quote(bucket, safe="")), hdrs, timeout,
-                             sb.get("ca_file"))
-                    item("supabase_storage_bucket", True, bucket)
-                except CallFailed as e:
-                    item("supabase_storage_bucket", False, e.reason_code)
-        if not sb.get("storage_enabled"):
-            out("%-28s -    supabase.storage_enabled=false(슬라이드 JPG 적재 꺼짐)" % "supabase_storage")
-    failed = [n for n, ok in items if not ok]
-    out("결과: %s" % ("전 항목 PASS" if not failed else "FAIL %d개" % len(failed)))
-    return not failed, items
+                item("supabase_slide_columns", False, e.reason_code)
+            try:
+                get_json("%s/storage/v1/bucket/%s" % (base, urllib.parse.quote(bucket, safe="")), hdrs, timeout,
+                         sb.get("ca_file"))
+                item("supabase_storage_bucket", True, bucket)
+            except CallFailed as e:
+                item("supabase_storage_bucket", False, e.reason_code)
+    if not sb.get("storage_enabled"):
+        out("%-28s -    supabase.storage_enabled=false(슬라이드 JPG 적재 꺼짐)" % "supabase_storage")

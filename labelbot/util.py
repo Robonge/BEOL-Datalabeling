@@ -1,4 +1,5 @@
 """공통 유틸: 해시, 정규화, JSON, 시각, 실행 ID."""
+import base64
 import datetime
 import hashlib
 import json
@@ -69,6 +70,19 @@ def write_text(path, text):
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write(text)
+
+
+def read_b64_text(path):
+    """작업 폴더의 .b64 보관본을 읽어 base64 문자열(앞뒤 공백 제거)을 돌려준다. 원본 경로는 열지 않는다(ingest.read_input 몫)."""
+    if not path.lower().endswith(".b64"):
+        raise ValueError("NOT_B64_PATH")
+    with open(path, encoding="ascii") as f:
+        return f.read().strip()
+
+
+def read_b64(path):
+    """.b64 보관본을 디코딩한 bytes. 메모리에서만 쓴다."""
+    return base64.b64decode(read_b64_text(path))
 
 
 def write_jsonl(path, rows):

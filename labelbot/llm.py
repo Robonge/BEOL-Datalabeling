@@ -43,7 +43,7 @@ def _folder_hashes(root):
 
     ids = set()
     if os.path.isdir(root):
-        for full, _, _ in ingest._iter_inputs(root):
+        for full, _, _ in ingest.iter_inputs(root):
             ids.add(util.sha256_bytes(ingest.read_input(full, None)))
     return ids
 
@@ -153,6 +153,26 @@ def patch_json(url, headers, payload, timeout, ca_file=None):
     hdrs.update(headers or {})
     req = urllib.request.Request(url, data=data, headers=hdrs, method="PATCH")
     return _open(req, timeout, ca_file)
+
+
+class SupabaseSinkBase:
+    """Supabase REST·Storage 적재 대상의 공통 부분: 기본 URL, 키 헤더, timeout, ca_file."""
+
+    def __init__(self, url, cfg, key):
+        self.base = url.rstrip("/")
+        self.cfg = cfg
+        self.key = key
+
+    def _hdrs(self):
+        return {"apikey": self.key, "Authorization": "Bearer " + self.key}
+
+    @property
+    def timeout(self):
+        return self.cfg.get("timeout") or 60
+
+    @property
+    def ca_file(self):
+        return self.cfg.get("ca_file")
 
 
 def get_json(url, headers, timeout, ca_file=None):

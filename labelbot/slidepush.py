@@ -6,33 +6,25 @@ slide_image_push_log로 멱등을 보장한다. 같은 대상 호스트·버킷�
 벡터 행이 있어야 열을 채울 수 있으므로 push-vectors 다음에 부른다. 행이 없으면 ROW_MISSING으로 남기고 다음에 다시 한다.
 라벨과 label_hash는 바꾸지 않는다(push-vectors의 멱등을 건드리지 않는다).
 """
-import base64
 import os
 import urllib.parse
 
 from labelbot import store, util
 from labelbot.embed import run_chunks
-from labelbot.llm import CallFailed, SendBlocked, check_send, host_hash, patch_json, post_bytes, read_key
+from labelbot.llm import (CallFailed, SendBlocked, SupabaseSinkBase, check_send, host_hash, patch_json, post_bytes,
+                          read_key)
 from labelbot.slideimg import object_path
 
 STAGE = "push_slides"
 
 
-class StorageSink:
-    def __init__(self, url, cfg, key):
-        self.base = url.rstrip("/")
-        self.cfg = cfg
-        self.key = key
-
-    def _hdrs(self):
-        return {"apikey": self.key, "Authorization": "Bearer " + self.key}
-
+class StorageSink(SupabaseSinkBase):
     def upload(self, bucket, path, data):
         url = "%s/storage/v1/object/%s/%s" % (self.base, urllib.parse.quote(bucket, safe=""),
                                               urllib.parse.quote(path, safe="/"))
         hdrs = self._hdrs()
         hdrs["x-upsert"] = "true"
-        post_bytes(url, hdrs, data, "image/jpeg", self.cfg.get("timeout") or 60, self.cfg.get("ca_file"))
+        post_bytes(url, hdrs, data, "image/jpeg", self.timeout, self.ca_file)
 
     def patch_row(self, chunk_id, fields):
         """반환: 갱신된 행 수."""
@@ -40,7 +32,7 @@ class StorageSink:
             self.base, self.cfg["table"], urllib.parse.quote(chunk_id, safe=""))
         hdrs = self._hdrs()
         hdrs["Prefer"] = "return=representation"
-        _, body = patch_json(url, hdrs, fields, self.cfg.get("timeout") or 60, self.cfg.get("ca_file"))
+        _, body = patch_json(url, hdrs, fields, self.timeout, self.ca_file)
         return len(body) if isinstance(body, list) else 0
 
 
@@ -102,8 +94,7 @@ def _send(ws, sink, bucket, path, r, st):
     if not os.path.isfile(rel):
         st["failed"] += 1
         return "B64_MISSING"
-    with open(rel, encoding="ascii") as f:
-        data = base64.b64decode(f.read().strip())
+    data = util.read_b64(rel)
     if util.sha256_bytes(data) != r["jpg_sha256"] or data[:3] != b"\xff\xd8\xff":
         st["failed"] += 1
         return "SHA_MISMATCH"

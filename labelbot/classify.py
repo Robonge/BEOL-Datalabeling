@@ -173,8 +173,7 @@ def classify_chunk(ctx, chunk):
     try:
         obj = ctx.chat.chat_json(messages, sorted({chunk["file_id"]} | set(fb_files)), _validator(tax), hint=hint)
     except (CallFailed, SendBlocked) as e:
-        add_failure(ctx.con, ctx.run_id, "classify", chunk["chunk_id"], e.reason_code)
-        ctx.log("classify", chunk["chunk_id"], e.reason_code)
+        ctx.fail("classify", chunk["chunk_id"], e.reason_code)
         return None
     active_names = {a.name for a in tax.active_axes()}
     for k in obj["axes"]:

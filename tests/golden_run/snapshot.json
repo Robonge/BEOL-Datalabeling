@@ -1,0 +1,179 @@
+{
+ "exit_codes": {
+  "apply": 0,
+  "compare": 0,
+  "dashboard": 0,
+  "embed": 0,
+  "push-slides": 0,
+  "push-vectors": 0,
+  "report": 0,
+  "review": 0,
+  "run": 0,
+  "selfcheck": 0
+ },
+ "failures": [
+  "classify AXIS_MISSING 4",
+  "label QUESTION_MISSING 5"
+ ],
+ "files_after_all": [
+  "out/SCHEMA.md",
+  "out/images/59183ee27fe21026d38d8c0491bcc9a7d6599d849cae98c6e02cef10f70967e4.b64",
+  "out/images/59c3e249d7a32265bdd322007addc7223e88f64fe629610958131eeec07493a1.b64",
+  "out/images/8ec46adbea57bab34e7b9d54b104d4a509aab650bfef736e7c896f3265fc97fb.b64",
+  "out/images/903c7a9773cf7251ee1267ca71f67424e5451db4e7d1bc21778d515d20a47764.b64",
+  "out/images/ba99e753be906e0da2d2cd075e8bf956e5c1e93ec6baecc326f21a51cd76617d.b64",
+  "out/images/bc8a04fc7e1f7f606c8a86f367d77eb3725880502e487314ea29260726d4983d.b64",
+  "out/images/d0b09968092e38c907f2f66f2590840cc0a082b6b0d1f54b0bb334e6fcea2f97.b64",
+  "out/images/d62325cd2ef64bcbf1c40a3eaa83d090ef8318f7d8a3418d69fb485af2f2071f.b64",
+  "out/labeling.sqlite",
+  "reports/alerts.json",
+  "reports/baseline_<RUN>.md",
+  "reports/candidates.jsonl",
+  "reports/candidates.md",
+  "reports/file_list.md",
+  "reports/flagged_<RUN>.jsonl",
+  "reports/flagged_<RUN>.md",
+  "reports/taxonomy_revisit.jsonl",
+  "reports/taxonomy_revisit.md",
+  "screens/compare.html",
+  "screens/results.html",
+  "screens/review.html"
+ ],
+ "files_after_run": [
+  "out/SCHEMA.md",
+  "out/images/59183ee27fe21026d38d8c0491bcc9a7d6599d849cae98c6e02cef10f70967e4.b64",
+  "out/images/59c3e249d7a32265bdd322007addc7223e88f64fe629610958131eeec07493a1.b64",
+  "out/images/8ec46adbea57bab34e7b9d54b104d4a509aab650bfef736e7c896f3265fc97fb.b64",
+  "out/images/903c7a9773cf7251ee1267ca71f67424e5451db4e7d1bc21778d515d20a47764.b64",
+  "out/images/ba99e753be906e0da2d2cd075e8bf956e5c1e93ec6baecc326f21a51cd76617d.b64",
+  "out/images/bc8a04fc7e1f7f606c8a86f367d77eb3725880502e487314ea29260726d4983d.b64",
+  "out/images/d0b09968092e38c907f2f66f2590840cc0a082b6b0d1f54b0bb334e6fcea2f97.b64",
+  "out/images/d62325cd2ef64bcbf1c40a3eaa83d090ef8318f7d8a3418d69fb485af2f2071f.b64",
+  "out/labeling.sqlite",
+  "reports/alerts.json",
+  "reports/baseline_<RUN>.md",
+  "reports/candidates.jsonl",
+  "reports/candidates.md",
+  "reports/file_list.md",
+  "reports/flagged_<RUN>.jsonl",
+  "reports/flagged_<RUN>.md",
+  "reports/taxonomy_revisit.jsonl",
+  "reports/taxonomy_revisit.md"
+ ],
+ "labels": {
+  "columns": [
+   "id",
+   "run_id",
+   "chunk_id",
+   "kind",
+   "key",
+   "value",
+   "status",
+   "evidence",
+   "confidence",
+   "sheet_hashes",
+   "prompt_version",
+   "model",
+   "created_at"
+  ],
+  "rows": 326
+ },
+ "out_labeling_sqlite": {
+  "aliases": {
+   "rows": 13,
+   "sha256": "eefcb59f84e42eb986993456e5cc387dc1d708483ca6afe3ff353354725c23e7"
+  },
+  "answers": {
+   "rows": 62,
+   "sha256": "65a2a102c7feb98e9e0516cebf590a8063ac9a37bc5d379a77872dc269b35266"
+  },
+  "chunks": {
+   "rows": 28,
+   "sha256": "7a07bda03e4201f607014940e22671bfbba253d52bd1f1f386ef5e6b6bdcaf5d"
+  },
+  "extracted_values": {
+   "rows": 6,
+   "sha256": "76895d0275d8a3d79dc6959d49e26023f0887e01d6b5c1ab04d3322d8cb39ee1"
+  },
+  "facet_labels": {
+   "rows": 253,
+   "sha256": "de5a2a7a25b4c28d376c2905eeb1f30eab24134ac490cbe291547fb6be1c765c"
+  },
+  "facet_values": {
+   "rows": 61,
+   "sha256": "752c747ec4795c0d2c4b065c12c9557840a20a1a3d6fffe92dbd433f42ab3b11"
+  },
+  "file_locations": {
+   "rows": 3,
+   "sha256": "cf6bf4f9a8f9ea1791bd80adc11e4bbe6560562dc50be254f6e5ef70e579e720"
+  },
+  "files": {
+   "rows": 3,
+   "sha256": "e17fa3016208b5184d0533f82ad34437b7bb04915d8639b96593189073f35fce"
+  },
+  "meta": {
+   "rows": 7,
+   "sha256": "9de1dcc46fa7bed1711fa106c9b0472a786d0223cee1f3df31526d2e1628cc49"
+  },
+  "questions": {
+   "rows": 56,
+   "sha256": "fa1af65fd47962c91d396e17b4606fe45b6f5df6d20c19ea8e574788c07b26d2"
+  }
+ },
+ "stdout": {
+  "apply": [
+   "[apply] inbox/에 반영할 .json 파일이 없습니다.",
+   "[apply] taxonomy 재검토 요청 누적 0건 → reports/taxonomy_revisit.md"
+  ],
+  "compare": [
+   "[compare] chunk 28개 → screens/compare.html"
+  ],
+  "dashboard": [
+   "[dashboard] chunk 28개 → screens/results.html"
+  ],
+  "embed": [
+   "[embed] 호출 1회, 저장 28, 건너뜀 0, 차단 0"
+  ],
+  "push-slides": [
+   "[push-slides] supabase.storage_enabled=false: 호출하지 않습니다."
+  ],
+  "push-vectors": [
+   "[push-vectors] supabase.enabled=false: 호출하지 않습니다."
+  ],
+  "report": [
+   "[report] reports/baseline_<RUN>.md",
+   "[report] taxonomy 재검토 요청 누적 0건 → reports/taxonomy_revisit.md"
+  ],
+  "review": [
+   "[review] run_id=<RUN> 불량 chunk 17개 → screens/review.html, reports/flagged_<RUN>.*"
+  ],
+  "run": [
+   "[ingest] 파일 3개 (정상 3, 새로 파싱 3)",
+   "[feedback] 승인된 규칙·사례 없음: 승인 규칙·사례를 넣지 않습니다.",
+   "[classify] chunk 28개 중 실패 4, 비내용 0",
+   "[question] 검증 질문 55개 생성(chunk 24개)",
+   "[label] 대상 24개 중 실패 5",
+   "[run] 완료 run_id=<RUN> LLM 호출 80회 (캐시 0회)"
+  ],
+  "selfcheck": [
+   "python                       PASS <PY>",
+   "sqlite3                      PASS <SQLITE>",
+   "workspace_writable           PASS ",
+   "taxonomy.xlsx                PASS 축 10 (활성 10)",
+   "llm_config                   PASS model=mock",
+   "llm_key_env                  PASS OPENAI_API_KEY",
+   "host_llm                     PASS 사외",
+   "host_embedding               PASS 사외",
+   "host_supabase                -    supabase.enabled=false",
+   "write_roundtrip .b64         PASS ",
+   "write_roundtrip .sqlite      PASS ",
+   "write_roundtrip .json        PASS ",
+   "write_roundtrip .jsonl       PASS ",
+   "write_roundtrip .html        PASS ",
+   "write_roundtrip .md          PASS ",
+   "write_roundtrip .log         PASS ",
+   "  write_roundtrip은 필요조건일 뿐이며 M7 게이트의 수동 확인이 필요하다.",
+   "결과: 전 항목 PASS"
+  ]
+ }
+}

@@ -122,7 +122,7 @@ def _merge(base, over):
     return out
 
 
-def _is_inside(child, parent):
+def is_inside(child, parent):
     child = os.path.normcase(os.path.realpath(child))
     parent = os.path.normcase(os.path.realpath(parent))
     try:
@@ -136,7 +136,7 @@ WORKSPACES_DIR = os.path.join(CODE_ROOT, "workspaces")
 
 def is_forbidden_inside_code(path):
     """코드 폴더 안이면서 workspaces/ 밖이면 True. 작업 폴더는 workspaces/ 아래에만 둘 수 있다."""
-    return _is_inside(path, CODE_ROOT) and not _is_inside(path, WORKSPACES_DIR)
+    return is_inside(path, CODE_ROOT) and not is_inside(path, WORKSPACES_DIR)
 
 
 class Workspace:

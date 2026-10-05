@@ -1,5 +1,6 @@
 """실행 맥락과 전 단계 오케스트레이션(ingest, run)."""
 import concurrent.futures
+import contextlib
 import os
 import sys
 import threading
@@ -61,7 +62,6 @@ class Ctx:
         self.log = log or Logger(ws)
         self.lock = threading.RLock()
         self.chat = ChatClient(self.cfg["llm"], con, transport=transport, log=self.log)
-        self.chat_lock = self.lock
         # 검수 피드백(승인 규칙·사례). run_all이 feedback.load로 바꾼다. 기본은 블록이 '(없음)'.
         self.feedback = feedback.NullFeedback()
         if tax is not None:
@@ -78,6 +78,11 @@ class Ctx:
             return (sh, prompts.version(stage), model, util.now_iso())
 
         return base
+
+    def fail(self, stage, target_id, reason_code):
+        """failures 행을 남기고 같은 사유를 로그에 쓴다. stage 문자열은 계약(vectorpush·engrbot이 읽는다)."""
+        store.add_failure(self.con, self.run_id, stage, target_id, reason_code)
+        self.log(stage, target_id, reason_code)
 
 
 class _LockedCon:
@@ -150,20 +155,27 @@ def _parallel(fn, items, workers):
         return list(ex.map(fn, items))
 
 
+@contextlib.contextmanager
+def _threaded_con(ctx):
+    """블록 안에서는 ctx.con과 ctx.chat.con을 잠금 연결로 바꾸고, 끝나면 원래 연결로 되돌린다."""
+    raw_con = ctx.con
+    ctx.con = _LockedCon(raw_con, ctx.lock)
+    ctx.chat.con = ctx.con
+    try:
+        yield
+    finally:
+        ctx.con = raw_con
+        ctx.chat.con = raw_con
+
+
 def run_labeling(ctx, chunks):
     """1차 분류 → 2차 매핑 → 3차 라벨링. 반환: 통계 dict."""
     from labelbot import candidates
 
     con, tax = ctx.con, ctx.tax
     workers = int(ctx.cfg["llm"].get("workers") or 4)
-    raw_con = ctx.con
-    ctx.con = _LockedCon(raw_con, ctx.lock)
-    ctx.chat.con = ctx.con
-    try:
+    with _threaded_con(ctx):
         cls_results = _parallel(lambda c: classify.classify_chunk(ctx, c), chunks, workers)
-    finally:
-        ctx.con = raw_con
-        ctx.chat.con = raw_con
     stats = {"chunks": len(chunks), "classify_failed": 0, "label_failed": 0, "excluded_type": 0, "labeled": 0,
              "no_questions": False, "truncated": {}}
     limit = int(ctx.cfg["limits"]["questions_per_chunk"])
@@ -184,14 +196,9 @@ def run_labeling(ctx, chunks):
     con.commit()
     say("[classify] chunk %d개 중 실패 %d, 비내용 %d" % (len(chunks), stats["classify_failed"], stats["excluded_type"]))
     # 2차: 승인 질문(규칙) + 1차 라벨 검증 질문(LLM, 남은 상한만큼)
-    ctx.con = _LockedCon(raw_con, ctx.lock)
-    ctx.chat.con = ctx.con
-    try:
+    with _threaded_con(ctx):
         gen_results = _parallel(lambda t: questions.generate_questions(ctx, t[0], t[1]["axes"], limit - len(t[2])),
                                 approved, workers)
-    finally:
-        ctx.con = raw_con
-        ctx.chat.con = raw_con
     con.commit()
     to_label = [(c, res, mapped + gen) for (c, res, mapped), gen in zip(approved, gen_results) if mapped + gen]
     stats["generated_questions"] = sum(len(g) for g in gen_results)
@@ -200,13 +207,8 @@ def run_labeling(ctx, chunks):
         stats["no_questions"] = True
         say("[label] 물을 질문이 없어 3차 라벨링을 건너뜁니다.")
         return stats
-    ctx.con = _LockedCon(raw_con, ctx.lock)
-    ctx.chat.con = ctx.con
-    try:
+    with _threaded_con(ctx):
         lab_results = _parallel(lambda t: label.label_chunk(ctx, t[0], t[1], t[2]), to_label, workers)
-    finally:
-        ctx.con = raw_con
-        ctx.chat.con = raw_con
     for (c, _, _), res in zip(to_label, lab_results):
         if res is None:
             stats["label_failed"] += 1

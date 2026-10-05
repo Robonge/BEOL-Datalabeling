@@ -188,8 +188,7 @@ def _data_urls(ws, con, image_ids, limit):
         r = con.execute("SELECT ext, rel_file FROM images WHERE image_id=?", (iid,)).fetchone()
         if not r:
             continue
-        with open(ws.path(r["rel_file"]), encoding="ascii") as f:
-            b64 = f.read().strip()
+        b64 = util.read_b64_text(ws.path(r["rel_file"]))
         mime = {"jpg": "jpeg", "jpeg": "jpeg", "gif": "gif", "svg": "svg+xml", "bmp": "bmp"}.get((r["ext"] or "png").lower(), "png")
         out.append("data:image/%s;base64,%s" % (mime, b64))
     return out
@@ -221,8 +220,7 @@ def _file_slides(ws, con, file_ids):
                 "SELECT s.chunk_id, s.seq, s.rel_file FROM slide_images s JOIN chunks c ON c.chunk_id=s.chunk_id"
                 " AND c.text_hash=s.text_hash WHERE s.file_id=? ORDER BY s.seq", (fid,)):
             try:
-                with open(ws.path(r["rel_file"]), encoding="ascii") as f:
-                    b64 = f.read().strip()
+                b64 = util.read_b64_text(ws.path(r["rel_file"]))
             except (OSError, ValueError):
                 continue
             rows.append({"seq": r["seq"], "chunk_id": r["chunk_id"], "src": "data:image/jpeg;base64," + b64})

@@ -110,8 +110,7 @@ def label_chunk(ctx, chunk, cls_res, questions):
     try:
         obj = ctx.chat.chat_json(messages, [chunk["file_id"]], _validator(qids), hint=hint)
     except (CallFailed, SendBlocked) as e:
-        add_failure(con, ctx.run_id, "label", chunk["chunk_id"], e.reason_code)
-        ctx.log("label", chunk["chunk_id"], e.reason_code)
+        ctx.fail("label", chunk["chunk_id"], e.reason_code)
         return None
     if set(obj["answers"]) - set(qids):
         add_failure(con, ctx.run_id, "label", chunk["chunk_id"], "UNMAPPED_QUESTION")

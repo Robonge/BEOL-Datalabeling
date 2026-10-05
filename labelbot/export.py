@@ -5,7 +5,7 @@ import re
 import shutil
 import sqlite3
 
-from labelbot import finals, slideimg, util
+from labelbot import finals, slideimg, store, util
 from labelbot.questions import all_questions
 
 SCHEMA = [
@@ -94,11 +94,7 @@ def export(ws, con, run_id, tax):
     db_path = os.path.join(out_dir, "labeling.sqlite")
     if os.path.exists(db_path):
         os.remove(db_path)
-    img_dir = os.path.join(out_dir, "images")
-    os.makedirs(img_dir, exist_ok=True)
-    slide_dir = os.path.join(out_dir, "slide_images")
-    bucket = ws.config["supabase"].get("storage_bucket")
-    memos = {f.file_id: f.memo for f in tax.files}
+    os.makedirs(os.path.join(out_dir, "images"), exist_ok=True)
     excluded = {f.file_id for f in tax.files if f.exclude}
     files = [f for f in con.execute(
         "SELECT DISTINCT f.* FROM files f JOIN file_locations l ON l.file_id=f.file_id "
@@ -112,60 +108,17 @@ def export(ws, con, run_id, tax):
     try:
         out.execute("PRAGMA journal_mode=DELETE")
         _create(out)
-        for f in files:
-            n = sum(1 for c in chunks if c["file_id"] == f["file_id"])
-            out.execute("INSERT INTO files VALUES(?,?,?,?,?,?,?,?)", (
-                f["file_id"], f["file_name"], f["rel_path"], f["title"], f["authored_at"], f["author"],
-                memos.get(f["file_id"]), n))
-            for loc in con.execute("SELECT * FROM file_locations WHERE file_id=?", (f["file_id"],)):
-                out.execute("INSERT INTO file_locations VALUES(?,?,?,?,?)", (
-                    loc["file_id"], loc["rel_path"], loc["file_name"], loc["first_seen_run"], loc["last_seen_run"]))
-            for item, value, src in _file_values(f):
-                out.execute("INSERT INTO extracted_values VALUES(?,?,?,?,?,?)", ("file", f["file_id"], item, value, None, src))
+        _write_files(out, con, files, chunks, {f.file_id: f.memo for f in tax.files})
+        bucket = ws.config["supabase"].get("storage_bucket")
         for c in chunks:
-            img_paths = []
-            for iid in json.loads(c["images"] or "[]"):
-                r = con.execute("SELECT rel_file FROM images WHERE image_id=?", (iid,)).fetchone()
-                if r:
-                    dst = os.path.join(img_dir, iid + ".b64")
-                    if not os.path.exists(dst):
-                        shutil.copyfile(ws.path(r["rel_file"]), dst)
-                    img_paths.append("images/%s.b64" % iid)
-            slide = slideimg.slide_image_meta(con, c["chunk_id"], bucket)
-            if slide:
-                dst = os.path.join(out_dir, slide["rel_file"])
-                if not os.path.exists(dst) and os.path.isfile(ws.path(slide["rel_file"])):
-                    os.makedirs(slide_dir, exist_ok=True)
-                    shutil.copyfile(ws.path(slide["rel_file"]), dst)
-            d = labels.get(c["chunk_id"]) or {}
-            out.execute("INSERT INTO chunks VALUES(?,?,?,?,?,?,?,?,?,?,?)", (
-                c["chunk_id"], c["file_id"], c["seq"], d.get("chunk_type"), c["title"], c["text"], c["text_hash"],
-                c["dup_group"], util.dumps(img_paths), c["warnings"], util.dumps(slide) if slide else None))
-            for axis, a in (d.get("axes") or {}).items():
-                for v in a["values"]:
-                    state = "value" if a["status"] == "value" else v
-                    out.execute("INSERT INTO facet_labels VALUES(?,?,?,?,?,?,?)", (
-                        c["chunk_id"], axis, v, state, a.get("evidence"), a.get("confidence"), a.get("review")))
-            for qid, a in (d.get("answers") or {}).items():
-                out.execute("INSERT INTO answers VALUES(?,?,?,?,?,?)", (
-                    c["chunk_id"], qid, a["answer"], a.get("quote"), a.get("confidence"), a.get("review")))
-            for e in d.get("extracted") or []:
-                out.execute("INSERT INTO extracted_values VALUES(?,?,?,?,?,?)", (
-                    "chunk", c["chunk_id"], e["item"], e["value"], e["quote"], "body"))
-        for a in tax.axes:
-            for v in a.values:
-                out.execute("INSERT INTO facet_values VALUES(?,?,?,?,?)", (a.name, v.name, v.parent, a.kind, v.definition))
-        for s in tax.synonyms:
-            out.execute("INSERT INTO aliases VALUES(?,?)", (s.alias, s.canonical))
-        for q in all_questions(con, tax):
-            target = q.target if isinstance(q.target, str) else "%s=%s" % tuple(q.target)
-            out.execute("INSERT INTO questions VALUES(?,?,?)", (q.qid, q.text, target))
+            _write_chunk(out, ws, con, c, labels.get(c["chunk_id"]) or {}, out_dir, bucket)
+        _write_taxonomy(out, con, tax)
         meta = {
             "run_id": run_id, "created_at": util.now_iso(),
-            "taxonomy_sha256": _meta(con, "taxonomy_sha256"),
+            "taxonomy_sha256": store.meta_get(con, "taxonomy_sha256"),
             "sheet_hashes": util.dumps(tax.sheet_hashes),
             "inactive_axes": util.dumps([a.name for a in tax.axes if not a.active]),
-            "sent_params": _meta(con, "sent_params"),
+            "sent_params": store.meta_get(con, "sent_params"),
             "file_count": str(len(files)), "chunk_count": str(len(chunks)),
         }
         out.executemany("INSERT INTO meta VALUES(?,?)", sorted(meta.items()))
@@ -176,9 +129,65 @@ def export(ws, con, run_id, tax):
     return db_path
 
 
-def _meta(con, key):
-    r = con.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
-    return r[0] if r else None
+def _write_files(out, con, files, chunks, memos):
+    for f in files:
+        n = sum(1 for c in chunks if c["file_id"] == f["file_id"])
+        out.execute("INSERT INTO files VALUES(?,?,?,?,?,?,?,?)", (
+            f["file_id"], f["file_name"], f["rel_path"], f["title"], f["authored_at"], f["author"],
+            memos.get(f["file_id"]), n))
+        for loc in con.execute("SELECT * FROM file_locations WHERE file_id=?", (f["file_id"],)):
+            out.execute("INSERT INTO file_locations VALUES(?,?,?,?,?)", (
+                loc["file_id"], loc["rel_path"], loc["file_name"], loc["first_seen_run"], loc["last_seen_run"]))
+        for item, value, src in _file_values(f):
+            out.execute("INSERT INTO extracted_values VALUES(?,?,?,?,?,?)", ("file", f["file_id"], item, value, None, src))
+
+
+def _copy_chunk_images(ws, con, c, out_dir, bucket):
+    """chunk 이미지와 슬라이드 JPG의 .b64 보관본을 out/로 복사한다. 반환: (이미지 상대 경로 목록, 슬라이드 메타 또는 None)."""
+    img_paths = []
+    for iid in json.loads(c["images"] or "[]"):
+        r = con.execute("SELECT rel_file FROM images WHERE image_id=?", (iid,)).fetchone()
+        if r:
+            dst = os.path.join(out_dir, "images", iid + ".b64")
+            if not os.path.exists(dst):
+                shutil.copyfile(ws.path(r["rel_file"]), dst)
+            img_paths.append("images/%s.b64" % iid)
+    slide = slideimg.slide_image_meta(con, c["chunk_id"], bucket)
+    if slide:
+        dst = os.path.join(out_dir, slide["rel_file"])
+        if not os.path.exists(dst) and os.path.isfile(ws.path(slide["rel_file"])):
+            os.makedirs(os.path.join(out_dir, "slide_images"), exist_ok=True)
+            shutil.copyfile(ws.path(slide["rel_file"]), dst)
+    return img_paths, slide
+
+
+def _write_chunk(out, ws, con, c, d, out_dir, bucket):
+    img_paths, slide = _copy_chunk_images(ws, con, c, out_dir, bucket)
+    out.execute("INSERT INTO chunks VALUES(?,?,?,?,?,?,?,?,?,?,?)", (
+        c["chunk_id"], c["file_id"], c["seq"], d.get("chunk_type"), c["title"], c["text"], c["text_hash"],
+        c["dup_group"], util.dumps(img_paths), c["warnings"], util.dumps(slide) if slide else None))
+    for axis, a in (d.get("axes") or {}).items():
+        for v in a["values"]:
+            state = "value" if a["status"] == "value" else v
+            out.execute("INSERT INTO facet_labels VALUES(?,?,?,?,?,?,?)", (
+                c["chunk_id"], axis, v, state, a.get("evidence"), a.get("confidence"), a.get("review")))
+    for qid, a in (d.get("answers") or {}).items():
+        out.execute("INSERT INTO answers VALUES(?,?,?,?,?,?)", (
+            c["chunk_id"], qid, a["answer"], a.get("quote"), a.get("confidence"), a.get("review")))
+    for e in d.get("extracted") or []:
+        out.execute("INSERT INTO extracted_values VALUES(?,?,?,?,?,?)", (
+            "chunk", c["chunk_id"], e["item"], e["value"], e["quote"], "body"))
+
+
+def _write_taxonomy(out, con, tax):
+    for a in tax.axes:
+        for v in a.values:
+            out.execute("INSERT INTO facet_values VALUES(?,?,?,?,?)", (a.name, v.name, v.parent, a.kind, v.definition))
+    for s in tax.synonyms:
+        out.execute("INSERT INTO aliases VALUES(?,?)", (s.alias, s.canonical))
+    for q in all_questions(con, tax):
+        target = q.target if isinstance(q.target, str) else "%s=%s" % tuple(q.target)
+        out.execute("INSERT INTO questions VALUES(?,?,?)", (q.qid, q.text, target))
 
 
 def _file_values(f):

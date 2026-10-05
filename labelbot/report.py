@@ -16,14 +16,21 @@ def _pct(n, d):
 def write_report(ws, con, run_id, tax, stats=None):
     pop = sorted(review._run_population(con, run_id))
     bots = finals.bot_labels(con, run_id, pop)
-    content = [c for c, d in bots.items() if d["chunk_type"] == "내용"]
-    flagged = [json.loads(r[0]) for r in con.execute("SELECT reason_codes FROM flagged_chunks WHERE run_id=?", (run_id,))]
     failed_files = con.execute(
         "SELECT f.file_id, f.reason_code FROM files f JOIN file_locations l ON l.file_id=f.file_id "
         "WHERE f.status='failed' AND l.last_seen_run=? GROUP BY f.file_id", (run_id,)).fetchall()
-    fail_cnt = {}
-    for r in con.execute("SELECT stage, reason_code, COUNT(*) FROM failures WHERE run_id=? GROUP BY stage, reason_code", (run_id,)):
-        fail_cnt[(r[0], r[1])] = r[2]
+    L = _summary(con, run_id, tax, pop, bots, failed_files)
+    L += _axis_tables(tax, bots)
+    L += _question_table(tax, bots, stats)
+    L += _tail(con, run_id, tax, pop, failed_files)
+    path = ws.path("reports", "baseline_%s.md" % run_id)
+    util.write_text(path, "\n".join(L))
+    return path
+
+
+def _summary(con, run_id, tax, pop, bots, failed_files):
+    content = [c for c, d in bots.items() if d["chunk_type"] == "내용"]
+    flagged = [json.loads(r[0]) for r in con.execute("SELECT reason_codes FROM flagged_chunks WHERE run_id=?", (run_id,))]
     cls_failed = sum(1 for cid in pop if cid not in bots or not bots[cid]["chunk_type"])
     lab_failed = len({r[0] for r in con.execute(
         "SELECT target_id FROM failures WHERE run_id=? AND stage='label'", (run_id,))} - {c for c in bots if bots[c]["answers"]})
@@ -34,19 +41,22 @@ def write_report(ws, con, run_id, tax, stats=None):
     na_r, na_n = alerts.na_ratio(con, run_id)
     dup_r, dup_n = alerts.dup_ratio(con, run_id, tax)
     al = con.execute("SELECT condition, value, threshold FROM alerts WHERE run_id=?", (run_id,)).fetchall()
-    L = ["# 기준선 리포트", "", "- 실행 ID: %s" % run_id, "- 생성: %s" % util.now_iso(), "",
-         "## 요약", "",
-         "- 대상 chunk %d개, 내용 chunk %d개, 불량 chunk %d개(%s)" % (len(pop), len(content), len(flagged), _pct(len(flagged), len(pop))),
-         "- 사유 코드별 불량: " + ", ".join("%s %d(%s)" % (c, sum(1 for f in flagged if c in f), _pct(sum(1 for f in flagged if c in f), len(pop)))
-                                       for c in review.REASONS),
-         "- 실패 chunk: 분류 %d, 라벨 %d / 실패 파일 %d" % (cls_failed, lab_failed, len(failed_files)),
-         "- dup_group 중복 비율: %s" % _pct(dup_chunks, len(pop)),
-         "- 교정 건수: %s" % (n_corr if n_corr else "검수 없음"),
-         "- N/A 비율: %s (답 %d개), 중복 라벨링 비율: %s (라벨 %d개)" % (
-             "-" if na_r is None else "%.1f%%" % (na_r * 100), na_n, "-" if dup_r is None else "%.1f%%" % (dup_r * 100), dup_n),
-         "- H5 알림: %s" % (", ".join("%s=%s(기준 %s)" % tuple(a) for a in al) if al else "없음"),
-         ""]
-    L += ["## 축별 unknown 비율 (unknown / (전체 − 해당 없음))", "", "| 축 | 종류 | unknown | 분모 | 비율 |", "|---|---|---|---|---|"]
+    return ["# 기준선 리포트", "", "- 실행 ID: %s" % run_id, "- 생성: %s" % util.now_iso(), "",
+            "## 요약", "",
+            "- 대상 chunk %d개, 내용 chunk %d개, 불량 chunk %d개(%s)" % (len(pop), len(content), len(flagged), _pct(len(flagged), len(pop))),
+            "- 사유 코드별 불량: " + ", ".join("%s %d(%s)" % (c, sum(1 for f in flagged if c in f), _pct(sum(1 for f in flagged if c in f), len(pop)))
+                                          for c in review.REASONS),
+            "- 실패 chunk: 분류 %d, 라벨 %d / 실패 파일 %d" % (cls_failed, lab_failed, len(failed_files)),
+            "- dup_group 중복 비율: %s" % _pct(dup_chunks, len(pop)),
+            "- 교정 건수: %s" % (n_corr if n_corr else "검수 없음"),
+            "- N/A 비율: %s (답 %d개), 중복 라벨링 비율: %s (라벨 %d개)" % (
+                "-" if na_r is None else "%.1f%%" % (na_r * 100), na_n, "-" if dup_r is None else "%.1f%%" % (dup_r * 100), dup_n),
+            "- H5 알림: %s" % (", ".join("%s=%s(기준 %s)" % tuple(a) for a in al) if al else "없음"),
+            ""]
+
+
+def _axis_tables(tax, bots):
+    L = ["## 축별 unknown 비율 (unknown / (전체 − 해당 없음))", "", "| 축 | 종류 | unknown | 분모 | 비율 |", "|---|---|---|---|---|"]
     for a in tax.axes:
         if not a.active:
             L.append("| %s | %s | - | - | 비활성 |" % (a.name, a.kind))
@@ -64,7 +74,11 @@ def write_report(ws, con, run_id, tax, stats=None):
             n = sum(1 for c in bots if v.name in (bots[c]["axes"].get(a.name) or {}).get("values", []))
             mark = "합칠 후보" if n / total < 0.01 else ("쪼갤 후보" if n / total > 0.5 else "")
             L.append("| %s | %s | %d | %s | %s |" % (a.name, v.name, n, _pct(n, total), mark))
-    L += ["", "## 질문별 O/X/N/A 분포", "", "| 질문 | O | X | N/A | n | 표시 |", "|---|---|---|---|---|---|"]
+    return L
+
+
+def _question_table(tax, bots, stats):
+    L = ["", "## 질문별 O/X/N/A 분포", "", "| 질문 | O | X | N/A | n | 표시 |", "|---|---|---|---|---|---|"]
     for q in tax.questions:
         ans = [bots[c]["answers"][q.qid]["answer"] for c in bots if q.qid in bots[c]["answers"]]
         n = len(ans)
@@ -73,9 +87,17 @@ def write_report(ws, con, run_id, tax, stats=None):
         L.append("| %s | %d | %d | %d | %d | %s |" % (q.qid, ans.count("O"), ans.count("X"), na, n, mark))
     if stats and stats.get("truncated"):
         L += ["", "질문 상한 절단 횟수: " + ", ".join("%s %d" % kv for kv in sorted(stats["truncated"].items()))]
-    syn_hit = 0
+    return L
+
+
+def _tail(con, run_id, tax, pop, failed_files):
+    """후보·동의어, 파싱 대조, 실패 목록, 조회 검증 절."""
     from labelbot.synonyms import SynonymTable
 
+    fail_cnt = {}
+    for r in con.execute("SELECT stage, reason_code, COUNT(*) FROM failures WHERE run_id=? GROUP BY stage, reason_code", (run_id,)):
+        fail_cnt[(r[0], r[1])] = r[2]
+    syn_hit = 0
     syn = SynonymTable(tax.synonyms)
     for cid in pop:
         r = con.execute("SELECT text FROM chunks WHERE chunk_id=?", (cid,)).fetchone()
@@ -83,15 +105,13 @@ def write_report(ws, con, run_id, tax, stats=None):
             syn_hit += 1
     cands = con.execute("SELECT kind, COUNT(DISTINCT content) FROM candidates WHERE run_id=? GROUP BY kind", (run_id,)).fetchall()
     marks = con.execute("SELECT status, COUNT(*) FROM compare_marks GROUP BY status").fetchall()
-    L += ["", "## 후보와 동의어 시트", "",
-          "- synonyms 시트 항목 수: %d, 항목이 일치한 chunk 비율: %s" % (len(tax.synonyms), _pct(syn_hit, len(pop))),
-          "- 후보 수: " + (", ".join("%s %d" % tuple(r) for r in cands) or "0"), "",
-          "## 파싱 대조", "",
-          "- 대조 기록: " + (", ".join("%s %d" % tuple(r) for r in marks) or "없음"), "",
-          "## 실패 목록 (단계, 사유 코드, 건수)", ""]
+    L = ["", "## 후보와 동의어 시트", "",
+         "- synonyms 시트 항목 수: %d, 항목이 일치한 chunk 비율: %s" % (len(tax.synonyms), _pct(syn_hit, len(pop))),
+         "- 후보 수: " + (", ".join("%s %d" % tuple(r) for r in cands) or "0"), "",
+         "## 파싱 대조", "",
+         "- 대조 기록: " + (", ".join("%s %d" % tuple(r) for r in marks) or "없음"), "",
+         "## 실패 목록 (단계, 사유 코드, 건수)", ""]
     L += ["- %s %s %d" % (k[0], k[1], v) for k, v in sorted(fail_cnt.items())] or ["- 없음"]
     L += ["", "실패 파일: " + (", ".join("%s(%s)" % (r[0][:16], r[1]) for r in failed_files) or "없음"), "",
           "## 조회 검증", "", "- PoC 단계에서는 실행하지 않았다(querycheck 미구현).", ""]
-    path = ws.path("reports", "baseline_%s.md" % run_id)
-    util.write_text(path, "\n".join(L))
-    return path
+    return L
