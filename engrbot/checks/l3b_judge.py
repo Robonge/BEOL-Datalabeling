@@ -11,7 +11,6 @@ class JudgeCheck(Check):
     id = "l3b.judge"
     layer = "L3B"
     scope = "record"
-    requires = ("llm",)
     parallel = True
 
     def run(self, target, ctx):

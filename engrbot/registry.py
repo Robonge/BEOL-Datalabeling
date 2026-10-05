@@ -28,7 +28,6 @@ class Check(object):
     id = None
     layer = None
     scope = "record"
-    requires = ()
     parallel = False
 
     def run(self, target, ctx):

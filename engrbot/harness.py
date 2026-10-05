@@ -50,6 +50,10 @@ def _value_axes(rec, tax, single=False, top_level=False):
     return out
 
 
+def _record(b, rid):
+    return next(r for r in b.records if r["record_id"] == rid)
+
+
 def _retext(unit, text):
     unit["text"] = text
     unit["text_canonical"] = None
@@ -73,7 +77,7 @@ def _fullwidth(s):
 
 @mutator("drop_slide", "L0", ["L0_PAGE_COUNT_MISMATCH"], target="file")
 def _drop_slide(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     if not _is_pptx(b, rec) or len(b.records_of(rec["file_id"])) < 2:
         return None
     b.records = [r for r in b.records if r["record_id"] != rid]
@@ -128,7 +132,7 @@ def _break_image_ref(b, rid, rng, tax):
 
 @mutator("drop_field", "L1", ["L1_REQUIRED_MISSING"], requires_rule="all_active_axes_required")
 def _drop_field(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     if rec.get("chunk_type") != "내용" or not rec.get("axes"):
         return None
     name = rng.choice(sorted(rec["axes"]))
@@ -138,7 +142,7 @@ def _drop_field(b, rid, rng, tax):
 
 @mutator("bad_type", "L1", ["L1_TYPE_INVALID"])
 def _bad_type(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     names = _value_axes(rec, tax)
     if not names:
         return None
@@ -149,7 +153,7 @@ def _bad_type(b, rid, rng, tax):
 
 @mutator("bad_enum", "L1", ["L1_ENUM_INVALID"])
 def _bad_enum(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     if not rec.get("answers"):
         return None
     qid = rng.choice(sorted(rec["answers"]))
@@ -159,7 +163,7 @@ def _bad_enum(b, rid, rng, tax):
 
 @mutator("bad_confidence", "L1", ["L1_CONFIDENCE_RANGE"])
 def _bad_confidence(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     names = _value_axes(rec, tax)
     if not names:
         return None
@@ -169,7 +173,7 @@ def _bad_confidence(b, rid, rng, tax):
 
 @mutator("ambiguous_date", "L1", ["L1_DATE_FORMAT"])
 def _ambiguous_date(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     for e in rec.get("extracted") or []:
         if e.get("item") == "date" and len(e.get("value") or "") == 10:
             e["value"] = "%s/%s/%s" % (e["value"][2:4], e["value"][5:7], e["value"][8:10])
@@ -179,7 +183,7 @@ def _ambiguous_date(b, rid, rng, tax):
 
 @mutator("case_ws_noise", "L1_AUTOFIX", ["L1_FORMAT_NORMALIZED"], autofix=True)
 def _case_ws_noise(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     names = _value_axes(rec, tax, single=True)
     if not names:
         return None
@@ -192,7 +196,7 @@ def _case_ws_noise(b, rid, rng, tax):
 
 @mutator("fullwidth", "L1_AUTOFIX", ["L1_FORMAT_NORMALIZED"], autofix=True)
 def _fullwidth_mut(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     names = [n for n in _value_axes(rec, tax, single=True) if _fullwidth(rec["axes"][n]["values"][0]) != rec["axes"][n]["values"][0]]
     if not names:
         return None
@@ -205,7 +209,7 @@ def _fullwidth_mut(b, rid, rng, tax):
 
 @mutator("date_dots", "L1_AUTOFIX", ["L1_FORMAT_NORMALIZED"], autofix=True)
 def _date_dots(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     for i, e in enumerate(rec.get("extracted") or []):
         if e.get("item") == "date" and len(e.get("value") or "") == 10:
             v = e["value"]
@@ -218,7 +222,7 @@ def _date_dots(b, rid, rng, tax):
 
 @mutator("out_of_taxonomy", "L2", ["L2_LABEL_NOT_IN_TAXONOMY"])
 def _out_of_taxonomy(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     names = _value_axes(rec, tax, single=True)
     if not names:
         return None
@@ -228,7 +232,7 @@ def _out_of_taxonomy(b, rid, rng, tax):
 
 @mutator("parent_and_child", "L2", ["L2_HIERARCHY_INCONSISTENT"])
 def _parent_and_child(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     for name in _value_axes(rec, tax):
         ax = tax.axes[name]
         if not ax.get("hierarchical"):
@@ -244,7 +248,7 @@ def _parent_and_child(b, rid, rng, tax):
 
 @mutator("reserved_plus_value", "L2", ["L2_MUTEX_VIOLATION"])
 def _reserved_plus_value(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     names = _value_axes(rec, tax)
     if not names:
         return None
@@ -254,7 +258,7 @@ def _reserved_plus_value(b, rid, rng, tax):
 
 @mutator("single_axis_multi", "L2", ["L2_MUTEX_VIOLATION"])
 def _single_axis_multi(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     for name in sorted(rec.get("axes") or {}):
         ax = tax.axes.get(name)
         if ax and ax.get("active") and not ax.get("multi") and len(ax["values"]) >= 2:
@@ -267,7 +271,7 @@ def _single_axis_multi(b, rid, rng, tax):
 
 @mutator("unknown_flood", "L2", ["L2_UNKNOWN_OVERUSE"])
 def _unknown_flood(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     if rec.get("chunk_type") != "내용":
         return None
     for ax in tax.classification_axes():
@@ -283,7 +287,7 @@ def _unknown_flood(b, rid, rng, tax):
 def _span_other_slide(b, rid, rng, tax):
     from engrbot import textmatch
 
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     names = _value_axes(rec, tax)
     if not names:
         return None
@@ -305,7 +309,7 @@ def _span_other_slide(b, rid, rng, tax):
 
 @mutator("span_fabricated", "L3A", ["L3_SPAN_NOT_FOUND"])
 def _span_fabricated(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     names = _value_axes(rec, tax)
     if not names:
         return None
@@ -315,7 +319,7 @@ def _span_fabricated(b, rid, rng, tax):
 
 @mutator("offset_shift", "L3A", ["L3_SPAN_OFFSET_INVALID"])
 def _offset_shift(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     text = model.nfc(b.units[rid].get("text") or "")
     for name in _value_axes(rec, tax):
         ev = rec["axes"][name].get("evidence") or {}
@@ -331,7 +335,7 @@ def _offset_shift(b, rid, rng, tax):
 
 @mutator("label_swap", "L3B", ["L3_NOT_SUPPORTED"])
 def _label_swap(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     for name in _value_axes(rec, tax, single=True):
         a = rec["axes"][name]
         quote = (a.get("evidence") or {}).get("quote") or ""
@@ -345,7 +349,7 @@ def _label_swap(b, rid, rng, tax):
 
 @mutator("answer_flip", "L3B", ["L3_NOT_SUPPORTED"])
 def _answer_flip(b, rid, rng, tax):
-    rec = next(r for r in b.records if r["record_id"] == rid)
+    rec = _record(b, rid)
     for qid in sorted(rec.get("answers") or {}):
         a = rec["answers"][qid]
         if a.get("answer") in ("O", "X"):
@@ -379,7 +383,7 @@ def _failing_llm(rid, mode):
 
 def _judge_fail_mutator(mode):
     def fn(b, rid, rng, tax):
-        rec = next(r for r in b.records if r["record_id"] == rid)
+        rec = _record(b, rid)
         if not _judgeable(rec, tax):
             return None
         return {"llm": _failing_llm(rid, mode)}
@@ -402,6 +406,84 @@ def _harness_policy(pol):
     return dict(pol, layers=[l for l in pol["layers"] if l not in ("L6",)])
 
 
+def _layer_false_positive(verdicts, n):
+    out = {}
+    for layer in ("L0", "L1", "L2", "L3A", "L3B"):
+        bad = [v for v in verdicts
+               if any(i["layer"] == layer and i["severity"] in ("critical", "major") for i in v["issues"])]
+        out[layer] = round(len(bad) / float(n), 4) if n else 0.0
+    return out
+
+
+def _inject(mut, bundle, clean_map, pol, sch, llm, paths, seed, tax, per_mutator):
+    """뮤테이터 하나를 PASS 레코드에 주입해 돌린다. 반환: (stat, 혼동 Counter, autofix 주입 수, autofix 정답 수)."""
+    from engrbot import runner
+
+    stat = {"layer": mut.layer, "expect": list(mut.expect), "injected": 0, "detected": 0, "pass_after": 0,
+            "skipped": None, "misses": []}
+    confusion = collections.Counter()
+    autofix_total = autofix_ok = 0
+    if mut.needs_mock and llm is None:
+        stat["skipped"] = "NEEDS_MOCK_JUDGE"
+        return stat, confusion, 0, 0
+    if mut.requires_rule and not sch["rules"].get(mut.requires_rule):
+        stat["skipped"] = "RULE_OFF:%s" % mut.requires_rule
+        return stat, confusion, 0, 0
+    rng = random.Random(_seed_for(mut.name, seed))
+    order = sorted(r["record_id"] for r in bundle.records if clean_map[r["record_id"]]["verdict"] == "PASS")
+    rng.shuffle(order)
+    for rid in order:
+        if stat["injected"] >= per_mutator:
+            break
+        mb = bundle.copy()
+        info = mut.fn(mb, rid, rng, tax)
+        if info is None:
+            continue
+        fid = clean_map[rid]["file_id"]
+        # 실패를 주입한 judge는 캐시를 쓰지 않는다(정답 실행의 캐시 응답이 주입을 가린다)
+        res = runner.execute(mb.subset([fid]), pol, sch, paths=None if info.get("llm") else paths,
+                             llm=info.get("llm") or llm)
+        vm = res.verdict_map()
+        stat["injected"] += 1
+        if mut.target == "file":
+            hits = [v for v in res.verdicts if any(i["code"] in mut.expect for i in v["issues"])]
+            ok = bool(hits)
+            tv = hits[0] if hits else (res.verdicts[0] if res.verdicts else None)
+        else:
+            tv = vm.get(rid)
+            ok = bool(tv) and any(i["code"] in mut.expect for i in tv["issues"])
+        if tv:
+            base_codes = {i["code"] for i in (clean_map.get(tv["record_id"]) or {}).get("issues", [])}
+            confusion.update(sorted({i["code"] for i in tv["issues"]} - base_codes))
+        if mut.autofix:
+            autofix_total += 1
+            fixes = [f for f in (tv or {}).get("auto_fixes", []) if f["field"] == info["field"]]
+            good = bool(tv) and tv["verdict"] == "AUTO_FIX" and bool(fixes) and fixes[-1]["after"] == info["expect_after"]
+            autofix_ok += int(good)
+            ok = ok and good
+        if mut.failsafe and tv and tv["verdict"] == "PASS":
+            stat["pass_after"] += 1
+            ok = False
+        stat["detected"] += int(ok)
+        if not ok:
+            stat["misses"].append(rid)
+    stat["recall"] = round(stat["detected"] / float(stat["injected"]), 4) if stat["injected"] else None
+    return stat, confusion, autofix_total, autofix_ok
+
+
+def _layer_recall(per):
+    layers = collections.OrderedDict()
+    for name, stat in per.items():
+        if stat["skipped"]:
+            continue
+        lay = layers.setdefault(stat["layer"], {"injected": 0, "detected": 0})
+        lay["injected"] += stat["injected"]
+        lay["detected"] += stat["detected"]
+    for lay in layers.values():
+        lay["recall"] = round(lay["detected"] / float(lay["injected"]), 4) if lay["injected"] else None
+    return layers
+
+
 def evaluate(bundle, pol, sch, llm=None, per_mutator=10, paths=None, seed=0, mutators=None):
     """반환: 지표 dict. llm이 None이면 정책의 transport(http)로 judge를 만든다."""
     from engrbot import runner
@@ -412,74 +494,18 @@ def evaluate(bundle, pol, sch, llm=None, per_mutator=10, paths=None, seed=0, mut
     clean_map = clean.verdict_map()
     n = len(clean.verdicts)
     non_pass = [v for v in clean.verdicts if v["verdict"] != "PASS"]
-    layer_fp = {}
-    for layer in ("L0", "L1", "L2", "L3A", "L3B"):
-        bad = [v for v in clean.verdicts
-               if any(i["layer"] == layer and i["severity"] in ("critical", "major") for i in v["issues"])]
-        layer_fp[layer] = round(len(bad) / float(n), 4) if n else 0.0
+    layer_fp = _layer_false_positive(clean.verdicts, n)
     selected = [MUTATORS[m] for m in (mutators or MUTATORS)]
     per = collections.OrderedDict()
     confusion = {}
     autofix_total = autofix_ok = 0
     for mut in selected:
-        stat = {"layer": mut.layer, "expect": list(mut.expect), "injected": 0, "detected": 0, "pass_after": 0,
-                "skipped": None, "misses": []}
+        stat, conf, a_total, a_ok = _inject(mut, bundle, clean_map, pol, sch, llm, paths, seed, tax, per_mutator)
         per[mut.name] = stat
-        confusion[mut.name] = collections.Counter()
-        if mut.needs_mock and llm is None:
-            stat["skipped"] = "NEEDS_MOCK_JUDGE"
-            continue
-        if mut.requires_rule and not sch["rules"].get(mut.requires_rule):
-            stat["skipped"] = "RULE_OFF:%s" % mut.requires_rule
-            continue
-        rng = random.Random(_seed_for(mut.name, seed))
-        order = sorted(r["record_id"] for r in bundle.records if clean_map[r["record_id"]]["verdict"] == "PASS")
-        rng.shuffle(order)
-        for rid in order:
-            if stat["injected"] >= per_mutator:
-                break
-            mb = bundle.copy()
-            info = mut.fn(mb, rid, rng, tax)
-            if info is None:
-                continue
-            fid = clean_map[rid]["file_id"]
-            # 실패를 주입한 judge는 캐시를 쓰지 않는다(정답 실행의 캐시 응답이 주입을 가린다)
-            res = runner.execute(mb.subset([fid]), pol, sch, paths=None if info.get("llm") else paths,
-                                 llm=info.get("llm") or llm)
-            vm = res.verdict_map()
-            stat["injected"] += 1
-            if mut.target == "file":
-                hits = [v for v in res.verdicts if any(i["code"] in mut.expect for i in v["issues"])]
-                ok = bool(hits)
-                tv = hits[0] if hits else (res.verdicts[0] if res.verdicts else None)
-            else:
-                tv = vm.get(rid)
-                ok = bool(tv) and any(i["code"] in mut.expect for i in tv["issues"])
-            if tv:
-                base_codes = {i["code"] for i in (clean_map.get(tv["record_id"]) or {}).get("issues", [])}
-                confusion[mut.name].update(sorted({i["code"] for i in tv["issues"]} - base_codes))
-            if mut.autofix:
-                autofix_total += 1
-                fixes = [f for f in (tv or {}).get("auto_fixes", []) if f["field"] == info["field"]]
-                good = bool(tv) and tv["verdict"] == "AUTO_FIX" and bool(fixes) and fixes[-1]["after"] == info["expect_after"]
-                autofix_ok += int(good)
-                ok = ok and good
-            if mut.failsafe and tv and tv["verdict"] == "PASS":
-                stat["pass_after"] += 1
-                ok = False
-            stat["detected"] += int(ok)
-            if not ok:
-                stat["misses"].append(rid)
-        stat["recall"] = round(stat["detected"] / float(stat["injected"]), 4) if stat["injected"] else None
-    layers = collections.OrderedDict()
-    for name, stat in per.items():
-        if stat["skipped"]:
-            continue
-        lay = layers.setdefault(stat["layer"], {"injected": 0, "detected": 0})
-        lay["injected"] += stat["injected"]
-        lay["detected"] += stat["detected"]
-    for lay in layers.values():
-        lay["recall"] = round(lay["detected"] / float(lay["injected"]), 4) if lay["injected"] else None
+        confusion[mut.name] = conf
+        autofix_total += a_total
+        autofix_ok += a_ok
+    layers = _layer_recall(per)
     judge = clean.ctx.judge
     return {
         "records": n,

@@ -86,6 +86,82 @@ def _parser():
     return p
 
 
+def _run(args, paths):
+    from engrbot import runner
+
+    layers = [x.strip() for x in args.layers.split(",")] if args.layers else None
+    res = runner.run(paths, labeler_run_id=args.labeler_run, bundle_dir=args.bundle, layers=layers,
+                     no_judge=args.no_judge, pass_sample=args.pass_sample)
+    c = res.manifest["counts"]
+    say("[run] qa_run_id=%s 레코드 %d (PASS %d, AUTO_FIX %d, REVIEW %d, REJECT %d)" % (
+        res.qa_run_id, c["records"], c["PASS"], c["AUTO_FIX"], c["REVIEW"], c["REJECT"]))
+    j = res.manifest["judge"]
+    if res.manifest["judge_ran"]:
+        say("[run] judge 호출 %d회 (캐시 %d회, 실패 %d건)" % (j["calls"], j["cache_hits"], j["failed"]))
+    else:
+        say("[run] judge 미실행(%s). judge를 거치지 않은 레코드는 PASS가 되지 않는다(PASS %d건)."
+            % (res.manifest["judge_skip_reason"], c["PASS"]))
+    return 0
+
+
+def _report(args, paths):
+    from engrbot import report, runner
+
+    res = runner.reload(paths, args.qa_run, bundle_dir=args.bundle)
+    report.write(res, append_history=False)
+    say("[report] %s 리포트를 다시 만들었다(LLM 0회)." % args.qa_run)
+    return 0
+
+
+def _baseline(args, paths):
+    from engrbot import report, runner
+
+    if args.action != "set":
+        say("baseline set --qa-run <ID>")
+        return 2
+    res = runner.reload(paths, args.qa_run, bundle_dir=args.bundle)
+    report.set_baseline(res)
+    say("[baseline] %s를 기준선으로 올렸다." % args.qa_run)
+    return 0
+
+
+def _review(args, paths):
+    from engrbot import runner, screen
+
+    res = runner.reload(paths, args.qa_run, bundle_dir=args.bundle, recompute_batch=False)
+    n = screen.build(res, pass_sample=args.pass_sample)
+    say("[review] 검토 화면을 만들었다(레코드 %d건)." % n)
+    return 0
+
+
+def _golden(args, paths):
+    from engrbot import golden, runner
+
+    if args.action != "add":
+        say("golden add --qa-run <ID>")
+        return 2
+    res = runner.reload(paths, args.qa_run, bundle_dir=args.bundle, recompute_batch=False)
+    out = golden.add(res)
+    say("[golden] 추가 %d건, 건너뜀 %d건." % (out["added"], out["skipped"]))
+    return 0
+
+
+def _feedback(args, paths):
+    from engrbot import feedback, runner
+
+    res = runner.reload(paths, args.qa_run, bundle_dir=args.bundle, recompute_batch=False)
+    out = feedback.build(res)
+    say("[feedback] 교정 %d건, 재작업 %d건, 제안 %d건." % (
+        len(out["corrections"]), len(out["rework"]), len(out["proposals"])))
+    return 0
+
+
+def _labeling_rules(args, paths):
+    from engrbot import labeling_rules
+
+    return labeling_rules.main_cli(args, paths, say)
+
+
 def main(argv=None):
     from engrbot import policy as policy_mod
     from engrbot import runner
@@ -94,74 +170,15 @@ def main(argv=None):
     if not args.cmd:
         _parser().print_help()
         return 2
+    commands = {"run": _run, "report": _report, "baseline": _baseline, "review": _review, "golden": _golden,
+                "feedback": _feedback, "eval": _eval, "intake": _ledger, "ledger": _ledger,
+                "labeling-rules": _labeling_rules}
     try:
         if args.cmd == "codes":
             return _codes(args)
         paths = io.QaPaths(args.workspace)
-        if args.cmd == "run":
-            layers = [x.strip() for x in args.layers.split(",")] if args.layers else None
-            res = runner.run(paths, labeler_run_id=args.labeler_run, bundle_dir=args.bundle, layers=layers,
-                             no_judge=args.no_judge, pass_sample=args.pass_sample)
-            c = res.manifest["counts"]
-            say("[run] qa_run_id=%s 레코드 %d (PASS %d, AUTO_FIX %d, REVIEW %d, REJECT %d)" % (
-                res.qa_run_id, c["records"], c["PASS"], c["AUTO_FIX"], c["REVIEW"], c["REJECT"]))
-            j = res.manifest["judge"]
-            if res.manifest["judge_ran"]:
-                say("[run] judge 호출 %d회 (캐시 %d회, 실패 %d건)" % (j["calls"], j["cache_hits"], j["failed"]))
-            else:
-                say("[run] judge 미실행(%s). judge를 거치지 않은 레코드는 PASS가 되지 않는다(PASS %d건)."
-                    % (res.manifest["judge_skip_reason"], c["PASS"]))
-            return 0
-        if args.cmd == "report":
-            from engrbot import report
-
-            res = runner.reload(paths, args.qa_run, bundle_dir=args.bundle)
-            report.write(res, append_history=False)
-            say("[report] %s 리포트를 다시 만들었다(LLM 0회)." % args.qa_run)
-            return 0
-        if args.cmd == "baseline":
-            from engrbot import report
-
-            if args.action != "set":
-                say("baseline set --qa-run <ID>")
-                return 2
-            res = runner.reload(paths, args.qa_run, bundle_dir=args.bundle)
-            report.set_baseline(res)
-            say("[baseline] %s를 기준선으로 올렸다." % args.qa_run)
-            return 0
-        if args.cmd == "review":
-            from engrbot import screen
-
-            res = runner.reload(paths, args.qa_run, bundle_dir=args.bundle, recompute_batch=False)
-            n = screen.build(res, pass_sample=args.pass_sample)
-            say("[review] 검토 화면을 만들었다(레코드 %d건)." % n)
-            return 0
-        if args.cmd == "golden":
-            from engrbot import golden
-
-            if args.action != "add":
-                say("golden add --qa-run <ID>")
-                return 2
-            res = runner.reload(paths, args.qa_run, bundle_dir=args.bundle, recompute_batch=False)
-            out = golden.add(res)
-            say("[golden] 추가 %d건, 건너뜀 %d건." % (out["added"], out["skipped"]))
-            return 0
-        if args.cmd == "feedback":
-            from engrbot import feedback
-
-            res = runner.reload(paths, args.qa_run, bundle_dir=args.bundle, recompute_batch=False)
-            out = feedback.build(res)
-            say("[feedback] 교정 %d건, 재작업 %d건, 제안 %d건." % (
-                len(out["corrections"]), len(out["rework"]), len(out["proposals"])))
-            return 0
-        if args.cmd == "eval":
-            return _eval(args, paths)
-        if args.cmd in ("intake", "ledger"):
-            return _ledger(args, paths)
-        if args.cmd == "labeling-rules":
-            from engrbot import labeling_rules
-
-            return labeling_rules.main_cli(args, paths, say)
+        if args.cmd in commands:
+            return commands[args.cmd](args, paths)
     except (io.QaPathError, runner.RunError, model.BundleError, policy_mod.PolicyError) as e:
         say("[오류] %s" % e)
         return 1
@@ -236,10 +253,10 @@ def _eval(args, paths):
     pol, sch = policy_mod.load(paths)
     g = args.golden
     if g.startswith("synthetic"):
-        from engrbot.tests import fixturegen
+        from engrbot import synthetic
 
         seed = int(g.split(":", 1)[1]) if ":" in g else 7
-        bundle = fixturegen.generate(seed=seed).bundle
+        bundle = synthetic.generate(seed=seed).bundle
     else:
         from engrbot import golden
 

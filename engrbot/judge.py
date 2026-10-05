@@ -31,6 +31,17 @@ EXAMPLE_VERDICT = {"unsupported": "unsupported(사람이 이 라벨을 뺐다)",
 _WS = re.compile(r"\s+")
 
 
+def read_prompt():
+    """judge 프롬프트 파일(코드 폴더의 평문 자산) bytes."""
+    with open(PROMPT_PATH, "rb") as f:
+        return f.read()
+
+
+def prompt_hash(raw=None):
+    """judge 프롬프트 sha256. reviewer 버전 문자열(runner.versions)과 Judge.prompt_hash가 같은 값을 쓴다."""
+    return hashlib.sha256(read_prompt() if raw is None else raw).hexdigest()
+
+
 class JudgeUnavailable(Exception):
     def __init__(self, reason_code):
         Exception.__init__(self, reason_code)
@@ -280,9 +291,8 @@ class Judge(object):
         self.max_items = int(jc["max_items_per_call"])
         self.cache_path = cache_path
         self.log = log or io.null_log
-        with open(PROMPT_PATH, "rb") as f:
-            raw = f.read()
-        self.prompt_hash = hashlib.sha256(raw).hexdigest()
+        raw = read_prompt()
+        self.prompt_hash = prompt_hash(raw)
         system, _, user = raw.decode("utf-8").partition(USER_MARK)
         self.system_prompt = system.strip()
         self.user_template = user.strip()

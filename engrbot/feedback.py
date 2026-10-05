@@ -74,18 +74,9 @@ def _autofix(run, doc, corrections):
                                     "quote": None, "source": "AUTO_FIX", "rule": rule})
 
 
-def build(run):
-    """반환: 피드백 dict. feedback/feedback.json, feedback/feedback.md를 쓰고 기각 제안을 qa/feedback_rejected.jsonl에 덧붙인다."""
-    doc, _status = golden.read_inbox(run)
-    sha = golden.decisions_sha256(doc)
-    doc = doc or {}
-    recs = {r["record_id"]: r for r in run.bundle.records}
-    vmap = run.verdict_map()
-    _queue_rows, rework_rows = queue.build(run)
-    rework_map = {r["record_id"]: r for r in rework_rows}
+def _review_corrections(run, doc, recs, vmap):
+    """REVIEW 대기열·PASS 표본: "교정"만 넣는다(확정은 골든셋에만 남는다)."""
     corrections = []
-
-    # REVIEW 대기열·PASS 표본: "교정"만 넣는다(확정은 골든셋에만 남는다)
     decs = _last_by(doc.get("decisions"), lambda d: (d.get("record_id"), d.get("field"))
                     if isinstance(d.get("record_id"), str) and isinstance(d.get("field"), str) else None)
     for (rid, field), d in sorted(decs.items()):
@@ -99,8 +90,11 @@ def build(run):
             continue
         corrections.append({"record_id": rid, "field": field, "value": d.get("value"), "quote": d.get("quote"),
                             "source": "REVIEW", "rule": None})
+    return corrections
 
-    # REJECT: 재작업, 직접 교정, 검수 오탐
+
+def _reject_decisions(run, doc, vmap, rework_map, corrections):
+    """REJECT: 재작업, 직접 교정(corrections에 덧붙인다), 검수 오탐. 반환: (rework, fp, REJECT 결정 수)."""
     rework, fp = [], {}
     rdecs = _last_by(doc.get("reject_decisions"), lambda d: d.get("record_id") if isinstance(d.get("record_id"), str) else None)
     for rid, d in sorted(rdecs.items()):
@@ -123,13 +117,11 @@ def build(run):
         elif kind == "false_positive":
             for code in sorted({i["code"] for i in row["issues"] if i["severity"] == "critical"}):
                 fp.setdefault(code, set()).add(rid)
+    return rework, fp, len(rdecs)
 
-    _autofix(run, doc, corrections)
-    corrections.sort(key=lambda c: (c["record_id"], c["field"], c["source"], c["rule"] or ""))
 
-    # 규칙 제안
-    known = {p["proposal_id"]: p for p in run.proposals}
-    already = proposals.rejected_ids(run.paths)
+def _proposal_decisions(run, doc, known):
+    """규칙 제안 결정. 반환: (승인 항목, 기각 ID)."""
     approved, rejected = [], []
     pdecs = _last_by(doc.get("proposal_decisions"),
                      lambda d: d.get("proposal_id") if isinstance(d.get("proposal_id"), str) else None)
@@ -149,9 +141,12 @@ def build(run):
                 if item["paste_row"] is None:
                     run.log("feedback", pid, "PASTE_INPUT_MISSING")
             approved.append(item)
+    return approved, rejected
 
-    # 검수 오탐 → qa_false_positives와 QA_POLICY 제안
-    n_reject_dec = len(rdecs)
+
+def _qa_policy_proposals(fp, n_reject_dec, already):
+    """검수 오탐 → qa_false_positives와 QA_POLICY 제안. 반환: (qa_false_positives, 새 제안)."""
+    out = []
     false_positives = [{"code": c, "records": len(fp[c])} for c in sorted(fp)]
     for c in sorted(fp):
         p = proposals.make("QA_POLICY", c, {"code": c},
@@ -159,7 +154,43 @@ def build(run):
                             "count": len(fp[c]), "threshold": None}, list(fp[c]))
         if p["proposal_id"] in already:
             continue
-        approved.append(dict(p, **{"as": None, "sheet": None}))
+        out.append(dict(p, **{"as": None, "sheet": None}))
+    return false_positives, out
+
+
+def _write(run, fb, known, already):
+    """feedback.json·.md를 쓰고 새로 기각한 제안을 기각 목록에 덧붙인다."""
+    if not run.policy["output"]["include_text"]:
+        fb = io.strip_text(fb)
+    io.write_json(run.path("feedback", "feedback.json"), fb)
+    io.write_text(run.path("feedback", "feedback.md"), render_md(fb))
+    for pid in fb["rejected_proposals"]:
+        if pid not in already:
+            p = known[pid]
+            io.append_jsonl(run.paths.feedback_rejected,
+                            {"proposal_id": pid, "kind": p["kind"], "target": p["target"], "qa_run_id": run.qa_run_id})
+            run.log("feedback", pid, "PROPOSAL_REJECTED")
+    return fb
+
+
+def build(run):
+    """반환: 피드백 dict. feedback/feedback.json, feedback/feedback.md를 쓰고 기각 제안을 qa/feedback_rejected.jsonl에 덧붙인다."""
+    doc, _status = golden.read_inbox(run)
+    sha = golden.decisions_sha256(doc)
+    doc = doc or {}
+    recs = {r["record_id"]: r for r in run.bundle.records}
+    vmap = run.verdict_map()
+    _queue_rows, rework_rows = queue.build(run)
+    rework_map = {r["record_id"]: r for r in rework_rows}
+    corrections = _review_corrections(run, doc, recs, vmap)
+    rework, fp, n_reject_dec = _reject_decisions(run, doc, vmap, rework_map, corrections)
+    _autofix(run, doc, corrections)
+    corrections.sort(key=lambda c: (c["record_id"], c["field"], c["source"], c["rule"] or ""))
+    known = {p["proposal_id"]: p for p in run.proposals}
+    already = proposals.rejected_ids(run.paths)
+    approved, rejected = _proposal_decisions(run, doc, known)
+    false_positives, qa_policy = _qa_policy_proposals(fp, n_reject_dec, already)
+    approved += qa_policy
     approved.sort(key=lambda p: (proposals.KINDS.index(p["kind"]), p["target"]))
 
     fb = {
@@ -172,17 +203,7 @@ def build(run):
         "rejected_proposals": sorted(set(rejected)),
         "qa_false_positives": false_positives,
     }
-    if not run.policy["output"]["include_text"]:
-        fb = io.strip_text(fb)
-    io.write_json(run.path("feedback", "feedback.json"), fb)
-    io.write_text(run.path("feedback", "feedback.md"), render_md(fb))
-    for pid in fb["rejected_proposals"]:
-        if pid not in already:
-            p = known[pid]
-            io.append_jsonl(run.paths.feedback_rejected,
-                            {"proposal_id": pid, "kind": p["kind"], "target": p["target"], "qa_run_id": run.qa_run_id})
-            run.log("feedback", pid, "PROPOSAL_REJECTED")
-    return fb
+    return _write(run, fb, known, already)
 
 
 def _metric_text(m):

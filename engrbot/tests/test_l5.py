@@ -3,7 +3,7 @@ import json
 import unittest
 
 from engrbot import policy
-from engrbot.tests.test_core import run, small_bundle
+from engrbot.tests.helpers import run, small_bundle
 
 CODE = "L5_DUP_GROUP_DISAGREE"
 

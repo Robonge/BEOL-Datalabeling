@@ -116,7 +116,7 @@ def candidates_path(d):
 
 # ---- 읽기 ----------------------------------------------------------------------
 
-def _read(d, name):
+def read(d, name):
     """장부 파일 행. 깨졌거나 필수 키가 빠진 행이 있으면 LedgerError(LEDGER_FILE_INVALID)."""
     try:
         rows = io.read_own_jsonl(os.path.join(d, name))
@@ -129,11 +129,14 @@ def _read(d, name):
     return rows
 
 
-def _latest(rows, key):
-    """같은 key는 (labeler_run_id, source_ws)가 큰 행 하나. key 순으로 돌려준다."""
+def latest(rows, key):
+    """같은 key는 (labeler_run_id, source_ws)가 큰 행 하나. key 순으로 돌려준다.
+
+    key는 필드 이름(str) 또는 행 → 비교 키 함수다.
+    """
     best = {}
     for r in rows:
-        k = r[key]
+        k = key(r) if callable(key) else r[key]
         old = best.get(k)
         if old is None or (r["labeler_run_id"], r["source_ws"]) > (old["labeler_run_id"], old["source_ws"]):
             best[k] = r
@@ -142,12 +145,12 @@ def _latest(rows, key):
 
 def read_golden(d):
     """누적 골든셋. golden_id마다 labeler_run_id가 큰(그다음 source_ws가 큰) 행 하나."""
-    return _latest(_read(d, GOLDEN), "golden_id")
+    return latest(read(d, GOLDEN), "golden_id")
 
 
 def read_examples(d):
     """judge 예시(없으면 []). example_id에는 판정이 없으므로, 최근 라벨러 실행의 사람 판정이 이긴다."""
-    return _latest(_read(d, EXAMPLES), "example_id")
+    return latest(read(d, EXAMPLES), "example_id")
 
 
 def read_candidates(d):
@@ -164,7 +167,7 @@ def read_candidates(d):
 # ---- 쓰기 ----------------------------------------------------------------------
 
 @contextlib.contextmanager
-def _locked(d):
+def locked(d):
     """장부 쓰기 잠금(한 번에 한 프로세스). LOCK_WAIT초 안에 못 잡으면 LEDGER_LOCKED."""
     os.makedirs(d, exist_ok=True)
     path = os.path.join(d, LOCK_NAME)
@@ -202,7 +205,7 @@ def _tmp(path):
     return "%s.%d.tmp%s" % (base, os.getpid(), ext)
 
 
-def _replace_text(path, text):
+def replace_text(path, text):
     tmp = _tmp(path)
     io.write_text(tmp, text)
     os.replace(tmp, path)
@@ -217,18 +220,18 @@ def _write_jsonl(path, rows):
                 return False
         except (ValueError, UnicodeDecodeError):
             pass
-    _replace_text(path, "".join(io.dumps(r) + "\n" for r in rows))
+    replace_text(path, "".join(io.dumps(r) + "\n" for r in rows))
     return True
 
 
-def _write_json(path, doc):
+def write_json(path, doc):
     if os.path.isfile(path):
         try:
             if io.read_own_json(path) == json.loads(io.dumps(doc)):
                 return False
         except (ValueError, UnicodeDecodeError):
             pass
-    _replace_text(path, io.dumps(doc, indent=2) + "\n")
+    replace_text(path, io.dumps(doc, indent=2) + "\n")
     return True
 
 
@@ -568,18 +571,18 @@ def _merge_source(d, source, part, run=None):
     rows = {}
     changed = False
     for name in (CASES, RECORDS, GOLDEN, EXAMPLES):
-        merged = [r for r in _read(d, name) if not mine(r)] + part.get(name, [])
+        merged = [r for r in read(d, name) if not mine(r)] + part.get(name, [])
         merged.sort(key=SORT_KEYS[name])
         rows[name] = merged
         changed |= _write_jsonl(os.path.join(d, name), merged)
     # 재검토·동의어는 작업 폴더 단위다(실행 구분이 없다). part에 있으면 그 작업 폴더 몫을 새로 바꾼다
-    revs = _read(d, REVISITS)
+    revs = read(d, REVISITS)
     if REVISITS in part or full:
         revs = [r for r in revs if r.get("source_ws") != source] + part.get(REVISITS, [])
     revs.sort(key=lambda r: (r["source_ws"], r["reason"], r["target_kind"], r["target_key"]))
     rows[REVISITS] = revs
     changed |= _write_jsonl(os.path.join(d, REVISITS), revs)
-    syn = {(s["alias"], s["canonical"]): s for s in _read(d, SYNONYMS)}
+    syn = {(s["alias"], s["canonical"]): s for s in read(d, SYNONYMS)}
     if SYNONYMS in part or full:
         keep = {}
         for k, s in syn.items():
@@ -599,7 +602,7 @@ def _merge_source(d, source, part, run=None):
     rows[SYNONYMS] = [dict(syn[k], sources=sorted(syn[k]["sources"]), count=len(syn[k]["sources"]))
                       for k in sorted(syn)]
     changed |= _write_jsonl(os.path.join(d, SYNONYMS), rows[SYNONYMS])
-    srcs = _read(d, SOURCES)
+    srcs = read(d, SOURCES)
     old = next((s for s in srcs if s["source_ws"] == source), None)
     runs_meta = {} if full else dict((old or {}).get("runs") or {})
     runs_meta.update(part.get("runs") or {})
@@ -611,9 +614,9 @@ def _merge_source(d, source, part, run=None):
 
 def _write_candidates(d, policy):
     doc = build_candidates(d, policy)
-    changed = _write_json(candidates_path(d), doc)
+    changed = write_json(candidates_path(d), doc)
     if changed or not os.path.isfile(os.path.join(d, CANDIDATES_MD)):
-        _replace_text(os.path.join(d, CANDIDATES_MD), render_candidates_md(doc))
+        replace_text(os.path.join(d, CANDIDATES_MD), render_candidates_md(doc))
         changed = True
     return changed
 
@@ -636,10 +639,10 @@ def intake(ws_root, policy, labeler_run_id=None, schema=None):
            "golden": 0, "examples": 0, "synonyms": 0, "revisits": 0, "skipped": {}, "reason": None}
     if not runs:
         # 장부에 이 작업 폴더 행이 없으면 아무것도 쓰지 않는다
-        if not any(s["source_ws"] == source for s in _read(d, SOURCES)):
+        if not any(s["source_ws"] == source for s in read(d, SOURCES)):
             out.update(reason="NO_CORRECTIONS", changed=False, totals=status(d))
             return out
-        with _locked(d):
+        with locked(d):
             changed = _merge_source(d, source, None)
             changed |= _write_candidates(d, policy)
         out.update(reason="NO_CORRECTIONS", changed=changed, totals=status(d))
@@ -669,7 +672,7 @@ def intake(ws_root, policy, labeler_run_id=None, schema=None):
         EXAMPLES: list(acc.examples.values()), SYNONYMS: synonyms, REVISITS: revisits, "runs": acc.runs,
         "source": {"taxonomy_version": acc.taxonomy_version},
     }
-    with _locked(d):
+    with locked(d):
         changed = _merge_source(d, source, part, run=labeler_run_id)
         changed |= _write_candidates(d, policy)
     out.update({"cases": len(acc.cases), "confirmed": n_conf, "corrected": len(acc.cases) - n_conf,
@@ -692,12 +695,12 @@ def counts_only(result):
 def status(d):
     """장부 누적 건수(본문 없음). 골든·예시는 고유 ID 수다."""
     cand = read_candidates(d)
-    srcs = _read(d, SOURCES)
+    srcs = read(d, SOURCES)
     return {
-        "dir": dir_label(d), "sources": len(srcs), "cases": len(_read(d, CASES)),
-        "golden": len({g["golden_id"] for g in _read(d, GOLDEN)}),
-        "examples": len({e["example_id"] for e in _read(d, EXAMPLES)}),
-        "synonyms": len(_read(d, SYNONYMS)), "revisits": len(_read(d, REVISITS)),
+        "dir": dir_label(d), "sources": len(srcs), "cases": len(read(d, CASES)),
+        "golden": len({g["golden_id"] for g in read(d, GOLDEN)}),
+        "examples": len({e["example_id"] for e in read(d, EXAMPLES)}),
+        "synonyms": len(read(d, SYNONYMS)), "revisits": len(read(d, REVISITS)),
         "candidates": len((cand or {}).get("rules") or []),
         "per_source": [{"source_ws": s["source_ws"], "runs": len(s.get("labeler_runs") or []),
                         "counts": s.get("counts") or {}} for s in srcs],
@@ -706,21 +709,15 @@ def status(d):
 
 def rebuild(d, policy):
     """장부 행은 그대로 두고 규칙 후보만 다시 만든다. 반환: 바뀌었으면 True."""
-    with _locked(d):
+    with locked(d):
         return _write_candidates(d, policy)
 
 
 # ---- 규칙 후보 (LLM 0회) ---------------------------------------------------------
 
-def _latest_records(d):
+def latest_records(d):
     """같은 (record_id, text_hash)는 labeler_run_id가 큰 것 하나."""
-    best = {}
-    for r in _read(d, RECORDS):
-        k = (r["record_id"], r.get("text_hash") or "")
-        old = best.get(k)
-        if old is None or (r["labeler_run_id"], r["source_ws"]) > (old["labeler_run_id"], old["source_ws"]):
-            best[k] = r
-    return [best[k] for k in sorted(best)]
+    return latest(read(d, RECORDS), lambda r: (r["record_id"], r.get("text_hash") or ""))
 
 
 def _cand_id(kind, core):
@@ -817,7 +814,7 @@ def _title_candidates(recs, cc, ok):
 def _synonym_candidates(d):
     """synonym_suggest 후보(축 하나로 해석되는 검수 등록 동의어가 있는 축)."""
     by_axis = {}
-    for s in _read(d, SYNONYMS):
+    for s in read(d, SYNONYMS):
         if s.get("axis"):
             by_axis.setdefault(s["axis"], []).append(s)
     found = []
@@ -835,7 +832,7 @@ def build_candidates(d, policy, tax_values=None):
     """records.jsonl·synonyms.jsonl에서 L4 규칙 후보 문서를 만든다. 모두 draft이고 domain_rules.validate를 통과한다.
     tax_values({축: 값 집합})를 주면 그 안의 값만 후보에 쓴다."""
     cc = config(policy)["candidates"]
-    recs = _latest_records(d)
+    recs = latest_records(d)
     reserved = set(model.RESERVED)
 
     def ok(axis, v):

@@ -4,7 +4,6 @@
 - 본문 없음: manifest.json, report.*, history.jsonl, engrbot.log, 콘솔. 파일명·경로·본문을 넣지 않는다.
 - 작업 폴더 전용: verdicts.jsonl 등. 발췌는 output.include_text가 true일 때만 넣는다.
 """
-import hashlib
 import os
 import sqlite3
 import time
@@ -12,8 +11,6 @@ import time
 import engrbot
 from engrbot import codes, engine, io, model
 from engrbot import policy as policy_mod
-
-JUDGE_PROMPT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts", "qa_judge.md")
 
 
 class RunError(Exception):
@@ -53,16 +50,13 @@ class RunResult(object):
         return {v["record_id"]: v for v in self.verdicts}
 
 
-def judge_prompt_hash():
-    with open(JUDGE_PROMPT_PATH, "rb") as f:
-        return hashlib.sha256(f.read()).hexdigest()
-
-
 def versions(bundle, pol, sch, judge_model):
+    from engrbot import judge as judge_mod
+
     return {
         "taxonomy": (bundle.taxonomy or {}).get("version"),
         "schema": policy_mod.schema_version(sch),
-        "reviewer": "%s+%s+%s+%s" % (engrbot.__version__, codes.catalog_hash()[:8], judge_prompt_hash()[:8],
+        "reviewer": "%s+%s+%s+%s" % (engrbot.__version__, codes.catalog_hash()[:8], judge_mod.prompt_hash()[:8],
                                      judge_model or "none"),
         "policy": policy_mod.policy_version(pol),
     }

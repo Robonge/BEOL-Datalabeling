@@ -262,7 +262,8 @@ def _cell(s):
     return str(s).replace("|", "\\|").replace("\n", " ")
 
 
-def render_md(rep):
+def _md_summary(rep):
+    """머리 요약."""
     c = rep["counts"]
     j = rep["judge"]
     lines = ["# 검수 배치 리포트", ""]
@@ -305,7 +306,12 @@ def render_md(rep):
                                      n("golden_total"), n("examples_used"), n("examples_excluded"), n("candidates"),
                                      ", intake 오류 %s" % led["intake_error"] if led.get("intake_error") else ""))
     lines.append("")
+    return lines
 
+
+def _md_versions(rep):
+    """1. 버전과 입력 지문."""
+    lines = []
     v = rep["versions"]
     lines += ["## 1. 버전과 입력 지문", ""]
     for k in sorted(v):
@@ -316,7 +322,12 @@ def render_md(rep):
     lines.append("- 입력 지문: %s" % rep["input_fingerprint"])
     lines.append("- 층: %s" % ", ".join(rep["layers"]))
     lines.append("")
+    return lines
 
+
+def _md_pareto(rep):
+    """2. 오류 유형 파레토."""
+    lines = []
     lines += ["## 2. 오류 유형 파레토", ""]
     if rep["pareto"]:
         lines += ["| code | 레코드 | 비율 | 누적 |", "|---|---|---|---|"]
@@ -325,7 +336,12 @@ def render_md(rep):
     else:
         lines.append("이슈가 붙은 레코드가 없다.")
     lines.append("")
+    return lines
 
+
+def _md_layers(rep):
+    """3. 층별 이슈율과 파일 단위 이슈."""
+    lines = []
     lines += ["## 3. 층별 이슈율과 파일 단위 이슈", ""]
     lines += ["| 층 | 이슈율(minor 이상) |", "|---|---|"]
     for l, r in rep["layer_issue_rate"].items():
@@ -338,7 +354,12 @@ def render_md(rep):
     else:
         lines.append("파일 단위 이슈가 없다.")
     lines.append("")
+    return lines
 
+
+def _md_queue(rep):
+    """4. REVIEW 대기."""
+    lines = []
     q = rep["review_queue"]
     lines += ["## 4. REVIEW 대기", "", "- 대기 %d건. 목록은 `review.html`에서 본다." % q["count"]]
     if q["codes"]:
@@ -346,7 +367,12 @@ def render_md(rep):
         for code, n in q["codes"].items():
             lines.append("| %s | %d |" % (code, n))
     lines.append("")
+    return lines
 
+
+def _md_taxonomy(rep):
+    """5. taxonomy 개정 후보."""
+    lines = []
     lines += ["## 5. taxonomy 개정 후보", "",
               "| 축 | 커버리지 | unknown 비율 | 미사용 값 | 연속 미사용 |", "|---|---|---|---|---|"]
     for a in sorted(rep["coverage"]):
@@ -355,7 +381,14 @@ def render_md(rep):
             _cell(", ".join(rep["unused_labels"].get(a) or []) or "-"),
             _cell(", ".join(rep["unused_streak"].get(a) or []) or "-")))
     lines += ["", "- 매핑되지 않는 빈출 용어 후보: %d건. 목록은 `taxonomy_candidates.md`에서 본다." % rep["unmapped_terms"]["count"], ""]
+    return lines
 
+
+def _md_drift(rep):
+    """6. 드리프트와 최근 추이(배치 이슈 표 포함)."""
+    d = rep["drift"]
+    bi = rep["batch_issues"]
+    lines = []
     lines += ["## 6. 드리프트와 최근 추이", ""]
     if d["baseline_qa_run_id"] is None:
         lines.append(d["note"])
@@ -384,7 +417,13 @@ def render_md(rep):
             h.get("qa_run_id"), _pct(h.get("pass_rate")), hc.get("PASS", "-"), hc.get("AUTO_FIX", "-"),
             hc.get("REVIEW", "-"), hc.get("REJECT", "-"), top))
     lines.append("")
+    return lines
 
+
+def _md_judge(rep):
+    """7. judge 통계와 한계."""
+    j = rep["judge"]
+    lines = []
     lines += ["## 7. judge 통계와 한계", ""]
     if j["ran"]:
         lines.append("- 호출 %d회, 캐시 적중 %d회, 실패 %d건" % (j["calls"], j["cache_hits"], j["failed"]))
@@ -397,7 +436,12 @@ def render_md(rep):
     lines.append("- 한계: 누락 라벨(본문에 근거가 있는데 붙이지 않은 라벨)은 탐지하지 못한다. 붙은 라벨과 근거만 본다.")
     lines.append("- 한계: judge 판정은 mock이면 배관 확인용이고 품질 지표가 아니다.")
     lines.append("")
+    return lines
 
+
+def _md_proposals(rep):
+    """8. 규칙 제안과 효과 확인."""
+    lines = []
     t = rep["transitions"]
     lines += ["## 8. 규칙 제안과 효과 확인", ""]
     p = rep["proposals"]
@@ -424,6 +468,14 @@ def render_md(rep):
         if t["proposals_skipped"]:
             lines.append("- 대상이 축·질문·코드·규칙이 아니라 이슈율을 재지 않은 제안: %d건" % t["proposals_skipped"])
     lines.append("")
+    return lines
+
+
+def render_md(rep):
+    lines = []
+    for section in (_md_summary, _md_versions, _md_pareto, _md_layers, _md_queue, _md_taxonomy, _md_drift,
+                    _md_judge, _md_proposals):
+        lines += section(rep)
     return "\n".join(lines)
 
 

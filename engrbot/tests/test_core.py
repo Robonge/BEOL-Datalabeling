@@ -8,21 +8,10 @@ import unittest
 
 from engrbot import codes, engine, io, model, policy, registry
 from engrbot.registry import Check
-from engrbot.tests import fixturegen
+from engrbot.tests.helpers import run, small_bundle
 
 PKG = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LABELBOT_ALLOWED = {"adapters/labelbot_ws.py", "io.py", "llm_http.py"}
-
-
-def small_bundle():
-    return fixturegen.generate(seed=3, n_files=3, slides_range=(3, 4)).bundle
-
-
-def run(bundle, layers, **pol):
-    p = policy.validate_policy(dict(pol, layers=layers))
-    s = policy.validate_schema({})
-    ctx = engine.Ctx(bundle, p, s, qa_run_id="QA-test")
-    return engine.run(bundle, ctx), ctx
 
 
 class _Fake(object):

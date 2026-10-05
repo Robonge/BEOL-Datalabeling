@@ -24,15 +24,6 @@ class QaPathError(Exception):
         self.reason_code = reason_code
 
 
-def _is_inside(child, parent):
-    child = os.path.normcase(os.path.realpath(child))
-    parent = os.path.normcase(os.path.realpath(parent))
-    try:
-        return os.path.commonpath([child, parent]) == parent
-    except ValueError:
-        return False
-
-
 class QaPaths(object):
     """작업 폴더(labelbot과 같은 폴더) 안의 qa/ 경로. 코드 폴더 안은 거부한다(PRD 9.2절)."""
 

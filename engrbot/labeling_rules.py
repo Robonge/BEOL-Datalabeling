@@ -65,13 +65,7 @@ def _as_list(v):
 
 def _latest_cases(d):
     """같은 (record_id, text_hash, field)는 (labeler_run_id, source_ws)가 큰 행 하나."""
-    best = {}
-    for r in ledger._read(d, ledger.CASES):
-        k = (r["record_id"], r.get("text_hash") or "", r["field"])
-        old = best.get(k)
-        if old is None or (r["labeler_run_id"], r["source_ws"]) > (old["labeler_run_id"], old["source_ws"]):
-            best[k] = r
-    return [best[k] for k in sorted(best)]
+    return ledger.latest(ledger.read(d, ledger.CASES), lambda r: (r["record_id"], r.get("text_hash") or "", r["field"]))
 
 
 # ---- 규칙 후보 -----------------------------------------------------------------
@@ -185,7 +179,7 @@ def all_examples(d, cases):
         if kind == "axis":
             by_rec.setdefault((c["record_id"], c.get("text_hash") or ""), []).append((key, c))
     out = {}
-    for r in ledger._latest_records(d):
+    for r in ledger.latest_records(d):
         k = (r["record_id"], r.get("text_hash") or "")
         axis_cases = by_rec.get(k)
         if not axis_cases:
@@ -326,10 +320,10 @@ def render_md(doc, cands):
 def write_candidates(d, doc, cfg):
     """장부 폴더에 labeling_candidates.json·.md를 쓴다(장부 잠금 안, 원자 교체). 반환: 후보 dict."""
     cands = candidates(d, doc, cfg)
-    with ledger._locked(d):
-        ledger._write_json(os.path.join(d, CANDIDATES), {"version": VERSION, "min_count": cfg["min_count"],
+    with ledger.locked(d):
+        ledger.write_json(os.path.join(d, CANDIDATES), {"version": VERSION, "min_count": cfg["min_count"],
                                                          "rules": cands["rules"], "examples": cands["examples"]})
-        ledger._replace_text(os.path.join(d, CANDIDATES_MD), render_md(doc, cands))
+        ledger.replace_text(os.path.join(d, CANDIDATES_MD), render_md(doc, cands))
     return cands
 
 
