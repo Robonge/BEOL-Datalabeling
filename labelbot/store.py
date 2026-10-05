@@ -1,4 +1,5 @@
 """작업 DB(work.sqlite) 스키마와 연결. schema_version으로 관리하고 마이그레이션은 표·열 추가만 한다."""
+import pathlib
 import sqlite3
 
 SCHEMA_VERSION = 2
@@ -122,6 +123,11 @@ def connect(path):
     con.execute("PRAGMA journal_mode=DELETE")
     migrate(con)
     return con
+
+
+def connect_ro(path):
+    """sqlite 파일을 읽기 전용(mode=ro URI)으로 연다. 쓰지 않고 마이그레이션도 하지 않는다(row_factory는 기본값)."""
+    return sqlite3.connect(pathlib.Path(path).resolve().as_uri() + "?mode=ro", uri=True)
 
 
 def migrate(con):

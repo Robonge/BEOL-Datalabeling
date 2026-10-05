@@ -12,12 +12,11 @@
 import json
 import math
 import os
-import pathlib
 import re
 import sqlite3
 import threading
 
-from labelbot import ingest, util
+from labelbot import ingest, store, util
 from labelbot.llm import SendBlocked, check_send
 from labelbot.workspace import CODE_ROOT, is_inside
 
@@ -345,7 +344,7 @@ def _resolve_examples(ws, entries, chat, active):
             skip("EXAMPLE_SOURCE_GONE", len(group))
             continue
         try:
-            con = sqlite3.connect(pathlib.Path(db).resolve().as_uri() + "?mode=ro", uri=True)
+            con = store.connect_ro(db)
         except sqlite3.Error:
             skip("EXAMPLE_SOURCE_UNREADABLE", len(group))
             continue

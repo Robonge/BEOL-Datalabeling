@@ -21,27 +21,33 @@ import sys
 import unicodedata
 
 CODE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+sys.path.insert(0, CODE_ROOT)
+from labelbot.ingest import iter_inputs  # noqa: E402
+from labelbot.workspace import DEFAULT_CONFIG  # noqa: E402
+
 PREFIX = "261004_BEOL_"
 BASE_PORT = 8770
 LIST_DIR = os.path.join(CODE_ROOT, "injested-file-list")
 
+# pipeline.json에 쓰는 값. 기본값과 같은 항목은 DEFAULT_CONFIG에서 가져오고, 이 스킬이 바꾸는 값만 직접 적는다.
+_D = DEFAULT_CONFIG
 PIPELINE = {
     "taxonomy_path": os.path.join(CODE_ROOT, "taxonomy", "taxonomy.xlsx").replace("\\", "/"),
-    "input_root": None,
+    "input_root": _D["input_root"],
     "llm": {
-        "base_url": "https://api.openai.com/v1",
+        "base_url": _D["llm"]["base_url"],
         "model": "gpt-6-sol",
         "temperature": None,
-        "max_tokens": None,
+        "max_tokens": _D["llm"]["max_tokens"],
         "max_tokens_param": "max_completion_tokens",
         "response_format_json": True,
         "timeout": 180,
         "workers": 6,
     },
-    "embedding": {"model": "text-embedding-3-small"},
+    "embedding": {"model": _D["embedding"]["model"]},
     # storage_enabled: 슬라이드 JPG를 Storage에 올린다(push-slides). 빠지면 workspace 기본값 False로 적재가 꺼진다.
     "supabase": {"enabled": True, "table": "beol_chunk_embeddings",
-                 "storage_enabled": True, "storage_bucket": "BEOL-labeling"},
+                 "storage_enabled": True, "storage_bucket": _D["supabase"]["storage_bucket"]},
 }
 
 
@@ -55,13 +61,8 @@ def nfc(s):
 
 
 def input_names(inp):
-    """labelbot ingest._iter_inputs와 같은 규칙으로 입력 파일명(NFC)을 모은다. 파일은 열지 않는다."""
-    names = set()
-    for _, _, files in os.walk(inp):
-        for fn in files:
-            if not (fn.startswith("~$") or fn.startswith(".")):
-                names.add(nfc(fn))
-    return names
+    """labelbot ingest.iter_inputs로 입력 파일명(NFC)을 모은다. 파일은 열지 않는다."""
+    return {fname for _, _, fname in iter_inputs(inp)}
 
 
 def find_duplicates(names):

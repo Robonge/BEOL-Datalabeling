@@ -12,12 +12,14 @@ import datetime
 import glob
 import json
 import os
-import sqlite3
 import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CODE_ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
+sys.path.insert(0, CODE_ROOT)
+from labelbot.store import connect_ro  # noqa: E402
+
 TEMPLATE = os.path.join(HERE, "..", "assets", "workflow_template.html")
 SUMMARY = os.path.join(CODE_ROOT, ".claude", "skills", "BEOL-labeling", "scripts", "summary.py")
 PLACEHOLDER = "/*__LIVE__*/null"
@@ -34,7 +36,7 @@ def live_data(ws, run):
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
     summ = json.loads(subprocess.run(args, capture_output=True, text=True, encoding="utf-8", env=env, check=True).stdout)
     run = summ.get("run_id")
-    con = sqlite3.connect("file:%s?mode=ro" % os.path.join(ws, "work.sqlite").replace("\\", "/"), uri=True)
+    con = connect_ro(os.path.join(ws, "work.sqlite"))
     q = lambda sql, *p: con.execute(sql, p).fetchall()
     ext = {e or "(없음)": n for e, n in q(
         "SELECT f.ext, COUNT(DISTINCT f.file_id) FROM files f JOIN file_locations l ON l.file_id=f.file_id"

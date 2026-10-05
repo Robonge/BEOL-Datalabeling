@@ -25,9 +25,14 @@ MAX_BODY = 5 * 1024 * 1024
 _RUN_ID = re.compile(r"^[0-9A-Za-z-]{1,64}$")
 
 
+def done_signal_path(ws_root, run_id):
+    """검수 완료 신호 파일 경로: <작업 폴더>/signals/review_done_<실행 ID>.json. feedback 스킬도 이 경로를 기다린다."""
+    return os.path.join(ws_root, "signals", "review_done_%s.json" % run_id)
+
+
 class _Handler(http.server.SimpleHTTPRequestHandler):
     inbox = None
-    signals = None
+    ws_root = None
     tmp_dir = None
     lock = None
 
@@ -117,19 +122,18 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         sig = {"run_id": run_id, "done_at": datetime.datetime.now().isoformat(timespec="seconds"),
                "counts": {"edits": n("corrections"), "status": n("chunk_status"), "syns": n("synonyms"),
                           "revisits": n("revisits")}}
-        name = "review_done_%s.json" % run_id
+        path = done_signal_path(self.ws_root, run_id)
         tmp = os.path.join(self.tmp_dir, ".signal_review_done.json")
         util.write_text(tmp, json.dumps(sig, ensure_ascii=False) + "\n")
-        os.replace(tmp, os.path.join(self.signals, name))
-        return name
+        os.replace(tmp, path)
+        return os.path.basename(path)
 
 
 def make_server(ws_root, port, host="127.0.0.1"):
     inbox = os.path.join(ws_root, "inbox")
-    signals = os.path.join(ws_root, "signals")
     os.makedirs(inbox, exist_ok=True)
-    os.makedirs(signals, exist_ok=True)
-    handler = type("Handler", (_Handler,), {"inbox": inbox, "signals": signals, "tmp_dir": ws_root,
+    os.makedirs(os.path.dirname(done_signal_path(ws_root, "")), exist_ok=True)
+    handler = type("Handler", (_Handler,), {"inbox": inbox, "ws_root": ws_root, "tmp_dir": ws_root,
                                             "lock": threading.Lock()})
     handler = functools.partial(handler, directory=os.path.join(ws_root, "screens"))
     return http.server.ThreadingHTTPServer((host, port), handler)

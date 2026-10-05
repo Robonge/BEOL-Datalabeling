@@ -18,12 +18,12 @@ import re
 import sys
 import time
 
+CODE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+sys.path.insert(0, CODE_ROOT)
+from labelbot.serve import done_signal_path  # noqa: E402  신호 경로 규칙은 화면 서버와 하나로 둔다.
+
 _RUN_ID = re.compile(r"^[0-9A-Za-z-]{1,64}$")
 COUNT_KEYS = ("edits", "status", "syns", "revisits")
-
-
-def signal_path(ws, run):
-    return os.path.join(ws, "signals", "review_done_%s.json" % run)
 
 
 def read_signal(path):
@@ -53,7 +53,7 @@ def main():
     if not _RUN_ID.match(a.run):
         print(json.dumps({"error": "RUN_ID_INVALID"}))
         return 2
-    path = signal_path(a.workspace, a.run)
+    path = done_signal_path(a.workspace, a.run)
     if a.check:
         if os.path.isfile(path):
             out, _ = read_signal(path)

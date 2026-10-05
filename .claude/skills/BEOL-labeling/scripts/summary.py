@@ -5,10 +5,11 @@
 import argparse
 import json
 import os
-import sqlite3
 import sys
 
 CODE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+sys.path.insert(0, CODE_ROOT)
+from labelbot.store import connect_ro  # noqa: E402
 
 
 def main():
@@ -20,7 +21,7 @@ def main():
     if not os.path.isfile(db):
         print(json.dumps({"error": "NO_WORK_DB"}))
         return 2
-    con = sqlite3.connect("file:%s?mode=ro" % db.replace("\\", "/"), uri=True)
+    con = connect_ro(db)
     q = lambda sql, *p: con.execute(sql, p).fetchall()
     run = a.run or (q("SELECT run_id FROM runs WHERE command='run' ORDER BY run_id DESC LIMIT 1") or [[None]])[0][0]
     out = {"run_id": run}
@@ -72,7 +73,6 @@ def main():
         }
     try:
         # 사람이 고치는 입력 파일은 labelbot의 read_input으로만 연다(CLAUDE.md).
-        sys.path.insert(0, CODE_ROOT)
         from labelbot.ingest import read_input
 
         cfg = json.loads(read_input(os.path.join(a.workspace, "pipeline.json"), None, expect="text"))
