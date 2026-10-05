@@ -42,6 +42,7 @@ STAGE_DESC = {
 }
 # 세션 구분색: design.md.md 인디고 계열 + 시맨틱 색(소면적 점에만 쓴다)
 PALETTE = ["#4A5FA8", "#C99A3B", "#3B8A6E", "#C25450", "#6B82C4", "#7A9CC0"]
+GIT, GIT_COLOR = "git 커밋", "#9DAABF"
 SKIP_PROMPTS = ("This session is being continued", "/model", "/compact", "[Request interrupted")
 
 
@@ -127,6 +128,24 @@ def build_data(facts, summary):
             if c.get("stage") in stages:
                 stages[c["stage"]]["changes"].append(ch)
                 mark(stages[c["stage"]], t)
+    # 커밋으로 바뀐 파일: 세션 편집 기록과 별도로 'git 커밋'으로 붙인다(경로당 한 번, 커밋 ID 목록)
+    by_path = {}
+    for cf in facts["git"].get("commit_files", []):
+        d = by_path.setdefault(cf["path"], dict(cf, commits=[]))
+        d["commits"].append(cf["commit"])
+    if by_path:
+        color[GIT] = GIT_COLOR
+    for cf in by_path.values():
+        item = {"path": cf["path"], "where": cf["stage"] or cf["area"], "session": GIT, "commits": cf["commits"]}
+        n = nodes[ROLE_KEY.get(cf["role"], "ws")]
+        n["files"].append(item)
+        mark(n, GIT)
+        if cf["stage"]:
+            stages[cf["stage"]]["files"].append(item)
+            mark(stages[cf["stage"]], GIT)
+        else:
+            common.setdefault(cf["area"], {}).setdefault(GIT, 0)
+            common[cf["area"]][GIT] += 1
     prompts = [{"session": s["title"], "ts": kst(p["ts"]), "text": p["text"][:240]}
                for s in sessions for p in s["prompts"] if not p["text"].startswith(SKIP_PROMPTS)]
     nodes["req"]["prompts"] = prompts
@@ -142,7 +161,7 @@ def build(facts, summary, history):
     sessions = facts["sessions"]
     color = data["color"]
     ssum = summary.get("sessions", {})
-    nfiles = len({f["path"] for s in sessions for f in s["files"]})
+    nfiles = len({f["path"] for s in sessions for f in s["files"]} | {c["path"] for c in facts["git"].get("commit_files", [])})
 
     def dots(names):
         return "".join('<i class="dot" style="background:%s" title="%s"></i>' % (color[n], e(n)) for n in names)
@@ -199,7 +218,7 @@ def build(facts, summary, history):
         "%%HEADLINE%%": e(summary.get("headline", "이 기간에 세션별로 바뀐 내용을 workflow 위에 표시했습니다.")),
         "%%NSESS%%": str(len(sessions)), "%%NFILES%%": str(nfiles),
         "%%NCOMMIT%%": str(len(facts["git"]["commits"])), "%%NUNC%%": str(facts["git"]["uncommitted"]),
-        "%%LEGEND%%": "".join('<span><i class="dot" style="background:%s"></i>%s</span>' % (color[s["title"]], e(s["title"])) for s in sessions),
+        "%%LEGEND%%": "".join('<span><i class="dot" style="background:%s"></i>%s</span>' % (color[t], e(t)) for t in color),
         "%%CHIPS%%": "".join(chips), "%%COMMON%%": common_html, "%%CARDS%%": "".join(cards),
         "%%GLOSS%%": gloss, "%%COMMITS%%": commits, "%%HIST%%": hist, "%%DATA%%": payload,
     }
@@ -362,7 +381,7 @@ footer{margin-top:40px;color:var(--text-footer);font-size:12px}
   }
   function listFiles(arr){
     if(!arr.length) return '';
-    return '<h4>바뀐 파일 '+arr.length+'개</h4><ul class="fl">'+arr.map(function(f){return '<li>'+dot(f.session)+'<code>'+esc(f.path)+'</code><span class="who">'+esc(f.where)+' · 편집 '+f.edits+'회</span></li>';}).join('')+'</ul>';
+    return '<h4>바뀐 파일 '+arr.length+'개</h4><ul class="fl">'+arr.map(function(f){return '<li>'+dot(f.session)+'<code>'+esc(f.path)+'</code><span class="who">'+esc(f.where)+' · '+(f.commits?'커밋 '+f.commits.join(', '):'편집 '+f.edits+'회')+'</span></li>';}).join('')+'</ul>';
   }
   function listPrompts(arr){
     if(!arr||!arr.length) return '';
@@ -437,7 +456,7 @@ footer{margin-top:40px;color:var(--text-footer);font-size:12px}
     document.getElementById('ioN').textContent=s.n||'';
     var n=D.stages[s.t]||{files:[],changes:[]};
     var c=n.changes.map(function(x){return '<li>'+dot(x.session)+'<b>'+esc(x.title)+'</b><p>'+esc(x.why)+'</p></li>';}).join('')+
-          n.files.map(function(f){return '<li>'+dot(f.session)+'<code class="mono">'+esc(f.path)+'</code> <span class="who">편집 '+f.edits+'회</span></li>';}).join('');
+          n.files.map(function(f){return '<li>'+dot(f.session)+'<code class="mono">'+esc(f.path)+'</code> <span class="who">'+(f.commits?'커밋 '+f.commits.join(', '):'편집 '+f.edits+'회')+'</span></li>';}).join('');
     document.getElementById('ioC').innerHTML=c?'<ul>'+c+'</ul>':'<p class="muted" style="margin-top:.4em;font-size:.85em">이번 기간에는 이 단계에서 바뀐 것이 없습니다.</p>';
   }
   var first=ST.findIndex(function(s){return count(D.stages[s.t]);});

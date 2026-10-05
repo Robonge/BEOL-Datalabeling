@@ -125,8 +125,7 @@ def scan_session(sid, since, until):
     sub = os.path.join(base, sid, "subagents")
     if os.path.isdir(sub):
         files += [os.path.join(sub, n) for n in os.listdir(sub) if n.endswith(".jsonl")]
-    title, prompts, edits, bash = sid[:8], [], [], 0
-    first_ts = last_ts = None
+    title, prompts, edits, bash, stamps = sid[:8], [], [], [], set()
     for fp in files:
         is_main = fp == main
         for o in iter_jsonl(fp):
@@ -138,8 +137,7 @@ def scan_session(sid, since, until):
             t = parse_ts(ts)
             if not (since <= t <= until):
                 continue
-            first_ts = min(first_ts or t, t)
-            last_ts = max(last_ts or t, t)
+            stamps.add(ts)
             if is_main and o.get("type") == "user" and not o.get("isMeta"):
                 txt = prompt_text(o.get("message", {}))
                 if txt:
@@ -153,10 +151,26 @@ def scan_session(sid, since, until):
                         if fpth:
                             edits.append({"ts": ts, "tool": b["name"], "path": fpth, "by": "main" if is_main else "subagent"})
                     elif b.get("name") in ("Bash", "PowerShell"):
-                        bash += 1
-    return {"session_id": sid, "title": title, "prompts": prompts, "edits": edits,
-            "shell_commands": bash, "first_ts": first_ts and first_ts.isoformat(),
-            "last_ts": last_ts and last_ts.isoformat()}
+                        bash.append(ts)
+    return {"session_id": sid, "title": title, "prompts": prompts, "edits": edits, "bash": bash, "stamps": stamps}
+
+
+def drop_fork_copy(fork, origin):
+    """fork transcript 앞부분은 원본 세션 기록의 복사본이다. 원본과 같은 시각의 기록을 빼고 fork가 새로 한 일만 남긴다."""
+    seen = origin["stamps"]
+    fork["prompts"] = [p for p in fork["prompts"] if p["ts"] not in seen]
+    fork["edits"] = [e for e in fork["edits"] if e["ts"] not in seen]
+    fork["bash"] = [t for t in fork["bash"] if t not in seen]
+    fork["stamps"] = fork["stamps"] - seen
+
+
+def finalize(s):
+    ts = sorted(s.pop("stamps"))
+    s["first_ts"] = parse_ts(ts[0]).isoformat() if ts else None
+    s["last_ts"] = parse_ts(ts[-1]).isoformat() if ts else None
+    s["shell_commands"] = len(s.pop("bash"))
+    s["files"] = summarize_files(s.pop("edits"))
+    return s
 
 
 def summarize_files(edits):
@@ -185,6 +199,23 @@ def git(*args):
         return ""
 
 
+DATA_PATHS = ("parshing test files/", "dummy pptx files", "injested-file-list/", "workspaces/")
+
+
+def commit_files(since):
+    """기간 안 커밋이 바꾼 파일. 셸 스크립트로 고쳐 transcript 편집 기록에 안 잡힌 변경을 보완한다(입력 데이터 폴더 제외)."""
+    out, cur = [], None
+    for line in git("log", "--since=" + since.isoformat(), "--name-only",
+                    "--pretty=format:@@%h	%ad	%s", "--date=format:%m-%d %H:%M").splitlines():
+        if line.startswith("@@"):
+            h, when, subj = (line[2:].split("	", 2) + ["", ""])[:3]
+            cur = {"commit": h, "when": when, "subject": subj}
+        elif line.strip() and cur and not line.startswith(DATA_PATHS):
+            st, role, area = classify_path(line.strip())
+            out.append(dict(cur, path=line.strip(), stage=st, role=role, area=area))
+    return out
+
+
 def project_key(path):
     return "".join(ch if ch.isalnum() else "-" for ch in path)
 
@@ -208,16 +239,12 @@ def main(argv=None):
         fp = os.path.join(base, n)
         if dt.datetime.fromtimestamp(os.path.getmtime(fp), dt.timezone.utc) < since:
             continue
-        s = scan_session(n[:-6], since, until)
-        if not (s["prompts"] or s["edits"]):
-            continue
-        s["files"] = summarize_files(s["edits"])
-        del s["edits"]
-        sessions.append(s)
-    # fork transcript는 원본 세션 기록을 복사하므로 원본이 있으면 뺀다
-    titles = {s["title"] for s in sessions}
-    sessions = [s for s in sessions
-                if not (s["title"].endswith(" (fork)") and s["title"][:-7] in titles)]
+        sessions.append(scan_session(n[:-6], since, until))
+    by_title = {s["title"]: s for s in sessions}
+    for s in sessions:
+        if s["title"].endswith(" (fork)") and s["title"][:-7] in by_title:
+            drop_fork_copy(s, by_title[s["title"][:-7]])
+    sessions = [finalize(s) for s in sessions if s["prompts"] or s["edits"]]
     stamp = until.astimezone().strftime("%Y%m%d-%H%M")
     facts = {
         "stamp": stamp, "since": since.isoformat(), "until": until.isoformat(),
@@ -225,7 +252,8 @@ def main(argv=None):
         "git": {"branch": git("rev-parse", "--abbrev-ref", "HEAD").strip(),
                 "commits": [l for l in git("log", "--since=" + since.isoformat(), "--pretty=%h %ad %s",
                                            "--date=format:%m-%d %H:%M").splitlines() if l],
-                "uncommitted": len([l for l in git("status", "--porcelain").splitlines() if l])},
+                "uncommitted": len([l for l in git("status", "--porcelain").splitlines() if l]),
+                "commit_files": commit_files(since)},
     }
     os.makedirs(os.path.join(HERE, "data"), exist_ok=True)
     out = os.path.join(HERE, "data", stamp + "_facts.json")
