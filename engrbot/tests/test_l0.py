@@ -1,6 +1,6 @@
 """L0 파싱 충실도 단위 테스트(5.1절, QM3).
 
-합성 pptx·docx는 pptx_writer가 메모리에서만 만든다. 파서 출력(ParsedUnit)은 fixturegen과 같은 방식으로 조립한다
+합성 pptx·docx는 pptx_writer가 메모리에서만 만든다. 파서 출력(ParsedUnit)은 synthetic과 같은 방식으로 조립한다
 (제목 + 본문 줄 + 표 행 'a | b' + 노트, 반복 바닥글 제외).
 """
 import ast
@@ -17,9 +17,9 @@ from engrbot import engine, model, rawextract, runner
 from engrbot import policy as policy_mod
 from engrbot.adapters import bundle_files
 from engrbot.checks import l0_parse
-from engrbot.tests import fixturegen, pptx_writer
+from engrbot import pptx_writer, synthetic
 
-FOOTER = fixturegen.FOOTER
+FOOTER = synthetic.FOOTER
 LINES = ["M2 배선층에서 저항 측정 진행", "CMP 공정 조건 재점검 진행", "Short 불량 발생 위치 분석",
          "다음 주 일정 재확인", "측정 장비 예약 현황 공유", "보고서 양식 변경 안내"]
 TABLE = [["항목", "측정값"], ["Rs", "12.5"], ["Rc", "2.1"]]
@@ -71,7 +71,7 @@ def make_bundle(specs, ext=".pptx", data=None):
             records.append({"record_id": uid, "file_id": fid, "labeler_run_id": "t", "chunk_type": "내용", "axes": {},
                             "answers": {}, "extracted": [], "failures": [], "duplicate_fields": [],
                             "labeler": {}, "human_reviewed": False})
-    b = model.Bundle("t", sources, units, records, {"axes": []}, fixturegen.FixtureLoader(blobs, images))
+    b = model.Bundle("t", sources, units, records, {"axes": []}, synthetic.FixtureLoader(blobs, images))
     return b, blobs, images
 
 
@@ -114,7 +114,7 @@ def retext(unit, text):
 
 class CleanFixtureTest(unittest.TestCase):
     def test_clean_fixture_has_no_minor_or_higher(self):
-        fx = fixturegen.generate(seed=7)
+        fx = synthetic.generate(seed=7)
         issues = run_l0(fx.bundle)
         self.assertEqual(codes_of(issues, "minor"), [])
         res = runner.execute(fx.bundle, _pol(), SCHEMA, layers=["L0"])
@@ -142,7 +142,7 @@ class MutationTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.fx = fixturegen.generate(seed=7)
+        cls.fx = synthetic.generate(seed=7)
         cls.pol = _pol()
 
     def _run(self, mutate):
@@ -287,7 +287,7 @@ class FileStateTest(unittest.TestCase):
         self.assertEqual(codes_of(empty), ["L0_SOURCE_UNREADABLE"])
 
     def test_source_unreadable_from_missing_b64(self):
-        fx = fixturegen.generate(seed=7, n_files=1)
+        fx = synthetic.generate(seed=7, n_files=1)
         d = tempfile.mkdtemp(prefix="engrbot_b64_")
         try:
             bundle_files.save(fx.bundle, d, blobs={}, images=fx.images)
@@ -461,7 +461,7 @@ class PptxCodeTest(unittest.TestCase):
         self.assertIn(("TRUNCATED", "info"), hit)
 
     def test_evidence_has_no_text(self):
-        fx = fixturegen.generate(seed=3, n_files=2)
+        fx = synthetic.generate(seed=3, n_files=2)
         b = fx.bundle.copy()
         for u in list(b.units.values())[:6]:
             retext(u, "�" * 30)
@@ -577,7 +577,7 @@ class SafetyTest(unittest.TestCase):
 
     def test_no_path_open_of_originals(self):
         """L0은 원본 경로를 열지 않는다. 열리는 파일은 작업 폴더의 .b64뿐이다."""
-        fx = fixturegen.generate(seed=5, n_files=2)
+        fx = synthetic.generate(seed=5, n_files=2)
         d = tempfile.mkdtemp(prefix="engrbot_open_")
         try:
             bundle_files.save(fx.bundle, d, blobs=fx.blobs, images=fx.images)

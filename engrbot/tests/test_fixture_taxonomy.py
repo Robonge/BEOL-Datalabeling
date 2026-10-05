@@ -6,7 +6,7 @@ from unittest import mock
 from engrbot import model, policy
 from engrbot.adapters import labelbot_ws
 from engrbot.checks import l2_taxonomy
-from engrbot.tests import fixturegen
+from engrbot import synthetic
 
 SCHEMA = policy.validate_schema({})
 POLICY = policy.validate_policy({})
@@ -26,7 +26,7 @@ def l2_codes(fx):
 
 def changed_snapshot():
     """엑셀 수정 흉내: 새 분류 축 추가, 빈(비활성) 축 추가, 기존 축 값 줄이기."""
-    snap = copy.deepcopy(fixturegen.taxonomy_snapshot())
+    snap = copy.deepcopy(synthetic.taxonomy_snapshot())
     snap["axes"].append({"name": "신규 축", "kind": "분류", "multi": True, "hierarchical": False, "active": True,
                          "definition": "", "values": [{"name": "새값%d" % i, "parent": None, "definition": ""}
                                                       for i in range(3)]})
@@ -40,21 +40,21 @@ def changed_snapshot():
 
 class FixtureTaxonomyTest(unittest.TestCase):
     def test_snapshot_is_current_xlsx(self):
-        tax = labelbot_ws.load_taxonomy(fixturegen.REPO_ROOT, {"taxonomy_path": fixturegen.TAXONOMY_XLSX})
-        snap = fixturegen.taxonomy_snapshot()
+        tax = labelbot_ws.load_taxonomy(synthetic.REPO_ROOT, {"taxonomy_path": synthetic.TAXONOMY_XLSX})
+        snap = synthetic.taxonomy_snapshot()
         self.assertEqual(snap["version"], tax.sheet_hashes["taxonomy"])
         self.assertEqual(snap, labelbot_ws.snapshot(tax))
 
     def test_clean_records_pass_l2_across_seeds(self):
         for seed in (1, 2, 3, 7, 11):
-            self.assertEqual(l2_codes(fixturegen.generate(seed=seed, n_files=3)), [], seed)
+            self.assertEqual(l2_codes(synthetic.generate(seed=seed, n_files=3)), [], seed)
 
     def test_changed_taxonomy_still_generates_clean(self):
         snap = changed_snapshot()
         used = set()
-        with mock.patch.object(fixturegen, "taxonomy_snapshot", return_value=snap):
+        with mock.patch.object(synthetic, "taxonomy_snapshot", return_value=snap):
             for seed in (1, 7):
-                fx = fixturegen.generate(seed=seed, n_files=3)
+                fx = synthetic.generate(seed=seed, n_files=3)
                 self.assertEqual(l2_codes(fx), [], seed)
                 content = [r for r in fx.bundle.records if r["chunk_type"] == "내용"]
                 self.assertTrue(all("빈 축" not in r["axes"] for r in content))
@@ -62,8 +62,8 @@ class FixtureTaxonomyTest(unittest.TestCase):
         self.assertTrue(used & {"새값0", "새값1", "새값2"})  # 새 축도 기본 문장 틀로 값을 받는다
 
     def test_same_seed_same_bundle(self):
-        self.assertEqual(fixturegen.generate(seed=5, n_files=2).bundle_hash(),
-                         fixturegen.generate(seed=5, n_files=2).bundle_hash())
+        self.assertEqual(synthetic.generate(seed=5, n_files=2).bundle_hash(),
+                         synthetic.generate(seed=5, n_files=2).bundle_hash())
 
 
 if __name__ == "__main__":

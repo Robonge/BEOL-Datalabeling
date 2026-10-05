@@ -1,0 +1,2 @@
+# judge 프롬프트 sha256이 reviewer 버전 문자열에 들어가므로 체크아웃 방식과 무관하게 LF로 고정한다
+engrbot/prompts/*.md text eol=lf

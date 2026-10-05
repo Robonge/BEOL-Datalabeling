@@ -8,10 +8,9 @@ import threading
 import unittest
 from unittest import mock
 
-from engrbot import io, judge, llm, model, policy, runner
-from engrbot.tests import fixturegen
+from engrbot import io, judge, llm, model, policy, runner, synthetic
 
-REPO_ROOT = fixturegen.REPO_ROOT
+REPO_ROOT = synthetic.REPO_ROOT
 LAYERS = ["L1", "L2", "L3A", "L3B"]
 KEY_ENV = "ENGRBOT_TEST_JUDGE_KEY"
 KEY_VALUE = "sk-engrbot-test-9f3a7c1e-DO-NOT-LEAK"
@@ -130,7 +129,7 @@ def _http_llm(pol, cfg, post):
 class JudgeTestBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.fx = fixturegen.generate(seed=7)
+        cls.fx = synthetic.generate(seed=7)
         cls.tax = model.TaxIndex(cls.fx.bundle.taxonomy)
         fids = sorted(cls.fx.bundle.sources)
         cls.small = cls.fx.bundle.subset(fids[:3])
@@ -567,7 +566,7 @@ class GeneratedQuestionTest(unittest.TestCase):
     """labelbot 검증 질문(Q-GEN-*): O는 라벨을 뒷받침, X는 반박한다는 뜻으로 judge에 보낸다."""
 
     def setUp(self):
-        fx = fixturegen.generate(seed=7, n_files=2)
+        fx = synthetic.generate(seed=7, n_files=2)
         self.bundle = fx.bundle.copy()
         snap = dict(fx.bundle.taxonomy)
         snap["questions"] = list(snap["questions"]) + [

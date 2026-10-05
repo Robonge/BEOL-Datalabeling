@@ -9,7 +9,7 @@ import unittest
 from engrbot import io, model, report, runner, stats
 from engrbot import policy as policy_mod
 from engrbot.adapters import bundle_files
-from engrbot.tests import fixturegen
+from engrbot import synthetic
 
 LAYERS = ["L1", "L2", "L6"]
 SCHEMA = policy_mod.validate_schema({})
@@ -221,7 +221,7 @@ def shifted(bundle, axis="불량 모드", value="Short"):
 class BaselineDriftTest(unittest.TestCase):
     def setUp(self):
         self.ws = Workspace()
-        self.fx = fixturegen.generate(seed=11, n_files=5)
+        self.fx = synthetic.generate(seed=11, n_files=5)
 
     def tearDown(self):
         self.ws.close()
@@ -319,7 +319,7 @@ class TermCandidateTest(unittest.TestCase):
         self.ws.close()
 
     def test_planted_term_ranks_top_and_taxonomy_excluded(self):
-        fx = fixturegen.generate(seed=5, n_files=6)
+        fx = synthetic.generate(seed=5, n_files=6)
         b = fx.bundle.copy()
         unk = []
         for r in b.records:
@@ -353,7 +353,7 @@ class TermCandidateTest(unittest.TestCase):
         self.assertEqual(rep["unmapped_terms"], {"count": len(terms), "file": "taxonomy_candidates.jsonl"})
 
     def test_stoplist_removes_term(self):
-        fx = fixturegen.generate(seed=5, n_files=6)
+        fx = synthetic.generate(seed=5, n_files=6)
         b = fx.bundle.copy()
         for r in b.records:
             if r["chunk_type"] == "내용" and any(model.UNKNOWN in a["values"] for a in r["axes"].values()):
@@ -368,7 +368,7 @@ class TermCandidateTest(unittest.TestCase):
 class ReportTest(unittest.TestCase):
     def setUp(self):
         self.ws = Workspace()
-        self.fx = fixturegen.generate(seed=3, n_files=4)
+        self.fx = synthetic.generate(seed=3, n_files=4)
 
     def tearDown(self):
         self.ws.close()

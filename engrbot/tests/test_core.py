@@ -1,6 +1,5 @@
 """QM0: 판정 엔진, 정책 로더, 카탈로그, 쓰기 확장자, 독립성 경계."""
 import ast
-import copy
 import os
 import shutil
 import tempfile

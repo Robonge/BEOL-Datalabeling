@@ -72,6 +72,7 @@ python -m codebot rules
 
 - 읽기 전용이다. 저장소 코드와 workflow가 루트 `CLAUDE.md` 규칙(C1 DRM·쓰기, C2 stack, C3 단계 계약, C4 완료 위생)을 지키는지 정적으로 본다.
 - skill은 `labeling-codebot`이다.
+- 정책 파일(`--policy`)의 경로 glob은 대소문자를 구분하고, `*`는 `/`를 넘지 않는다(여러 폴더는 `**`).
 
 ## gpt-6-sol 설정 예
 

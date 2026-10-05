@@ -322,7 +322,7 @@ def write_candidates(d, doc, cfg):
     cands = candidates(d, doc, cfg)
     with ledger.locked(d):
         ledger.write_json(os.path.join(d, CANDIDATES), {"version": VERSION, "min_count": cfg["min_count"],
-                                                         "rules": cands["rules"], "examples": cands["examples"]})
+                                                        "rules": cands["rules"], "examples": cands["examples"]})
         ledger.replace_text(os.path.join(d, CANDIDATES_MD), render_md(doc, cands))
     return cands
 

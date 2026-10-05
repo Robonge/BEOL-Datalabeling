@@ -1,10 +1,9 @@
 """여러 테스트가 같이 쓰는 엔진 실행 도우미(test_core, test_l5)."""
-from engrbot import engine, policy
-from engrbot.tests import fixturegen
+from engrbot import engine, policy, synthetic
 
 
 def small_bundle():
-    return fixturegen.generate(seed=3, n_files=3, slides_range=(3, 4)).bundle
+    return synthetic.generate(seed=3, n_files=3, slides_range=(3, 4)).bundle
 
 
 def run(bundle, layers, **pol):

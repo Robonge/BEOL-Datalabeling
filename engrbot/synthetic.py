@@ -1,6 +1,6 @@
 """합성 fixture 생성기(9절). 시드로 결정되는 번들을 메모리에서 만든다. 실데이터를 쓰지 않는다.
 
-`eval --golden synthetic`과 테스트(engrbot/tests/fixturegen.py는 이 모듈의 별칭)가 같이 쓴다.
+`eval --golden synthetic`과 engrbot 테스트가 같이 쓴다.
 
 - taxonomy: 저장소 taxonomy/taxonomy.xlsx를 어댑터와 같은 경로(read_input → parse_bytes → snapshot)로 읽는다.
   엑셀을 고치면 다음 실행부터 반영된다.

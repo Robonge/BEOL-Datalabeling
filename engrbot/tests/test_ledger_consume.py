@@ -11,7 +11,7 @@ from unittest import mock
 from engrbot import domain_rules, io, judge, llm, model, policy, report, runner
 from engrbot.checks import l4_domain
 from engrbot.engine import RecordTarget
-from engrbot.tests import fixturegen
+from engrbot import synthetic
 
 SCHEMA = policy.validate_schema({})
 OTHER_A = "a" * 64
@@ -56,7 +56,7 @@ class BlockingMock(llm.MockJudgeLLM):
 
 
 def _dummy_ids():
-    with open(os.path.join(fixturegen.REPO_ROOT, "tests", "gold", "dummy_hashes.jsonl"), encoding="utf-8") as f:
+    with open(os.path.join(synthetic.REPO_ROOT, "tests", "gold", "dummy_hashes.jsonl"), encoding="utf-8") as f:
         return [json.loads(l)["file_id"] for l in f if l.strip()]
 
 
@@ -70,7 +70,7 @@ def ex_row(eid, axis=None, value=None, verdict="unsupported", file_id=OTHER_A, t
 class JudgeExamplesBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.fx = fixturegen.generate(seed=7, n_files=3)
+        cls.fx = synthetic.generate(seed=7, n_files=3)
         cls.tax = model.TaxIndex(cls.fx.bundle.taxonomy)
         rec = next(r for r in cls.fx.bundle.records if r["chunk_type"] == "내용")
         cls.rec = rec
@@ -337,7 +337,7 @@ class HttpAllowsTest(JudgeExamplesBase):
 
 # ---- L4 후보 규칙 -------------------------------------------------------------
 
-TAX = model.TaxIndex(fixturegen.taxonomy_snapshot())
+TAX = model.TaxIndex(synthetic.taxonomy_snapshot())
 MODE = "불량 모드"
 PHYS = "물리 현상"
 
@@ -429,7 +429,7 @@ LINE_PREFIX = "- 교정 장부: "
 class ReportLedgerLineTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        fx = fixturegen.generate(seed=5, n_files=2, slides_range=(3, 4))
+        fx = synthetic.generate(seed=5, n_files=2, slides_range=(3, 4))
         cls.bundle = fx.bundle
         cls.quotes = {a["evidence"]["quote"] for r in fx.bundle.records for a in r["axes"].values()
                       if a.get("evidence") and a["evidence"].get("quote")}

@@ -2,7 +2,7 @@
 CLI 실행 결과를 바이트 단위로 묶어 둔다. 리팩터링 뒤에도 같은 입력이면 같은 바이트가 나와야 한다.
 
 시나리오(모두 tempfile.mkdtemp() 임시 작업 폴더, judge는 기본 policy의 transport=mock):
-- clean   : fixturegen seed=7, n_files=4. `run`(기본 층) → `feedback`(결정 없음).
+- clean   : synthetic seed=7, n_files=4. `run`(기본 층) → `feedback`(결정 없음).
 - defects : reviewfix.scenario(seed=7, n_files=12)로 결함을 심은 번들. `run --layers L0..L6(L4·L5 포함)`
             → qa/inbox에 검토 결정(확인·교정·판단 불가, rework·false_positive, 자동 수정 규칙 승인·거절) → `feedback`.
 - eval    : `eval --golden synthetic:7 --per-mutator 2`(하네스 mock judge).
@@ -32,7 +32,7 @@ import unittest
 
 from engrbot import cli, golden, io
 from engrbot.adapters import bundle_files
-from engrbot.tests import fixturegen
+from engrbot import synthetic
 from engrbot.tests import reviewfix as rf
 
 GOLDEN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "golden_outputs")
@@ -157,7 +157,7 @@ class CleanRunGoldenTest(_GoldenCase):
 
     @classmethod
     def produce(cls):
-        fx = fixturegen.generate(seed=7, n_files=4)
+        fx = synthetic.generate(seed=7, n_files=4)
         bdir = os.path.join(cls.tmp, "bundle")
         bundle_files.save(fx.bundle, bdir, blobs=fx.blobs, images=fx.images)
         cls.run_cli(os.path.join(cls.tmp, "ws"), bdir)

@@ -6,9 +6,9 @@ from labelbot import review as lb_review
 
 from engrbot import model, normalize, policy, textmatch
 from engrbot.checks import l1_schema, l2_taxonomy, l3a_span
-from engrbot.tests import fixturegen
+from engrbot import synthetic
 
-TAX = model.TaxIndex(fixturegen.taxonomy_snapshot())
+TAX = model.TaxIndex(synthetic.taxonomy_snapshot())
 SCHEMA = policy.validate_schema({})
 POLICY = policy.validate_policy({})
 
@@ -90,7 +90,7 @@ class TextMatchTest(unittest.TestCase):
 
     def test_parity_with_labelbot_quote_found(self):
         """구현은 따로, 결과는 같아야 한다(표 구분자가 없는 입력 집합)."""
-        fx = fixturegen.generate(seed=11, n_files=4)
+        fx = synthetic.generate(seed=11, n_files=4)
         cases = []
         units = fx.bundle.units
         for r in fx.bundle.records:

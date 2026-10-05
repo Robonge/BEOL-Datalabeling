@@ -310,10 +310,8 @@ def _md_summary(rep):
 
 
 def _md_versions(rep):
-    """1. 버전과 입력 지문."""
-    lines = []
     v = rep["versions"]
-    lines += ["## 1. 버전과 입력 지문", ""]
+    lines = ["## 1. 버전과 입력 지문", ""]
     for k in sorted(v):
         val = v[k]
         if isinstance(val, dict):
@@ -326,9 +324,7 @@ def _md_versions(rep):
 
 
 def _md_pareto(rep):
-    """2. 오류 유형 파레토."""
-    lines = []
-    lines += ["## 2. 오류 유형 파레토", ""]
+    lines = ["## 2. 오류 유형 파레토", ""]
     if rep["pareto"]:
         lines += ["| code | 레코드 | 비율 | 누적 |", "|---|---|---|---|"]
         for p in rep["pareto"]:
@@ -340,10 +336,7 @@ def _md_pareto(rep):
 
 
 def _md_layers(rep):
-    """3. 층별 이슈율과 파일 단위 이슈."""
-    lines = []
-    lines += ["## 3. 층별 이슈율과 파일 단위 이슈", ""]
-    lines += ["| 층 | 이슈율(minor 이상) |", "|---|---|"]
+    lines = ["## 3. 층별 이슈율과 파일 단위 이슈", "", "| 층 | 이슈율(minor 이상) |", "|---|---|"]
     for l, r in rep["layer_issue_rate"].items():
         lines.append("| %s | %s |" % (l, _pct(r)))
     lines.append("")
@@ -358,10 +351,8 @@ def _md_layers(rep):
 
 
 def _md_queue(rep):
-    """4. REVIEW 대기."""
-    lines = []
     q = rep["review_queue"]
-    lines += ["## 4. REVIEW 대기", "", "- 대기 %d건. 목록은 `review.html`에서 본다." % q["count"]]
+    lines = ["## 4. REVIEW 대기", "", "- 대기 %d건. 목록은 `review.html`에서 본다." % q["count"]]
     if q["codes"]:
         lines += ["", "| code | 레코드 |", "|---|---|"]
         for code, n in q["codes"].items():
@@ -371,10 +362,8 @@ def _md_queue(rep):
 
 
 def _md_taxonomy(rep):
-    """5. taxonomy 개정 후보."""
-    lines = []
-    lines += ["## 5. taxonomy 개정 후보", "",
-              "| 축 | 커버리지 | unknown 비율 | 미사용 값 | 연속 미사용 |", "|---|---|---|---|---|"]
+    lines = ["## 5. taxonomy 개정 후보", "",
+             "| 축 | 커버리지 | unknown 비율 | 미사용 값 | 연속 미사용 |", "|---|---|---|---|---|"]
     for a in sorted(rep["coverage"]):
         lines.append("| %s | %s | %s | %s | %s |" % (
             _cell(a), _pct(rep["coverage"][a]), _pct(rep["unknown_rate"].get(a)),
@@ -388,8 +377,7 @@ def _md_drift(rep):
     """6. 드리프트와 최근 추이(배치 이슈 표 포함)."""
     d = rep["drift"]
     bi = rep["batch_issues"]
-    lines = []
-    lines += ["## 6. 드리프트와 최근 추이", ""]
+    lines = ["## 6. 드리프트와 최근 추이", ""]
     if d["baseline_qa_run_id"] is None:
         lines.append(d["note"])
     else:
@@ -421,10 +409,8 @@ def _md_drift(rep):
 
 
 def _md_judge(rep):
-    """7. judge 통계와 한계."""
     j = rep["judge"]
-    lines = []
-    lines += ["## 7. judge 통계와 한계", ""]
+    lines = ["## 7. judge 통계와 한계", ""]
     if j["ran"]:
         lines.append("- 호출 %d회, 캐시 적중 %d회, 실패 %d건" % (j["calls"], j["cache_hits"], j["failed"]))
     else:
@@ -440,10 +426,8 @@ def _md_judge(rep):
 
 
 def _md_proposals(rep):
-    """8. 규칙 제안과 효과 확인."""
-    lines = []
     t = rep["transitions"]
-    lines += ["## 8. 규칙 제안과 효과 확인", ""]
+    lines = ["## 8. 규칙 제안과 효과 확인", ""]
     p = rep["proposals"]
     lines.append("- 규칙 제안 %d건%s" % (p["count"], (": " + ", ".join("%s %d" % kv for kv in p["by_kind"].items()))
                                       if p["by_kind"] else ""))

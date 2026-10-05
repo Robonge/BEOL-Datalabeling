@@ -8,7 +8,7 @@ import tempfile
 
 from engrbot import io, model, runner
 from engrbot import policy as policy_mod
-from engrbot.tests import fixturegen
+from engrbot import synthetic
 
 LAYERS = ["L1", "L2", "L3A"]
 QA_RUN_ID = "QA-20261004T010203-0a0b"
@@ -37,7 +37,7 @@ def _swapcase_target(rec, tax):
 
 def scenario(seed=7, n_files=12, policy_over=None, qa_run_id=QA_RUN_ID, root=None, prepare=None):
     """반환: (RunResult, fixture, roles). roles: review, review_human, reject, autofix_case, autofix_date."""
-    fx = fixturegen.generate(seed=seed, n_files=n_files)
+    fx = synthetic.generate(seed=seed, n_files=n_files)
     b = fx.bundle
     tax = model.TaxIndex(b.taxonomy)
     content = sorted((r for r in b.records if r["chunk_type"] == "내용"), key=lambda r: r["record_id"])

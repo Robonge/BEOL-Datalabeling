@@ -20,7 +20,7 @@ from labelbot.workspace import CODE_ROOT, Workspace
 from engrbot import model, runner
 from engrbot import policy as policy_mod
 from engrbot.adapters import labelbot_ws
-from engrbot.tests import pptx_writer
+from engrbot import pptx_writer
 
 TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.xlsx")
 FOOTER = "사내 테스트용 더미 자료"

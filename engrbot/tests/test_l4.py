@@ -8,9 +8,9 @@ import unittest
 from engrbot import domain_rules, engine, model, policy
 from engrbot.checks import l4_domain
 from engrbot.checks.l1_schema import ALL
-from engrbot.tests import fixturegen
+from engrbot import synthetic
 
-TAX = model.TaxIndex(fixturegen.taxonomy_snapshot())
+TAX = model.TaxIndex(synthetic.taxonomy_snapshot())
 SCHEMA = policy.validate_schema({})
 LAYER = "구조/레이어"
 MODE = "불량 모드"
@@ -217,7 +217,7 @@ class EngineTest(unittest.TestCase):
         return engine.run(bundle, ctx)
 
     def test_default_draft_rules_keep_verdicts(self):
-        bundle = fixturegen.generate(seed=3, n_files=3, slides_range=(3, 4)).bundle.copy()
+        bundle = synthetic.generate(seed=3, n_files=3, slides_range=(3, 4)).bundle.copy()
         content = [r for r in bundle.records if r.get("chunk_type") == SCHEMA["content_chunk_type"]]
         self.assertTrue(content)
         content[0]["axes"][MODE] = {"values": ["EM"], "status": "value", "confidence": 0.9}

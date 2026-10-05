@@ -80,9 +80,6 @@ def iter_inputs(root):
             yield full, rel, util.nfc(fn)
 
 
-_iter_inputs = iter_inputs  # 예전 이름(.claude 스킬 문서가 참조한다)
-
-
 def collect(ws, con, run_id, input_root, only_ext=None, log=None, excluded=()):
     """입력 루트를 훑어 b64 저장과 files·file_locations 기록. 반환: 이번 실행에서 본 file_id 목록.
 

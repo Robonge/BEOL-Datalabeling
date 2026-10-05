@@ -5,7 +5,7 @@ import re
 import unittest
 
 from engrbot import io, queue, screen
-from engrbot.tests import pptx_writer
+from engrbot import pptx_writer
 from engrbot.tests import reviewfix as rf
 
 

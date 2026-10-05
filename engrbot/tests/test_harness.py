@@ -4,8 +4,7 @@ import shutil
 import tempfile
 import unittest
 
-from engrbot import harness, io, policy
-from engrbot.tests import fixturegen
+from engrbot import harness, io, policy, synthetic
 
 SCHEMA = policy.validate_schema({})
 _FULL = {}
@@ -16,7 +15,7 @@ def full_result():
     if "res" not in _FULL:
         from engrbot.llm import MockJudgeLLM
 
-        fx = fixturegen.generate(seed=7)
+        fx = synthetic.generate(seed=7)
         pol = policy.validate_policy({})
         _FULL["res"] = harness.evaluate(fx.bundle, pol, SCHEMA, llm=MockJudgeLLM(), per_mutator=10)
     return _FULL["res"]
@@ -24,12 +23,12 @@ def full_result():
 
 class FixtureTest(unittest.TestCase):
     def test_same_seed_same_bundle(self):
-        a, b = fixturegen.generate(seed=5), fixturegen.generate(seed=5)
+        a, b = synthetic.generate(seed=5), synthetic.generate(seed=5)
         self.assertEqual(a.bundle_hash(), b.bundle_hash())
-        self.assertNotEqual(a.bundle_hash(), fixturegen.generate(seed=6).bundle_hash())
+        self.assertNotEqual(a.bundle_hash(), synthetic.generate(seed=6).bundle_hash())
 
     def test_scale_and_variety(self):
-        fx = fixturegen.generate(seed=7)
+        fx = synthetic.generate(seed=7)
         recs = fx.bundle.records
         self.assertEqual(len(fx.bundle.sources), 12)
         self.assertGreaterEqual(len(recs), 80)
@@ -51,7 +50,7 @@ class DeterministicLayersTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        fx = fixturegen.generate(seed=7)
+        fx = synthetic.generate(seed=7)
         pol = policy.validate_policy({"layers": ["L1", "L2", "L3A"]})
         names = [m for m, v in harness.MUTATORS.items() if v.layer in ("L1", "L1_AUTOFIX", "L2", "L3A")]
         cls.res = harness.evaluate(fx.bundle, pol, SCHEMA, per_mutator=10, mutators=names)

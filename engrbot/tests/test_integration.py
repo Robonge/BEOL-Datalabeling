@@ -9,7 +9,7 @@ import unittest
 
 from engrbot import cli, io, runner
 from engrbot.adapters import bundle_files
-from engrbot.tests import fixturegen
+from engrbot import synthetic
 
 ALLOWED = (".b64", ".sqlite", ".json", ".jsonl", ".html", ".md", ".log")
 NO_TEXT_FILES = ("manifest.json", "report.md", "report.json")
@@ -29,7 +29,7 @@ class RunTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.mkdtemp()
-        cls.fx = fixturegen.generate(seed=7, n_files=4)
+        cls.fx = synthetic.generate(seed=7, n_files=4)
         cls.bdir = os.path.join(cls.tmp, "bundle")
         bundle_files.save(cls.fx.bundle, cls.bdir, blobs=cls.fx.blobs, images=cls.fx.images)
         cls.ws = os.path.join(cls.tmp, "ws")
@@ -120,7 +120,7 @@ class ZeroLayerAndNoJudgeTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.tmp, True)
-        fx = fixturegen.generate(seed=9, n_files=2)
+        fx = synthetic.generate(seed=9, n_files=2)
         self.bdir = os.path.join(self.tmp, "bundle")
         bundle_files.save(fx.bundle, self.bdir, blobs=fx.blobs, images=fx.images)
         self.paths = io.QaPaths(os.path.join(self.tmp, "ws"))
@@ -173,7 +173,7 @@ class ZeroLayerAndNoJudgeTest(unittest.TestCase):
     def test_include_text_false_strips_excerpts(self):
         with open(os.path.join(self.paths.qa, "policy.json"), "w", encoding="utf-8") as f:
             json.dump({"output": {"include_text": False}}, f)
-        fx = fixturegen.generate(seed=9, n_files=2)
+        fx = synthetic.generate(seed=9, n_files=2)
         b = fx.bundle.copy()
         b.records[1]["axes"]["불량 모드"] = {"values": ["Short"], "status": "value",
                                          "evidence": {"quote": "존재하지 않는 문장으로 근거를 대체함"}, "confidence": 0.9}

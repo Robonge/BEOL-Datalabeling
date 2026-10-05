@@ -188,17 +188,17 @@ class ScanHelpersTest(unittest.TestCase):
 
     def test_read_file_utf8_sig_and_errors(self):
         with tempfile.TemporaryDirectory() as d:
-            ok = os.path.join(d, "ok.txt")
+            ok = os.path.join(d, "ok.md")
             with open(ok, "wb") as fh:
                 fh.write(b"\xef\xbb\xbf" + "가나".encode("utf-8"))
-            bad = os.path.join(d, "bad.txt")
+            bad = os.path.join(d, "bad.md")
             with open(bad, "wb") as fh:
                 fh.write(b"\xff\xfe\x80")
             self.assertEqual(scan.read_file(ok), ("가나", None))
             self.assertEqual(scan.read_file(bad), ("", "READ_DECODE_FAILED"))
             self.assertEqual(scan.read_file(os.path.join(d, "none")), ("", "READ_FAILED"))
-            self.assertIsNone(scan.RepoIndex(d, []).read_text("bad.txt"))
-            self.assertEqual(scan.RepoIndex(d, []).read_text("ok.txt"), "가나")
+            self.assertIsNone(scan.RepoIndex(d, []).read_text("bad.md"))
+            self.assertEqual(scan.RepoIndex(d, []).read_text("ok.md"), "가나")
 
 
 if __name__ == "__main__":
