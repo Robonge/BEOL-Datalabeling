@@ -1,28 +1,16 @@
 """C1 최상위 규칙(DRM, 표준 라이브러리, 쓰기 확장자, ingest 한 곳) 검사."""
 import ast
-import fnmatch
 import posixpath
 import sys
 from pathlib import Path
 
 from codebot.registry import Check, register
+from codebot.scan import dotted, match_any
 
 SELF_EXTS = (".b64", ".json", ".jsonl", ".sqlite", ".md", ".html", ".log")
 MEMORY_CTORS = ("BytesIO", "StringIO")
 PATH_CALLS = ("os.path.join", "path", "pathlib.path", "purepath", "pathlib.purepath")
 PATH_TOKENS = ("path", "file", "fname", "filename", "filepath")
-
-
-def dotted(node):
-    """Name·Attribute 체인을 'a.b.c' 문자열로 바꾼다. 아니면 빈 문자열이다."""
-    parts = []
-    while isinstance(node, ast.Attribute):
-        parts.append(node.attr)
-        node = node.value
-    if isinstance(node, ast.Name):
-        parts.append(node.id)
-        return ".".join(reversed(parts))
-    return ""
 
 
 def is_memory_call(node):
@@ -143,10 +131,6 @@ def is_open_call(node):
     return isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "open"
 
 
-def matches_any(path, globs):
-    return any(fnmatch.fnmatch(path, g) for g in globs)
-
-
 @register
 class GoverningCheck(Check):
     layer = "C1"
@@ -174,7 +158,7 @@ class GoverningCheck(Check):
         if sf.tree is None:
             return []
         pol = ctx.policy.get("c1", {})
-        in_test = matches_any(sf.path, pol.get("test_globs", []))
+        in_test = match_any(sf.path, pol.get("test_globs", []))
         out = []
         for node in ast.walk(sf.tree):
             if isinstance(node, ast.Call):

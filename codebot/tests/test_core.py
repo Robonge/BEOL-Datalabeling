@@ -175,5 +175,31 @@ class ScanTest(unittest.TestCase):
             self.assertEqual([f.path for f in idx.files], ["pkg/a.py"])
 
 
+class ScanHelpersTest(unittest.TestCase):
+    def test_dotted_and_leaf_name(self):
+        import ast
+        expr = lambda src: ast.parse(src, mode="eval").body
+        self.assertEqual(scan.dotted(expr("a.b.c")), "a.b.c")
+        self.assertEqual(scan.dotted(expr("f().b")), "")
+        self.assertEqual(scan.leaf_name(expr("a.b.c")), "c")
+        self.assertEqual(scan.leaf_name(expr("f().b")), "b")
+        self.assertEqual(scan.leaf_name(expr("pkg.NotImplementedError()")), "NotImplementedError")
+        self.assertIsNone(scan.leaf_name(expr("1")))
+
+    def test_read_file_utf8_sig_and_errors(self):
+        with tempfile.TemporaryDirectory() as d:
+            ok = os.path.join(d, "ok.txt")
+            with open(ok, "wb") as fh:
+                fh.write(b"\xef\xbb\xbf" + "가나".encode("utf-8"))
+            bad = os.path.join(d, "bad.txt")
+            with open(bad, "wb") as fh:
+                fh.write(b"\xff\xfe\x80")
+            self.assertEqual(scan.read_file(ok), ("가나", None))
+            self.assertEqual(scan.read_file(bad), ("", "READ_DECODE_FAILED"))
+            self.assertEqual(scan.read_file(os.path.join(d, "none")), ("", "READ_FAILED"))
+            self.assertIsNone(scan.RepoIndex(d, []).read_text("bad.txt"))
+            self.assertEqual(scan.RepoIndex(d, []).read_text("ok.txt"), "가나")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -62,8 +62,34 @@ class SourceFile(object):
         return False
 
 
+def dotted(node):
+    """Name·Attribute 체인을 'a.b.c' 문자열로 바꾼다. 아니면 빈 문자열이다."""
+    parts = []
+    while isinstance(node, ast.Attribute):
+        parts.append(node.attr)
+        node = node.value
+    if isinstance(node, ast.Name):
+        parts.append(node.id)
+        return ".".join(reversed(parts))
+    return ""
+
+
+def leaf_name(node):
+    """Call이면 호출 대상을 보고, Name은 id를, Attribute는 마지막 attr을 낸다(밑동이 Name이 아니어도 된다). 아니면 None이다."""
+    if isinstance(node, ast.Call):
+        node = node.func
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    return None
+
+
 def match(rel, pattern):
-    """'**'을 포함하는 glob을 '/' 경계로 맞춘다."""
+    """glob 한 개를 저장소 상대 경로(구분자 '/')에 맞춘다. '*'·'?'는 '/'를 넘지 않고, '**'는 넘는다.
+
+    정책·검사의 모든 glob이 이 함수 하나를 쓴다. fnmatch와 달리 대소문자를 구분하고 '[...]'를 문자 집합으로 보지 않는다.
+    """
     regex = ""
     i = 0
     while i < len(pattern):
@@ -83,6 +109,21 @@ def match(rel, pattern):
             regex += re.escape(pattern[i])
             i += 1
     return re.fullmatch(regex, rel) is not None
+
+
+def match_any(rel, patterns):
+    return any(match(rel, p) for p in patterns)
+
+
+def read_file(full):
+    """파일 하나를 utf-8-sig로 읽는다. 실패하면 (빈 문자열, 사유 코드)를 낸다."""
+    try:
+        with open(full, "r", encoding="utf-8-sig") as fh:
+            return fh.read(), None
+    except UnicodeDecodeError:
+        return "", "READ_DECODE_FAILED"
+    except OSError:
+        return "", "READ_FAILED"
 
 
 class RepoIndex(object):
@@ -105,11 +146,8 @@ class RepoIndex(object):
         full = os.path.join(self.root, rel)
         if not os.path.isfile(full):
             return None
-        try:
-            with open(full, "r", encoding="utf-8-sig") as fh:
-                return fh.read()
-        except (OSError, UnicodeDecodeError):
-            return None
+        text, err = read_file(full)
+        return None if err else text
 
     def glob(self, pattern):
         found = set(p for p in self.texts if match(p, pattern))
@@ -122,17 +160,6 @@ class RepoIndex(object):
                     if match(rel, pattern):
                         found.add(rel)
         return sorted(found)
-
-
-def _read(full):
-    """파일 하나를 읽는다. 실패하면 (빈 문자열, 사유 코드)를 낸다."""
-    try:
-        with open(full, "r", encoding="utf-8-sig") as fh:
-            return fh.read(), None
-    except UnicodeDecodeError:
-        return "", "READ_DECODE_FAILED"
-    except OSError:
-        return "", "READ_FAILED"
 
 
 def build(root, targets, exclude):
@@ -151,8 +178,8 @@ def build(root, targets, exclude):
                         rels.add(os.path.relpath(os.path.join(dirpath, n), root).replace(os.sep, "/"))
     files = []
     for rel in sorted(rels):
-        if any(match(rel, pat) for pat in exclude):
+        if match_any(rel, exclude):
             continue
-        text, err = _read(os.path.join(root, rel))
+        text, err = read_file(os.path.join(root, rel))
         files.append(SourceFile(rel, text, read_error=err))
     return RepoIndex(root, files)

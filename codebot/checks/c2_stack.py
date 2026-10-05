@@ -1,9 +1,9 @@
 """C2 스택 규칙: 구문, 전송 우회, 비밀 리터럴, requirements 비움."""
 import ast
-import fnmatch
 import re
 
 from codebot.registry import Check, register
+from codebot.scan import match_any
 
 _BYPASS_MODULES = ("http.client", "socket", "ftplib", "smtplib")
 _BYPASS_CALLS = ("urlopen", "build_opener")
@@ -14,10 +14,6 @@ _SECRET_RES = (
     re.compile(r"(?<![A-Za-z0-9])AKIA[A-Z0-9]{16}"),
     re.compile(r"(?<![A-Za-z0-9])ghp_[A-Za-z0-9]{30,}"),
 )
-
-
-def _matches(path, patterns):
-    return any(fnmatch.fnmatch(path, p) for p in patterns)
 
 
 def _is_bypass_module(name):
@@ -45,7 +41,7 @@ class C2Stack(Check):
             return out
         c2 = ctx.policy.get("c2", {})
         skip = list(c2.get("transport_modules", [])) + list(ctx.policy.get("c1", {}).get("test_globs", []))
-        if not _matches(sf.path, skip):
+        if not match_any(sf.path, skip):
             out.extend(self._bypass(sf))
         out.extend(self._secrets(sf))
         return out

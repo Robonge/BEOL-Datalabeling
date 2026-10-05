@@ -5,19 +5,10 @@ import re
 import tokenize
 
 from codebot.registry import Check, register
+from codebot.scan import leaf_name
 
 _SKIP_DECORATORS = ("skip", "skipif", "skipunless", "expectedfailure")
 _MARK_RE = re.compile(r"\b(TODO|FIXME|XXX)\b")
-
-
-def _name(node):
-    if isinstance(node, ast.Call):
-        node = node.func
-    if isinstance(node, ast.Name):
-        return node.id
-    if isinstance(node, ast.Attribute):
-        return node.attr
-    return None
 
 
 def _is_empty_stmt(st):
@@ -26,7 +17,7 @@ def _is_empty_stmt(st):
     if isinstance(st, ast.Expr) and isinstance(st.value, ast.Constant) and st.value.value is Ellipsis:
         return True
     if isinstance(st, ast.Raise) and st.exc is not None:
-        return _name(st.exc) == "NotImplementedError"
+        return leaf_name(st.exc) == "NotImplementedError"
     return False
 
 
@@ -54,13 +45,13 @@ class C4Hygiene(Check):
             line = None
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 for d in node.decorator_list:
-                    name = _name(d)
+                    name = leaf_name(d)
                     if name is not None and name.lower() in _SKIP_DECORATORS:
                         line = d.lineno
                         break
-            elif isinstance(node, ast.Call) and _name(node) == "skipTest":
+            elif isinstance(node, ast.Call) and leaf_name(node) == "skipTest":
                 line = node.lineno
-            elif isinstance(node, ast.Raise) and node.exc is not None and _name(node.exc) == "SkipTest":
+            elif isinstance(node, ast.Raise) and node.exc is not None and leaf_name(node.exc) == "SkipTest":
                 line = node.lineno
             if line is not None:
                 out.append(self.finding(
@@ -86,7 +77,7 @@ class C4Hygiene(Check):
         for node in ast.walk(sf.tree):
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
-            if any(_name(d) == "abstractmethod" for d in node.decorator_list):
+            if any(leaf_name(d) == "abstractmethod" for d in node.decorator_list):
                 continue
             body = node.body
             if (body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant)
@@ -95,7 +86,7 @@ class C4Hygiene(Check):
             # 클래스 안 메서드의 본문이 raise NotImplementedError뿐이면 추상 메서드 관례로 보고 면제한다
             if (isinstance(getattr(node, "parent", None), ast.ClassDef) and len(body) == 1
                     and isinstance(body[0], ast.Raise) and body[0].exc is not None
-                    and _name(body[0].exc) == "NotImplementedError"):
+                    and leaf_name(body[0].exc) == "NotImplementedError"):
                 continue
             if body and all(_is_empty_stmt(s) for s in body):
                 out.append(self.finding(
