@@ -303,7 +303,7 @@ dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr
 #wf .io.chgs ul{list-style:none;display:grid;gap:.35em;margin-top:.45em;font-size:.82em}
 #wf .io.chgs li{border:1px solid var(--bg-grid);border-radius:.5em;padding:.4em .7em;background:rgba(237,241,247,.5)}
 #wf .io.chgs li p{color:var(--text-body);margin-top:.1em;font-size:.95em}
-@media (max-width:720px){#wf .stations{flex-wrap:wrap}#wf .stations .st{flex:1 1 30%}#wf .wrow{flex-wrap:wrap}}
+@media (max-width:720px){#wf .stations{flex-wrap:wrap}#wf .stations .st{flex:1 1 30%}#wf .watch{flex-direction:column;align-items:stretch}#wf .wrow{flex-wrap:wrap}#wf .wrow .st{flex:1 1 45%}#wf .st .t{word-break:keep-all;overflow-wrap:normal}}
 footer{margin-top:40px;color:var(--text-footer);font-size:12px}
 </style></head><body>
 %%SYMBOL%%
