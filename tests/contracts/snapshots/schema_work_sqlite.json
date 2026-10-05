@@ -1,0 +1,214 @@
+{
+  "meta": [
+    [
+      "schema_version",
+      "2"
+    ]
+  ],
+  "sqlite_master": [
+    [
+      "index",
+      "ix_chunks_file",
+      "CREATE INDEX ix_chunks_file ON chunks(file_id)"
+    ],
+    [
+      "index",
+      "ix_failures_run",
+      "CREATE INDEX ix_failures_run ON failures(run_id, stage)"
+    ],
+    [
+      "index",
+      "ix_labels_run_chunk",
+      "CREATE INDEX ix_labels_run_chunk ON labels(run_id, chunk_id)"
+    ],
+    [
+      "index",
+      "sqlite_autoindex_chunk_embeddings_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_chunks_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_compare_marks_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_corrections_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_file_locations_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_files_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_flagged_chunks_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_gen_questions_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_images_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_llm_cache_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_meta_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_revisit_requests_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_runs_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_slide_images_1",
+      null
+    ],
+    [
+      "table",
+      "alerts",
+      "CREATE TABLE alerts (run_id TEXT, condition TEXT, value REAL, threshold REAL)"
+    ],
+    [
+      "table",
+      "candidates",
+      "CREATE TABLE candidates (id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, kind TEXT, content TEXT, axis TEXT, parent TEXT, evidence TEXT, chunk_id TEXT, source TEXT)"
+    ],
+    [
+      "table",
+      "chunk_embeddings",
+      "CREATE TABLE chunk_embeddings (chunk_id TEXT, model TEXT, dim INTEGER, text_hash TEXT, vector BLOB, run_id TEXT, PRIMARY KEY(chunk_id, model))"
+    ],
+    [
+      "table",
+      "chunks",
+      "CREATE TABLE chunks (chunk_id TEXT PRIMARY KEY, file_id TEXT NOT NULL, seq INTEGER, part_name TEXT, title TEXT, text TEXT, text_hash TEXT, dup_hash TEXT, dup_group TEXT, warnings TEXT, images TEXT, view TEXT)"
+    ],
+    [
+      "table",
+      "compare_marks",
+      "CREATE TABLE compare_marks (chunk_id TEXT, status TEXT, memo TEXT, file_sha256 TEXT, applied_at TEXT, PRIMARY KEY(chunk_id))"
+    ],
+    [
+      "table",
+      "corrections",
+      "CREATE TABLE corrections (review_run_id TEXT, chunk_id TEXT, target_kind TEXT, target_key TEXT, human_value TEXT, bot_value TEXT, review_status TEXT, recheck INTEGER, text_hash TEXT, question_hash TEXT, file_sha256 TEXT, applied_at TEXT, PRIMARY KEY(review_run_id, chunk_id, target_kind, target_key))"
+    ],
+    [
+      "table",
+      "failures",
+      "CREATE TABLE failures (id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, stage TEXT, target_id TEXT, reason_code TEXT, created_at TEXT)"
+    ],
+    [
+      "table",
+      "file_locations",
+      "CREATE TABLE file_locations (file_id TEXT NOT NULL, rel_path TEXT NOT NULL CHECK(rel_path <> ''), file_name TEXT NOT NULL CHECK(file_name <> ''), first_seen_run TEXT, last_seen_run TEXT, PRIMARY KEY(file_id, rel_path))"
+    ],
+    [
+      "table",
+      "files",
+      "CREATE TABLE files (file_id TEXT PRIMARY KEY, file_name TEXT NOT NULL CHECK(file_name <> ''), rel_path TEXT NOT NULL CHECK(rel_path <> ''), ext TEXT, size INTEGER, status TEXT, reason_code TEXT, title TEXT, author TEXT, authored_at TEXT, author_source TEXT, date_source TEXT, near_dup_group TEXT, first_seen_run TEXT, chunk_method TEXT)"
+    ],
+    [
+      "table",
+      "flagged_chunks",
+      "CREATE TABLE flagged_chunks (run_id TEXT, chunk_id TEXT, reason_codes TEXT, unknown_ratio REAL, min_confidence REAL, text_hash TEXT, weak_quotes INTEGER, PRIMARY KEY(run_id, chunk_id))"
+    ],
+    [
+      "table",
+      "gen_questions",
+      "CREATE TABLE gen_questions (qid TEXT PRIMARY KEY, chunk_id TEXT, axis TEXT, value TEXT, text TEXT NOT NULL, prompt_version TEXT, created_at TEXT)"
+    ],
+    [
+      "table",
+      "images",
+      "CREATE TABLE images (image_id TEXT PRIMARY KEY, ext TEXT, size INTEGER, rel_file TEXT)"
+    ],
+    [
+      "table",
+      "labels",
+      "CREATE TABLE labels (id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, chunk_id TEXT, kind TEXT, key TEXT, value TEXT, status TEXT, evidence TEXT, confidence REAL, sheet_hashes TEXT, prompt_version TEXT, model TEXT, created_at TEXT)"
+    ],
+    [
+      "table",
+      "llm_cache",
+      "CREATE TABLE llm_cache (cache_key TEXT PRIMARY KEY, response TEXT NOT NULL, created_at TEXT)"
+    ],
+    [
+      "table",
+      "meta",
+      "CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT)"
+    ],
+    [
+      "table",
+      "revisit_requests",
+      "CREATE TABLE revisit_requests (review_run_id TEXT, chunk_id TEXT, target_kind TEXT, target_key TEXT, reason TEXT, proposed_value TEXT, proposed_parent TEXT, related_values TEXT, memo TEXT, bot_value TEXT, human_value TEXT, file_id TEXT, file_sha256 TEXT, applied_at TEXT, PRIMARY KEY(review_run_id, chunk_id, target_kind, target_key))"
+    ],
+    [
+      "table",
+      "runs",
+      "CREATE TABLE runs (run_id TEXT PRIMARY KEY, command TEXT, started_at TEXT, finished_at TEXT, config_hash TEXT, sheet_hashes TEXT, sent_params TEXT, input_root TEXT)"
+    ],
+    [
+      "table",
+      "slide_image_push_log",
+      "CREATE TABLE slide_image_push_log (id INTEGER PRIMARY KEY AUTOINCREMENT, chunk_id TEXT, jpg_sha256 TEXT, bucket TEXT, object_path TEXT, target_host_hash TEXT, pushed_at TEXT, result_code TEXT)"
+    ],
+    [
+      "table",
+      "slide_images",
+      "CREATE TABLE slide_images (chunk_id TEXT PRIMARY KEY, file_id TEXT, seq INTEGER, jpg_sha256 TEXT, width INTEGER, height INTEGER, quality INTEGER, rel_file TEXT, text_hash TEXT, layout_hash TEXT, renderer_version TEXT, created_at TEXT)"
+    ],
+    [
+      "table",
+      "sqlite_sequence",
+      "CREATE TABLE sqlite_sequence(name,seq)"
+    ],
+    [
+      "table",
+      "vector_push_log",
+      "CREATE TABLE vector_push_log (id INTEGER PRIMARY KEY AUTOINCREMENT, chunk_id TEXT, model TEXT, text_hash TEXT, label_hash TEXT, target_host_hash TEXT, pushed_at TEXT, result_code TEXT)"
+    ]
+  ],
+  "workspace_entries": [
+    "b64",
+    "images",
+    "inbox",
+    "inputs",
+    "logs",
+    "out",
+    "pipeline.json",
+    "raw",
+    "reports",
+    "screens",
+    "slide_images",
+    "work.sqlite"
+  ]
+}

@@ -1,0 +1,341 @@
+{
+  "engrbot.adapters.labelbot_ws.LABEL_STAGE": {
+    "answer": "label",
+    "axis": "classify",
+    "chunk_type": "classify",
+    "extract": "label"
+  },
+  "engrbot.adapters.labelbot_ws.RECORD_STAGES": [
+    "classify",
+    "label"
+  ],
+  "engrbot.adapters.labelbot_ws.REQUIRED": {
+    "chunks": [
+      "chunk_id",
+      "file_id",
+      "seq",
+      "part_name",
+      "title",
+      "text",
+      "text_hash",
+      "dup_group",
+      "warnings",
+      "images",
+      "view"
+    ],
+    "corrections": [
+      "chunk_id"
+    ],
+    "failures": [
+      "id",
+      "run_id",
+      "stage",
+      "target_id",
+      "reason_code"
+    ],
+    "files": [
+      "file_id",
+      "file_name",
+      "ext",
+      "status",
+      "reason_code"
+    ],
+    "images": [
+      "image_id",
+      "ext",
+      "size",
+      "rel_file"
+    ],
+    "labels": [
+      "id",
+      "run_id",
+      "chunk_id",
+      "kind",
+      "key",
+      "value",
+      "status",
+      "evidence",
+      "confidence",
+      "sheet_hashes",
+      "prompt_version",
+      "model",
+      "created_at"
+    ],
+    "runs": [
+      "run_id",
+      "command",
+      "sheet_hashes"
+    ]
+  },
+  "engrbot.adapters.labelbot_ws.SOURCE_FAIL_STAGES": [
+    "ingest",
+    "parse"
+  ],
+  "labelbot.chunker.METHODS:shape": {
+    "slide": {
+      ".docx": "labelbot.docx_parser.parse_docx",
+      ".pptx": "labelbot.pptx_parser.parse_pptx"
+    }
+  },
+  "labelbot.classify.CHUNK_TYPES": [
+    "내용",
+    "표지",
+    "목차",
+    "참고문헌"
+  ],
+  "labelbot.classify.NA": "해당 없음",
+  "labelbot.classify.UNKNOWN": "unknown",
+  "labelbot.dashboard.ALERT_LABELS": {
+    "DUP_LABEL_HIGH": "중복 라벨링 비율이 기준 이상",
+    "NA_RATIO_LOW": "N/A 비율이 기준 이하"
+  },
+  "labelbot.feedback.ANSWER_KINDS": [
+    "ANSWER",
+    "GEN_ANSWER"
+  ],
+  "labelbot.feedback.AXIS_KINDS": [
+    "REPLACE",
+    "REMOVE",
+    "ADD"
+  ],
+  "labelbot.feedback.RULES_FILENAME": "labeling_rules.json",
+  "labelbot.finals.CONFIRMED": "사람이 확인",
+  "labelbot.finals.CORRECTED": "사람이 교정",
+  "labelbot.finals.RECHECK": "사람이 교정(재검수 필요)",
+  "labelbot.finals.UNREVIEWED": "검수하지 않음",
+  "labelbot.ingest.OLE_EXT": [
+    ".ppt",
+    ".doc",
+    ".xls"
+  ],
+  "labelbot.ingest.OLE_SIG": "hex:d0cf11e0",
+  "labelbot.ingest.OOXML_EXT": [
+    ".pptx",
+    ".docx",
+    ".xlsx"
+  ],
+  "labelbot.ingest.OOXML_SIG": "hex:504b0304",
+  "labelbot.ingest.PARSED_EXT": [
+    ".pptx",
+    ".docx"
+  ],
+  "labelbot.ingest.TEXT_EXT": [
+    ".json",
+    ".txt",
+    ".csv",
+    ".md"
+  ],
+  "labelbot.label.ANSWERS": [
+    "O",
+    "X",
+    "N/A"
+  ],
+  "labelbot.questions.GEN_PREFIX": "Q-GEN-",
+  "labelbot.review.REASONS": [
+    "UNKNOWN_HIGH",
+    "LOW_CONFIDENCE",
+    "QUOTE_NOT_FOUND",
+    "PARSE_WARNING",
+    "CLASSIFY_FAILED",
+    "LABEL_FAILED"
+  ],
+  "labelbot.review.REASON_LABELS": {
+    "CLASSIFY_FAILED": "분류 실패",
+    "LABEL_FAILED": "라벨 실패",
+    "LOW_CONFIDENCE": "확신도 낮음",
+    "PARSE_WARNING": "파싱 경고",
+    "QUOTE_NOT_FOUND": "근거 인용 불일치",
+    "UNKNOWN_HIGH": "unknown 비율 높음"
+  },
+  "labelbot.revisit.DROP_CODES": [
+    "REVISIT_CHUNK_NOT_FLAGGED",
+    "REVISIT_REASON_INVALID",
+    "REVISIT_FIELD_INVALID",
+    "REVISIT_DUPLICATE",
+    "REVISIT_MEMO_TRUNCATED"
+  ],
+  "labelbot.revisit.MEMO_MAX": 500,
+  "labelbot.revisit.MEMO_REQUIRED": [
+    "OTHER",
+    "NEED_QUESTION"
+  ],
+  "labelbot.revisit.REASONS": [
+    "NO_FIT_VALUE",
+    "AMBIGUOUS_DEF",
+    "VALUE_OVERLAP",
+    "NEW_AXIS",
+    "NEED_QUESTION",
+    "OTHER"
+  ],
+  "labelbot.revisit.REASON_LABELS": {
+    "AMBIGUOUS_DEF": "정의가 모호함",
+    "NEED_QUESTION": "필요한 질문이 없음",
+    "NEW_AXIS": "새 축이 필요함",
+    "NO_FIT_VALUE": "맞는 값이 없음",
+    "OTHER": "기타",
+    "VALUE_OVERLAP": "값 두 개가 겹침"
+  },
+  "labelbot.revisit.TARGETS": [
+    "axis",
+    "question",
+    "new_axis"
+  ],
+  "labelbot.revisit.TARGET_REASONS": {
+    "axis": [
+      "NO_FIT_VALUE",
+      "AMBIGUOUS_DEF",
+      "VALUE_OVERLAP",
+      "OTHER"
+    ],
+    "new_axis": [
+      "NEW_AXIS"
+    ],
+    "question": [
+      "AMBIGUOUS_DEF",
+      "OTHER"
+    ],
+    "question_blank": [
+      "NEED_QUESTION"
+    ]
+  },
+  "labelbot.slideimg.STAGE": "slide_image",
+  "labelbot.slidepush.STAGE": "push_slides",
+  "labelbot.store.INDEXES": [
+    "CREATE INDEX IF NOT EXISTS ix_labels_run_chunk ON labels(run_id, chunk_id)",
+    "CREATE INDEX IF NOT EXISTS ix_chunks_file ON chunks(file_id)",
+    "CREATE INDEX IF NOT EXISTS ix_failures_run ON failures(run_id, stage)"
+  ],
+  "labelbot.store.SCHEMA_VERSION": 2,
+  "labelbot.store.TABLES:order": [
+    "meta",
+    "llm_cache",
+    "runs",
+    "failures",
+    "files",
+    "file_locations",
+    "chunks",
+    "images",
+    "labels",
+    "candidates",
+    "alerts",
+    "gen_questions",
+    "flagged_chunks",
+    "corrections",
+    "revisit_requests",
+    "compare_marks",
+    "chunk_embeddings",
+    "vector_push_log",
+    "slide_images",
+    "slide_image_push_log"
+  ],
+  "labelbot.util.ALLOWED_EXT": [
+    ".b64",
+    ".sqlite",
+    ".json",
+    ".jsonl",
+    ".html",
+    ".md",
+    ".log"
+  ],
+  "labelbot.workspace.DEFAULT_CONFIG": {
+    "alerts": {
+      "dup_ratio_min": 0.4,
+      "na_ratio_max": 0.3
+    },
+    "chunking": {
+      "method": "slide"
+    },
+    "embedding": {
+      "api_key_env": "OPENAI_API_KEY",
+      "auth_header": "Authorization",
+      "base_url": "https://api.openai.com/v1",
+      "batch_size": 64,
+      "ca_file": null,
+      "enabled": true,
+      "extra_headers": {},
+      "model": "text-embedding-3-small",
+      "path": "/embeddings",
+      "timeout": 60,
+      "transport": "http"
+    },
+    "feedback": {
+      "enabled": true,
+      "example_chars": 800,
+      "examples_k": 2,
+      "examples_root": null,
+      "exclude_same_file": true,
+      "max_rules": 30,
+      "min_similarity": {
+        "embedding": 0.5,
+        "lexical": 0.05
+      },
+      "rules_path": null,
+      "similarity": "auto"
+    },
+    "flag": {
+      "confidence_min": 0.7,
+      "unknown_ratio_min": 0.5
+    },
+    "include_file_ids": [],
+    "input_root": null,
+    "limits": {
+      "chunk_char_limit": 6000,
+      "images_per_chunk": 4,
+      "query_k": 20,
+      "questions_per_chunk": 8
+    },
+    "llm": {
+      "api_key_env": "OPENAI_API_KEY",
+      "auth_header": "Authorization",
+      "base_url": "https://api.openai.com/v1",
+      "ca_file": null,
+      "chat_path": "/chat/completions",
+      "extra_headers": {},
+      "internal_host_suffixes": [],
+      "max_retries": 2,
+      "max_tokens": null,
+      "max_tokens_param": "max_tokens",
+      "model": "",
+      "response_format_json": false,
+      "temperature": 0,
+      "timeout": 60,
+      "transport": "http",
+      "workers": 4
+    },
+    "parse": {
+      "boilerplate_ratio": 0.6,
+      "image_min_bytes": 2048
+    },
+    "render": {
+      "browser_path": null,
+      "jpeg_quality": 85,
+      "timeout": 30,
+      "width_px": 1280
+    },
+    "supabase": {
+      "batch_size": 100,
+      "ca_file": null,
+      "enabled": false,
+      "key_env": "SUPABASE_SERVICE_KEY",
+      "storage_bucket": "BEOL-labeling",
+      "storage_enabled": false,
+      "table": "chunk_embeddings",
+      "timeout": 60,
+      "url": "",
+      "url_env": "SUPABASE_URL"
+    },
+    "taxonomy_path": null
+  },
+  "labelbot.workspace.Workspace.SUBDIRS": [
+    "inputs",
+    "raw",
+    "b64",
+    "images",
+    "slide_images",
+    "screens",
+    "inbox",
+    "out",
+    "reports",
+    "logs"
+  ]
+}

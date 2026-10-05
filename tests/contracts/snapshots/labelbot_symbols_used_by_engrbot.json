@@ -1,0 +1,122 @@
+{
+  "labelbot.ingest.InputError": {
+    "kind": "exception",
+    "signature": "(reason_code)",
+    "used_in": [
+      "engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.ingest.read_input": {
+    "kind": "function",
+    "signature": "(path, snapshot_dir=None, expect=None)",
+    "used_in": [
+      "engrbot/adapters/labelbot_ws.py",
+      "engrbot/io.py"
+    ]
+  },
+  "labelbot.llm.CallFailed": {
+    "kind": "exception",
+    "signature": "(reason_code)",
+    "used_in": [
+      "engrbot/llm_http.py"
+    ]
+  },
+  "labelbot.llm.SendBlocked": {
+    "kind": "exception",
+    "signature": "(reason_code)",
+    "used_in": [
+      "engrbot/llm_http.py"
+    ]
+  },
+  "labelbot.llm.auth_headers": {
+    "kind": "function",
+    "signature": "(cfg, key)",
+    "used_in": [
+      "engrbot/llm_http.py"
+    ]
+  },
+  "labelbot.llm.check_send": {
+    "kind": "function",
+    "signature": "(url, file_ids, suffixes, probe=False, dummy_path=None)",
+    "used_in": [
+      "engrbot/llm_http.py"
+    ]
+  },
+  "labelbot.llm.post_json": {
+    "kind": "function",
+    "signature": "(url, headers, payload, timeout, ca_file=None)",
+    "used_in": [
+      "engrbot/llm_http.py"
+    ]
+  },
+  "labelbot.llm.read_key": {
+    "kind": "function",
+    "signature": "(env_name)",
+    "used_in": [
+      "engrbot/llm_http.py"
+    ]
+  },
+  "labelbot.synonyms.SynonymTable": {
+    "kind": "class",
+    "signature": "(synonyms)",
+    "used_in": [
+      "engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.TaxonomyError": {
+    "kind": "exception",
+    "signature": "(issues, warnings=None)",
+    "used_in": [
+      "engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.parse_bytes": {
+    "kind": "function",
+    "signature": "(b)",
+    "used_in": [
+      "engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.util.ALLOWED_EXT": {
+    "kind": "constant",
+    "type": "tuple",
+    "used_in": [
+      "engrbot/io.py"
+    ]
+  },
+  "labelbot.util.check_ext": {
+    "kind": "function",
+    "signature": "(path)",
+    "used_in": [
+      "engrbot/io.py"
+    ]
+  },
+  "labelbot.util.write_text": {
+    "kind": "function",
+    "signature": "(path, text)",
+    "used_in": [
+      "engrbot/io.py"
+    ]
+  },
+  "labelbot.workspace.CODE_ROOT": {
+    "kind": "constant",
+    "type": "str",
+    "used_in": [
+      "engrbot/io.py"
+    ]
+  },
+  "labelbot.workspace.DEFAULT_CONFIG": {
+    "kind": "constant",
+    "type": "dict",
+    "used_in": [
+      "engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.workspace.is_forbidden_inside_code": {
+    "kind": "function",
+    "signature": "(path)",
+    "used_in": [
+      "engrbot/io.py"
+    ]
+  }
+}

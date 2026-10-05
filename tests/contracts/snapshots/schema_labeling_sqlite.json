@@ -1,0 +1,374 @@
+{
+  "empty_row_counts": {
+    "aliases": 0,
+    "answers": 0,
+    "chunks": 0,
+    "extracted_values": 0,
+    "facet_labels": 0,
+    "facet_values": 0,
+    "file_locations": 0,
+    "files": 0,
+    "meta": 8,
+    "questions": 0
+  },
+  "export_SCHEMA_columns": [
+    [
+      "files",
+      [
+        [
+          "file_id",
+          "TEXT PRIMARY KEY"
+        ],
+        [
+          "file_name",
+          "TEXT NOT NULL"
+        ],
+        [
+          "rel_path",
+          "TEXT NOT NULL"
+        ],
+        [
+          "title",
+          "TEXT"
+        ],
+        [
+          "authored_at",
+          "TEXT"
+        ],
+        [
+          "author",
+          "TEXT"
+        ],
+        [
+          "memo",
+          "TEXT"
+        ],
+        [
+          "chunk_count",
+          "INTEGER"
+        ]
+      ]
+    ],
+    [
+      "file_locations",
+      [
+        [
+          "file_id",
+          "TEXT NOT NULL"
+        ],
+        [
+          "rel_path",
+          "TEXT NOT NULL"
+        ],
+        [
+          "file_name",
+          "TEXT NOT NULL"
+        ],
+        [
+          "first_seen_run",
+          "TEXT"
+        ],
+        [
+          "last_seen_run",
+          "TEXT"
+        ]
+      ]
+    ],
+    [
+      "chunks",
+      [
+        [
+          "chunk_id",
+          "TEXT PRIMARY KEY"
+        ],
+        [
+          "file_id",
+          "TEXT NOT NULL"
+        ],
+        [
+          "seq",
+          "INTEGER"
+        ],
+        [
+          "chunk_type",
+          "TEXT"
+        ],
+        [
+          "title",
+          "TEXT"
+        ],
+        [
+          "text",
+          "TEXT"
+        ],
+        [
+          "text_hash",
+          "TEXT"
+        ],
+        [
+          "dup_group",
+          "TEXT"
+        ],
+        [
+          "image_paths",
+          "TEXT"
+        ],
+        [
+          "parse_warnings",
+          "TEXT"
+        ],
+        [
+          "slide_image",
+          "TEXT"
+        ]
+      ]
+    ],
+    [
+      "facet_values",
+      [
+        [
+          "axis",
+          "TEXT"
+        ],
+        [
+          "value",
+          "TEXT"
+        ],
+        [
+          "parent",
+          "TEXT"
+        ],
+        [
+          "kind",
+          "TEXT"
+        ],
+        [
+          "definition",
+          "TEXT"
+        ]
+      ]
+    ],
+    [
+      "aliases",
+      [
+        [
+          "alias",
+          "TEXT"
+        ],
+        [
+          "canonical",
+          "TEXT"
+        ]
+      ]
+    ],
+    [
+      "questions",
+      [
+        [
+          "question_id",
+          "TEXT PRIMARY KEY"
+        ],
+        [
+          "text",
+          "TEXT"
+        ],
+        [
+          "target",
+          "TEXT"
+        ]
+      ]
+    ],
+    [
+      "facet_labels",
+      [
+        [
+          "chunk_id",
+          "TEXT"
+        ],
+        [
+          "axis",
+          "TEXT"
+        ],
+        [
+          "value",
+          "TEXT"
+        ],
+        [
+          "state",
+          "TEXT"
+        ],
+        [
+          "evidence",
+          "TEXT"
+        ],
+        [
+          "confidence",
+          "REAL"
+        ],
+        [
+          "review_status",
+          "TEXT"
+        ]
+      ]
+    ],
+    [
+      "answers",
+      [
+        [
+          "chunk_id",
+          "TEXT"
+        ],
+        [
+          "question_id",
+          "TEXT"
+        ],
+        [
+          "answer",
+          "TEXT"
+        ],
+        [
+          "quote",
+          "TEXT"
+        ],
+        [
+          "confidence",
+          "REAL"
+        ],
+        [
+          "review_status",
+          "TEXT"
+        ]
+      ]
+    ],
+    [
+      "extracted_values",
+      [
+        [
+          "target_type",
+          "TEXT"
+        ],
+        [
+          "target_id",
+          "TEXT"
+        ],
+        [
+          "item",
+          "TEXT"
+        ],
+        [
+          "value",
+          "TEXT"
+        ],
+        [
+          "evidence",
+          "TEXT"
+        ],
+        [
+          "source",
+          "TEXT"
+        ]
+      ]
+    ],
+    [
+      "meta",
+      [
+        [
+          "key",
+          "TEXT PRIMARY KEY"
+        ],
+        [
+          "value",
+          "TEXT"
+        ]
+      ]
+    ]
+  ],
+  "meta_keys": [
+    "chunk_count",
+    "created_at",
+    "file_count",
+    "inactive_axes",
+    "run_id",
+    "sent_params",
+    "sheet_hashes",
+    "taxonomy_sha256"
+  ],
+  "out_entries": [
+    "SCHEMA.md",
+    "images",
+    "labeling.sqlite"
+  ],
+  "schema_md_empty_taxonomy": "# labeling.sqlite 스키마\n\nBEOL 비정형 자료 라벨링 결과다. 읽기 전용 SELECT로 조회한다. 라벨은 chunk와 축 값의 관계(facet_labels)로 저장된다.\n\n## files\n\n파일 단위 정보. 파일 1개 = 행 1개\n\n| 열 | 형식 | 설명 |\n|---|---|---|\n| file_id | TEXT PRIMARY KEY | 원본 bytes의 sha256 |\n| file_name | TEXT NOT NULL | 파일명(처음 본 위치 기준) |\n| rel_path | TEXT NOT NULL | 대표 상대 경로(입력 루트 기준, 구분자 /) |\n| title | TEXT | 문서 속성의 제목 |\n| authored_at | TEXT | 작성일(YYYY-MM-DD) |\n| author | TEXT | 작성자 |\n| memo | TEXT | taxonomy.xlsx files 시트의 맥락 메모 |\n| chunk_count | INTEGER | chunk 수 |\n\n## file_locations\n\n같은 파일(해시)이 놓인 모든 위치. files와 1:N\n\n| 열 | 형식 | 설명 |\n|---|---|---|\n| file_id | TEXT NOT NULL | files.file_id |\n| rel_path | TEXT NOT NULL | 상대 경로 |\n| file_name | TEXT NOT NULL | 그 위치의 파일명 |\n| first_seen_run | TEXT | 처음 본 실행 ID |\n| last_seen_run | TEXT | 마지막으로 본 실행 ID |\n\n## chunks\n\n검색 단위. pptx는 슬라이드 1장 = chunk 1개\n\n| 열 | 형식 | 설명 |\n|---|---|---|\n| chunk_id | TEXT PRIMARY KEY | <파일 ID 앞 16자>:<part 이름> |\n| file_id | TEXT NOT NULL | files.file_id |\n| seq | INTEGER | 파일 안 순서(슬라이드 번호) |\n| chunk_type | TEXT | 내용/표지/목차/참고문헌 |\n| title | TEXT | 슬라이드 제목 |\n| text | TEXT | chunk 본문([표], [노트], [차트] 구간 포함) |\n| text_hash | TEXT | 본문 해시 |\n| dup_group | TEXT | 같은 본문 chunk 묶음 ID(없으면 NULL) |\n| image_paths | TEXT | 이미지 파일 경로 JSON 목록(images/<id>.b64) |\n| parse_warnings | TEXT | 파싱 경고 코드 JSON 목록 |\n| slide_image | TEXT | 슬라이드 근사 미리보기 JPG JSON(rel_file=slide_images/<sha256>.b64, sha256, width, height, bucket, object_path). 없으면 NULL |\n\n## facet_values\n\n분류 체계(축과 표준 값)\n\n| 열 | 형식 | 설명 |\n|---|---|---|\n| axis | TEXT | 축 이름 |\n| value | TEXT | 표준 값 |\n| parent | TEXT | 상위값(계층 축) |\n| kind | TEXT | 분류/상태 |\n| definition | TEXT | 정의·판정 규칙 |\n\n## aliases\n\n동의어 → 표준어\n\n| 열 | 형식 | 설명 |\n|---|---|---|\n| alias | TEXT | 본문 표현 |\n| canonical | TEXT | 표준어 |\n\n## questions\n\nO/X 질문\n\n| 열 | 형식 | 설명 |\n|---|---|---|\n| question_id | TEXT PRIMARY KEY | 질문 ID |\n| text | TEXT | 질문 문장 |\n| target | TEXT | 적용 대상(공통 또는 축=값) |\n\n## facet_labels\n\nchunk와 축 값의 관계. 값마다 1행\n\n| 열 | 형식 | 설명 |\n|---|---|---|\n| chunk_id | TEXT | chunks.chunk_id |\n| axis | TEXT | 축 이름 |\n| value | TEXT | 표준 값. state가 value가 아니면 '해당 없음' 또는 'unknown' |\n| state | TEXT | value / 해당 없음 / unknown |\n| evidence | TEXT | 근거 인용 |\n| confidence | REAL | 확신도 0~1 |\n| review_status | TEXT | 검수하지 않음 / 사람이 확인 / 사람이 교정 |\n\n## answers\n\nchunk별 질문 답\n\n| 열 | 형식 | 설명 |\n|---|---|---|\n| chunk_id | TEXT | chunks.chunk_id |\n| question_id | TEXT | questions.question_id |\n| answer | TEXT | O / X / N/A |\n| quote | TEXT | 근거 인용 |\n| confidence | REAL | 확신도 0~1 |\n| review_status | TEXT | 검수하지 않음 / 사람이 확인 / 사람이 교정 |\n\n## extracted_values\n\n날짜·담당자 값\n\n| 열 | 형식 | 설명 |\n|---|---|---|\n| target_type | TEXT | file 또는 chunk |\n| target_id | TEXT | file_id 또는 chunk_id |\n| item | TEXT | date 또는 person |\n| value | TEXT | 값(날짜는 YYYY-MM-DD) |\n| evidence | TEXT | 근거 인용 |\n| source | TEXT | docprops / filename / body |\n\n## meta\n\n산출 정보\n\n| 열 | 형식 | 설명 |\n|---|---|---|\n| key | TEXT PRIMARY KEY | 키 |\n| value | TEXT | 값 |\n\n## 관계\n\n- files 1 : N file_locations (file_id). 같은 파일이 여러 폴더에 있으면 file_locations에 모두 있다.\n- files 1 : N chunks (file_id)\n- chunks 1 : N facet_labels, answers (chunk_id)\n- facet_labels.(axis, value) → facet_values.(axis, value) (state='value'일 때)\n- answers.question_id → questions.question_id\n\n## 분류 체계\n\n\n## 질문\n\n\n## 예시 SQL\n\n경로로 파일과 chunk 찾기:\n\n```sql\nSELECT f.file_id, l.rel_path, c.chunk_id, c.title\nFROM file_locations l JOIN files f ON f.file_id = l.file_id JOIN chunks c ON c.file_id = f.file_id\nWHERE l.rel_path LIKE '%M2%' ORDER BY l.rel_path, c.seq;\n```\n\n특정 축 값이 붙은 chunk:\n\n```sql\nSELECT c.chunk_id, c.title FROM facet_labels fl JOIN chunks c ON c.chunk_id = fl.chunk_id\nWHERE fl.axis = '불량 모드' AND fl.value = 'Short';\n```\n\n미해결 위험이 있다고 답한 chunk:\n\n```sql\nSELECT a.chunk_id, a.quote FROM answers a WHERE a.question_id = 'Q-COM-001' AND a.answer = 'O';\n```\n",
+  "sqlite_master": [
+    [
+      "index",
+      "sqlite_autoindex_chunks_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_files_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_meta_1",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_questions_1",
+      null
+    ],
+    [
+      "table",
+      "aliases",
+      "CREATE TABLE aliases (alias TEXT, canonical TEXT)"
+    ],
+    [
+      "table",
+      "answers",
+      "CREATE TABLE answers (chunk_id TEXT, question_id TEXT, answer TEXT, quote TEXT, confidence REAL, review_status TEXT)"
+    ],
+    [
+      "table",
+      "chunks",
+      "CREATE TABLE chunks (chunk_id TEXT PRIMARY KEY, file_id TEXT NOT NULL, seq INTEGER, chunk_type TEXT, title TEXT, text TEXT, text_hash TEXT, dup_group TEXT, image_paths TEXT, parse_warnings TEXT, slide_image TEXT)"
+    ],
+    [
+      "table",
+      "extracted_values",
+      "CREATE TABLE extracted_values (target_type TEXT, target_id TEXT, item TEXT, value TEXT, evidence TEXT, source TEXT)"
+    ],
+    [
+      "table",
+      "facet_labels",
+      "CREATE TABLE facet_labels (chunk_id TEXT, axis TEXT, value TEXT, state TEXT, evidence TEXT, confidence REAL, review_status TEXT)"
+    ],
+    [
+      "table",
+      "facet_values",
+      "CREATE TABLE facet_values (axis TEXT, value TEXT, parent TEXT, kind TEXT, definition TEXT)"
+    ],
+    [
+      "table",
+      "file_locations",
+      "CREATE TABLE file_locations (file_id TEXT NOT NULL, rel_path TEXT NOT NULL, file_name TEXT NOT NULL, first_seen_run TEXT, last_seen_run TEXT)"
+    ],
+    [
+      "table",
+      "files",
+      "CREATE TABLE files (file_id TEXT PRIMARY KEY, file_name TEXT NOT NULL, rel_path TEXT NOT NULL, title TEXT, authored_at TEXT, author TEXT, memo TEXT, chunk_count INTEGER)"
+    ],
+    [
+      "table",
+      "meta",
+      "CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT)"
+    ],
+    [
+      "table",
+      "questions",
+      "CREATE TABLE questions (question_id TEXT PRIMARY KEY, text TEXT, target TEXT)"
+    ]
+  ]
+}

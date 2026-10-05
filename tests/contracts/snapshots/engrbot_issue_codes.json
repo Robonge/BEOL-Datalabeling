@@ -1,0 +1,376 @@
+{
+  "L0_EMPTY_RATIO_HIGH": {
+    "layer": "L0",
+    "scope": "file",
+    "severity": "major"
+  },
+  "L0_EMPTY_UNIT": {
+    "layer": "L0",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L0_FORMAT_UNSUPPORTED": {
+    "layer": "L0",
+    "scope": "file",
+    "severity": "info"
+  },
+  "L0_GARBLED_TEXT": {
+    "layer": "L0",
+    "scope": "record",
+    "severities": [
+      "major",
+      "minor"
+    ],
+    "severity": "major"
+  },
+  "L0_IMAGE_DROPPED": {
+    "layer": "L0",
+    "scope": "record",
+    "severity": "minor"
+  },
+  "L0_IMAGE_LINK_MISMATCH": {
+    "layer": "L0",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L0_IMAGE_ONLY_UNIT": {
+    "layer": "L0",
+    "scope": "record",
+    "severity": "info"
+  },
+  "L0_IMAGE_REF_BROKEN": {
+    "layer": "L0",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L0_PAGE_COUNT_MISMATCH": {
+    "layer": "L0",
+    "scope": "file",
+    "severity": "major"
+  },
+  "L0_PARSER_WARNING": {
+    "layer": "L0",
+    "scope": "record",
+    "severities": [
+      "minor",
+      "info"
+    ],
+    "severity": "info"
+  },
+  "L0_PARSE_FAILED": {
+    "layer": "L0",
+    "scope": "file",
+    "severity": "critical"
+  },
+  "L0_SIGNATURE_MISMATCH": {
+    "layer": "L0",
+    "scope": "file",
+    "severity": "critical"
+  },
+  "L0_SOURCE_UNREADABLE": {
+    "layer": "L0",
+    "scope": "file",
+    "severity": "critical"
+  },
+  "L0_TABLE_CELLS_LOST": {
+    "layer": "L0",
+    "scope": "record",
+    "severity": "minor"
+  },
+  "L0_TABLE_LOST": {
+    "layer": "L0",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L0_TEXT_COVERAGE_LOW": {
+    "layer": "L0",
+    "scope": "record",
+    "severities": [
+      "major",
+      "minor"
+    ],
+    "severity": "major"
+  },
+  "L1_CONFIDENCE_RANGE": {
+    "layer": "L1",
+    "scope": "record",
+    "severities": [
+      "major",
+      "minor"
+    ],
+    "severity": "major"
+  },
+  "L1_DATE_FORMAT": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L1_DUPLICATE_FIELD": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L1_ENUM_INVALID": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "critical"
+  },
+  "L1_EVIDENCE_MISSING": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L1_FORMAT_NORMALIZED": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "fixable"
+  },
+  "L1_LABELER_FAILED": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "critical"
+  },
+  "L1_LOT_ID_UNCOMMON": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "info"
+  },
+  "L1_PATTERN_MISMATCH": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L1_REQUIRED_MISSING": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "critical"
+  },
+  "L1_TYPE_INVALID": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "critical"
+  },
+  "L1_UNKNOWN_FIELD": {
+    "layer": "L1",
+    "scope": "record",
+    "severity": "minor"
+  },
+  "L2_ALL_NOT_APPLICABLE": {
+    "layer": "L2",
+    "scope": "record",
+    "severity": "minor"
+  },
+  "L2_AXIS_UNKNOWN": {
+    "layer": "L2",
+    "scope": "record",
+    "severity": "critical"
+  },
+  "L2_HIERARCHY_INCONSISTENT": {
+    "layer": "L2",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L2_LABEL_NOT_IN_TAXONOMY": {
+    "layer": "L2",
+    "scope": "record",
+    "severity": "critical"
+  },
+  "L2_MUTEX_VIOLATION": {
+    "layer": "L2",
+    "scope": "record",
+    "severities": [
+      "critical",
+      "major"
+    ],
+    "severity": "critical"
+  },
+  "L2_STATUS_MISMATCH": {
+    "layer": "L2",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L2_TAXONOMY_STALE": {
+    "layer": "L2",
+    "scope": "record",
+    "severity": "minor"
+  },
+  "L2_UNKNOWN_OVERUSE": {
+    "layer": "L2",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L3_EXTRACT_NOT_IN_QUOTE": {
+    "layer": "L3A",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L3_JUDGE_FAILED": {
+    "fail_safe": true,
+    "layer": "L3B",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L3_JUDGE_SKIPPED": {
+    "fail_safe": true,
+    "layer": "L3B",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L3_NOT_SUPPORTED": {
+    "layer": "L3B",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L3_PARTIALLY_SUPPORTED": {
+    "layer": "L3B",
+    "scope": "record",
+    "severity": "minor"
+  },
+  "L3_SPAN_NOT_FOUND": {
+    "layer": "L3A",
+    "scope": "record",
+    "severity": "critical"
+  },
+  "L3_SPAN_OFFSET_INVALID": {
+    "layer": "L3A",
+    "scope": "record",
+    "severity": "critical"
+  },
+  "L3_SPAN_TOO_LONG": {
+    "layer": "L3A",
+    "scope": "record",
+    "severity": "minor"
+  },
+  "L3_SPAN_TOO_SHORT": {
+    "layer": "L3A",
+    "scope": "record",
+    "severity": "minor"
+  },
+  "L3_SPAN_WRONG_UNIT": {
+    "layer": "L3A",
+    "scope": "record",
+    "severity": "critical"
+  },
+  "L4_AXIS_COMBO_VIOLATION": {
+    "layer": "L4",
+    "scope": "record",
+    "severities": [
+      "major",
+      "minor"
+    ],
+    "severity": "major"
+  },
+  "L4_RULE_DRAFT_HIT": {
+    "layer": "L4",
+    "scope": "record",
+    "severity": "info"
+  },
+  "L4_SYNONYM_SUGGEST": {
+    "layer": "L4",
+    "scope": "record",
+    "severity": "info"
+  },
+  "L4_TITLE_LABEL_MISMATCH": {
+    "layer": "L4",
+    "scope": "record",
+    "severities": [
+      "major",
+      "minor"
+    ],
+    "severity": "major"
+  },
+  "L5_DUP_GROUP_DISAGREE": {
+    "layer": "L5",
+    "scope": "record",
+    "severity": "major"
+  },
+  "L6_DRIFT_HIGH": {
+    "layer": "L6",
+    "scope": "batch",
+    "severity": "info"
+  },
+  "L6_PASS_RATE_DROP": {
+    "layer": "L6",
+    "scope": "batch",
+    "severity": "info"
+  },
+  "L6_SAMPLE_TOO_SMALL": {
+    "layer": "L6",
+    "scope": "batch",
+    "severity": "info"
+  },
+  "L6_UNKNOWN_RATE_HIGH": {
+    "layer": "L6",
+    "scope": "batch",
+    "severity": "info"
+  },
+  "L6_UNMAPPED_TERMS": {
+    "layer": "L6",
+    "scope": "batch",
+    "severity": "info"
+  },
+  "L6_UNUSED_LABELS": {
+    "layer": "L6",
+    "scope": "batch",
+    "severity": "info"
+  },
+  "__order__": [
+    "L0_SOURCE_UNREADABLE",
+    "L0_SIGNATURE_MISMATCH",
+    "L0_PARSE_FAILED",
+    "L0_FORMAT_UNSUPPORTED",
+    "L0_PAGE_COUNT_MISMATCH",
+    "L0_TEXT_COVERAGE_LOW",
+    "L0_EMPTY_UNIT",
+    "L0_IMAGE_ONLY_UNIT",
+    "L0_EMPTY_RATIO_HIGH",
+    "L0_TABLE_LOST",
+    "L0_TABLE_CELLS_LOST",
+    "L0_IMAGE_LINK_MISMATCH",
+    "L0_IMAGE_REF_BROKEN",
+    "L0_IMAGE_DROPPED",
+    "L0_GARBLED_TEXT",
+    "L0_PARSER_WARNING",
+    "L1_LABELER_FAILED",
+    "L1_REQUIRED_MISSING",
+    "L1_TYPE_INVALID",
+    "L1_ENUM_INVALID",
+    "L1_CONFIDENCE_RANGE",
+    "L1_DATE_FORMAT",
+    "L1_PATTERN_MISMATCH",
+    "L1_EVIDENCE_MISSING",
+    "L1_DUPLICATE_FIELD",
+    "L1_UNKNOWN_FIELD",
+    "L1_LOT_ID_UNCOMMON",
+    "L1_FORMAT_NORMALIZED",
+    "L2_AXIS_UNKNOWN",
+    "L2_LABEL_NOT_IN_TAXONOMY",
+    "L2_HIERARCHY_INCONSISTENT",
+    "L2_MUTEX_VIOLATION",
+    "L2_STATUS_MISMATCH",
+    "L2_UNKNOWN_OVERUSE",
+    "L2_ALL_NOT_APPLICABLE",
+    "L2_TAXONOMY_STALE",
+    "L3_SPAN_OFFSET_INVALID",
+    "L3_SPAN_NOT_FOUND",
+    "L3_SPAN_WRONG_UNIT",
+    "L3_SPAN_TOO_SHORT",
+    "L3_SPAN_TOO_LONG",
+    "L3_EXTRACT_NOT_IN_QUOTE",
+    "L3_NOT_SUPPORTED",
+    "L3_PARTIALLY_SUPPORTED",
+    "L3_JUDGE_FAILED",
+    "L3_JUDGE_SKIPPED",
+    "L4_AXIS_COMBO_VIOLATION",
+    "L4_TITLE_LABEL_MISMATCH",
+    "L4_SYNONYM_SUGGEST",
+    "L4_RULE_DRAFT_HIT",
+    "L5_DUP_GROUP_DISAGREE",
+    "L6_DRIFT_HIGH",
+    "L6_UNKNOWN_RATE_HIGH",
+    "L6_PASS_RATE_DROP",
+    "L6_UNUSED_LABELS",
+    "L6_UNMAPPED_TERMS",
+    "L6_SAMPLE_TOO_SMALL"
+  ]
+}

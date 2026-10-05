@@ -1,0 +1,30 @@
+{
+  ".claude/skills/BEOL-labeling-feedback/scripts/collect_inbox.py": {
+    "help": "usage: collect_inbox.py [-h] --workspace WORKSPACE --run RUN [--downloads DOWNLOADS]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n  --downloads DOWNLOADS\n",
+    "status": "ok"
+  },
+  ".claude/skills/BEOL-labeling-feedback/scripts/wait_review_done.py": {
+    "help": "usage: wait_review_done.py [-h] --workspace WORKSPACE --run RUN [--check] [--timeout TIMEOUT] [--interval INTERVAL]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n  --check\n  --timeout TIMEOUT\n  --interval INTERVAL\n",
+    "status": "ok"
+  },
+  ".claude/skills/BEOL-labeling-workflow/scripts/build_workflow.py": {
+    "help": "usage: build_workflow.py [-h] [--workspace WORKSPACE] [--run RUN] [--out OUT]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n  --out OUT\n",
+    "status": "ok"
+  },
+  ".claude/skills/BEOL-labeling/scripts/init_workspace.py": {
+    "help": "usage: init_workspace.py [-h] --input INPUT [--workspace WORKSPACE] [--force] [--skip-duplicates]\n\noptions:\n  -h, --help            show this help message and exit\n  --input INPUT\n  --workspace WORKSPACE\n  --force               pipeline.json이 있어도 다시 쓴다\n  --skip-duplicates     injested-file-list와 겹치는 파일명을 pipeline.json skip_file_names에 넣는다\n",
+    "status": "ok"
+  },
+  ".claude/skills/BEOL-labeling/scripts/record_ingested.py": {
+    "help": "usage: record_ingested.py [-h] --workspace WORKSPACE [--run RUN]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n",
+    "status": "ok"
+  },
+  ".claude/skills/BEOL-labeling/scripts/serve_screens.py": {
+    "reason": "NO_ARGPARSE",
+    "status": "skipped"
+  },
+  ".claude/skills/BEOL-labeling/scripts/summary.py": {
+    "help": "usage: summary.py [-h] --workspace WORKSPACE [--run RUN]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n",
+    "status": "ok"
+  }
+}
