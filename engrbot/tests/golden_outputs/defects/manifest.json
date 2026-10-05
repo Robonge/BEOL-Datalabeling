@@ -1,0 +1,70 @@
+{
+  "adapter": "bundle_files",
+  "counts": {
+    "AUTO_FIX": 5,
+    "PASS": 89,
+    "REJECT": 2,
+    "REVIEW": 4,
+    "files": 12,
+    "records": 100
+  },
+  "finished_at": "<TS>",
+  "input_fingerprint": "49ef06ca3be3169e237665b8d92f0c69e6dd5b31be238a4c83f0754d24012006",
+  "judge": {
+    "cache_hits": 0,
+    "calls": 88,
+    "examples": {
+      "calls_with_examples": 0,
+      "excluded_external": 0,
+      "excluded_same_source": 0,
+      "loaded": 0,
+      "used": 0
+    },
+    "failed": 0,
+    "sent_params": {
+      "model": "mock",
+      "transport": "mock"
+    }
+  },
+  "judge_ran": true,
+  "judge_skip_reason": null,
+  "labeler_run_id": "20261004T000000-fx01",
+  "layers": [
+    "L0",
+    "L1",
+    "L2",
+    "L3A",
+    "L3B",
+    "L4",
+    "L5",
+    "L6"
+  ],
+  "ledger": {
+    "candidates_loaded": 0,
+    "candidates_version": null,
+    "dir": "qa/ledger",
+    "examples_loaded": 0,
+    "examples_sha": null,
+    "golden_total": 0,
+    "intake": null,
+    "intake_error": null
+  },
+  "policy_sha256": "36a9cce29dfd84fb365dc466e5e0e5be5dcb92f36bc4fdc7e1da07708fa934bf",
+  "qa_run_id": "<QA_RUN_ID>",
+  "schema_sha256": "a531b27640824fa176108f736e95acb3fbcf2b4f3c7d9ec756df52349a6a15d3",
+  "started_at": "<TS>",
+  "versions": {
+    "labeler_prompt": {
+      "classify": [
+        "fx-classify"
+      ],
+      "label": [
+        "fx-label"
+      ]
+    },
+    "policy": "2026-10-04.1+36a9cce29dfd",
+    "reviewer": "0.1.0+a5d97062+9af26808+mock",
+    "schema": "2026-10-04.1+a531b2764082",
+    "taxonomy": "db61bd8ae6253a0b20351a33f60ec4a2aec4dee4503c6c58176852377cc609cc"
+  }
+}

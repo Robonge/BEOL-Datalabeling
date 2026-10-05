@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>검수봇 검토 화면</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --surface:#F6F8FC; --surface-2:#E4EAF3;
+  --text-strong:#1E2D4A; --text-muted:#6F7F99;
+  --danger:#C25450; --warning:#C99A3B; --success:#3B8A6E;
+  --radius-sm:8px; --radius:12px;
+  --font:'Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);font-size:13.5px;line-height:1.55;letter-spacing:-0.02em;color:var(--text-strong);background:var(--bg-base)}
+h1,h2,h3,h4{margin:0;font-weight:700}
+button,input,textarea,select{font:inherit;letter-spacing:inherit;color:inherit}
+.mono{font-family:var(--mono);letter-spacing:-0.01em}
+.muted{color:var(--text-muted)}
+.app{display:grid;grid-template-rows:auto auto 1fr;height:100vh}
+.bar{display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--bg-grid);flex-wrap:wrap}
+.bar h1{font-size:18px;letter-spacing:-0.055em}
+.bar .meta{font-size:11.5px;color:var(--text-muted)}
+.bar .sp{flex:1}
+.bar input{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--surface);width:150px}
+.tabs{display:flex;gap:6px;padding:8px 20px;border-bottom:1px solid var(--bg-grid);flex-wrap:wrap}
+.tab{border:1px solid var(--bg-grid);background:transparent;border-radius:999px;padding:4px 14px;cursor:pointer;font-weight:700}
+.tab.on{background:var(--primary);border-color:var(--primary);color:#EDF1F7}
+.tab .n{font-family:var(--mono);margin-left:6px;opacity:.8}
+.cols{display:grid;grid-template-columns:340px 1fr;min-height:0}
+.cols.full{grid-template-columns:1fr}
+.list{border-right:1px solid var(--bg-grid);display:flex;flex-direction:column;min-height:0}
+.filters{padding:10px 12px;border-bottom:1px solid var(--bg-grid)}
+.filters .lbl{font-size:11px;color:var(--text-muted);margin-bottom:6px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{border:1px solid var(--bg-grid);background:transparent;border-radius:999px;padding:2px 10px;font-size:11.5px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#EDF1F7}
+.chip .n{font-family:var(--mono);margin-left:5px;opacity:.75}
+.items{overflow:auto;padding:8px 10px 30px;flex:1}
+.grp{border-left:3px solid var(--primary-soft);margin:8px 0;padding-left:6px;background:rgba(107,130,196,.06)}
+.grp .gh{font-size:10.5px;color:var(--primary);padding:3px 4px 1px}
+.item{display:block;width:100%;text-align:left;border:1px solid transparent;background:var(--surface);border-radius:var(--radius-sm);padding:7px 10px;margin:4px 0;cursor:pointer}
+.item.on{border-color:var(--primary);box-shadow:0 5px 16px rgba(53,70,144,.14)}
+.item .l1{display:flex;gap:8px;font-size:11px;color:var(--text-muted)}
+.item .l1 .id{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .l2{font-weight:700;font-size:13px;margin:2px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tags{display:flex;gap:4px;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:9.5px;border:1px solid var(--bg-grid);border-radius:5px;padding:0 5px;color:var(--text-muted)}
+.tag.critical{border-color:var(--danger);color:var(--danger)}
+.tag.major{border-color:var(--warning);color:#A97C1F}
+.done{font-size:10.5px;font-weight:700;border-radius:999px;padding:0 7px;border:1px solid var(--success);color:var(--success)}
+.detail{overflow:auto;min-height:0;padding:18px 24px 60px}
+.dh h2{font-size:19px;letter-spacing:-0.05em;word-break:break-all}
+.dh .path{font-size:11.5px;color:var(--text-muted);word-break:break-all}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start;margin-top:12px}
+.card{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
+.card h3{font-size:14px;margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.text{white-space:pre-wrap;word-break:break-word;line-height:1.7;max-height:460px;overflow:auto}
+mark{background:none;color:inherit;border-radius:3px;padding:0 1px}
+mark.q{background:rgba(194,84,80,.22);box-shadow:inset 0 -2px 0 var(--danger)}
+mark.s{background:rgba(74,95,168,.14);box-shadow:inset 0 -2px 0 var(--primary)}
+.imgs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.imgs img{height:92px;max-width:170px;object-fit:contain;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);cursor:zoom-in}
+.iss{border-top:1px dashed var(--bg-grid);padding:6px 0}
+.iss:first-of-type{border-top:0}
+.iss .c{font-family:var(--mono);font-size:11.5px;font-weight:700}
+.iss .r{font-size:12.5px}
+.iss .fx{font-size:12px;color:var(--text-muted)}
+.fld{border-top:1px dashed var(--bg-grid);padding:9px 0}
+.fld:first-of-type{border-top:0}
+.fld.prob{background:rgba(201,154,59,.08);margin:0 -8px;padding:9px 8px;border-radius:var(--radius-sm)}
+.fh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.fh b{font-size:13px}
+.badge{font-size:10px;border:1px solid var(--bg-grid);border-radius:5px;padding:0 5px;color:var(--text-muted)}
+.badge.prob{border-color:var(--warning);color:#A97C1F}
+.v{display:inline-block;font-size:12px;border-radius:6px;padding:0 8px;border:1px solid var(--primary);background:rgba(74,95,168,.12);color:var(--primary-deep);margin-right:4px}
+.v.na{border-color:var(--bg-grid);background:transparent;color:var(--text-muted)}
+.ev{font-size:12px;border-left:2px solid var(--warning);padding-left:8px;margin:3px 0;word-break:break-word}
+.defs{font-size:11.5px;margin:3px 0}
+.defs summary{cursor:pointer;color:var(--primary)}
+.defs dl{margin:4px 0 0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
+.defs dt{font-weight:700}
+.defs dd{margin:0;color:var(--text-muted)}
+.opts{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.opt{border:1px solid var(--bg-grid);background:transparent;border-radius:var(--radius-sm);padding:2px 10px;cursor:pointer;font-size:12px}
+.opt[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#EDF1F7;font-weight:700}
+.edit{margin-top:6px;display:flex;flex-direction:column;gap:5px}
+.edit .vals{display:flex;gap:4px 10px;flex-wrap:wrap;font-size:12px}
+.edit textarea,.edit input[type=text],.edit select,.pin input,.pin select,.pin textarea{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--bg-base);width:100%}
+.edit textarea{height:52px}
+.btn{border:1px solid var(--bg-grid);background:var(--surface);border-radius:var(--radius-sm);padding:6px 12px;cursor:pointer;font-weight:700;font-size:12.5px}
+.btn.primary{background:var(--primary-deep);color:#EDF1F7;border-color:var(--primary-deep)}
+.btn.sm{padding:3px 9px;font-size:11.5px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{border:1px solid var(--bg-grid);padding:4px 8px;text-align:left;vertical-align:top;word-break:break-word}
+th{background:var(--surface-2)}
+.wide{padding:16px 24px 60px;overflow:auto;min-height:0}
+.agrp summary{cursor:pointer;font-weight:700;font-size:14px}
+.agrp .meta{font-size:12px;color:var(--text-muted);margin-left:8px;font-weight:400}
+.pin{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:6px}
+.note{font-size:12px;color:var(--text-muted);border:1px dashed var(--bg-grid);border-radius:var(--radius-sm);padding:5px 9px;margin-bottom:8px}
+.emptystate{max-width:520px;margin:14vh auto;text-align:center;color:var(--text-muted)}
+dialog{border:1px solid var(--bg-grid);border-radius:var(--radius);background:var(--surface);width:min(640px,92vw);padding:18px}
+dialog textarea{width:100%;height:240px;font-family:var(--mono);font-size:12px}
+.zoom{position:fixed;inset:0;background:rgba(30,45,74,.7);display:none;align-items:center;justify-content:center;z-index:50;cursor:zoom-out}
+.zoom.on{display:flex}
+.zoom img{max-width:92vw;max-height:92vh;background:var(--bg-base)}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--text-strong);color:#EDF1F7;padding:8px 14px;border-radius:var(--radius-sm);font-size:12.5px;opacity:0;pointer-events:none;z-index:60}
+.toast.on{opacity:1}
+@media (max-width:1180px){ .two{grid-template-columns:1fr} }
+@media (max-width:860px){ .app{height:auto} .cols{grid-template-columns:1fr} .items{max-height:260px} .pin{grid-template-columns:1fr 1fr} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="zoom" id="zoom" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status"></div>
+<dialog id="dlg">
+  <h3>결정 JSON 텍스트</h3>
+  <p id="dlgP" class="muted"></p>
+  <textarea id="dlgTa" readonly aria-label="결정 JSON"></textarea>
+  <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" id="dlgSel" type="button">전체 선택</button>
+    <button class="btn primary" id="dlgClose" type="button">닫기</button>
+  </div>
+</dialog>
+
+<script>
+const DATA = {"answers_allowed": ["O", "X", "N/A"], "approved_rules": [], "autofix": [], "axes": [{"definition": "논의 대상 배선층·비아층", "kind": "분류", "multi": true, "name": "구조/레이어", "values": [{"definition": "해당 번호 금속층", "name": "M0", "parent": null}, {"definition": "해당 번호 금속층", "name": "M1", "parent": null}, {"definition": "해당 번호 금속층", "name": "M2", "parent": null}, {"definition": "해당 번호 금속층", "name": "M3", "parent": null}, {"definition": "", "name": "Mx", "parent": null}, {"definition": "해당 번호 비아층", "name": "V0", "parent": null}, {"definition": "해당 번호 비아층", "name": "V1", "parent": null}, {"definition": "해당 번호 비아층", "name": "V2", "parent": null}, {"definition": "해당 번호 비아층", "name": "V3", "parent": null}, {"definition": "", "name": "Vx", "parent": null}, {"definition": "", "name": "JHV", "parent": null}]}, {"definition": "공정 단계. Patterning·Material과 독립", "kind": "분류", "multi": true, "name": "공정 모듈", "values": [{"definition": "노광·현상·overlay·litho CD", "name": "Litho", "parent": null}, {"definition": "trench·via 식각, hardmask open, strip", "name": "Etch", "parent": null}, {"definition": "PVD·CVD·ALD, seed, 도금(ECP), 금속·barrier ", "name": "Metal", "parent": null}, {"definition": "CCP, Cu CMP, API, node분리, node미분리", "name": "CMP", "parent": null}, {"definition": "식각·CMP 후 세정", "name": "Clean", "parent": null}, {"definition": "IMD, HDLK, HCLK, low-k dielectric, PID", "name": "CVD", "parent": null}]}, {"definition": "사내 제품·세대 코드.", "kind": "분류", "multi": true, "name": "제품·세대", "values": [{"definition": "", "name": "SF1.4", "parent": null}, {"definition": "", "name": "SF1.0", "parent": null}, {"definition": "", "name": "SF0.7", "parent": null}, {"definition": "", "name": "SF2", "parent": null}, {"definition": "", "name": "SF2X", "parent": null}]}, {"definition": "변경 변수와 원인 범주를 모두 붙인다", "kind": "분류", "multi": true, "name": "REMSPC", "values": [{"definition": "마스크·레티클·OPC", "name": "Reticle", "parent": null}, {"definition": "장비·챔버·하드웨어·PM", "name": "Equipment", "parent": null}, {"definition": "소재 변경", "name": "Materials", "parent": null}, {"definition": "integration 구조·공정 순서", "name": "Scheme", "parent": null}, {"definition": "레시피 조건", "name": "Process", "parent": null}, {"definition": "산포·재현성·공정 제어", "name": "Controllability", "parent": null}]}, {"definition": "패터닝 방식", "kind": "분류", "multi": true, "name": "Patterning", "values": [{"definition": "", "name": "EUV-SAUP", "parent": null}, {"definition": "", "name": "EUV-SET", "parent": null}, {"definition": "", "name": "ArF-SET", "parent": null}, {"definition": "ArF litho-etch 2회 이중 패터닝", "name": "ArF-LELE", "parent": null}]}, {"definition": "막 재료 범주", "kind": "분류", "multi": true, "name": "Material", "values": [{"definition": "층간 절연막(low-k, ULK, cap)", "name": "IMD", "parent": null}, {"definition": "barrier metal과 liner", "name": "BM/Liner", "parent": null}, {"definition": "배선 금속 자체", "name": "Metallization", "parent": null}]}, {"definition": "전기적 불량 유형. 하위가 불분명하면 상위만", "kind": "분류", "multi": true, "name": "불량 모드", "values": [{"definition": "단선", "name": "Open", "parent": null}, {"definition": "인접 배선 단락, leakage spec 초과", "name": "Short", "parent": null}, {"definition": "신뢰성 열화", "name": "Reliability", "parent": null}, {"definition": "전자이동", "name": "EM", "parent": "Reliability"}, {"definition": "절연막 시간 의존 파괴", "name": "TDDB", "parent": "Reliability"}, {"definition": "spec 내 동작하나 전기 특성 이탈", "name": "Parametric", "parent": null}, {"definition": "배선 저항 산포·상승", "name": "Rs 산포", "parent": "Parametric"}, {"definition": "", "name": "MHC", "parent": null}, {"definition": "Via 저항 상승, Via Rc 상승", "name": "Via Rc high", "parent": "MHC"}, {"definition": "Line 저항 상승, CMBSRP 저항 상승", "name": "Line R high", "parent": "MHC"}]}, {"definition": "물리적 메커니즘. 불량 모드와 별개", "kind": "분류", "multi": true, "name": "물리 현상", "values": [{"definition": "충진 내부 공극, seam", "name": "Void", "parent": null}, {"definition": "금속 잔류로 인접 배선 연결", "name": "metal bridge", "parent": null}, {"definition": "식각 미완으로 하부층 미노출", "name": "not open", "parent": null}, {"definition": "연마 부족 잔류", "name": "unCMP", "parent": null}, {"definition": "hardmask 침식·소실", "name": "hardmask loss", "parent": null}, {"definition": "넓은 배선 상부 과연마", "name": "dishing", "parent": null}, {"definition": "인접 패턴 CD 비대칭", "name": "CD imbalance", "parent": null}, {"definition": "CD 감소로 인한 어떠한 불량 발생 혹은 수율 개선, ET결과의 차이", "name": "CD small", "parent": null}, {"definition": "WF map의 CD산포 불량, CD의 3sigma 증가 등", "name": "CD 산포불량", "parent": null}]}, {"definition": "조건별로 엇갈리면 모두 붙인다", "kind": "상태", "multi": true, "name": "결과", "values": [{"definition": "개선", "name": "improved", "parent": null}, {"definition": "악화", "name": "degraded", "parent": null}, {"definition": "차이 없음", "name": "neutral", "parent": null}, {"definition": "판단 불가", "name": "inconclusive", "parent": null}]}, {"definition": "하나라도 채택이면 adopted, 전부 기각이면 rejected, 평가는 있으나 결론 미기재면 pending, 평가 내용이 없으면 해당 없음", "kind": "상태", "multi": false, "name": "의사결정 상태", "values": [{"definition": "채택", "name": "adopted", "parent": null}, {"definition": "기각", "name": "rejected", "parent": null}, {"definition": "미결", "name": "pending", "parent": null}]}], "codes": {}, "files": {}, "images_per_chunk": 4, "kind": "qa_review", "labeler_run_id": "20261004T000000-fx01", "na": "해당 없음", "proposals": [{"examples": ["4956c195dc558897:ppt/slides/slide2.xml", "ce09a73e8cac9c8c:ppt/slides/slide10.xml", "ce09a73e8cac9c8c:ppt/slides/slide3.xml"], "kind": "TERM", "metric": {"count": 3, "n": 4, "name": "lift", "threshold": 1.5, "value": 1.55}, "paste_row": null, "proposal_id": "244300bd343c0c4f", "subject": {"term": "고온"}, "target": "term:고온"}, {"examples": ["205f6d2f7e106e07:ppt/slides/slide3.xml", "ce09a73e8cac9c8c:ppt/slides/slide5.xml", "ce09a73e8cac9c8c:ppt/slides/slide6.xml", "ce09a73e8cac9c8c:ppt/slides/slide7.xml"], "kind": "TERM", "metric": {"count": 4, "n": 5, "name": "lift", "threshold": 1.5, "value": 1.653333}, "paste_row": null, "proposal_id": "7c1c0f3720c67f21", "subject": {"term": "보고서"}, "target": "term:보고서"}, {"examples": ["205f6d2f7e106e07:ppt/slides/slide8.xml", "2130fb37bef66164:ppt/slides/slide6.xml", "4956c195dc558897:ppt/slides/slide3.xml", "4956c195dc558897:ppt/slides/slide6.xml", "ce09a73e8cac9c8c:ppt/slides/slide10.xml"], "kind": "TERM", "metric": {"count": 6, "n": 8, "name": "lift", "threshold": 1.5, "value": 1.55}, "paste_row": null, "proposal_id": "2ea679b18342fdb0", "subject": {"term": "분류해"}, "target": "term:분류해"}, {"examples": ["205f6d2f7e106e07:ppt/slides/slide3.xml", "ce09a73e8cac9c8c:ppt/slides/slide5.xml", "ce09a73e8cac9c8c:ppt/slides/slide6.xml", "ce09a73e8cac9c8c:ppt/slides/slide7.xml"], "kind": "TERM", "metric": {"count": 4, "n": 5, "name": "lift", "threshold": 1.5, "value": 1.653333}, "paste_row": null, "proposal_id": "b3cab21d98055b98", "subject": {"term": "양식"}, "target": "term:양식"}, {"examples": ["4956c195dc558897:ppt/slides/slide2.xml", "ce09a73e8cac9c8c:ppt/slides/slide10.xml", "ce09a73e8cac9c8c:ppt/slides/slide3.xml"], "kind": "TERM", "metric": {"count": 3, "n": 4, "name": "lift", "threshold": 1.5, "value": 1.55}, "paste_row": null, "proposal_id": "7147b6ebce142f01", "subject": {"term": "영향은"}, "target": "term:영향은"}, {"examples": ["205f6d2f7e106e07:ppt/slides/slide8.xml", "2130fb37bef66164:ppt/slides/slide6.xml", "4956c195dc558897:ppt/slides/slide3.xml", "4956c195dc558897:ppt/slides/slide6.xml", "ce09a73e8cac9c8c:ppt/slides/slide10.xml"], "kind": "TERM", "metric": {"count": 6, "n": 8, "name": "lift", "threshold": 1.5, "value": 1.55}, "paste_row": null, "proposal_id": "9a313040e59f36df", "subject": {"term": "요인으로"}, "target": "term:요인으로"}, {"examples": ["205f6d2f7e106e07:ppt/slides/slide8.xml", "2130fb37bef66164:ppt/slides/slide6.xml", "4956c195dc558897:ppt/slides/slide3.xml", "4956c195dc558897:ppt/slides/slide6.xml", "ce09a73e8cac9c8c:ppt/slides/slide10.xml"], "kind": "TERM", "metric": {"count": 6, "n": 8, "name": "lift", "threshold": 1.5, "value": 1.55}, "paste_row": null, "proposal_id": "58839d05b508c1da", "subject": {"term": "원인"}, "target": "term:원인"}, {"examples": ["4956c195dc558897:ppt/slides/slide2.xml", "ce09a73e8cac9c8c:ppt/slides/slide10.xml", "ce09a73e8cac9c8c:ppt/slides/slide3.xml"], "kind": "TERM", "metric": {"count": 3, "n": 4, "name": "lift", "threshold": 1.5, "value": 1.55}, "paste_row": null, "proposal_id": "1d82e4379aa35796", "subject": {"term": "필요"}, "target": "term:필요"}, {"examples": ["205f6d2f7e106e07:ppt/slides/slide3.xml", "205f6d2f7e106e07:ppt/slides/slide8.xml", "2130fb37bef66164:ppt/slides/slide2.xml", "4956c195dc558897:ppt/slides/slide4.xml", "ce09a73e8cac9c8c:ppt/slides/slide5.xml"], "kind": "TERM", "metric": {"count": 6, "n": 8, "name": "lift", "threshold": 1.5, "value": 1.55}, "paste_row": null, "proposal_id": "13d3d859599a4229", "subject": {"term": "확정"}, "target": "term:확정"}, {"examples": ["205f6d2f7e106e07:ppt/slides/slide3.xml", "205f6d2f7e106e07:ppt/slides/slide8.xml", "2130fb37bef66164:ppt/slides/slide2.xml", "4956c195dc558897:ppt/slides/slide4.xml", "ce09a73e8cac9c8c:ppt/slides/slide5.xml"], "kind": "TERM", "metric": {"count": 6, "n": 8, "name": "lift", "threshold": 1.5, "value": 1.55}, "paste_row": null, "proposal_id": "aff63c7260926250", "subject": {"term": "회의에서"}, "target": "term:회의에서"}], "qa_run_id": "<QA_RUN_ID>", "questions": [{"qid": "Q-COM-001", "text": "이 chunk가 BEOL interconnect 공정에 관련한 내용이 맞는가?"}], "records": [], "unknown": "unknown"};
+
+(function(){
+  "use strict";
+  var root = document.getElementById("root");
+
+  function h(tag, attrs, kids){
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs){
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else if (k.slice(0,2) === "on") e.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function(c){ if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("on");
+    clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("on"); }, 2200);
+  }
+
+  if (!DATA || DATA.kind !== "qa_review"){
+    root.appendChild(h("div", {class:"emptystate"}, [
+      h("h2", {text:"표시할 데이터가 없습니다"}),
+      h("p", {text:"이 화면은 검수봇 run 또는 review 명령이 데이터를 채워 넣은 뒤에 사용합니다."})
+    ]));
+    return;
+  }
+
+  var records = DATA.records || [];
+  var byId = {};
+  records.forEach(function(r){ byId[r.record_id] = r; });
+  var axisDef = {};
+  (DATA.axes || []).forEach(function(a){ axisDef[a.name] = a; });
+  var qtext = {};
+  (DATA.questions || []).forEach(function(q){ qtext[q.qid] = q.text; });
+  var codesDesc = DATA.codes || {};
+  var SECTION_NAMES = {REVIEW:"REVIEW 대기열", PASS_SAMPLE:"PASS 표본", REJECT:"REJECT 목록", AUTO_FIX:"AUTO_FIX"};
+
+  // ---------- 상태(브라우저 자동 저장) ----------
+  var KEY = "engrbot_review_" + DATA.qa_run_id;
+  var st = {reviewer:"", fields:{}, rejects:{}, autofix:{}, props:{}};
+  var tab = "REVIEW", selId = null, activeCodes = {};
+  function load(){
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      ["fields","rejects","autofix","props"].forEach(function(k){ if (o[k]) st[k] = o[k]; });
+      if (typeof o.reviewer === "string") st.reviewer = o.reviewer;
+    } catch(e){}
+  }
+  var saveT = null;
+  function save(){
+    clearTimeout(saveT);
+    saveT = setTimeout(function(){
+      try { window.localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){}
+    }, 150);
+  }
+  load();
+
+  // ---------- 봇 값 표시 ----------
+  function fieldKind(f){ return f.split(":")[0]; }
+  function fieldKey(f){ return f.slice(f.indexOf(":") + 1); }
+  function botValue(r, f){
+    var k = fieldKind(f), key = fieldKey(f), L = r.labels || {};
+    if (k === "axis"){ var a = (L.axes || {})[key]; return a ? {value:a.values.slice(), quote:a.quote || "", conf:a.confidence, status:a.status} : null; }
+    if (k === "answer"){ var q = (L.answers || {})[key]; return q ? {value:q.answer, quote:q.quote || "", conf:q.confidence} : null; }
+    if (k === "extract"){
+      var ex = (L.extracted || []).filter(function(e){ return e.field === f; })[0];
+      return ex ? {value:ex.value, quote:ex.quote || "", conf:null} : null;
+    }
+    return null;
+  }
+  function fieldLabel(f){
+    var k = fieldKind(f), key = fieldKey(f);
+    if (k === "axis") return "축 · " + key;
+    if (k === "answer") return "질문 · " + key + (qtext[key] ? " — " + qtext[key] : "");
+    if (k === "extract") return "추출 · " + key;
+    return f;
+  }
+  function valueDef(axis, v){
+    var a = axisDef[axis];
+    if (!a) return "";
+    var x = (a.values || []).filter(function(y){ return y.name === v; })[0];
+    return x ? (x.definition || "") : "";
+  }
+
+  // ---------- 본문 강조 ----------
+  function pieces(q){
+    var out = [];
+    (q || "").split(/\n/).forEach(function(line){
+      line.split(/\s*(?:…|\.{3,})\s*/).forEach(function(p){ p = p.trim(); if (p.length >= 2) out.push(p); });
+    });
+    return out;
+  }
+  function highlighted(text, strong, weak){
+    var ranges = [];
+    function add(qs, cls){
+      qs.forEach(function(q){ pieces(q).forEach(function(p){
+        var i = text.indexOf(p);
+        if (i >= 0) ranges.push({s:i, e:i + p.length, c:cls});
+      }); });
+    }
+    add(strong, "q"); add(weak, "s");
+    ranges.sort(function(a, b){ return a.s - b.s || (a.c === "q" ? -1 : 1); });
+    var box = h("div", {class:"text"}), pos = 0;
+    ranges.forEach(function(r){
+      if (r.s < pos) return;
+      if (r.s > pos) box.appendChild(document.createTextNode(text.slice(pos, r.s)));
+      box.appendChild(h("mark", {class:r.c, text:text.slice(r.s, r.e)}));
+      pos = r.e;
+    });
+    if (pos < text.length) box.appendChild(document.createTextNode(text.slice(pos)));
+    return box;
+  }
+
+  // ---------- 결정 출력(4.5절 형식) ----------
+  function fieldState(rid, f){ return (st.fields[rid] || {})[f]; }
+  function setField(rid, f, patch){
+    st.fields[rid] = st.fields[rid] || {};
+    var cur = st.fields[rid][f] || {};
+    for (var k in patch) cur[k] = patch[k];
+    st.fields[rid][f] = cur;
+    save();
+  }
+  function buildOutput(){
+    var decisions = [], rejects = [], autofix = [], props = [];
+    records.forEach(function(r){
+      if (r.section !== "REVIEW" && r.section !== "PASS_SAMPLE") return;
+      r.fields.forEach(function(f){
+        var s = fieldState(r.record_id, f);
+        if (!s || !s.decision) return;
+        var b = botValue(r, f) || {value:null, quote:""};
+        var d = {record_id:r.record_id, field:f, decision:s.decision, value:null, quote:null};
+        if (s.decision === "confirm"){ d.value = b.value; d.quote = b.quote; }
+        else if (s.decision === "correct"){ d.value = s.value !== undefined ? s.value : b.value; d.quote = s.quote !== undefined ? s.quote : b.quote; }
+        decisions.push(d);
+      });
+    });
+    records.forEach(function(r){
+      if (r.section !== "REJECT") return;
+      var s = st.rejects[r.record_id];
+      if (!s || !s.decision) return;
+      var corr = [];
+      if (s.decision === "correct"){
+        r.fields.forEach(function(f){
+          var c = (s.corr || {})[f];
+          if (c && c.on){
+            var b = botValue(r, f) || {value:null, quote:""};
+            corr.push({field:f, value:c.value !== undefined ? c.value : b.value, quote:c.quote !== undefined ? c.quote : b.quote});
+          }
+        });
+      }
+      rejects.push({record_id:r.record_id, decision:s.decision, corrections:corr});
+    });
+    (DATA.autofix || []).forEach(function(g){
+      var s = st.autofix[g.rule] || {};
+      var ex = Object.keys(s.except || {}).filter(function(k){ return s.except[k]; }).sort();
+      var dec = g.approved ? (ex.length ? "approve" : null) : (s.decision || null);
+      if (dec) autofix.push({rule:g.rule, decision:dec, except:ex});
+    });
+    (DATA.proposals || []).forEach(function(p){
+      var s = st.props[p.proposal_id];
+      if (!s || !s.decision) return;
+      var d = {proposal_id:p.proposal_id, decision:s.decision, as:null, note:s.note || ""};
+      if (p.kind === "TERM"){
+        d.as = s.as || null;
+        d.axis = s.axis || ""; d.parent = s.parent || ""; d.canonical = s.canonical || "";
+      }
+      props.push(d);
+    });
+    return {kind:"qa_decisions", qa_run_id:DATA.qa_run_id, reviewer:st.reviewer || "",
+            decisions:decisions, reject_decisions:rejects, autofix_decisions:autofix, proposal_decisions:props};
+  }
+  function download(){
+    var text = JSON.stringify(buildOutput(), null, 2);
+    var name = "qa_decisions_" + DATA.qa_run_id + ".json";
+    try {
+      var blob = new Blob([text], {type:"application/json"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+      toast(name + " 내려받기를 시작했습니다. qa/inbox/에 넣으세요");
+    } catch(e){
+      showText(text, "내려받기가 막혔습니다. 아래 텍스트를 " + name + " 파일로 저장해 qa/inbox/에 넣으세요.");
+    }
+  }
+  function showText(text, msg){
+    var dlg = document.getElementById("dlg"), ta = document.getElementById("dlgTa");
+    document.getElementById("dlgP").textContent = msg || "";
+    ta.value = text;
+    try { dlg.showModal(); } catch(e){ dlg.setAttribute("open", ""); }
+    ta.focus(); ta.select();
+  }
+  function copyText(){
+    var text = JSON.stringify(buildOutput(), null, 2);
+    function fallback(){ showText(text, "자동 복사가 막혀 있습니다. 텍스트를 선택해 복사(Ctrl+C)하세요."); }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ toast("텍스트로 복사했습니다"); }, fallback);
+        return;
+      }
+    } catch(e){}
+    fallback();
+  }
+  document.getElementById("dlgClose").addEventListener("click", function(){
+    var d = document.getElementById("dlg"); try { d.close(); } catch(e){ d.removeAttribute("open"); }
+  });
+  document.getElementById("dlgSel").addEventListener("click", function(){
+    var ta = document.getElementById("dlgTa"); ta.focus(); ta.select();
+  });
+  var zoom = document.getElementById("zoom");
+  zoom.addEventListener("click", function(){ zoom.classList.remove("on"); zoom.textContent = ""; });
+  function openZoom(url){
+    zoom.textContent = "";
+    zoom.appendChild(h("img", {src:url, alt:"확대 이미지"}));
+    zoom.classList.add("on");
+  }
+
+  // ---------- 진행 표시 ----------
+  function isDone(r){
+    if (r.section === "REJECT") return !!(st.rejects[r.record_id] || {}).decision;
+    if (r.section === "AUTO_FIX") return false;
+    return r.fields.length > 0 && r.fields.every(function(f){ var s = fieldState(r.record_id, f); return s && s.decision; });
+  }
+  function sectionRecords(sec){
+    return records.filter(function(r){ return sec === "REVIEW" ? (r.section === "REVIEW" || r.section === "PASS_SAMPLE") : r.section === sec; });
+  }
+
+  // ---------- 그리기 ----------
+  function render(){
+    root.textContent = "";
+    var app = h("div", {class:"app"});
+    var nReview = sectionRecords("REVIEW"), nReject = sectionRecords("REJECT");
+    var done = nReview.concat(nReject).filter(isDone).length;
+    var reviewer = h("input", {type:"text", value:st.reviewer, placeholder:"검토자 식별자", "aria-label":"검토자",
+      oninput:function(e){ st.reviewer = e.target.value; save(); }});
+    app.appendChild(h("div", {class:"bar"}, [
+      h("h1", {text:"검수봇 검토 화면"}),
+      h("span", {class:"meta mono", text:"검수 실행 " + DATA.qa_run_id + " · 라벨러 실행 " + (DATA.labeler_run_id || "-")}),
+      h("span", {class:"sp"}),
+      h("span", {class:"meta", text:"결정 완료 " + done + " / " + (nReview.length + nReject.length)}),
+      reviewer,
+      h("button", {class:"btn primary", type:"button", text:"JSON 내려받기", onclick:download}),
+      h("button", {class:"btn", type:"button", text:"텍스트로 복사", onclick:copyText})
+    ]));
+    var tabs = [["REVIEW", "REVIEW 대기열", nReview.length], ["REJECT", "REJECT 목록", nReject.length],
+                ["AUTO_FIX", "AUTO_FIX", (DATA.autofix || []).length], ["PROPOSALS", "규칙 제안", (DATA.proposals || []).length]];
+    app.appendChild(h("div", {class:"tabs"}, tabs.map(function(t){
+      return h("button", {class:"tab" + (tab === t[0] ? " on" : ""), type:"button", onclick:function(){ tab = t[0]; selId = null; render(); }},
+               [t[1], h("span", {class:"n", text:String(t[2])})]);
+    })));
+    if (tab === "AUTO_FIX") app.appendChild(h("div", {class:"wide"}, [renderAutofix()]));
+    else if (tab === "PROPOSALS") app.appendChild(h("div", {class:"wide"}, [renderProposals()]));
+    else app.appendChild(renderRecordsTab(tab));
+    root.appendChild(app);
+  }
+
+  function renderRecordsTab(sec){
+    var recs = sectionRecords(sec);
+    var counts = {};
+    recs.forEach(function(r){ r.issue_codes.forEach(function(c){ counts[c] = (counts[c] || 0) + 1; }); });
+    var on = Object.keys(activeCodes).filter(function(c){ return activeCodes[c]; });
+    var shown = recs.filter(function(r){ return !on.length || r.issue_codes.some(function(c){ return activeCodes[c]; }); });
+    if (!selId || !byId[selId] || shown.indexOf(byId[selId]) < 0) selId = shown.length ? shown[0].record_id : null;
+    var chips = Object.keys(counts).sort().map(function(c){
+      return h("button", {class:"chip" + (activeCodes[c] ? " on" : ""), type:"button", title:codesDesc[c] || "",
+        onclick:function(){ activeCodes[c] = !activeCodes[c]; render(); }}, [c, h("span", {class:"n", text:String(counts[c])})]);
+    });
+    var items = h("div", {class:"items"});
+    var lastKey = null, box = items;
+    shown.forEach(function(r){
+      var key = null, label = "";
+      if (r.section === "PASS_SAMPLE"){ key = "pass"; label = "PASS 표본"; }
+      else if (r.priority === 2){ key = "file:" + r.file_id; label = "파일 범위 이슈 · " + r.file_name; }
+      else if (r.priority === 3){ key = "failsafe"; label = "judge 미실행·실패만 있는 레코드"; }
+      else if (r.group){ key = "dup:" + r.group; label = "중복 묶음 " + r.group; }
+      if (key !== lastKey){
+        box = key ? h("div", {class:"grp"}, [h("div", {class:"gh", text:label})]) : items;
+        if (key) items.appendChild(box);
+        lastKey = key;
+      }
+      box.appendChild(h("button", {class:"item" + (r.record_id === selId ? " on" : ""), type:"button",
+        onclick:function(){ selId = r.record_id; render(); }}, [
+        h("div", {class:"l1"}, [h("span", {class:"id mono", text:r.record_id}), h("span", {text:"점수 " + r.score}),
+          isDone(r) ? h("span", {class:"done", text:"결정함"}) : null]),
+        h("div", {class:"l2", text:r.file_name + " · 슬라이드 " + (r.slide_no || "-") + " · " + (r.title || "")}),
+        h("div", {class:"tags"}, r.issues.filter(function(i){ return i.severity === "critical" || i.severity === "major"; })
+          .map(function(i){ return h("span", {class:"tag " + i.severity, text:i.code}); }))
+      ]));
+    });
+    if (!shown.length) items.appendChild(h("p", {class:"muted", text:"표시할 레코드가 없습니다."}));
+    var list = h("div", {class:"list"}, [
+      h("div", {class:"filters"}, [h("div", {class:"lbl", text:"이슈 코드로 거르기"}), h("div", {class:"chips"}, chips)]),
+      items
+    ]);
+    var detail = h("div", {class:"detail"}, [selId ? renderRecord(byId[selId]) : h("p", {class:"muted", text:"레코드를 고르세요."})]);
+    return h("div", {class:"cols"}, [list, detail]);
+  }
+
+  function renderRecord(r){
+    var wrap = h("div");
+    wrap.appendChild(h("div", {class:"dh"}, [
+      h("h2", {text:r.file_name + " · 슬라이드 " + (r.slide_no || "-")}),
+      h("div", {class:"path mono", text:r.record_id + " · " + SECTION_NAMES[r.section] + " · 판정 " + r.verdict + " · 점수 " + r.score})
+    ]));
+    var fi = ((DATA.files || {})[r.file_id] || {}).file_issues || [];
+    if (fi.length){
+      wrap.appendChild(h("div", {class:"note"}, ["이 파일의 파일 범위 이슈: "].concat(fi.map(function(x){ return x.code + "(" + x.severity + ") "; }))));
+    }
+    var strong = [], weak = [];
+    r.issues.forEach(function(i){ if (i.quote && (i.severity === "critical" || i.severity === "major")) strong.push(i.quote); });
+    r.fields.forEach(function(f){ var b = botValue(r, f); if (b && b.quote) weak.push(b.quote); });
+    var left = h("div", {class:"card"}, [h("h3", {text:"chunk 본문"}), highlighted(r.text, strong, weak)]);
+    if (r.images.length){
+      left.appendChild(h("div", {class:"imgs"}, r.images.map(function(u){
+        return h("img", {src:u, alt:"슬라이드 이미지", onclick:function(){ openZoom(u); }});
+      })));
+      if (r.image_total > r.images.length) left.appendChild(h("p", {class:"muted", text:"이미지 " + r.image_total + "개 중 " + r.images.length + "개만 표시합니다."}));
+    }
+    var right = h("div");
+    right.appendChild(renderIssues(r));
+    if (r.section === "REJECT") right.appendChild(renderReject(r));
+    else if (r.section === "AUTO_FIX") right.appendChild(h("div", {class:"note", text:"AUTO_FIX 레코드는 AUTO_FIX 탭에서 규칙 단위로 결정합니다."}));
+    else right.appendChild(renderFields(r));
+    wrap.appendChild(h("div", {class:"two"}, [left, right]));
+    return wrap;
+  }
+
+  function renderIssues(r){
+    var card = h("div", {class:"card"}, [h("h3", {text:"이슈와 사유"})]);
+    if (r.judge) card.appendChild(h("div", {class:"note", text:"judge: 항목 " + r.judge.items + " · 지지 " + r.judge.supported +
+      " · 부분 " + r.judge.partial + " · 불지지 " + r.judge.unsupported + " · 실패 " + r.judge.failed}));
+    if (!r.issues.length) card.appendChild(h("p", {class:"muted", text:"이슈가 없습니다."}));
+    r.issues.forEach(function(i){
+      card.appendChild(h("div", {class:"iss"}, [
+        h("div", {}, [h("span", {class:"c", text:i.code}), " ", h("span", {class:"tag " + i.severity, text:i.severity}), " ",
+          h("span", {class:"muted", text:i.field || ""})]),
+        h("div", {class:"r", text:i.reason || codesDesc[i.code] || ""}),
+        i.judge_reason ? h("div", {class:"fx", text:"judge 사유: " + i.judge_reason}) : null,
+        i.quote ? h("div", {class:"ev", text:"인용: " + i.quote}) : null,
+        i.suggested_fix ? h("div", {class:"fx", text:"고칠 방법: " + i.suggested_fix}) : null
+      ]));
+    });
+    return card;
+  }
+
+  function botLine(r, f){
+    var b = botValue(r, f), k = fieldKind(f), key = fieldKey(f);
+    if (!b) return h("div", {class:"muted", text:"봇 값 없음"});
+    var vals = Array.isArray(b.value) ? b.value : [b.value];
+    var line = h("div", {}, vals.map(function(v){
+      var na = v === DATA.na || v === DATA.unknown;
+      return h("span", {class:"v" + (na ? " na" : ""), title:k === "axis" ? valueDef(key, v) : "", text:String(v)});
+    }).concat([b.conf !== null && b.conf !== undefined ? h("span", {class:"muted mono", text:"확신도 " + b.conf}) : null]));
+    var out = h("div", {}, [line]);
+    if (b.quote) out.appendChild(h("div", {class:"ev", text:b.quote}));
+    if (k === "axis" && axisDef[key]){
+      var dl = h("dl");
+      vals.forEach(function(v){ var d = valueDef(key, v); if (d){ dl.appendChild(h("dt", {text:v})); dl.appendChild(h("dd", {text:d})); } });
+      if (dl.childNodes.length) out.appendChild(h("details", {class:"defs"}, [h("summary", {text:"taxonomy 정의"}), dl]));
+    }
+    return out;
+  }
+
+  function valueEditor(r, f, cur, onchange){
+    var k = fieldKind(f), key = fieldKey(f), b = botValue(r, f) || {value:null, quote:""};
+    var value = cur.value !== undefined ? cur.value : b.value;
+    var quote = cur.quote !== undefined ? cur.quote : b.quote;
+    var box = h("div", {class:"edit"});
+    if (k === "axis"){
+      var names = ((axisDef[key] || {}).values || []).map(function(v){ return v.name; }).concat([DATA.na, DATA.unknown]);
+      var sel = Array.isArray(value) ? value.slice() : [];
+      box.appendChild(h("div", {class:"vals"}, names.map(function(n){
+        var cb = h("input", {type:"checkbox", checked:sel.indexOf(n) >= 0 ? "checked" : null, onchange:function(e){
+          var i = sel.indexOf(n);
+          if (e.target.checked && i < 0) sel.push(n);
+          if (!e.target.checked && i >= 0) sel.splice(i, 1);
+          onchange({value:sel.slice()});
+        }});
+        return h("label", {title:valueDef(key, n)}, [cb, " " + n]);
+      })));
+    } else if (k === "answer"){
+      var s = h("select", {"aria-label":"답", onchange:function(e){ onchange({value:e.target.value}); }},
+        (DATA.answers_allowed || []).map(function(a){ return h("option", {value:a, selected:a === value ? "selected" : null, text:a}); }));
+      box.appendChild(s);
+    } else {
+      box.appendChild(h("input", {type:"text", value:value || "", "aria-label":"값", oninput:function(e){ onchange({value:e.target.value}); }}));
+    }
+    box.appendChild(h("textarea", {placeholder:"근거 인용(본문에서 글자 그대로)", "aria-label":"근거 인용",
+      oninput:function(e){ onchange({quote:e.target.value}); }}, [quote || ""]));
+    return box;
+  }
+
+  function renderFields(r){
+    var card = h("div", {class:"card"}, [h("h3", {}, ["필드별 결정",
+      h("button", {class:"btn sm", type:"button", text:"남은 필드 모두 라벨 확정", onclick:function(){
+        r.fields.forEach(function(f){ var s = fieldState(r.record_id, f); if (!s || !s.decision) setField(r.record_id, f, {decision:"confirm"}); });
+        render();
+      }})])]);
+    if (!r.fields.length) card.appendChild(h("p", {class:"muted", text:"결정할 필드가 없습니다."}));
+    var order = r.fields.slice().sort(function(a, b){
+      return (r.problem_fields.indexOf(a) < 0) - (r.problem_fields.indexOf(b) < 0);
+    });
+    order.forEach(function(f){
+      var prob = r.problem_fields.indexOf(f) >= 0;
+      var s = fieldState(r.record_id, f) || {};
+      var row = h("div", {class:"fld" + (prob ? " prob" : "")}, [
+        h("div", {class:"fh"}, [h("b", {text:fieldLabel(f)}), prob ? h("span", {class:"badge prob", text:"이슈"}) : null]),
+        botLine(r, f)
+      ]);
+      var opts = [["confirm", "라벨 확정"], ["correct", "교정"], ["cannot_judge", "판단 불가"]];
+      row.appendChild(h("div", {class:"opts"}, opts.map(function(o){
+        return h("button", {class:"opt", type:"button", "aria-pressed":s.decision === o[0] ? "true" : "false", text:o[1],
+          onclick:function(){ setField(r.record_id, f, {decision:s.decision === o[0] ? null : o[0]}); render(); }});
+      })));
+      if (s.decision === "correct") row.appendChild(valueEditor(r, f, s, function(p){ setField(r.record_id, f, p); }));
+      card.appendChild(row);
+    });
+    return card;
+  }
+
+  function renderReject(r){
+    var s = st.rejects[r.record_id] || {};
+    var card = h("div", {class:"card"}, [h("h3", {text:"재작업 지시와 결정"})]);
+    var tb = h("table", {}, [h("tr", {}, [h("th", {text:"필드"}), h("th", {text:"코드"}), h("th", {text:"사유"}), h("th", {text:"고칠 방법"})])]);
+    (r.rework || []).forEach(function(i){
+      tb.appendChild(h("tr", {}, [h("td", {text:i.field || "-"}), h("td", {class:"mono", text:i.code}), h("td", {text:i.reason || ""}), h("td", {text:i.suggested_fix || ""})]));
+    });
+    card.appendChild(tb);
+    var opts = [["rework", "재작업(지시가 맞다)"], ["correct", "직접 교정"], ["false_positive", "검수 오탐(규칙이 틀렸다)"]];
+    card.appendChild(h("div", {class:"opts"}, opts.map(function(o){
+      return h("button", {class:"opt", type:"button", "aria-pressed":s.decision === o[0] ? "true" : "false", text:o[1], onclick:function(){
+        st.rejects[r.record_id] = st.rejects[r.record_id] || {};
+        st.rejects[r.record_id].decision = s.decision === o[0] ? null : o[0];
+        save(); render();
+      }});
+    })));
+    if (s.decision === "correct"){
+      var order = r.fields.slice().sort(function(a, b){ return (r.problem_fields.indexOf(a) < 0) - (r.problem_fields.indexOf(b) < 0); });
+      order.forEach(function(f){
+        var c = (s.corr || {})[f] || {};
+        var row = h("div", {class:"fld" + (r.problem_fields.indexOf(f) >= 0 ? " prob" : "")}, [
+          h("div", {class:"fh"}, [h("label", {}, [h("input", {type:"checkbox", checked:c.on ? "checked" : null, onchange:function(e){
+            s.corr = s.corr || {}; s.corr[f] = s.corr[f] || {}; s.corr[f].on = e.target.checked;
+            st.rejects[r.record_id] = s; save(); render();
+          }}), " ", h("b", {text:fieldLabel(f)})])]),
+          botLine(r, f)
+        ]);
+        if (c.on) row.appendChild(valueEditor(r, f, c, function(p){
+          s.corr[f] = s.corr[f] || {}; for (var k in p) s.corr[f][k] = p[k];
+          st.rejects[r.record_id] = s; save();
+        }));
+        card.appendChild(row);
+      });
+    }
+    return card;
+  }
+
+  function renderAutofix(){
+    var wrap = h("div");
+    var groups = DATA.autofix || [];
+    if (!groups.length) wrap.appendChild(h("p", {class:"muted", text:"AUTO_FIX 레코드가 없습니다."}));
+    groups.forEach(function(g){
+      var s = st.autofix[g.rule] || {};
+      st.autofix[g.rule] = s;
+      var summary = h("summary", {}, [g.rule, h("span", {class:"meta", text:g.items.length + "건" + (g.approved ? " · 이미 승인된 규칙(policy)" : "")})]);
+      var det = h("details", {class:"card agrp"}, [summary]);
+      if (!g.approved) det.setAttribute("open", "");
+      if (!g.approved){
+        det.appendChild(h("div", {class:"opts"}, [["approve", "규칙 승인"], ["reject", "규칙 기각"]].map(function(o){
+          return h("button", {class:"opt", type:"button", "aria-pressed":s.decision === o[0] ? "true" : "false", text:o[1],
+            onclick:function(){ s.decision = s.decision === o[0] ? null : o[0]; save(); render(); }});
+        })));
+      }
+      var tb = h("table", {style:"margin-top:8px"}, [h("tr", {}, [h("th", {text:"제외"}), h("th", {text:"레코드"}), h("th", {text:"필드"}), h("th", {text:"전"}), h("th", {text:"후"})])]);
+      g.items.forEach(function(it){
+        var r = byId[it.record_id] || {};
+        s.except = s.except || {};
+        tb.appendChild(h("tr", {}, [
+          h("td", {}, [h("input", {type:"checkbox", "aria-label":"이 레코드 제외", checked:s.except[it.record_id] ? "checked" : null,
+            onchange:function(e){ s.except[it.record_id] = e.target.checked; save(); }})]),
+          h("td", {}, [h("div", {class:"mono", text:it.record_id}), h("div", {class:"muted", text:(r.file_name || "") + " · 슬라이드 " + (r.slide_no || "-")})]),
+          h("td", {class:"mono", text:it.field}),
+          h("td", {text:JSON.stringify(it.before)}),
+          h("td", {text:JSON.stringify(it.after)})
+        ]));
+      });
+      det.appendChild(tb);
+      wrap.appendChild(det);
+    });
+    return wrap;
+  }
+
+  function renderProposals(){
+    var wrap = h("div");
+    var props = DATA.proposals || [];
+    if (!props.length) wrap.appendChild(h("p", {class:"muted", text:"규칙 제안이 없습니다."}));
+    wrap.appendChild(h("div", {class:"note", text:"제안은 검수봇이 배치에서 집계한 신호와 수치입니다. 승인한 것만 피드백 묶음에 들어갑니다. 기각한 제안은 다음 실행부터 올라오지 않습니다."}));
+    props.forEach(function(p){
+      var s = st.props[p.proposal_id] || {};
+      st.props[p.proposal_id] = s;
+      var m = p.metric || {};
+      var card = h("div", {class:"card"}, [
+        h("h3", {}, [h("span", {class:"tag", text:p.kind}), p.target]),
+        h("div", {class:"muted", text:(m.name || "") + " " + (m.value === null || m.value === undefined ? "-" : m.value) +
+          (m.n !== null && m.n !== undefined ? " · n=" + m.n : "") + (m.threshold !== null && m.threshold !== undefined ? " · 기준 " + m.threshold : "")}),
+        (p.examples || []).length ? h("div", {class:"muted mono", text:"예시: " + p.examples.join(", ")}) : null
+      ]);
+      card.appendChild(h("div", {class:"opts"}, [["approve", "승인"], ["reject", "기각"], ["hold", "보류"]].map(function(o){
+        return h("button", {class:"opt", type:"button", "aria-pressed":s.decision === o[0] ? "true" : "false", text:o[1],
+          onclick:function(){ s.decision = s.decision === o[0] ? null : o[0]; save(); render(); }});
+      })));
+      if (p.kind === "TERM" && s.decision === "approve"){
+        card.appendChild(h("div", {class:"opts"}, [["value", "새 값으로"], ["synonym", "동의어로"]].map(function(o){
+          return h("button", {class:"opt", type:"button", "aria-pressed":s.as === o[0] ? "true" : "false", text:o[1],
+            onclick:function(){ s.as = s.as === o[0] ? null : o[0]; save(); render(); }});
+        })));
+        var pin = h("div", {class:"pin"});
+        if (s.as === "value"){
+          pin.appendChild(h("select", {"aria-label":"축", onchange:function(e){ s.axis = e.target.value; save(); }},
+            [h("option", {value:"", text:"축 선택"})].concat((DATA.axes || []).map(function(a){
+              return h("option", {value:a.name, selected:s.axis === a.name ? "selected" : null, text:a.name});
+            }))));
+          pin.appendChild(h("input", {type:"text", placeholder:"상위값(선택)", value:s.parent || "", oninput:function(e){ s.parent = e.target.value; save(); }}));
+        } else if (s.as === "synonym"){
+          pin.appendChild(h("input", {type:"text", placeholder:"표준어(taxonomy 값)", value:s.canonical || "", oninput:function(e){ s.canonical = e.target.value; save(); }}));
+        }
+        if (s.as) card.appendChild(pin);
+      }
+      card.appendChild(h("div", {class:"pin"}, [h("input", {type:"text", placeholder:"메모(선택)", value:s.note || "", oninput:function(e){ s.note = e.target.value; save(); }})]));
+      wrap.appendChild(card);
+    });
+    return wrap;
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
