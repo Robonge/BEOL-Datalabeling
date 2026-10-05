@@ -114,7 +114,11 @@ class _SlideWs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dir = tempfile.mkdtemp(prefix="labelbot_ws_")
-        cfg = {"taxonomy_path": TAXONOMY, "input_root": DUMMY_DIR,
+        # 입력은 커밋된 더미 해시 스냅샷의 파일로 고정한다. 폴더에 새 파일이 들어오거나
+        # 'parshing test files'(llm.DUMMY_DIRS)가 바뀌어도 사외 전송 허용 여부가 흔들리지 않게 한다.
+        with open(llm.DUMMY_HASHES_PATH, encoding="utf-8") as f:
+            include = [json.loads(line)["file_id"] for line in f if line.strip()]
+        cfg = {"taxonomy_path": TAXONOMY, "input_root": DUMMY_DIR, "include_file_ids": include,
                "llm": {"transport": "mock", "model": "mock"}, "embedding": {"transport": "mock"},
                "supabase": {"enabled": False, "storage_enabled": True, "url": "https://example.supabase.co",
                             "table": "beol_chunk_embeddings"}}
