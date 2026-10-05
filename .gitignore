@@ -17,3 +17,8 @@ codebot/out/
 
 # Office 잠금 파일
 ~$*
+
+# 세션 변경 대시보드 생성물(요청 원문 포함)
+change-dashboard/data/
+change-dashboard/reports/
+change-dashboard/index.html
