@@ -62,7 +62,7 @@
 | H6 | 라벨링 후 | 불량 목록의 chunk를 검수한다. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 검수 중 발견한 동의어는 교정 파일(`.json`)에 담기고, 후보 리포트의 "검수 등록" 행으로 나온다. taxonomy가 내용을 담지 못하는 축·질문은 재검토 요청(사유 코드, 제안 값, 메모 500자)으로 남기며, `reports/taxonomy_revisit.md`로 나온다. 다 끝나면 검수 화면의 "검수 완료" 버튼을 누르고(교정이 없어도 누른다), 그 신호로 반영·임베딩·적재가 이어진다. | 검수 화면, `reports/taxonomy_revisit.md` | 대기(검수 완료 버튼까지) |
 | H7 | 산출 후 | 봇이 `reports/query_candidates.md`에 올린 조회 질문 후보 중 검증에 쓸 질문을 `queries` 시트에 붙여넣고 채택 열을 Y로 둔다. | `reports/query_candidates.md`, `taxonomy.xlsx`(`queries` 시트) | 대기 |
 | H8 | 1차 분류 후, 라벨링 후 | 봇이 올린 동의어 후보를 보고 승인할 것을 `synonyms` 시트에 붙여넣는다. 시트에 옮긴 동의어는 다음 실행부터 쓰인다(6.2절). | `reports/candidates.md`, `taxonomy.xlsx`(`synonyms` 시트) | 계속(처리 전 후보는 시트에 넣지 않는다) |
-| H9 | 검수 반영 후, 다음 실행 전 | 검수 교정에서 Engr-bot이 센 규칙 후보(축 값 혼동·과잉·누락, 질문 답 뒤집힘)와 사람이 손댄 chunk 사례를 보고 승인·기각한다. 승인한 규칙은 다음 실행의 1차 분류·3차 라벨링 프롬프트에 "검수 피드백 지침"으로, 승인한 사례는 비슷한 chunk의 1차 분류에 few-shot으로 들어간다. 규칙 문장은 사람이 고칠 수 있다. | `workspaces/_engrbot/ledger/labeling_candidates.md`, `taxonomy/labeling_rules.json`, `engrbot labeling-rules approve·reject` | 계속(승인 전에는 넣지 않는다) |
+| H9 | 검수 반영 후, 다음 실행 전 | 검수 교정에서 Engr-bot이 센 규칙 후보(축 값 혼동·과잉·누락, 질문 답 뒤집힘)와 사람이 손댄 chunk 사례를 보고 승인·기각한다. 승인한 규칙은 다음 실행의 1차 분류·3차 라벨링 프롬프트에 "검수 피드백 지침"으로, 승인한 사례는 비슷한 chunk의 1차 분류에 few-shot으로 들어간다. 규칙 문장은 사람이 고칠 수 있다. | `workspaces/_engrbot/ledger/labeling_candidates.md`(실행 시 생성), `taxonomy/labeling_rules.json`(승인 시 생성), `engrbot labeling-rules approve·reject` | 계속(승인 전에는 넣지 않는다) |
 
 **H5 라벨 분포 알림 조건**
 
@@ -206,7 +206,7 @@ flowchart TD
 - 리포트는 `report --run <실행ID>`로 특정 실행 기준으로 다시 낼 수 있고, work.sqlite만으로 LLM 호출 없이 다시 계산된다. 사내 리포트에는 분포만 낸다.
   - 축별 `unknown / (전체 − 해당 없음)` 비율(비활성 축은 "비활성"으로 표시), 질문별 O/X/N/A 분포, N/A 편중 질문 표시(n≥20이면서 N/A가 95% 이상이거나 5% 이하), 중복 라벨링 비율, H5 알림 여부
   - 사유 코드별 불량 건수와 전체 내용 chunk 대비 비율, 실패 chunk 수, `dup_group` 중복 비율, 교정 건수
-- 사내 리포트는 정확도 지표를 내지 않는다. 사내 라벨의 정확도는 측정하지 않고, 프롬프트 변경 효과는 사외 더미 정답표 대조로만 본다. 사외 대조 도구 `tools/evalgold.py`는 더미 정답표 `tests/gold/gold_labels.jsonl`과 봇 결과를 비교하며, 지표(축별 완전 일치율, Jaccard, 혼동 행렬) 계산은 `labelbot/metrics.py`에 둔다. 사내 `report`는 `metrics.py`의 이 지표를 부르지 않는다.
+- 사내 리포트는 정확도 지표를 내지 않는다. 사내 라벨의 정확도는 측정하지 않고, 프롬프트 변경 효과는 사외 더미 정답표 대조로만 본다. 사외 대조 도구 `tools/evalgold.py`는 더미 정답표 `tests/gold/gold_labels.jsonl`(미구현)과 봇 결과를 비교하며, 지표(축별 완전 일치율, Jaccard, 혼동 행렬) 계산은 `labelbot/metrics.py`(미구현)에 둔다. 사내 `report`는 `metrics.py`의 이 지표를 부르지 않는다.
 
 ### FR-6. 산출과 조회 검증
 
@@ -573,7 +573,7 @@ flowchart LR
 | 상대 경로가 사외로 새어 나가 사용자 폴더명이나 프로젝트명이 노출된다. | 상대 경로만 저장하고 절대 경로는 작업 DB 실행 메타에만 둔다. 로그, 콘솔, 리포트, `alerts.json`, 교정 파일, 게이트 기록에서 0건인지 통합 테스트로 본다(9.3절). |
 | 폴더명이 1차 분류를 끌고 간다. | 경로는 참고(인용 불가)로만 넣고 근거는 본문에서 받는다(FR-2). |
 | 불량 목록이 너무 길어 검수 시간이 부족하다. | 사유 코드 필터와 겹침 순 정렬로 우선순위를 정하고, 기준값(`flag.unknown_ratio_min`, `flag.confidence_min`)은 설정으로 조정한다(FR-5). |
-| 사내 라벨의 정확도를 알 수 없다. | 사내 정확도는 측정하지 않는다. 사외 더미 정답표 대조(`tools/evalgold.py`)로만 프롬프트 변경 효과를 본다. |
+| 사내 라벨의 정확도를 알 수 없다. | 사내 정확도는 측정하지 않는다. 사외 더미 정답표 대조(`tools/evalgold.py`(미구현))로만 프롬프트 변경 효과를 본다. |
 | 프롬프트를 바꾸는 P1 항목(라벨링 참고 구간, 인용·추출값 검증)은 재계산되지 않는다. | 첫 실행 전에 넣거나 2회차까지 동결하고, 어느 쪽인지 사내 실행 기록에 남긴다. |
 | 임베딩 모델을 바꾸면 차원이 달라져 벡터가 섞인다. | `chunk_embeddings`와 Supabase 표에 모델과 차원을 두고, 모델이 다른 벡터는 같은 조회에서 섞지 않는다(FR-9). |
 | Supabase 적재가 실패하거나 Supabase 표가 로컬과 어긋난다. | 로컬 `chunk_embeddings`가 원본이고 Supabase는 사본이다. 실패는 사유 코드로 남기고 라벨링·산출을 막지 않으며, `vector_push_log`로 아직 보내지 않았거나 바뀐 chunk만 다시 보낸다. |
@@ -752,7 +752,7 @@ flowchart LR
   3. 사내 정확도는 측정하지 않는다. 사내 리포트에는 분포만 낸다.
   4. 걸린 chunk는 상한 없이 전부 내고, 사유 코드 6개(`UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED`)를 붙인다.
   5. `review_gold`를 삭제한다.
-  6. 사외 더미 정답표 대조(`tools/evalgold.py`, `labelbot/metrics.py`)는 유지한다.
+  6. 사외 더미 정답표 대조(`tools/evalgold.py`, `labelbot/metrics.py`(미구현))는 유지한다.
   7. `UNKNOWN_HIGH` 기준은 0.5(`flag.unknown_ratio_min`), `LOW_CONFIDENCE` 기준은 0.7(`flag.confidence_min`)이다.
 - 바뀐 절: 2절 목표, 3.2절 H6, 4절 흐름도, FR-1(`dup_group` 용도), FR-2(비활성 축 처리), FR-4(참고 구간), FR-5(전면 교체), FR-7, 6.2절(재판정 참조 삭제), 8.2절(작업 DB 표), 8.3절, 9.1절(`flag` 블록), 9.4절, 9.5절, 10.1절, 10.2절, 11절, 12절. 부록 A는 고치지 않았다.
 - 새로 둔 것: 작업 DB 표 `flagged_chunks(run_id, chunk_id, reason_codes, unknown_ratio, min_confidence, text_hash)`, `reports/flagged_<실행ID>.jsonl`, `reports/flagged_<실행ID>.md`, `pipeline.json`의 `flag` 블록.
@@ -769,7 +769,7 @@ flowchart LR
 
 - 점검: 사람 교정은 그 작업 폴더의 `corrections`에만 남아 최종 라벨만 바꾸고, 실행마다 새 작업 폴더를 쓰므로 다음 실행의 1차 분류·3차 라벨링에 되먹이는 길이 없었다.
 - 사용자 결정: 규칙 요약과 유사 사례 few-shot을 함께 쓰고, 사람이 승인한 것만 적용한다(H9). 봇은 승인하지 않는다.
-- 저장 위치: 승인 규칙과 사례 참조(작업 폴더 이름, chunk ID, 본문 해시, 확정 라벨)는 본문 없는 `taxonomy/labeling_rules.json`(git 추적)에 둔다. 사례 본문은 실행할 때 원래 작업 폴더 DB에서 읽기 전용으로 가져오므로 따로 복사본을 두지 않는다. 사례는 사외 전송 가드를 통과한 파일에서만 고르고, 같은 파일·같은 본문의 사례는 그 chunk에 쓰지 않는다.
+- 저장 위치: 승인 규칙과 사례 참조(작업 폴더 이름, chunk ID, 본문 해시, 확정 라벨)는 본문 없는 `taxonomy/labeling_rules.json`(승인 시 생성)(git 추적)에 둔다. 사례 본문은 실행할 때 원래 작업 폴더 DB에서 읽기 전용으로 가져오므로 따로 복사본을 두지 않는다. 사례는 사외 전송 가드를 통과한 파일에서만 고르고, 같은 파일·같은 본문의 사례는 그 chunk에 쓰지 않는다.
 - 2026-10-05 소유 이동(사용자 결정): 교정 수집·규칙·사례 후보·승인은 Engr-bot(`engrbot intake`, `engrbot labeling-rules`)이 맡고, labelbot은 승인 파일만 읽는다. 처음 둔 labelbot 쪽 수집 저장소(`workspaces/_feedback/`)와 `labelbot feedback` 명령은 없앴다.
 
 ### 2026-10-05 실행별 taxonomy 재검토 파일

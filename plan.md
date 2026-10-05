@@ -29,6 +29,7 @@
 labelbot/
   __main__.py        명령 진입점
   cli.py             명령과 인자 처리
+  (그 밖) pipeline.py(ingest·run 오케스트레이션) prompts.py(prompts/*.md 로더) finals.py(확정 label) dashboard.py(결과 대시보드) serve.py(화면 서버) revisit.py(taxonomy 재검토 요청) xlsx.py(bytes 기반 xlsx 읽기) mock.py(mock LLM) util.py(해시·JSON·시각 유틸)
   workspace.py       작업 폴더 경로, workspaces/ 밖 코드 폴더 안 지정 거부
   selfcheck.py       환경 self-check (작업 폴더에 taxonomy.xlsx가 없으면 FAIL), write_roundtrip, 호스트 판정 항목
   probe.py           파일 구조 통계 (본문 미출력)
@@ -47,12 +48,12 @@ labelbot/
   label.py           3차 라벨링, 날짜·담당자 추출
   alerts.py          라벨 분포 점검과 사람 알림 (HITL H5)
   review.py          4차 불량 목록 추출, 검수 화면 생성, 교정 반영
-  feedback.py        검수 피드백 소비: 승인 파일(taxonomy/labeling_rules.json)의 규칙·사례 참조 → 다음 실행 프롬프트 블록(생산·승인은 engrbot/labeling_rules.py)
-  metrics.py         사외 더미 정답표 대조 지표(축별 완전 일치율, Jaccard, 혼동 행렬). tools/evalgold.py만 쓴다
+  feedback.py        검수 피드백 소비: 승인 파일(taxonomy/labeling_rules.json(승인 시 생성))의 규칙·사례 참조 → 다음 실행 프롬프트 블록(생산·승인은 engrbot/labeling_rules.py)
+  metrics.py(미구현)         사외 더미 정답표 대조 지표(축별 완전 일치율, Jaccard, 혼동 행렬). tools/evalgold.py만 쓴다
   export.py          산출 SQLite, SCHEMA.md
-  querycheck.py      조회 질문 후보, LLM SQL 조회 검증
+  querycheck.py(미구현)      조회 질문 후보, LLM SQL 조회 검증
   report.py          기준선 리포트 (report --run, 분포만)
-  gate.py            M7 게이트 기록 (gate record, reports/gate_<timestamp>.json)
+  gate.py(미구현)            M7 게이트 기록 (gate record, reports/gate_<timestamp>.json)
   embed.py           임베딩 (python -m labelbot embed, chunk_embeddings)
   vectorpush.py      Supabase 벡터 적재 (python -m labelbot push-vectors, vector_push_log)
   cdp.py             표준 라이브러리 DevTools 클라이언트 (headless Edge/Chrome, WebSocket)
@@ -63,7 +64,7 @@ labelbot/
 prompts/             단계별 프롬프트 (.md)
 docs/supabase_schema.md  Supabase(pgvector) 표 정의 SQL 코드 블록 (.sql 파일은 두지 않는다)
 taxonomy/taxonomy.xlsx   기본 taxonomy (더미 동의어 포함)
-taxonomy/labeling_rules.json         검수 피드백 승인 규칙·사례 참조와 기각 ID(축·값·질문 ID·건수·문장, 사례는 작업 폴더 이름·chunk ID·본문 해시·확정 라벨만, 본문 없음, git 추적, 사람이 문장·enabled 편집). Engr-bot이 쓰고 labelbot이 읽는다
+taxonomy/labeling_rules.json(승인 시 생성)         검수 피드백 승인 규칙·사례 참조와 기각 ID(축·값·질문 ID·건수·문장, 사례는 작업 폴더 이름·chunk ID·본문 해시·확정 라벨만, 본문 없음, git 추적, 사람이 문장·enabled 편집). Engr-bot이 쓰고 labelbot이 읽는다
 workspaces/_engrbot/ledger/          Engr-bot 교정 장부(커밋 제외). labeling_candidates.md(라벨링 규칙·사례 승인 대기 후보, 본문 없음)
 taxonomy/taxonomy_revisit_requests/  apply가 검수 실행마다 쓰는 재검토 파일 taxonomy_revisit_<연월일_시분초>.md·.html·.json (taxonomy 시트 붙여넣기 행, 메모 포함, git 추적)
 dummy pptx files/    사외 검증 샘플 원천 (저장소 상대 경로). 어느 파일이든 쓸 수 있고 ingest 바이트 경로로만 읽는다
@@ -157,7 +158,7 @@ logs/           .log (파일 ID와 사유 코드만)
 
 ## 3. 구현 단계와 완료 기준
 
-각 마일스톤의 완료 기준은 테스트로 통과 여부를 판정한다. M0~M6과 M6b는 사외에서, M7은 사내에서 진행한다. `[P0]`은 M7 첫 실행 전에 있어야 하는 항목이고, `[P1]`은 `work.sqlite`와 LLM 캐시만으로 나중에 다시 계산할 수 있어 첫 실행을 막지 않는 항목이다(라벨링 품질 보강 v2 기준). G번호는 v2의 gap ID다. 4차 단계 단순화(2026-10-04)로 G3(표본 추출), G13(검수 행동 기록), G8의 재판정 형식, G1의 사내 정확도 지표, G2의 review_gold·회차 간 답 재사용 부분은 대체되어 뺐다. G1은 사외 더미 정답표 대조(`tools/evalgold.py`)만, G2는 교정 반영 규칙만 남는다.
+각 마일스톤의 완료 기준은 테스트로 통과 여부를 판정한다. M0~M6과 M6b는 사외에서, M7은 사내에서 진행한다. `[P0]`은 M7 첫 실행 전에 있어야 하는 항목이고, `[P1]`은 `work.sqlite`와 LLM 캐시만으로 나중에 다시 계산할 수 있어 첫 실행을 막지 않는 항목이다(라벨링 품질 보강 v2 기준). G번호는 v2의 gap ID다. 4차 단계 단순화(2026-10-04)로 G3(표본 추출), G13(검수 행동 기록), G8의 재판정 형식, G1의 사내 정확도 지표, G2의 review_gold·회차 간 답 재사용 부분은 대체되어 뺐다. G1은 사외 더미 정답표 대조(`tools/evalgold.py`(미구현))만, G2는 교정 반영 규칙만 남는다.
 
 ### M0. 점검 도구와 골격
 
@@ -231,7 +232,7 @@ logs/           .log (파일 ID와 사유 코드만)
 
 ### M2. taxonomy.xlsx, 동의어 시트, 후보 리포트, 1차 분류
 
-만드는 파일: `ooxml.py`(bytes 기반 xlsx 읽기), `taxonomy.py`, `synonyms.py`, `candidates.py`, `classify.py`, `tests/fixtures/default_taxonomy_rows.jsonl`(커밋된 `taxonomy/taxonomy.xlsx`에서 만든 기대 행. xlsx가 기준이다), `tests/xlsx_writer.py`(메모리 전용), `tests/fixtures/synthetic_chunks.jsonl`, `tests/gold/gold_labels.jsonl`(초안), `tools/gold_view.py`, `prompts/classify.md`
+만드는 파일: `ooxml.py`(bytes 기반 xlsx 읽기), `taxonomy.py`, `synonyms.py`, `candidates.py`, `classify.py`, `tests/fixtures/default_taxonomy_rows.jsonl`(커밋된 `taxonomy/taxonomy.xlsx`에서 만든 기대 행. xlsx가 기준이다), `tests/xlsx_writer.py`(메모리 전용), `tests/fixtures/synthetic_chunks.jsonl`(미구현), `tests/gold/gold_labels.jsonl`(미구현)(초안), `tools/gold_view.py`, `prompts/classify.md`
 
 테스트 진입점: `taxonomy.parse_bytes(b)`가 파서 진입점이고, `read_input`은 bytes를 읽어 넘기기만 한다. 오류 픽스처와 규칙 테스트는 `tests/xlsx_writer.py`가 메모리에서 만든 bytes를 `parse_bytes`에 넣는다(디스크에 xlsx를 쓰지 않는다). 읽을 위치는 `pipeline.json`의 `taxonomy_path`(기본값: 작업 폴더의 `taxonomy.xlsx`)이고, 통합 테스트는 `taxonomy_path`를 `taxonomy/taxonomy.xlsx`로 지정해 복사 없이 읽는다. `taxonomy/taxonomy.xlsx`는 저장소에 이미 있으며 기본 taxonomy의 기준이다. 이 파일에 의존하는 테스트는 `tests/test_defaults_taxonomy.py`와 통합 테스트 모듈로 분리한다. M2의 나머지 테스트는 `parse_bytes`만으로 통과해야 한다.
 
@@ -262,7 +263,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] mock LLM이 taxonomy에 없는 값을 내면 facet_labels에 저장되지 않고 해당 축이 `unknown`이 되며 새 값 후보로 올라간다.
 - [ ] mock LLM이 형식이 틀린 응답을 내면 설정된 횟수만큼 재시도한 뒤 실패로 기록되고, 그 응답은 캐시에 없다.
 - [ ] 참고문헌 유형으로 분류된 chunk는 2~3차 대상에서 빠진다.
-- [ ] 정답표 초안 `tests/gold/gold_labels.jsonl`이 부록의 39 chunk를 담고 스키마를 만족한다. `tools/gold_view.py`가 사람 검토용 `tests/gold/gold_labels.md`를 만들고, 합성 픽스처 6개(SYN-01~06)가 `synthetic_chunks.jsonl`에 있다.
+- [ ] 정답표 초안 `tests/gold/gold_labels.jsonl`(미구현)이 부록의 39 chunk를 담고 스키마를 만족한다. `tools/gold_view.py`가 사람 검토용 `tests/gold/gold_labels.md`(미구현)를 만들고, 합성 픽스처 6개(SYN-01~06)가 `synthetic_chunks.jsonl`에 있다.
 
 [P0] G6 분류 응답 완전성: 응답의 축 키 집합이 활성 축 집합과 정확히 같아야 통과한다. 빠진 축에 `해당 없음`이나 `unknown`을 자동으로 넣지 않는다.
 - [ ] mock LLM이 활성 축 9개 중 8개만 답하면 재시도하고, 그래도 빠지면 "분류 실패"가 되며 facet_labels에 그 chunk 행이 없다.
@@ -283,7 +284,7 @@ logs/           .log (파일 ID와 사유 코드만)
 
 ### M3. 질문 후보와 매핑, 검증 질문 생성
 
-만드는 파일: `questions.py`, `prompts/propose_questions.md`, `prompts/question_gen.md`
+만드는 파일: `questions.py`, `prompts/propose_questions.md`(미구현), `prompts/question_gen.md`
 
 2차는 두 갈래다. (1) 승인된 질문을 규칙으로 매핑한다(아래 기존 기준). (2) 1차 분류가 붙인 라벨의 진위를 검증하는 O/X 질문을 LLM이 chunk마다 만든다(2026-10-04 사용자 결정).
 
@@ -410,7 +411,7 @@ logs/           .log (파일 ID와 사유 코드만)
 
 ### M6. 산출, 조회 검증, 재실행
 
-만드는 파일: `export.py`, `querycheck.py`, `report.py`, `tools/evalgold.py`, `labelbot/metrics.py`(`tools/evalgold.py` 전용 지표), `prompts/propose_queries.md`, `prompts/text_to_sql.md`
+만드는 파일: `export.py`, `querycheck.py`, `report.py`, `tools/evalgold.py`, `labelbot/metrics.py`(미구현)(`tools/evalgold.py` 전용 지표), `prompts/propose_queries.md`(미구현), `prompts/text_to_sql.md`(미구현)
 
 완료 기준:
 - [ ] 산출 SQLite의 facet_labels, answers, extracted_values에 있는 모든 ID가 대상 표에 존재한다.
@@ -433,7 +434,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] `python -m labelbot run`으로 정답표 10개 파일에 전 단계가 mock으로 끝까지 돌고 리포트(`.md`)가 생성된다.
 - [ ] `queries` 시트의 채택=Y 행만 조회 검증에 쓰이고, `queries` 시트만 바뀐 재실행에서는 분류·라벨링 호출이 0회다.
 - [ ] mock은 정답표에서 mock 응답을 만들어 저장 결과, 3상태 집계, H5 분모를 확인한다(배관 검증).
-- [ ] `tools/evalgold.py`(개발 전용)가 실제 LLM 결과를 정답표와 대조해 축별 완전 일치율, Jaccard, 혼동 행렬을 `.md`로 낸다. 합격선은 정하지 않는다.
+- [ ] `tools/evalgold.py`(미구현)(개발 전용)가 실제 LLM 결과를 정답표와 대조해 축별 완전 일치율, Jaccard, 혼동 행렬을 `.md`로 낸다. 합격선은 정하지 않는다.
 - [ ] 필수층 미확정이면 실패: 정답표 필수층(합성 픽스처 6개와 파일 4개 18 chunk)에 `confirmed=true`가 하나라도 빠지면 정답표 테스트가 실패한다(skip이 아니다). 커버리지층은 리포트에 확정률만 낸다. 정답표 테스트는 `taxonomy/taxonomy.xlsx` 의존 테스트처럼 별도 모듈로 분리되어, 확정 전에는 그 모듈만 실패한다.
 - [ ] 정답표 확정 절차: 초안 → 필수층 3 chunk 앵커링 측정(사용자가 초안을 보기 전에 따로 라벨링해 초안과의 일치율을 리포트에 낸다) → 사용자가 `gold_labels.md`에서 틀린 칸을 알려 주면 jsonl에 반영하고 `confirmed=true` → 커버리지층은 나중에 확정한다.
 
@@ -458,7 +459,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 채택 질문이 10개 이하이면 정답률 전체에 "참고"가 붙는다.
 
 [P1] G1 정답표 대조:
-- [ ] `tools/evalgold.py`가 `labelbot/metrics.py`로 더미 정답표 대조 지표를 낸다.
+- [ ] `tools/evalgold.py`가 `labelbot/metrics.py`(미구현)로 더미 정답표 대조 지표를 낸다.
 
 [P1] 리포트 재계산:
 - [ ] 같은 `work.sqlite`로 새 코드에서 `report --run <ID>`를 돌리면 LLM 호출 0회로 분포 항목이 다시 계산된다.
@@ -588,7 +589,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 | 프롬프트를 바꾸는 P1 항목(G7, G14)은 재계산되지 않는다. | M7 전에 넣거나 2회차까지 동결하고, M7 7단계에 기록한다. | M4, M7 |
 | P1 항목이 첫 실행에 없을 수 있다. | `labels`, `failures`, `flagged_chunks`, `corrections`가 남으므로 새 zip으로 호출 0회 재계산이 된다. | M5, M6 |
 | 불량 목록이 너무 길다. | 사유 코드 필터와 겹침 순 정렬을 두고, 기준값은 `flag` 블록 설정으로 조정한다. | M5 |
-| 사내 정확도는 측정하지 않는다. | 사외 더미 정답표 대조(`tools/evalgold.py`)로만 프롬프트 변경 효과를 본다. | M6 |
+| 사내 정확도는 측정하지 않는다. | 사외 더미 정답표 대조(`tools/evalgold.py`(미구현))로만 프롬프트 변경 효과를 본다. | M6 |
 | 금지 확장자 검사가 입력 파일 때문에 항상 실패한다. | 실행 전 목록과 비교해 새 파일만 보고, 입력 전용 경로를 명시적으로 뺀다. | M6 |
 | 사내에서 임베딩 모델을 바꾸면 차원이 달라진다. | `chunk_embeddings`에 `model`과 `dim`을 두고, 모델이 다른 벡터는 같은 조회에서 섞지 않으며 Supabase 표에 섞어 올리지 않는다. 모델을 바꾸면 그 모델로 다시 만든다. | M6b |
 | 사내에서 Supabase나 pgvector를 쓸 수 없다. | `supabase.enabled` 기본값을 false로 두고, 로컬 `chunk_embeddings`를 원본으로 유지한다. M7 2단계에서 사용 가능 여부를 확인해 기록한다. | M6b, M7 |
@@ -614,7 +615,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 3. M6 이후 같은 통합 실행에서 금지 확장자 전수 검사(G17), 로그·리포트 비노출 검사와 원본 경로 단일 열기 검사(G16)를 돌린다.
 4. M6b 이후 테스트 안에서 띄운 `http.server` mock 서버로 `embed`와 `push-vectors`를 돌려 호출 수, `chunk_embeddings`·`vector_push_log` 행 수, 사외 호스트 차단, 302 거부, 키·본문·파일명 비노출을 확인한다. 실제 Supabase로는 사외에서 더미 해시 chunk만 보낼 수 있다.
 5. 화면 두 개(파싱 대조, 검수)를 브라우저에서 직접 열어, 데이터가 보이고 사유 코드 필터, 내려받기와 교정 반영이 되는지 확인한다.
-6. 사외에서 쓸 수 있는 OpenAI 호환 엔드포인트가 있으면 mock 대신 실제 LLM으로 정답표 파일을 한 번 돌리고, `tools/evalgold.py`로 정답표와 대조해 지표(`labelbot/metrics.py`)를 본다(합격선은 정하지 않는다). 사외 호스트이므로 더미 해시 파일만 호출된다. 없으면 이 단계는 사내에서 한다.
+6. 사외에서 쓸 수 있는 OpenAI 호환 엔드포인트가 있으면 mock 대신 실제 LLM으로 정답표 파일을 한 번 돌리고, `tools/evalgold.py`로 정답표와 대조해 지표(`labelbot/metrics.py`(미구현))를 본다(합격선은 정하지 않는다). 사외 호스트이므로 더미 해시 파일만 호출된다. 없으면 이 단계는 사내에서 한다.
 7. 구현 결과를 별도 검토 패스로 점검한다(코드 리뷰, 완료 기준 충족 여부).
 8. M7은 사내에서 사용자가 진행한다. 게이트 G-1~G-10이 모두 PASS인 뒤에 100개 실행을 시작하고, 기준선 리포트의 수치(내용 없는 집계)와 게이트 결과(손으로 옮겨 적은 항목 번호, PASS/FAIL, 사유 코드)만 사외로 전달한다.
 
@@ -631,7 +632,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 - 확정된 결정(2026-10-04, `PRD.md` 부록 B): 파일 메모·조회 질문은 선택 시트 `files`·`queries`에 둔다. H4는 "대기"다. 평가 내용이 없는 chunk의 의사결정 상태는 `해당 없음`이다. EUV-SAUP·EUV-SET·ArF-SET는 Patterning 값이고 정의는 비우며, 이에 기대는 정답표 칸은 `unknown`이다. 개발 산출물 확장자 예외는 없다.
 - 확정된 결정(2026-10-04, 라벨링 품질 보강 v2 6절, 다시 논의하지 않는다):
   1. 지금은 OpenAI API 기준으로 만들고, 사내 반입 후 사용자가 `pipeline.json`의 `llm`, `embedding`, `supabase` 블록만 고친다.
-  2. 정답표 확인에 사용자가 1시간을 쓴다. `tools/gold_view.py`가 만든 `.md`를 보고 틀린 칸만 알린다.
+  2. 정답표 확인에 사용자가 1시간을 쓴다. `tools/gold_view.py`(미구현)가 만든 `.md`를 보고 틀린 칸만 알린다.
   3. blind 모드는 off로 고정하며 구현하지 않는다. (4차 단계 단순화로 대체됨: 표본 검수가 없어져 이 결정은 쓰지 않는다.)
   4. 준중복은 `dup_group`으로 표시만 하고 전부 처리한다. 이 결정으로 사내 v1/v2/final 준중복 표시 방식의 미결 항목을 닫는다.
   5. 의심 표본은 겹침 순 상위 40과 의심 풀 무작위 10이며, 의심 풀 오답 수 추정식은 "상위 40의 오답 수 + 무작위 10의 오답 수 × (나머지 의심 풀 크기 / 10)"이다. (4차 단계 단순화로 대체됨)
@@ -650,7 +651,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
   2. 사유 코드는 `UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED` 6개다. 기준값은 `flag.unknown_ratio_min` 0.5, `flag.confidence_min` 0.7이다.
   3. 걸린 chunk는 상한 없이 전부 `flagged_chunks`, `reports/flagged_<실행ID>.jsonl`·`.md`, 검수 화면에 낸다.
   4. 사람이 교정한 값이 최종 라벨이며 재실행해도 덮어쓰지 않는다. 봇 원답은 `corrections`에 남는다.
-  5. LLM 독립 재판정, 표본 추출, `review_snapshot`·`review_actions`, `review_gold/`, 사내 정확도 지표는 두지 않는다. 사내 정확도는 측정하지 않고, 프롬프트 변경 효과는 사외 더미 정답표 대조(`tools/evalgold.py`)로만 본다.
+  5. LLM 독립 재판정, 표본 추출, `review_snapshot`·`review_actions`, `review_gold/`, 사내 정확도 지표는 두지 않는다. 사내 정확도는 측정하지 않고, 프롬프트 변경 효과는 사외 더미 정답표 대조(`tools/evalgold.py`(미구현))로만 본다.
 - 확정된 결정(2026-10-04, 구현 착수 전 요구사항 정리, 사외 구동 기준). 이 블록이 위의 다른 문구와 충돌하면 이 블록을 따른다.
   1. 현재 구현은 사외 구동 기준이다. Python 버전은 3.14.2 기준으로 한다(1절·M0의 3.8 문법 기준을 대체한다). 사내 Python 버전은 M7에서 self-check로 확인한다.
   2. 벡터 저장소: 사외는 로컬 `chunk_embeddings`(1차)와 사외 Supabase 실제 적재(2차)이며, 오늘 PoC는 실제 Supabase 적재까지 완료 기준에 넣는다(위 "실제 Supabase 적재는 선택"을 대체한다). 사내는 로컬 1차 보관, 2차 사내 DB 저장이며 사내 DB 적재는 이후 범위다. 사내 반입본의 `supabase.enabled` 기본값은 false다.
@@ -807,25 +808,25 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 
 - 폴더 재확인 단계: 정답표 초안과 M1 테스트 전에 BytesIO 스크립트로 폴더의 `*.pptx` sha256 목록을 `tests/gold/dummy_hashes.jsonl`(`{"file_id","name"}`)로 만든다. 위 해시 11개(정답 10 + 준중복 1)가 모두 있는지 확인한다. 2026-10-04에 `dummy pptx files/`에서 11개 모두 있음을 확인했다.
 - 층: 필수층은 파일 4개 18 chunk에 합성 6개를 더한 것이고, 커버리지층은 파일 6개 21 chunk다(표의 구분 열).
-- 합성 픽스처 `tests/fixtures/synthetic_chunks.jsonl`(키는 `fixture_id`): SYN-01 "단락" 치환, SYN-02 상위값만(Reliability), SYN-03 결과 엇갈림, SYN-04 채택+기각 혼재, SYN-05 `Via12`/`Metal12` 숫자 경계, SYN-06 평가 없는 배경 문단. 커버리지가 안 되는 값은 SYN-07 이후로 추가하고, 파일 목록은 바꾸지 않는다.
-- 형식 `tests/gold/gold_labels.jsonl`, chunk당 한 줄, `ensure_ascii=False`:
+- 합성 픽스처 `tests/fixtures/synthetic_chunks.jsonl`(미구현)(키는 `fixture_id`): SYN-01 "단락" 치환, SYN-02 상위값만(Reliability), SYN-03 결과 엇갈림, SYN-04 채택+기각 혼재, SYN-05 `Via12`/`Metal12` 숫자 경계, SYN-06 평가 없는 배경 문단. 커버리지가 안 되는 값은 SYN-07 이후로 추가하고, 파일 목록은 바꾸지 않는다.
+- 형식 `tests/gold/gold_labels.jsonl`(미구현), chunk당 한 줄, `ensure_ascii=False`:
   `{"file_id":"<sha256>", "file_name":"표시용", "slide_no":n, "tier":"required|coverage", "chunk_type":..., "labels":{"구조/레이어":[...], ... 10축}, "Q-COM-001":"O|X|N/A", "note":..., "confirmed":false}`
   - 축 값은 배열이고, 원소는 값·`해당 없음`·`unknown` 중 하나다. 제품·세대는 비활성 축이므로 모두 `["해당 없음"]`이다. 평가 내용이 없는 chunk의 의사결정 상태는 `["해당 없음"]`이다. 정의를 비운 값에 기대야 하는 칸(Mx·Vx의 범위 판단, EUV-SAUP·EUV-SET·ArF-SET의 구분, anneal·hardmask·erosion의 귀속)은 `["unknown"]`으로 두고 `note`에 사유를 적는다.
-  - `tools/gold_view.py`가 사람 검토용 `tests/gold/gold_labels.md`를 만든다.
+  - `tools/gold_view.py`가 사람 검토용 `tests/gold/gold_labels.md`(미구현)를 만든다.
 - 절차: (1) 결정 반영 완료 → (2) 실행자가 BytesIO 스크립트로 읽어 모든 칸을 채운 초안을 쓴다 → (3) 사용자가 초안을 보기 전에 필수층 3 chunk를 따로 라벨링하고, 초안과의 일치율을 앵커링 측정으로 리포트에 낸다 → (4) 사용자가 `.md` 보기에서 틀린 칸만 알려 주면 실행자가 jsonl에 반영하고 `confirmed=true`로 바꾼다 → (5) 커버리지층은 나중에 확정한다.
 - 통과 기준: 필수층과 합성 픽스처가 모두 `confirmed=true`여야 M6 정답표 테스트가 통과한다. 하나라도 빠지면 실패다. 커버리지층은 리포트에 확정률만 낸다.
-- 연결: mock은 정답표에서 mock 응답을 만들어 저장 결과와 3상태 집계, H5 분모를 확인한다(배관 검증). 실제 LLM이 있으면 `tools/evalgold.py`가 축별 완전 일치율, Jaccard, 혼동 행렬을 `.md`로 낸다. 합격선은 정하지 않는다.
+- 연결: mock은 정답표에서 mock 응답을 만들어 저장 결과와 3상태 집계, H5 분모를 확인한다(배관 검증). 실제 LLM이 있으면 `tools/evalgold.py`(미구현)가 축별 완전 일치율, Jaccard, 혼동 행렬을 `.md`로 낸다. 합격선은 정하지 않는다.
 
 ## 변경 이력
 
-- 2026-10-04 라벨링 품질 보강(v2) 반영: `.omc/plans/labeling-quality-review-v2.md`의 4절(마일스톤별 반영 제안), 6절(확정 결정), 8절(리스크)과 G21 Supabase 벡터 적재 명세를 반영했다. 반영한 gap ID는 G1, G2, G3, G4(chunk `dup_group`, 파일 `near_dup_group`), G5, G6, G7, G8, G9(G1 안의 N/A 편중 표시), G11, G12, G13, G14, G15, G16, G17, G18, G19, G20, G21이다. 바뀐 곳은 1절(외부 전송 제약), 2절(디렉터리 구조: `metrics.py`, `gate.py`, `embed.py`, `vectorpush.py`, `docs/supabase_schema.md`, `prompts/*.md`, 작업 폴더의 `pipeline.json` 세 블록·`review_gold/`·`gate_<timestamp>.json`), 3절 M0(G18, G19), M1(G16, G4, G15), M2(3상태 기준 수정, G6, G8, G16), M3(G5, G11), M4(재실행 기준 수정, G6, G7, G14), M5(시드·실행 ID 거부·리포트 기준 수정, G3, G2, G13, G16, G1, G8 재판정 형식), M6(재실행 기준 수정, G16, G17, G12, 리포트 요약), 신설 M6b(G20, G21), M7(게이트 G-1~G-10을 끼워 10단계로 다시 매김, 사내 설정 세 블록, 벡터 DB 사용 가능 여부 확인, 완료 기준 추가), 4절 HITL 표(H6 보강, 게이트·벡터 적재 행), 5절 리스크, 6절 검증 단계, 7절(v2 7절 미결 항목과 G21 결정 항목을 기본안과 함께 추가, 준중복 미결 항목 닫음, v2 6절 확정 결정 15개 추가)이다. taxonomy 재설계로 정해진 내용(분류 축 8 + 상태 축 2, `taxonomy.xlsx` 읽기 전용, 화면 2개, 더미 정답표 10개 파일 39 chunk, `tools/evalgold.py`)은 바꾸지 않았다.
+- 2026-10-04 라벨링 품질 보강(v2) 반영: `.omc/plans/labeling-quality-review-v2.md`의 4절(마일스톤별 반영 제안), 6절(확정 결정), 8절(리스크)과 G21 Supabase 벡터 적재 명세를 반영했다. 반영한 gap ID는 G1, G2, G3, G4(chunk `dup_group`, 파일 `near_dup_group`), G5, G6, G7, G8, G9(G1 안의 N/A 편중 표시), G11, G12, G13, G14, G15, G16, G17, G18, G19, G20, G21이다. 바뀐 곳은 1절(외부 전송 제약), 2절(디렉터리 구조: `metrics.py`, `gate.py`, `embed.py`, `vectorpush.py`, `docs/supabase_schema.md`, `prompts/*.md`, 작업 폴더의 `pipeline.json` 세 블록·`review_gold/`·`gate_<timestamp>.json`), 3절 M0(G18, G19), M1(G16, G4, G15), M2(3상태 기준 수정, G6, G8, G16), M3(G5, G11), M4(재실행 기준 수정, G6, G7, G14), M5(시드·실행 ID 거부·리포트 기준 수정, G3, G2, G13, G16, G1, G8 재판정 형식), M6(재실행 기준 수정, G16, G17, G12, 리포트 요약), 신설 M6b(G20, G21), M7(게이트 G-1~G-10을 끼워 10단계로 다시 매김, 사내 설정 세 블록, 벡터 DB 사용 가능 여부 확인, 완료 기준 추가), 4절 HITL 표(H6 보강, 게이트·벡터 적재 행), 5절 리스크, 6절 검증 단계, 7절(v2 7절 미결 항목과 G21 결정 항목을 기본안과 함께 추가, 준중복 미결 항목 닫음, v2 6절 확정 결정 15개 추가)이다. taxonomy 재설계로 정해진 내용(분류 축 8 + 상태 축 2, `taxonomy.xlsx` 읽기 전용, 화면 2개, 더미 정답표 10개 파일 39 chunk, `tools/evalgold.py`(미구현))은 바꾸지 않았다.
 - 2026-10-04 구현 착수 리뷰 반영: 2절에 "명령", "ID와 해시 정의", "작업 DB(work.sqlite) 표"를 추가했다(실행 ID 발급은 `run`·`ingest`, `schema_version`과 추가 전용 마이그레이션, `taxonomy_path`). M2에 `taxonomy.parse_bytes` 진입점과 `taxonomy/taxonomy.xlsx` 의존 테스트 분리를 적었다. M6b의 `run`·`embed` 관계와 `result_code` 성공 기준 멱등을 고쳤다. 역방향 의존 기준을 옮겼다: M0의 더미 해시 밖 chunk 차단 → M2(M0에는 공용 함수 단위 테스트), M0의 빈 작업 폴더 `run` → M6, M1의 위치 이동 시 분류·라벨링 호출 0회 → M4, M5의 리포트 지표·실패 건수·`report --run`·`evalgold.py`=`report.py` → M6. M1의 "리포트에 적힌다"는 `files` 표로 바꿨다.
-- 2026-10-04 4차 단계 단순화: 사용자 결정에 따라 4차를 검수 봇에서 "4차 불량 목록 추출"(`PRD.md` FR-5)로 바꿨다. LLM 호출 없이 사유 코드 6개(`UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED`)로 판정하고, 걸린 chunk를 상한 없이 `flagged_chunks`, `reports/flagged_<실행ID>.jsonl`·`.md`, 검수 화면에 낸다. 뺀 것은 LLM 독립 재판정(`prompts/rejudge.md`, G8 재판정 형식), 표본 추출 전부(G3), `review_snapshot`·`review_actions` 표와 검수 행동 기록(G13), blind 문장, `review_gold/`와 `report --compare-review-gold`, 회차 간 답 재사용(G2 일부), 사내 리포트의 정확도 지표(G1 사내 부분), M7의 합격선 결정과 review_gold 보관이다. 사외 더미 정답표 대조(`tools/evalgold.py`, `labelbot/metrics.py`)는 남기고 `metrics.py`는 M6에서 만든다. 바뀐 곳은 1절, 2절(디렉터리 구조, `pipeline.json`의 `flag` 블록, 명령 표, ID와 해시 정의, 작업 DB 표), 3절 머리말, M4(G7 문구), M5(전면 재작성), M6(리포트 분포 항목, G1 블록), M7(10단계, G-6·G-8 문구, 완료 기준), 4절 H6, 5절 리스크, 6절 검증 단계, 7절(임베딩 용도, 대체된 결정 표시, 새 확정 결정)이다. 백업은 `.omc/backups/plan.pre-flag-step.md`다.
+- 2026-10-04 4차 단계 단순화: 사용자 결정에 따라 4차를 검수 봇에서 "4차 불량 목록 추출"(`PRD.md` FR-5)로 바꿨다. LLM 호출 없이 사유 코드 6개(`UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED`)로 판정하고, 걸린 chunk를 상한 없이 `flagged_chunks`, `reports/flagged_<실행ID>.jsonl`·`.md`, 검수 화면에 낸다. 뺀 것은 LLM 독립 재판정(`prompts/rejudge.md`(미구현), G8 재판정 형식), 표본 추출 전부(G3), `review_snapshot`·`review_actions` 표와 검수 행동 기록(G13), blind 문장, `review_gold/`와 `report --compare-review-gold`, 회차 간 답 재사용(G2 일부), 사내 리포트의 정확도 지표(G1 사내 부분), M7의 합격선 결정과 review_gold 보관이다. 사외 더미 정답표 대조(`tools/evalgold.py`, `labelbot/metrics.py`(미구현))는 남기고 `metrics.py`는 M6에서 만든다. 바뀐 곳은 1절, 2절(디렉터리 구조, `pipeline.json`의 `flag` 블록, 명령 표, ID와 해시 정의, 작업 DB 표), 3절 머리말, M4(G7 문구), M5(전면 재작성), M6(리포트 분포 항목, G1 블록), M7(10단계, G-6·G-8 문구, 완료 기준), 4절 H6, 5절 리스크, 6절 검증 단계, 7절(임베딩 용도, 대체된 결정 표시, 새 확정 결정)이다. 백업은 `.omc/backups/plan.pre-flag-step.md`다.
 - 2026-10-04 검수 화면 taxonomy 재검토 요청: 근거는 `.omc/plans/autopilot-impl.md`(8절 Critic 반영 우선)와 `.omc/autopilot/spec.md`다. 검수 화면의 재검토 요청(교정 파일 `revisits`)을 작업 DB `revisit_requests`로 반영하고 `reports/taxonomy_revisit.md`·`.jsonl`로 낸다. 라벨·`label_hash`는 바뀌지 않아 Supabase 재적재가 없다. `apply`는 교정 파일별 `SAVEPOINT`를 둔다. 바뀐 곳은 2절(reports 목록, 명령 표, 작업 DB 표), M5 G16·G2 완료 기준, 로그·리포트 비노출 검사, 4절 H6, 후보 처리 흐름이다.
 - 2026-10-04 2차 검증 질문 생성: 사용자 결정에 따라 2차에 "1차 라벨 검증 질문 생성(LLM)"을 더했다. 승인 질문 매핑은 그대로 두고, 남은 상한만큼 1차 라벨(해당 없음·unknown 제외)마다 O/X 판정 질문을 `prompts/question_gen.md`로 만든다. 질문은 `gen_questions` 표에 남고, 3차 라벨러는 뒷받침=O·반박=X·근거 없음=N/A로 답한다. chunk당 LLM 호출이 2회에서 3회로 늘었다. 바뀐 곳은 2절 디렉터리 구조(`questions.py` 설명), M3(제목, 만드는 파일, 생성 규칙, 완료 기준)다.
 - 2026-10-04 사외 검증 폴더 허용: 사용자 승인에 따라 `parshing test files/`의 현재 파일 해시를 사외 전송 허용 목록(`dummy_hashes.jsonl`)에 더했다(`llm.DUMMY_DIRS`). 이 폴더 파일이 `EXTERNAL_NON_DUMMY`로 막히던 문제를 해결한다. 폴더 단위 허용이므로 이 폴더에 사내 파일을 넣지 않는 것을 운영 규칙으로 둔다. 바뀐 곳은 2절 디렉터리 구조와 M0 G19 사외 전송 조건이다.
 - 2026-10-04 검수 화면 슬라이드 근사 미리보기(B안): 사용자 결정에 따라 렌더링 없이 파서 좌표로 슬라이드 배치를 재구성해 검수 화면에 보여 준다. `pptx_parser.slide_layouts`, `review.py`의 보관본 메모리 재파싱(`layout`·`image_map`), `screens/review.html` 미리보기 카드를 더했다. 바뀐 곳은 M5(P2 항목과 완료 기준 2개)다.
 - 2026-10-04 검수 진행을 검수 반영 스킬로 이동: 사용자 결정에 따라 H6 검수는 `BEOL-labeling-feedback` 스킬이 검수 화면을 띄우고 "검수 완료" 버튼 신호를 기다리는 단계가 됐다(끝났는지 묻지 않는다). H2 대조는 그 스킬이 시작할 때 실행 여부를 묻는다. `BEOL-labeling`은 결과 대시보드만 띄운다. `serve.py`에 `POST /inbox/review/done`(교정 저장 뒤 `signals/review_done_<실행ID>.json`, 건수만)과 `/inbox/status`의 `done` 표시를, `screens/review.html`에 검수 완료 버튼(서버가 `done`을 알릴 때만 보임)을 더했다. 바뀐 곳은 2절 디렉터리 구조(`signals/`)와 명령 표(`serve`), 4절 H2·H6이다.
-- 2026-10-05 검수 교정 피드백 루프: 점검 결과 교정이 그 작업 폴더의 `corrections`에만 남고 다음 실행 프롬프트로 가는 길이 없었다. 사용자 결정(규칙 요약 + 유사 사례 few-shot, 사람 승인 후 적용)에 따라 `labelbot/feedback.py`를 더했다. `feedback harvest`가 교정(사람 값 ≠ 봇 값, 재검수·본문 변경·질문 문장 변경 제외)과 사례(사람이 교정했거나 유효하게 확인한 chunk, 활성 축 확정 라벨)를 `workspaces/_feedback/feedback.sqlite`로 모은다. 규칙 후보는 LLM 없이 패턴을 센다: REPLACE(실제 값 혼동, 특수값끼리), REMOVE(과잉), ADD(누락), ANSWER, GEN_ANSWER(`축=값`). 특수값 출발·도착은 REMOVE·ADD로 바꾸고, 지지 건수는 서로 다른 chunk 수, 기본 기준 2건, 반대 방향도 2건 이상이면 상충(`--all`이 승인하지 않음). 승인은 `taxonomy/labeling_rules.json`(본문 없음, git 추적)에, 사례 승인은 저장소에 남는다. `run`은 승인 규칙을 "검수 피드백 지침"으로, 유사도 상위 2개 승인 사례(같은 파일·같은 본문 해시·같은 dup_hash 제외, 사외 가드 통과 파일만)를 "검수 피드백 사례"로 넣고, `feedback_applied:<실행ID>` meta와 labels·runs의 `sheet_hashes.labeling_rules`에 적용 이력을 남긴다. 유사도는 임베딩(기본 하한 0.5), 안 되면 문자 3-gram Jaccard. 바뀐 곳은 2절 디렉터리 구조와 명령 표(`run`, `feedback`), 4절 H9, 스킬 `BEOL-labeling` 1-2·요약과 `BEOL-labeling-feedback` 4-1·보고다.
-- 2026-10-05 검수 피드백 소유를 Engr-bot으로 이동(사용자 결정): 교정 수집은 Engr-bot 장부(`engrbot intake`)가, 라벨링 규칙·few-shot 사례 후보와 승인은 `engrbot labeling-rules`가 맡는다. labelbot은 `taxonomy/labeling_rules.json`(v2: rules, rejected, examples, rejected_examples)만 읽는다. 사례는 (작업 폴더 이름, chunk ID, 본문 해시, 확정 라벨) 참조만 두고, 본문·임베딩은 실행할 때 원래 작업 폴더 `work.sqlite`에서 읽기 전용으로 가져온다(없거나 본문이 바뀌면 `EXAMPLE_SOURCE_GONE`·`EXAMPLE_TEXT_CHANGED`로 빠짐). `labelbot feedback` 명령과 `workspaces/_feedback/` 저장소는 없앴다. 바뀐 곳은 2절 디렉터리 구조와 명령 표, 4절 H9, 스킬 `BEOL-labeling` 1-2와 `BEOL-labeling-feedback` 4-1·4-2다.
+- 2026-10-05 검수 교정 피드백 루프: 점검 결과 교정이 그 작업 폴더의 `corrections`에만 남고 다음 실행 프롬프트로 가는 길이 없었다. 사용자 결정(규칙 요약 + 유사 사례 few-shot, 사람 승인 후 적용)에 따라 `labelbot/feedback.py`를 더했다. `feedback harvest`가 교정(사람 값 ≠ 봇 값, 재검수·본문 변경·질문 문장 변경 제외)과 사례(사람이 교정했거나 유효하게 확인한 chunk, 활성 축 확정 라벨)를 `workspaces/_feedback/feedback.sqlite`로 모은다. 규칙 후보는 LLM 없이 패턴을 센다: REPLACE(실제 값 혼동, 특수값끼리), REMOVE(과잉), ADD(누락), ANSWER, GEN_ANSWER(`축=값`). 특수값 출발·도착은 REMOVE·ADD로 바꾸고, 지지 건수는 서로 다른 chunk 수, 기본 기준 2건, 반대 방향도 2건 이상이면 상충(`--all`이 승인하지 않음). 승인은 `taxonomy/labeling_rules.json`(승인 시 생성)(본문 없음, git 추적)에, 사례 승인은 저장소에 남는다. `run`은 승인 규칙을 "검수 피드백 지침"으로, 유사도 상위 2개 승인 사례(같은 파일·같은 본문 해시·같은 dup_hash 제외, 사외 가드 통과 파일만)를 "검수 피드백 사례"로 넣고, `feedback_applied:<실행ID>` meta와 labels·runs의 `sheet_hashes.labeling_rules`에 적용 이력을 남긴다. 유사도는 임베딩(기본 하한 0.5), 안 되면 문자 3-gram Jaccard. 바뀐 곳은 2절 디렉터리 구조와 명령 표(`run`, `feedback`), 4절 H9, 스킬 `BEOL-labeling` 1-2·요약과 `BEOL-labeling-feedback` 4-1·보고다.
+- 2026-10-05 검수 피드백 소유를 Engr-bot으로 이동(사용자 결정): 교정 수집은 Engr-bot 장부(`engrbot intake`)가, 라벨링 규칙·few-shot 사례 후보와 승인은 `engrbot labeling-rules`가 맡는다. labelbot은 `taxonomy/labeling_rules.json`(승인 시 생성)(v2: rules, rejected, examples, rejected_examples)만 읽는다. 사례는 (작업 폴더 이름, chunk ID, 본문 해시, 확정 라벨) 참조만 두고, 본문·임베딩은 실행할 때 원래 작업 폴더 `work.sqlite`에서 읽기 전용으로 가져온다(없거나 본문이 바뀌면 `EXAMPLE_SOURCE_GONE`·`EXAMPLE_TEXT_CHANGED`로 빠짐). `labelbot feedback` 명령과 `workspaces/_feedback/` 저장소는 없앴다. 바뀐 곳은 2절 디렉터리 구조와 명령 표, 4절 H9, 스킬 `BEOL-labeling` 1-2와 `BEOL-labeling-feedback` 4-1·4-2다.
 - 2026-10-05 실행별 taxonomy 재검토 파일: 사용자 결정에 따라 `apply`가 반영한 검수 실행마다(요청 1건 이상, `revisits` 키 있음) 그 실행의 요청만 담은 `taxonomy/taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`을 쓴다(`revisit.write_run_files`, 같은 이름이면 `_2` 접미). taxonomy 시트 A~K 그대로의 "바로 붙여넣기"(`NO_FIT_VALUE`)·"확인 필요"(이미 있는 값, 없는 상위값·축, `NEW_AXIS` 정의 행) 블록과 엑셀 행 없는 요청 목록으로 나뉜다. 메모가 담기지만 git 추적 대상이며 원격에 올라가도 된다(`PRD.md` 9.2). `report`·`run`은 쓰지 않는다. 바뀐 곳은 2절 디렉터리 구조와 명령 표(`apply`)다.
