@@ -8,8 +8,8 @@ description: BEOL 공정 문서(pptx·docx) 폴더를 labelbot 워크플로로 �
 labelbot 파이프라인(`plan.md` 워크플로)을 한 폴더에 돌린다. 사람 개입 지점 중 **불량 chunk 검수(H6) 앞에서 멈추고**, `/BEOL-labeling-feedback`이 검수 화면을 띄워 사람 검수를 기다린 뒤 반영·적재한다.
 
 ```
-[이 스킬] 준비 → 사전 점검 → 수집·파싱 → 1~3차 분류·라벨링 → 불량 목록 → 화면 3개 만들기 → 대시보드 띄우기 → 멈춤(검수 대기)
-[BEOL-labeling-feedback] H2 대조 여부 질문 → 검수 화면 띄우기 → 사람 검수(검수 완료 버튼) → 반영 → 화면·리포트 재생성 → 임베딩 → Supabase 적재
+[이 스킬] 준비 → (검수 피드백 승인 확인) → 사전 점검 → 수집·파싱 → 1~3차 분류·라벨링(승인된 피드백 규칙·사례 반영) → 불량 목록 → 화면 3개 만들기 → 대시보드 띄우기 → 멈춤(검수 대기)
+[BEOL-labeling-feedback] H2 대조 여부 질문 → 검수 화면 띄우기 → 사람 검수(검수 완료 버튼) → 반영 → Engr-bot 장부·라벨링 규칙 후보 → 화면·리포트 재생성 → 임베딩 → Supabase 적재
 ```
 
 ## 사람 개입 지점을 이렇게 다룬다 (사용자 결정, 2026-10-04)
@@ -19,6 +19,7 @@ labelbot 파이프라인(`plan.md` 워크플로)을 한 폴더에 돌린다. 사
 | H2 파싱 대조 | 멈추지 않는다. `compare.html`은 만들기만 하고 띄우지 않는다. `/BEOL-labeling-feedback`이 시작할 때 이번에 할지 묻는다 | 대조는 선택이며 라벨링을 막지 않는다(plan.md "계속"). 화면을 여는 책임을 feedback 한 곳에 모은다 |
 | H5 분포 알림 | 요약에 보여 주고 진행 | 알림은 원인 점검용이며 라벨링을 막지 않는다 |
 | H3·H8 새 값·동의어 후보 | 건수와 리포트 위치만 알리고 **이번에 재실행하지 않는다** | 후보는 다음 실행으로 넘긴다. taxonomy 재검토 요청 리포트(`reports/taxonomy_revisit.md`)도 같은 방식으로 다음 실행에 넘긴다. 봇은 taxonomy.xlsx를 고치지 않는다 |
+| 검수 피드백 승인 | 1-2에서 승인 대기(규칙 후보·사례)가 있을 때만 `AskUserQuestion`으로 묻는다 | 사람 교정에서 나온 규칙·사례는 사람이 승인한 것만 1차 분류·3차 라벨링 프롬프트에 들어간다(사용자 결정, 2026-10-05). 봇이 대신 승인하지 않는다 |
 | H6 불량 chunk 검수(재검토 요청 포함) | **이 앞에서 멈춘다.** 검수 화면은 `/BEOL-labeling-feedback`이 띄우고, 사람이 검수 화면의 **검수 완료**를 누르면 그 스킬이 반영·적재로 이어간다 | 사람 값이 최종 라벨이 되고, Supabase 적재는 검수 후에만 한다. 재검토 요청은 라벨을 바꾸지 않는다 |
 
 Supabase 적재는 이 스킬에서 하지 않는다. 검수 전 라벨이 사본에 올라가지 않게 하려는 결정이다.
@@ -38,6 +39,7 @@ Supabase 적재는 이 스킬에서 하지 않는다. 검수 전 라벨이 사�
 - 보고에는 건수, 실행 ID, 사유 코드만 쓴다. 본문과 파일명은 화면(HTML) 안에서만 본다.
 - 사외 호스트(OpenAI, Supabase)에는 더미 해시 목록(`tests/gold/dummy_hashes.jsonl`)에 있는 파일만 보낸다. 목록 밖 파일은 labelbot이 그 호출을 막고 `EXTERNAL_NON_DUMMY`를 남긴다. 이것은 정상 동작이므로 우회하지 말고 보고한다.
 - `taxonomy.xlsx`와 `pipeline.json`의 모델·안전 설정을 마음대로 바꾸지 않는다.
+- 검수 피드백 승인은 사람 몫이다. 규칙·사례 후보와 승인은 Engr-bot이 맡는다(`python -m engrbot labeling-rules`). `approve`·`reject`는 사용자가 1-2에서 고른 대로만 부르고, `taxonomy/labeling_rules.json`을 손으로 고치지 않는다(사용자가 고친다). 승인 파일과 후보 리포트 `workspaces/_engrbot/ledger/labeling_candidates.md`에는 본문이 없어 위치를 링크해도 된다. 장부의 `golden.jsonl`·`judge_examples.jsonl`은 본문 인용이 있으므로 열지 않는다.
 - 재검토 요청의 메모에는 사내 본문이 들어 있을 수 있다. `reports/taxonomy_revisit.md`·`.jsonl`을 Read·Grep·`cat`으로 열지 않고, `revisit_requests`는 `COUNT`와 `reason`별 `GROUP BY`만 조회하며(`SELECT *`, `.dump` 금지), inbox JSON과 `inputs/<sha256>.b64`를 열거나 디코딩하지 않고, 검수 탭을 `get_page_text`·`read_page`·스크린샷으로 읽지 않는다. 건수와 위치만 보고한다.
 
 ## 진행 현황 표시
@@ -105,6 +107,24 @@ python "<S>/init_workspace.py" --input "<IN>"
 
 중복을 빼고 나니 처리할 파일이 0개면(`file_counts` 합계 = `skipped`) 그 사실을 알리고 멈춘다.
 
+#### 1-2. 검수 피드백 승인 확인
+
+```bash
+python -m engrbot labeling-rules status --workspace "<WS>"
+```
+출력 JSON의 `candidates`(승인 대기 규칙 후보, 그중 `candidates_conflict`는 상충), `examples_pending`(승인 대기 사례 후보), `rules.enabled`(이미 승인돼 켜진 규칙), `examples.enabled`(승인돼 켜진 사례)를 본다. 후보는 이전 검수에서 `/BEOL-labeling-feedback`이 Engr-bot 장부로 넘긴 사람 교정에서 나온다.
+
+- `candidates`와 `examples_pending`이 모두 0이면 묻지 않고 2단계로 간다.
+- 하나라도 있으면 2단계로 가기 전에 `AskUserQuestion`으로 한 번 묻는다. 질문에는 건수와 후보 리포트 위치(`workspaces/_engrbot/ledger/labeling_candidates.md`)만 쓴다.
+
+| 선택지 | 처리 |
+|---|---|
+| 상충 없는 후보·사례 전부 승인 | `python -m engrbot labeling-rules approve --workspace "<WS>" --all --examples all`. 상충 후보는 승인하지 않고 남는다(출력의 `skipped_conflict`). 승인한 규칙 수·사례 수를 보고한다 |
+| 이미 승인된 것만 반영 | 승인하지 않고 2단계로 간다. 대기분은 다음 실행에 다시 묻는다 |
+| 이번엔 피드백 없이 | 3단계를 `python -m labelbot run --workspace "<WS>" --no-feedback`으로 돌린다 |
+
+규칙·사례를 골라 승인하거나 문장을 고치고 싶다고 하면, 리포트의 ID로 `engrbot labeling-rules approve --workspace "<WS>" --ids FR-…,EX-…`를 부르거나 `taxonomy/labeling_rules.json`을 사용자가 고친 뒤 진행한다.
+
 ### 2. 사전 점검
 
 ```bash
@@ -117,7 +137,7 @@ python -m labelbot selfcheck --workspace "<WS>" --probe-llm
 ```bash
 python -m labelbot run --workspace "<WS>"
 ```
-LLM 호출은 chunk당 3회(1차 분류·2차 검증 질문 생성·3차 라벨링)이고 6개씩 병렬이라, 파일 10개(chunk 50개 안팎)면 약 4~7분 걸린다. 백그라운드로 실행하고, `Monitor`로 단계 줄을 감시해 milestone 3~6의 진행 현황을 갱신하면서 끝날 때까지 기다린다. `[run] 완료 run_id=...`가 나와야 끝난 것이고, 출력의 `run_id`를 `<RUN>`으로 쓴다.
+`[feedback] …` 줄이 이번 실행에 넣은 승인 규칙 수·사례 풀·제외 사유(원래 작업 폴더가 없거나 본문이 바뀐 사례, 사외 가드)·유사도 방식을 알린다. 사례 본문은 승인 파일에 없고 원래 작업 폴더의 DB에서 읽기 전용으로 가져온다. 승인된 사례가 있고 임베딩을 쓸 수 있으면 분류 전에 이번 chunk를 한 번 임베딩한다(임베딩 호스트로 본문이 나가며 같은 더미 가드를 거친다. 저장된 벡터는 검수 뒤 임베딩 단계가 다시 쓰므로 호출이 늘지 않는다). LLM 호출은 chunk당 3회(1차 분류·2차 검증 질문 생성·3차 라벨링)이고 6개씩 병렬이라, 파일 10개(chunk 50개 안팎)면 약 4~7분 걸린다. 백그라운드로 실행하고, `Monitor`로 단계 줄을 감시해 milestone 3~6의 진행 현황을 갱신하면서 끝날 때까지 기다린다. `[run] 완료 run_id=...`가 나와야 끝난 것이고, 출력의 `run_id`를 `<RUN>`으로 쓴다.
 
 끝나면 바로 처리 완료 파일 목록을 남긴다.
 ```bash
@@ -153,6 +173,7 @@ python "<S>/summary.py" --workspace "<WS>" --run <RUN>
 - 추출 경고: `extract:*` 사유 코드별 건수(날짜·담당자 값을 저장하지 않은 건수. 라벨에는 영향 없음). 없으면 생략
 - 후보: 새 값 n, 동의어 n → 다음 실행으로 넘김(reports/candidates.md)
 - taxonomy 재검토 요청: 누적 n(reports/taxonomy_revisit.md, 출처 summary의 revisits). 리포트는 열어 보고하지 않는다
+- 검수 피드백: 승인 규칙 분류 n·라벨 n, 사례 풀 n(사례를 받은 chunk n, 유사도 <방식>). summary의 `feedback`이 출처이며, `enabled=false`면 그 `reason`(꺼짐·승인된 것 없음)을 쓴다
 - Supabase: 아직 적재하지 않음(검수 후 BEOL-labeling-feedback에서 적재)
 ```
 `failures`에 `EXTERNAL_NON_DUMMY`가 있으면 "더미 해시 목록 밖 파일이라 사외 LLM 호출이 막혔다"고 따로 적는다.

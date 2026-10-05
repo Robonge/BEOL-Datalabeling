@@ -24,6 +24,8 @@ def _parser():
     for name, h in (("ingest", "수집·파싱·chunk"), ("run", "전 단계 실행")):
         sp = add(name, h)
         sp.add_argument("--input", help="입력 폴더(기본: pipeline.json input_root 또는 작업 폴더 raw/)")
+        if name == "run":
+            sp.add_argument("--no-feedback", action="store_true", help="승인된 검수 피드백 규칙·사례를 이번 실행에 넣지 않는다")
     for name, h in (("compare", "파싱 대조 화면"), ("review", "불량 목록과 검수 화면"), ("report", "기준선 리포트 재계산"),
                     ("dashboard", "결과 대시보드 화면"),
                     ("embed", "chunk 임베딩"), ("push-vectors", "Supabase 벡터 적재"),
@@ -65,7 +67,7 @@ def main(argv=None):
             run_ingest(ws, args.input or ws.input_root)
             return 0
         if args.command == "run":
-            run_all(ws, args.input or ws.input_root)
+            run_all(ws, args.input or ws.input_root, use_feedback=not args.no_feedback)
             return 0
         con = store.connect(ws.work_db)
         try:

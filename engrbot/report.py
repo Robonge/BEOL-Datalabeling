@@ -176,6 +176,33 @@ def _judge(run, m):
                                                                                  "failed")}}
 
 
+def _int_or_none(x):
+    return x if isinstance(x, int) and not isinstance(x, bool) else None
+
+
+def _ledger(man):
+    """manifest ledger의 건수만 뽑는다(경로·본문 없음). 장부가 없으면 None."""
+    led = man.get("ledger")
+    if not isinstance(led, dict) or not led:
+        return None
+    intake = led.get("intake") if isinstance(led.get("intake"), dict) else {}
+    ex = (man.get("judge") or {}).get("examples")
+    ex = ex if isinstance(ex, dict) else {}
+    used = _int_or_none(ex.get("used"))
+    same, ext = _int_or_none(ex.get("excluded_same_source")), _int_or_none(ex.get("excluded_external"))
+    err = led.get("intake_error")
+    return {
+        "intake_cases": _int_or_none(intake.get("cases")),
+        "intake_corrected": _int_or_none(intake.get("corrected")),
+        "intake_confirmed": _int_or_none(intake.get("confirmed")),
+        "golden_total": _int_or_none(led.get("golden_total")),
+        "examples_used": used,
+        "examples_excluded": None if same is None and ext is None else (same or 0) + (ext or 0),
+        "candidates": _int_or_none(led.get("candidates_loaded")),
+        "intake_error": err if isinstance(err, str) and _KIND_RE.match(err) else ("OTHER" if err else None),
+    }
+
+
 def build(run, m, history, trans):
     man = run.manifest or {}
     ctx = _ctx(run)
@@ -188,7 +215,7 @@ def build(run, m, history, trans):
         k = p.get("kind") if isinstance(p.get("kind"), str) and _KIND_RE.match(p.get("kind")) else "OTHER"
         by_kind[k] = by_kind.get(k, 0) + 1
     file_issues = sorted({(fi["file_id"], fi["code"]) for fi in run.file_issues})
-    return {
+    rep = {
         "qa_run_id": run.qa_run_id,
         "labeler_run_id": run.labeler_run_id,
         "versions": man.get("versions") or dict(ctx.versions),
@@ -215,6 +242,10 @@ def build(run, m, history, trans):
         "proposals": {"count": len(run.proposals), "by_kind": dict(sorted(by_kind.items()))},
         "transitions": trans,
     }
+    led = _ledger(man)
+    if led is not None:
+        rep["ledger"] = led
+    return rep
 
 
 # ---- report.md ---------------------------------------------------------------
@@ -264,6 +295,15 @@ def render_md(rep):
                                     else "기준선 %s%s" % (d["baseline_qa_run_id"], ", taxonomy 변경됨" if d["taxonomy_changed"] else "")))
     lines.append("- REVIEW 대기 %d건, 규칙 제안 %d건, 용어 후보 %d건" % (
         rep["review_queue"]["count"], rep["proposals"]["count"], rep["unmapped_terms"]["count"]))
+    led = rep.get("ledger")
+    if led:
+        def n(k):
+            return "-" if led.get(k) is None else str(led[k])
+
+        lines.append("- 교정 장부: 이번 intake 사례 %s(교정 %s, 확인 %s), 누적 골든 %s, "
+                     "judge 예시 사용 %s회(요청 누적, 제외 %s회), L4 후보 %s%s" % (n("intake_cases"), n("intake_corrected"), n("intake_confirmed"),
+                                     n("golden_total"), n("examples_used"), n("examples_excluded"), n("candidates"),
+                                     ", intake 오류 %s" % led["intake_error"] if led.get("intake_error") else ""))
     lines.append("")
 
     v = rep["versions"]

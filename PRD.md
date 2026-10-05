@@ -62,6 +62,7 @@
 | H6 | 라벨링 후 | 불량 목록의 chunk를 검수한다. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 검수 중 발견한 동의어는 교정 파일(`.json`)에 담기고, 후보 리포트의 "검수 등록" 행으로 나온다. taxonomy가 내용을 담지 못하는 축·질문은 재검토 요청(사유 코드, 제안 값, 메모 500자)으로 남기며, `reports/taxonomy_revisit.md`로 나온다. 다 끝나면 검수 화면의 "검수 완료" 버튼을 누르고(교정이 없어도 누른다), 그 신호로 반영·임베딩·적재가 이어진다. | 검수 화면, `reports/taxonomy_revisit.md` | 대기(검수 완료 버튼까지) |
 | H7 | 산출 후 | 봇이 `reports/query_candidates.md`에 올린 조회 질문 후보 중 검증에 쓸 질문을 `queries` 시트에 붙여넣고 채택 열을 Y로 둔다. | `reports/query_candidates.md`, `taxonomy.xlsx`(`queries` 시트) | 대기 |
 | H8 | 1차 분류 후, 라벨링 후 | 봇이 올린 동의어 후보를 보고 승인할 것을 `synonyms` 시트에 붙여넣는다. 시트에 옮긴 동의어는 다음 실행부터 쓰인다(6.2절). | `reports/candidates.md`, `taxonomy.xlsx`(`synonyms` 시트) | 계속(처리 전 후보는 시트에 넣지 않는다) |
+| H9 | 검수 반영 후, 다음 실행 전 | 검수 교정에서 Engr-bot이 센 규칙 후보(축 값 혼동·과잉·누락, 질문 답 뒤집힘)와 사람이 손댄 chunk 사례를 보고 승인·기각한다. 승인한 규칙은 다음 실행의 1차 분류·3차 라벨링 프롬프트에 "검수 피드백 지침"으로, 승인한 사례는 비슷한 chunk의 1차 분류에 few-shot으로 들어간다. 규칙 문장은 사람이 고칠 수 있다. | `workspaces/_engrbot/ledger/labeling_candidates.md`, `taxonomy/labeling_rules.json`, `engrbot labeling-rules approve·reject` | 계속(승인 전에는 넣지 않는다) |
 
 **H5 라벨 분포 알림 조건**
 
@@ -763,6 +764,13 @@ flowchart LR
 
 - 사용자 결정: (1) H6 불량 chunk 검수는 검수 반영 스킬(`BEOL-labeling-feedback`)이 검수 화면을 띄우고 기다리는 단계로 둔다. 끝났는지 묻지 않고, 검수 화면의 "검수 완료" 버튼 신호로 반영·적재를 잇는다. (2) H2 파싱 대조는 그 스킬이 시작할 때 실행 여부를 묻고, 하겠다고 하면 검수 화면과 함께 연다. (3) 라벨링 스킬(`BEOL-labeling`)은 결과 대시보드만 띄우고 검수 대기에서 멈춘다.
 - 바뀐 곳: 3.2절 H2·H6, FR-7(화면 서버와 검수 완료 버튼). 새로 둔 것: `POST /inbox/review/done`, 완료 신호 `signals/review_done_<실행ID>.json`(허용 형식 `.json`, 건수만).
+
+### 2026-10-05 검수 교정 피드백 루프
+
+- 점검: 사람 교정은 그 작업 폴더의 `corrections`에만 남아 최종 라벨만 바꾸고, 실행마다 새 작업 폴더를 쓰므로 다음 실행의 1차 분류·3차 라벨링에 되먹이는 길이 없었다.
+- 사용자 결정: 규칙 요약과 유사 사례 few-shot을 함께 쓰고, 사람이 승인한 것만 적용한다(H9). 봇은 승인하지 않는다.
+- 저장 위치: 승인 규칙과 사례 참조(작업 폴더 이름, chunk ID, 본문 해시, 확정 라벨)는 본문 없는 `taxonomy/labeling_rules.json`(git 추적)에 둔다. 사례 본문은 실행할 때 원래 작업 폴더 DB에서 읽기 전용으로 가져오므로 따로 복사본을 두지 않는다. 사례는 사외 전송 가드를 통과한 파일에서만 고르고, 같은 파일·같은 본문의 사례는 그 chunk에 쓰지 않는다.
+- 2026-10-05 소유 이동(사용자 결정): 교정 수집·규칙·사례 후보·승인은 Engr-bot(`engrbot intake`, `engrbot labeling-rules`)이 맡고, labelbot은 승인 파일만 읽는다. 처음 둔 labelbot 쪽 수집 저장소(`workspaces/_feedback/`)와 `labelbot feedback` 명령은 없앴다.
 
 ### 2026-10-05 실행별 taxonomy 재검토 파일
 

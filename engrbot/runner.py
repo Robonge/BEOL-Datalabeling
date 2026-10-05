@@ -6,6 +6,7 @@
 """
 import hashlib
 import os
+import sqlite3
 import time
 
 import engrbot
@@ -115,6 +116,14 @@ def make_judge(pol, bundle, paths, no_judge=False, llm=None, log=None, skip_reas
                              cache_path=paths.judge_cache if paths else None, log=log, llm=llm)
     except judge_mod.JudgeUnavailable as e:
         return None, e.reason_code
+    lcfg = pol.get("ledger") or {}
+    jex = lcfg.get("judge_examples") or {}
+    if paths and lcfg.get("enabled") and jex.get("enabled") and hasattr(j, "set_examples"):
+        # 교정 장부의 사람 판정 예시를 judge 프롬프트에 넣는다. 장부가 없거나 깨졌으면 예시 없이 돈다
+        rows, code = _ledger_call(lambda ledger: ledger.read_examples(ledger.ledger_dir(paths.root, pol)))
+        if code:
+            (log or io.null_log)("ledger", "-", code)
+        j.set_examples(rows or [], k_per_item=jex.get("k_per_item", 2), max_per_call=jex.get("max_per_call", 6))
     return j, None
 
 
@@ -147,6 +156,7 @@ def execute(bundle, pol, sch, paths=None, qa_run_id=None, no_judge=False, llm=No
     vers = versions(bundle, pol, sch, getattr(judge, "name", None))
     ctx = engine.Ctx(bundle, pol, sch, judge=judge, qa_run_id=qa_run_id, versions=vers, log=log, paths=paths,
                      judge_skip_reason=skip)
+    ctx.ledger_dir, ctx.ledger_error = _ledger_dir(paths, pol)
     out = engine.run(bundle, ctx)
     return RunResult(qa_run_id=qa_run_id, labeler_run_id=bundle.labeler_run_id, paths=paths, policy=pol, schema=sch,
                      bundle=bundle, ctx=ctx, verdicts=out["verdicts"], file_issues=out["file_issues"],
@@ -165,9 +175,81 @@ def new_run_id(paths):
 
 def _judge_stats(judge):
     if judge is None:
-        return {"calls": 0, "cache_hits": 0, "failed": 0, "sent_params": {}}
+        return {"calls": 0, "cache_hits": 0, "failed": 0, "sent_params": {}, "examples": {}}
     return {"calls": judge.calls, "cache_hits": judge.cache_hits, "failed": judge.failed,
-            "sent_params": judge.sent_params()}
+            "sent_params": judge.sent_params(), "examples": dict(getattr(judge, "example_stats", {}) or {})}
+
+
+LEDGER_IO_ERRORS = (OSError, ValueError, KeyError, TypeError, sqlite3.Error)
+
+
+def _ledger_call(fn):
+    """장부 호출을 감싼다. 실패해도 실행을 멈추지 않는다. 반환: (결과 또는 None, 사유 코드 또는 None)."""
+    from engrbot import ledger
+
+    try:
+        return fn(ledger), None
+    except ledger.LedgerError as e:
+        return None, e.reason_code
+    except model.BundleError as e:
+        return None, e.reason_code
+    except LEDGER_IO_ERRORS:
+        return None, "LEDGER_IO_FAILED"
+
+
+def _ledger_dir(paths, pol):
+    """L4 후보·judge 예시를 읽을 장부 위치. 반환: (위치 또는 None, 사유 코드 또는 None).
+    작업 폴더가 없거나 장부를 끄면 (None, None). 허용 위치 밖이면 (None, 코드)."""
+    if paths is None or not (pol.get("ledger") or {}).get("enabled"):
+        return None, None
+    return _ledger_call(lambda ledger: ledger.ledger_dir(paths.root, pol))
+
+
+def auto_intake(paths, pol, log, schema=None):
+    """run 시작 때 그 작업 폴더를 장부에 반영한다. 실패해도 run을 멈추지 않는다. 반환: (intake 결과 또는 None, 사유 코드 또는 None)."""
+    out, code = _ledger_call(lambda ledger: ledger.intake(paths.root, pol, schema=schema))
+    log("ledger", "-", code or (out or {}).get("reason") or "INTAKE_OK")
+    return out, code
+
+
+def _candidates_loaded(pol, d):
+    """L4가 이번 실행에 실제로 더한 후보 규칙 수(L4가 꺼져 있으면 0)."""
+    if "L4" not in pol["layers"]:
+        return 0
+    from engrbot.checks import l4_domain
+
+    try:
+        return len(l4_domain.rules_for(pol, d)) - len(l4_domain.rules_for(pol, None))
+    except policy_mod.PolicyError:
+        return 0
+
+
+def _ledger_manifest(result, intake_out, intake_error):
+    """manifest["ledger"]: 건수, 버전, 표시 이름만 넣는다(경로 전체를 쓰지 않는다)."""
+    d = result.ctx.ledger_dir
+    out = {"dir": None, "intake": None, "intake_error": intake_error or getattr(result.ctx, "ledger_error", None),
+           "examples_loaded": 0, "examples_sha": None, "candidates_loaded": 0, "candidates_version": None,
+           "golden_total": 0}
+    if d is None:
+        return out
+    from engrbot import ledger
+
+    pol = result.policy
+    st, _ = _ledger_call(lambda lg: lg.status(d))
+    cand, _ = _ledger_call(lambda lg: lg.read_candidates(d))
+    judge = result.ctx.judge
+    jex = (pol.get("ledger") or {}).get("judge_examples") or {}
+    ids = []
+    if judge is not None and jex.get("enabled") and hasattr(judge, "set_examples"):
+        rows, _ = _ledger_call(lambda lg: lg.read_examples(d))
+        ids = sorted(e["example_id"] for e in rows or [])
+    stats = getattr(judge, "example_stats", None) or {}
+    out.update({"dir": ledger.dir_label(d), "intake": ledger.counts_only(intake_out),
+                "examples_loaded": int(stats.get("loaded", len(ids)) or 0),
+                "examples_sha": model.hash_obj(ids)[:12] if ids else None,
+                "candidates_loaded": _candidates_loaded(pol, d),
+                "candidates_version": (cand or {}).get("version"), "golden_total": (st or {}).get("golden", 0)})
+    return out
 
 
 def write_verdicts(run):
@@ -184,6 +266,14 @@ def run(paths, labeler_run_id=None, bundle_dir=None, layers=None, no_judge=False
 
     pol, sch = policy_mod.load(paths, policy_path, schema_path)
     log = io.Logger(paths.log_path)
+    lcfg = pol.get("ledger") or {}
+    intake_out = intake_error = None
+    if lcfg.get("enabled"):
+        _, intake_error = _ledger_dir(paths, pol)
+        if intake_error:
+            log("ledger", "-", intake_error)
+        elif bundle_dir is None and lcfg.get("auto_intake"):
+            intake_out, intake_error = auto_intake(paths, pol, log, schema=sch)
     bundle = load_bundle(paths, labeler_run_id, bundle_dir)
     qa_run_id = new_run_id(paths)
     started = model.now_iso()
@@ -218,6 +308,8 @@ def run(paths, labeler_run_id=None, bundle_dir=None, layers=None, no_judge=False
         "started_at": started,
         "finished_at": None,
     }
+    if lcfg.get("enabled"):
+        result.manifest["ledger"] = _ledger_manifest(result, intake_out, intake_error)
     result.queue, result.rework = queue.write(result)
     result.proposals = proposals.write(result)
     report.write(result)

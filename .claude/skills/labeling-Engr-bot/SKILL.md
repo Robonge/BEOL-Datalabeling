@@ -17,6 +17,19 @@ labelbot이 만든 라벨을 BEOL 도메인 관점으로 검수한다. 기본 �
 - 작업 폴더 `<WS>`: 인자로 받는다. 없으면 코드 폴더의 `workspaces\` 아래에서 고른다. 폴더가 없거나 여러 개이면 사용자에게 어느 폴더인지 묻는다. 임의로 고르지 않는다.
 - 결과 위치: `<WS>\qa\runs\<qa_run_id>\` 아래에 `report.md`, `report.json`, `review.html` 등이 생긴다.
 - 도메인 규칙 파일: `engrbot/defaults/domain_rules.json`(`policy`의 `l4.rules_path`로 바꿀 수 있다).
+- 교정 장부: `workspaces\_engrbot\ledger\`(커밋 제외). 사람 검수 교정이 Engr-bot 입력으로 들어오는 곳이다. 설계는 `engrbot/docs/plan-ledger.md`.
+
+## 사람 검수 결과를 입력으로 받는다 (사용자 결정, 2026-10-05)
+
+`/BEOL-labeling-feedback`이 검수 교정을 반영하면(`labelbot apply`) 바로 `python -m engrbot intake --workspace "<WS>"`를 불러 그 작업 폴더의 교정을 교정 장부에 넣는다. `engrbot run`도 시작할 때 그 작업 폴더를 다시 intake한다(멱등, LLM 0회). 장부는 세 곳에 쓰인다.
+
+| 장부 산출 | 쓰는 곳 |
+|---|---|
+| `golden.jsonl` 누적 골든셋 | `python -m engrbot eval --workspace "<WS>" --golden ledger`(층별 탐지율·오탐률) |
+| `judge_examples.jsonl` 사람 판정 예시 | L3b judge 호출에 비슷한 라벨의 사람 판정 사례를 예시로 붙인다. 같은 파일·같은 본문의 사례는 쓰지 않고, 사외 호스트에서 허용되지 않는 출처의 사례는 빠진다 |
+| `rule_candidates.json` L4 규칙 후보 | 반복된 교정 패턴에서 만든 draft 규칙이다. `run`이 draft로 함께 적용해 `L4_RULE_DRAFT_HIT`(판정 영향 없음)로 얼마나 걸리는지 보여 준다. 승인은 사람이 `engrbot/defaults/domain_rules.json`에 옮겨 `approved`로 바꾸는 것이다 |
+
+장부의 `golden.jsonl`·`judge_examples.jsonl`에는 본문 인용이 들어 있다. Read·Grep·`cat`으로 열어 보고하지 않고 `python -m engrbot ledger --workspace "<WS>" status` 출력의 건수만 쓴다. 후보 규칙 목록은 `rule_candidates.md`(본문 없음)를 사람이 연다.
 
 ## 도메인 규칙의 상태
 
@@ -61,7 +74,11 @@ judge 설정이 없거나 judge를 부르지 않으려면 `--no-judge`를 붙인
 
 ### 3. 콘솔 결과 전달
 
-콘솔의 `[run] qa_run_id=<ID> 레코드 n (PASS n, AUTO_FIX n, REVIEW n, REJECT n)` 줄에서 qa_run_id와 판정 건수를 그대로 전한다. judge 줄(`호출 n회` 또는 `미실행`)도 한 줄로 전한다.
+콘솔의 `[run] qa_run_id=<ID> 레코드 n (PASS n, AUTO_FIX n, REVIEW n, REJECT n)` 줄에서 qa_run_id와 판정 건수를 그대로 전한다. judge 줄(`호출 n회` 또는 `미실행`)도 한 줄로 전한다. 교정 장부 상태가 필요하면 아래 명령의 건수 줄만 전한다.
+
+```bash
+python -m engrbot ledger --workspace "<WS>" status
+```
 
 ### 4. 리포트와 검토 화면 안내
 
@@ -86,7 +103,7 @@ python -m engrbot review --workspace "<WS>" --qa-run <ID>
 | `L4_RULE_DRAFT_HIT` | draft 규칙에 걸림(info, 판정 영향 없음) |
 | `L5_DUP_GROUP_DISAGREE` | 중복 묶음 안에서 분류 축 값이 서로 다름 |
 
-보고는 코드별 건수와 판정(PASS·AUTO_FIX·REVIEW·REJECT) 건수, 리포트와 검토 화면 위치만 짧게 쓴다. 본문과 파일명은 옮기지 않는다. `draft` 규칙에 걸린 건이 있으면 "규칙이 draft라 판정에는 반영되지 않았다"고 한 줄 덧붙인다.
+보고는 코드별 건수와 판정(PASS·AUTO_FIX·REVIEW·REJECT) 건수, 리포트와 검토 화면 위치만 짧게 쓴다. 본문과 파일명은 옮기지 않는다. `draft` 규칙에 걸린 건이 있으면 "규칙이 draft라 판정에는 반영되지 않았다"고 한 줄 덧붙인다. 리포트 요약의 "교정 장부" 줄이 있으면(이번 intake 사례·누적 골든·judge 예시 사용·L4 후보 건수) 그대로 한 줄로 전하고, draft 적중 중 `cand-`로 시작하는 규칙은 장부 후보라고 구분한다.
 
 ## 이 스킬이 하지 않는 일
 

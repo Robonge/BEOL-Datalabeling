@@ -55,6 +55,9 @@ def main():
         out["review_synonyms"] = q(
             "SELECT COUNT(DISTINCT content) FROM candidates WHERE source='review' AND run_id=?", run)[0][0]
         out["embeddings"] = q("SELECT COUNT(*) FROM chunk_embeddings WHERE run_id=?", run)[0][0]
+        # 검수 피드백 적용 건수(승인 규칙 수, 사례 풀, 사례를 받은 chunk 수, 유사도 방식). 이 기능 전 실행이면 None.
+        fa = q("SELECT value FROM meta WHERE key=?", "feedback_applied:" + run)
+        out["feedback"] = json.loads(fa[0][0]) if fa else None
     out["compare_marks"] = {s: n for s, n in q("SELECT status, COUNT(*) FROM compare_marks GROUP BY 1")}
     out["pushed_ok"] = q("SELECT COUNT(DISTINCT chunk_id) FROM vector_push_log WHERE result_code='OK'")[0][0]
     # taxonomy 재검토 요청: 건수만 낸다(메모·제안 값은 읽지 않는다). 읽기 전용이라 마이그레이션 전 DB면 표가 없다.

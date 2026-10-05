@@ -8,7 +8,7 @@ description: BEOL-labeling이 검수 대기에서 멈춘 뒤 사람 검수부터
 `/BEOL-labeling`이 검수 대기에서 멈춘 뒤 이어서 쓴다. 이 스킬이 검수 화면을 띄우고, 사람이 검수를 마치고 **검수 완료**를 누를 때까지 기다린 뒤, 교정과 대조 기록을 반영하고 확정된 라벨로 Supabase에 올린다. LLM 분류·라벨링은 다시 부르지 않는다(임베딩만 호출).
 
 ```
-상태 확인 → (H2 대조 여부 질문) → 검수 화면 띄우기 → [사람: H6 검수(+H2 대조) → 검수 완료] → 교정 모으기 → 반영 → 화면·리포트 → 임베딩 → 적재 → 보고
+상태 확인 → (H2 대조 여부 질문) → 검수 화면 띄우기 → [사람: H6 검수(+H2 대조) → 검수 완료] → 교정 모으기 → 반영 → Engr-bot 장부·라벨링 규칙 후보 → 화면·리포트 → 임베딩 → 적재 → 보고
 ```
 
 ## 사람 개입 지점을 이렇게 다룬다 (사용자 결정, 2026-10-04)
@@ -36,6 +36,8 @@ description: BEOL-labeling이 검수 대기에서 멈춘 뒤 사람 검수부터
 - 봇은 `taxonomy.xlsx`를 고치지 않는다. 검수 중 등록한 동의어는 `reports/candidates.md`의 "검수 등록" 행으로만 나오며, 시트에 붙여넣는 것은 사람 몫이고 다음 실행에 반영된다. 검수 중 남긴 taxonomy 재검토 요청은 `reports/taxonomy_revisit.md`(누적)와, `apply`가 반영한 검수 실행마다 쓰는 `taxonomy/taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`(그 실행분만, taxonomy.xlsx가 있는 폴더 기준, git 추적 대상)으로만 나오며 처리됨 판정은 없다. 라벨과 `label_hash`를 바꾸지 않으므로 Supabase 재적재도 없다.
 - 재검토 메모에는 사내 본문이 들어 있을 수 있다. `reports/taxonomy_revisit.md`·`.jsonl`과 `taxonomy/taxonomy_revisit_requests/`의 파일을 Read·Grep·`cat`으로 열어 보고하지 않는다(파일 수와 위치는 `apply` 출력 줄로만 안다). `revisit_requests`는 `COUNT`와 `reason`별 `GROUP BY`만 조회한다(`SELECT *`, `.dump`, 다른 열 조회 금지). inbox JSON과 `inputs/<sha256>.b64`는 `apply` 밖에서 열거나 디코딩하지 않는다. 검수 탭과 JSON 저장 대체 텍스트 창에는 `get_page_text`·`read_page`·`find`·스크린샷을 쓰지 않는다(3-2의 건수 스니펫과 저장 버튼을 찾는 `find`만 허용하며 `javascript_tool`은 `revisits.length`만 읽는다). 위치와 건수(요약의 `revisits`)만 보고한다.
 - 보고에는 건수, 실행 ID, 사유 코드만 쓴다.
+- Engr-bot 교정 장부(4-1, `workspaces/_engrbot/ledger/`)의 `golden.jsonl`·`judge_examples.jsonl`에는 본문 인용이 있다. 열거나 조회하지 않고 `engrbot intake` 출력의 건수만 쓴다.
+- 라벨링 규칙·사례 후보(4-2)는 교정을 다음 라벨링의 규칙·사례 후보로 셀 뿐이고 승인하지 않는다. 승인은 다음 `/BEOL-labeling` 1-2에서 사람이 한다. 후보 리포트 `labeling_candidates.md`와 승인 파일 `taxonomy/labeling_rules.json`에는 본문이 없어 위치를 링크해도 된다.
 
 ## 진행 현황 표시
 
@@ -171,6 +173,22 @@ python -m labelbot apply --workspace "<WS>" --kind review
 
 재검토 요청이 1건 이상인 검수 실행을 반영하면 `[apply] taxonomy 재검토 요청 파일 N개 → taxonomy/taxonomy_revisit_requests/` 줄이 나온다(실행마다 `taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json` 3개, 같은 초면 `_2` 접미). 파일 내용은 열지 않고 이 줄의 개수와 위치만 보고한다. 엑셀 반영은 사람 몫이다: md의 탭 구분 코드 블록이나 html 표(머리글 아래 A~K 칸)를 복사해 taxonomy 시트 A열에 붙인다("확인 필요" 블록은 고친 뒤 붙인다).
 
+### 4-1. Engr-bot 교정 장부로 넘기기 (LLM 호출 0회)
+
+반영(`apply`)이 `OK`인 review가 하나라도 있으면 항상 돌린다. 사람 검수 결과를 Engr-bot의 입력(누적 골든셋, L3b judge 판정 예시, L4 규칙 후보, 라벨링 규칙·사례 후보)으로 넘기는 단계다(사용자 결정, 2026-10-05). 진행 현황에서는 milestone 3 "교정 반영"에 딸린 과정으로 보고 블록을 따로 갱신하지 않는다.
+```bash
+python -m engrbot intake --workspace "<WS>"
+```
+작업 폴더 DB를 읽기 전용으로 읽어 `workspaces/_engrbot/ledger/`의 이 작업 폴더 몫을 바꾼다(다시 돌려도 결과가 같다). `[intake] …`·`[ledger] …` 줄의 건수와 건너뜀 사유 코드만 보고에 쓴다. 장부의 `golden.jsonl`·`judge_examples.jsonl`에는 본문 인용이 있으므로 열지 않는다. 실패(`[오류] <코드>`)해도 반영·적재는 계속하고 사유 코드만 보고한다.
+
+### 4-2. 라벨링 규칙·사례 후보 만들기 (LLM 호출 0회)
+
+4-1이 성공했을 때만 돌린다. 진행 현황에서는 milestone 3에 딸린 과정으로 본다.
+```bash
+python -m engrbot labeling-rules candidates --workspace "<WS>"
+```
+Engr-bot이 장부의 교정 패턴으로 다음 라벨링(1차 분류·3차 라벨링)에 넣을 규칙 후보와 few-shot 사례 후보를 세어 `workspaces/_engrbot/ledger/labeling_candidates.md`(본문 없음)를 다시 쓴다. `[labeling-rules] …` 줄의 건수만 보고에 쓴다. 승인은 하지 않는다(다음 `/BEOL-labeling` 1-2에서 묻는다). 실패해도 반영·적재는 계속하고 사유 코드만 보고한다.
+
 ### 5. 화면·리포트 다시 만들기 (LLM 호출 0회)
 
 ```bash
@@ -213,6 +231,8 @@ python ".claude/skills/BEOL-labeling/scripts/summary.py" --workspace "<WS>" --ru
 압축 규칙:
 - **링크는 빼지 않는다.** 대시보드 URL, 작업 폴더, 재검토 요청이 1건 이상이면 누적 리포트(`reports/taxonomy_revisit.md`)와 실행별 폴더, 검수 등록 동의어가 1건 이상이면 `reports/candidates.md`를 마크다운 링크로 남긴다. 경로는 코드 폴더 기준 상대 경로로 쓴다.
 - **0건이거나 기본값인 항목은 쓰지 않는다.** 확인·판단 불가·재검수 필요가 0이면 교정에서 빼고, 차단·건너뜀·실패가 0이면 빼고, 동의어 0건이면 candidates 줄을 빼고, 대조를 안 했으면 대조 줄을 뺀다. Downloads에서 옮긴 파일이 0이면 "모은 파일"도 쓰지 않는다.
+- **피드백 줄은 4-2를 돌렸으면 한 줄 쓴다.** `라벨링 피드백: 규칙 후보 k개(상충 c)·사례 후보 p개(다음 /BEOL-labeling에서 승인) → [labeling_candidates.md](workspaces/_engrbot/ledger/labeling_candidates.md)`. 출처는 4-2의 `[labeling-rules]` 줄이고, 실패했으면 `라벨링 피드백: <사유 코드>`로 쓴다.
+- **Engr-bot 장부 줄은 4-1을 돌렸으면 한 줄 쓴다.** `Engr-bot 장부: 사례 n(교정 n, 확인 n) → 누적 골든 n · judge 예시 n · L4 후보 n(draft)`. 출처는 4-1의 `[intake]`·`[ledger]` 줄이고, 실패했으면 `Engr-bot 장부: <사유 코드>`로 쓴다.
 - **조건부 줄은 해당될 때만 한 줄씩 붙인다.** 파싱 대조(`대조: 이상 없음 n, 이상 있음 n`), 동의어(`동의어 n → [candidates.md](…) "검수 등록" 행을 synonyms 시트에`), `REVISIT_*`·`EXTERNAL_NON_DUMMY`·전송 실패 같은 사유 코드, Supabase 적재 꺼짐(`supabase.enabled=false`), 3-2에서 대신 내려받은 경우.
 - 엑셀 붙여넣기 방법(md 탭 블록 또는 html 표 → taxonomy 시트 A열)은 재검토 요청이 있을 때 재검토 줄 끝에 괄호로 짧게만 적는다.
 - 보고 뒤에 설명 문단을 덧붙이지 않는다. 이번 대화에서 설정을 바꾼 것(포트 변경 등)처럼 사용자가 꼭 알아야 할 일만 `※` 한 줄로 쓴다.

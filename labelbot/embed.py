@@ -23,10 +23,12 @@ def run_chunks(con, run_id):
         "WHERE f.status='ok' AND l.last_seen_run=? ORDER BY c.file_id, c.seq", (run_id,))]
 
 
-def embed(ws, con, run_id, transport=None, log=None):
+def embed(ws, con, run_id, transport=None, log=None, quiet=False):
+    """quiet=True(피드백 사례 유사도용, run 안에서 부름): 출력하지 않고 failures 표에도 남기지 않는다(로그만)."""
     cfg = ws.config["embedding"]
     if not cfg.get("enabled"):
-        print("[embed] embedding.enabled=false: 호출하지 않습니다.")
+        if not quiet:
+            print("[embed] embedding.enabled=false: 호출하지 않습니다.")
         return {"called": 0, "stored": 0, "skipped": 0, "blocked": 0}
     if transport is None:
         if cfg.get("transport") == "mock":
@@ -46,7 +48,8 @@ def embed(ws, con, run_id, transport=None, log=None):
         try:
             check_send(url, [c["file_id"]], suffixes)
         except SendBlocked as e:
-            store.add_failure(con, run_id, "embed", c["chunk_id"], e.reason_code)
+            if not quiet:
+                store.add_failure(con, run_id, "embed", c["chunk_id"], e.reason_code)
             if log:
                 log("embed", c["chunk_id"], e.reason_code)
             blocked += 1
@@ -62,13 +65,17 @@ def embed(ws, con, run_id, transport=None, log=None):
             vecs = transport.embed([c["text"] for c in batch])
         except (CallFailed, SendBlocked) as e:
             for c in batch:
-                store.add_failure(con, run_id, "embed", c["chunk_id"], e.reason_code)
+                if not quiet:
+                    store.add_failure(con, run_id, "embed", c["chunk_id"], e.reason_code)
             if log:
                 log("embed", batch[0]["chunk_id"], e.reason_code)
             continue
         if len(vecs) != len(batch):
             for c in batch:
-                store.add_failure(con, run_id, "embed", c["chunk_id"], "RESPONSE_SHAPE")
+                if not quiet:
+                    store.add_failure(con, run_id, "embed", c["chunk_id"], "RESPONSE_SHAPE")
+            if log:
+                log("embed", batch[0]["chunk_id"], "RESPONSE_SHAPE")
             continue
         for c, v in zip(batch, vecs):
             con.execute(
@@ -78,5 +85,6 @@ def embed(ws, con, run_id, transport=None, log=None):
             stored += 1
         con.commit()
     con.commit()
-    print("[embed] 호출 %d회, 저장 %d, 건너뜀 %d, 차단 %d" % (called, stored, skipped, blocked))
+    if not quiet:
+        print("[embed] 호출 %d회, 저장 %d, 건너뜀 %d, 차단 %d" % (called, stored, skipped, blocked))
     return {"called": called, "stored": stored, "skipped": skipped, "blocked": blocked}

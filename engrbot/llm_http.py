@@ -52,6 +52,14 @@ class OpenAICompatJudgeLLM(JudgeLLM):
         """실제 전송하는 요청 전체(주소, 경로, 모델, messages, 파라미터). 헤더와 키는 넣지 않는다."""
         return {"url": self.url, "body": self.build_body(messages)}
 
+    def allows(self, file_id):
+        """예시 출처 파일 하나를 check_send로 판정한다. 막히면(사외 비더미, 불확실 호스트) False."""
+        try:
+            lb_llm.check_send(self.url, [file_id], self.cfg.get("internal_host_suffixes"))
+        except lb_llm.SendBlocked:
+            return False
+        return True
+
     def complete(self, messages, file_ids, hint=None):
         cfg = self.cfg
         try:

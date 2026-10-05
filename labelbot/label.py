@@ -101,6 +101,7 @@ def label_chunk(ctx, chunk, cls_res, questions):
         "axis_values": _axis_summary(cls_res["axes"]),
         "synonym_matches": "\n".join("- %s → %s" % (a, c) for a, c in matches) or "(없음)",
         "questions": "\n".join("- %s: %s" % (q.qid, q.text) for q in questions),
+        "feedback_rules": ctx.feedback.rules_text("label", questions),
         "chunk_text": chunk["text"],
         "response_format": RESPONSE_FORMAT,
     }

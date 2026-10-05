@@ -4,7 +4,7 @@ import os
 import sys
 import threading
 
-from labelbot import classify, ingest, label, prompts, questions, store, util
+from labelbot import classify, feedback, ingest, label, prompts, questions, store, util
 from labelbot.llm import ChatClient
 
 
@@ -62,6 +62,8 @@ class Ctx:
         self.lock = threading.RLock()
         self.chat = ChatClient(self.cfg["llm"], con, transport=transport, log=self.log)
         self.chat_lock = self.lock
+        # 검수 피드백(승인 규칙·사례). run_all이 feedback.load로 바꾼다. 기본은 블록이 '(없음)'.
+        self.feedback = feedback.NullFeedback()
         if tax is not None:
             self.syn = SynonymTable(tax.synonyms)
             self.sheet_hashes = dict(tax.sheet_hashes)
@@ -217,8 +219,12 @@ def run_labeling(ctx, chunks):
     return stats
 
 
-def run_all(ws, input_root, transport=None, command="run"):
-    """수집부터 분류·라벨링·알림·불량 목록·후보·산출·리포트까지. embed·push-vectors는 부르지 않는다."""
+def run_all(ws, input_root, transport=None, command="run", use_feedback=True):
+    """수집부터 분류·라벨링·알림·불량 목록·후보·산출·리포트까지. push-vectors는 부르지 않는다.
+
+    승인된 검수 피드백 사례가 있고 임베딩을 쓸 수 있으면, 사례 유사도를 재려고 이번 chunk를 임베딩한다(embed와 같은 가드·저장).
+    use_feedback=False(run --no-feedback)면 승인 규칙·사례를 넣지 않는다.
+    """
     from labelbot import alerts, candidates, export, report, review
 
     con = store.connect(ws.work_db)
@@ -234,13 +240,22 @@ def run_all(ws, input_root, transport=None, command="run"):
         store.meta_set(con, "sent_params", util.dumps(ctx.chat.sent_params()))
         store.meta_set(con, "axis_kinds", util.dumps({a.name: a.kind for a in tax.axes}))
         chunks = content_chunks(con, seen)
+        try:
+            ctx.feedback = feedback.load(ws, tax, ctx.chat, enabled=use_feedback)
+        except feedback.FeedbackError as e:
+            raise PipelineError("검수 피드백 규칙 파일(labeling_rules.json) 오류: %s" % e)
+        ctx.feedback.prepare(ws, con, run_id, chunks, log=log)
+        if ctx.feedback.enabled:
+            ctx.sheet_hashes["labeling_rules"] = ctx.feedback.digest()
+        say(ctx.feedback.summary_line())
         stats = run_labeling(ctx, chunks)
+        store.meta_set(con, "feedback_applied:" + run_id, util.dumps(ctx.feedback.applied()))
         alerts.evaluate(ctx)
         review.compute_flags(con, run_id, ws.config, tax, ws.path("reports"))
         candidates.write_reports(ctx)
         export.export(ws, con, run_id, tax)
         report.write_report(ws, con, run_id, tax, stats=stats)
-        finish_run(con, run_id, tax.sheet_hashes, ctx.chat.sent_params())
+        finish_run(con, run_id, ctx.sheet_hashes, ctx.chat.sent_params())
         say("[run] 완료 run_id=%s LLM 호출 %d회 (캐시 %d회)" % (run_id, ctx.chat.calls, ctx.chat.cache_hits))
         return run_id, ctx
     finally:

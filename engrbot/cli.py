@@ -60,11 +60,26 @@ def _parser():
 
     ev = sub.add_parser("eval", help="mutation 하네스(층별 탐지율, 오탐률)")
     ws(ev)
-    ev.add_argument("--golden", required=True, help="synthetic[:시드] 또는 골든셋 .jsonl 경로")
+    ev.add_argument("--golden", required=True, help="synthetic[:시드], ledger(교정 장부 골든셋) 또는 골든셋 .jsonl 경로")
     ev.add_argument("--judge", choices=("mock", "http"), default="mock")
     ev.add_argument("--per-mutator", type=int, default=10)
     ev.add_argument("--bundle", help="골든셋 .jsonl과 함께 쓸 jsonl 번들 폴더")
     ev.add_argument("--run", dest="labeler_run")
+
+    it = sub.add_parser("intake", help="작업 폴더의 사람 교정을 교정 장부에 반영한다(LLM 0회)")
+    ws(it)
+    it.add_argument("--run", dest="labeler_run", help="라벨러 실행 ID(기본: 교정이 있는 모든 실행)")
+
+    lg = sub.add_parser("ledger", help="교정 장부 상태 보기(status)와 규칙 후보 다시 만들기(rebuild)")
+    ws(lg)
+    lg.add_argument("action", choices=("status", "rebuild"))
+
+    lr = sub.add_parser("labeling-rules", help="교정 장부 → 라벨링 규칙·few-shot 사례 후보와 사람 승인(LLM 0회)")
+    ws(lr)
+    lr.add_argument("action", choices=("candidates", "approve", "reject", "status"))
+    lr.add_argument("--ids", action="append", help="approve·reject: 규칙 ID(FR-)·사례 ID(EX-), 쉼표로 여러 개")
+    lr.add_argument("--all", action="store_true", help="approve·reject: 지금 규칙 후보 전부(approve는 상충 제외)")
+    lr.add_argument("--examples", choices=("all", "none"), default="none", help="approve·reject: 사례 후보도 전부 같은 결정")
 
     c = sub.add_parser("codes", help="issue code 카탈로그를 .md로 낸다")
     c.add_argument("--out", help="출력 .md 경로(기본: engrbot/docs/issue_codes.md)")
@@ -141,10 +156,67 @@ def main(argv=None):
             return 0
         if args.cmd == "eval":
             return _eval(args, paths)
+        if args.cmd in ("intake", "ledger"):
+            return _ledger(args, paths)
+        if args.cmd == "labeling-rules":
+            from engrbot import labeling_rules
+
+            return labeling_rules.main_cli(args, paths, say)
     except (io.QaPathError, runner.RunError, model.BundleError, policy_mod.PolicyError) as e:
         say("[오류] %s" % e)
         return 1
     return 2
+
+
+def _skipped_text(skipped):
+    return ", ".join("%s %d" % (k, v) for k, v in sorted((skipped or {}).items())) or "없음"
+
+
+def _ledger_line(st):
+    return "[ledger] 누적 작업 폴더 %d, 사례 %d, 골든 %d, judge 예시 %d, L4 후보 %d → %s" % (
+        st["sources"], st["cases"], st["golden"], st["examples"], st["candidates"], st["dir"])
+
+
+def _ledger(args, paths):
+    """intake, ledger status|rebuild. 건수·코드·작업 폴더 이름만 낸다. 장부 오류는 [오류] <코드>, 종료 코드 1."""
+    from engrbot import ledger
+
+    try:
+        return _ledger_cmd(args, paths, ledger)
+    except ledger.LedgerError as e:
+        say("[오류] %s" % e.reason_code)
+        return 1
+
+
+def _ledger_cmd(args, paths, ledger):
+    from engrbot import policy as policy_mod
+
+    pol, sch = policy_mod.load(paths)
+    if args.cmd == "intake":
+        out = ledger.intake(paths.root, pol, args.labeler_run, schema=sch)
+        if out.get("reason"):
+            what = "이 작업 폴더의 장부 행을 지웠다" if out["changed"] else "장부에 이 작업 폴더 행이 없다(그대로)"
+            say("[intake] %s: %s." % (out["reason"], what))
+        else:
+            say("[intake] 교정 %d건 → 사례 %d(교정 %d, 확인 %d), 골든 %d, judge 예시 %d, 동의어 %d, 재검토 %d"
+                " / 건너뜀 %s" % (out["corrections"], out["cases"], out["corrected"], out["confirmed"],
+                                 out["golden"], out["examples"], out["synonyms"], out["revisits"],
+                                 _skipped_text(out["skipped"])))
+        say(_ledger_line(out["totals"]))
+        return 0
+    d = ledger.ledger_dir(paths.root, pol)
+    if args.action == "rebuild":
+        changed = ledger.rebuild(d, pol)
+        say("[ledger] 규칙 후보를 다시 만들었다(%s)." % ("바뀜" if changed else "그대로"))
+    st = ledger.status(d)
+    say(_ledger_line(st))
+    if args.action == "status":
+        for s in st["per_source"]:
+            c = s["counts"]
+            say("[ledger] %s: 실행 %d, 사례 %d(교정 %d, 확인 %d), 골든 %d, judge 예시 %d, 동의어 %d, 재검토 %d" % (
+                s["source_ws"], s["runs"], c.get("cases", 0), c.get("corrected", 0), c.get("confirmed", 0),
+                c.get("golden", 0), c.get("examples", 0), c.get("synonyms", 0), c.get("revisits", 0)))
+    return 0
 
 
 def _codes(args):
@@ -171,8 +243,18 @@ def _eval(args, paths):
     else:
         from engrbot import golden
 
+        if g == "ledger":
+            from engrbot import ledger
+
+            try:
+                rows = ledger.read_golden(ledger.ledger_dir(paths.root, pol))
+            except ledger.LedgerError as e:
+                say("[오류] %s" % e.reason_code)
+                return 1
+        else:
+            rows = io.read_own_jsonl(g)
         base = runner.load_bundle(paths, args.labeler_run, args.bundle)
-        bundle = golden.to_bundle(io.read_own_jsonl(g), base)
+        bundle = golden.to_bundle(rows, base)
         # 골든셋 행은 사람이 결정한 필드만 담는다. 빠진 활성 축을 오탐으로 세지 않는다.
         sch = dict(sch, rules=dict(sch["rules"], all_active_axes_required=False))
     llm = None
@@ -187,5 +269,7 @@ def _eval(args, paths):
     base_path = paths.q("eval_%s" % stamp)
     harness.write_report(res, base_path)
     say("[eval] 층별 탐지율 %s, 오탐률 %.3f" % (
-        ", ".join("%s=%.2f" % (k, v["recall"]) for k, v in sorted(res["layers"].items())), res["false_positive_rate"]))
+        # 주입 0건인 층(작은 골든셋)은 recall이 None이다
+        ", ".join("%s=%s" % (k, "-" if v["recall"] is None else "%.2f" % v["recall"])
+                  for k, v in sorted(res["layers"].items())), res["false_positive_rate"]))
     return 0

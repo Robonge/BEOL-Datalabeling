@@ -17,16 +17,22 @@ DEFAULT_SCHEMA_PATH = os.path.join(PKG_ROOT, "defaults", "schema.json")
 # 기본값에 없는 키를 받는 자리(값 형식은 따로 검사한다)
 FREE_MAPS = {("severity_overrides",), ("l0", "warning_severity")}
 EXTENSION_BLOCKS = ("l4", "l5")
-NULLABLE = {("judge", "temperature")}  # null이면 보내지 않는다(7.1절)
+NULLABLE = {("judge", "temperature"), ("ledger", "dir")}  # judge.temperature는 null이면 보내지 않는다(7.1절)
 RATIO_KEYS = {
     ("l0", "coverage_major"), ("l0", "coverage_minor"), ("l0", "empty_ratio_major"), ("l0", "repeated_line_ratio"),
     ("l0", "cell_ratio_minor"), ("l0", "garbled_major"), ("l0", "garbled_minor"), ("l2", "unknown_ratio_major"),
     ("l3", "long_quote", "ratio"), ("feedback", "axis_issue_rate"), ("feedback", "question_issue_rate"),
     ("feedback", "quote_issue_rate"), ("l6", "jsd_notice"), ("l6", "jsd_alert"), ("l6", "unknown_rate_alert"),
-    ("l6", "pass_rate_drop_alert"),
+    ("l6", "pass_rate_drop_alert"), ("ledger", "candidates", "min_confidence"),
+    ("ledger", "candidates", "min_lift"),
 }
 MIN_ONE = {("judge", "max_items_per_call"), ("judge", "workers"), ("judge", "timeout"), ("l6", "min_n"),
-           ("feedback", "min_n"), ("l6", "unused_runs"), ("output", "excerpt_chars")}
+           ("feedback", "min_n"), ("l6", "unused_runs"), ("output", "excerpt_chars"),
+           ("ledger", "quote_chars"), ("ledger", "judge_examples", "k_per_item"),
+           ("ledger", "judge_examples", "max_per_call"), ("ledger", "candidates", "min_support"), ("ledger", "candidates", "min_files"),
+           ("ledger", "candidates", "min_corrected"), ("ledger", "candidates", "min_forbid"),
+           ("ledger", "candidates", "min_title"), ("ledger", "candidates", "max_rules"),
+           ("ledger", "labeling", "min_count")}
 
 
 class PolicyError(Exception):

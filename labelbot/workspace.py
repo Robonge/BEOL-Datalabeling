@@ -66,6 +66,20 @@ DEFAULT_CONFIG = {
         "query_k": 20,
     },
     "chunking": {"method": "slide"},
+    # 검수 피드백 소비(labelbot/feedback.py). 생산·승인은 Engr-bot(`python -m engrbot labeling-rules`)이 한다.
+    # rules_path 기본: 코드 폴더 taxonomy/labeling_rules.json(승인 규칙·사례 참조, 본문 없음, git 추적).
+    # examples_root 기본: 코드 폴더 workspaces/(사례 본문을 읽기 전용으로 가져올 원래 작업 폴더들).
+    "feedback": {
+        "enabled": True,
+        "rules_path": None,
+        "examples_root": None,
+        "max_rules": 30,
+        "examples_k": 2,
+        "example_chars": 800,
+        "similarity": "auto",
+        "min_similarity": {"embedding": 0.5, "lexical": 0.05},
+        "exclude_same_file": True,
+    },
     "parse": {"image_min_bytes": 2048, "boilerplate_ratio": 0.6},
 }
 

@@ -152,10 +152,14 @@ def classify_chunk(ctx, chunk):
     tax = ctx.tax
     replaced, matches = ctx.syn.apply(chunk["text"])
     values = dict(file_context(ctx, chunk["file_id"]))
+    # 검수 피드백: 승인 규칙과 유사한 승인 사례. 사례 본문도 LLM에 가므로 사례 파일 ID를 가드에 함께 넘긴다.
+    fb_examples, fb_files = ctx.feedback.examples_for(chunk)
     values.update(
         {
             "synonym_matches": synonym_lines(matches),
             "taxonomy": ctx.taxonomy_text,
+            "feedback_rules": ctx.feedback.rules_text("classify"),
+            "feedback_examples": fb_examples,
             "chunk_text": replaced,
             "response_format": RESPONSE_FORMAT,
         }
@@ -167,7 +171,7 @@ def classify_chunk(ctx, chunk):
         "axes": {a.name: {"values": [v.name for v in a.values], "multi": a.multi} for a in tax.active_axes()},
     }
     try:
-        obj = ctx.chat.chat_json(messages, [chunk["file_id"]], _validator(tax), hint=hint)
+        obj = ctx.chat.chat_json(messages, sorted({chunk["file_id"]} | set(fb_files)), _validator(tax), hint=hint)
     except (CallFailed, SendBlocked) as e:
         add_failure(ctx.con, ctx.run_id, "classify", chunk["chunk_id"], e.reason_code)
         ctx.log("classify", chunk["chunk_id"], e.reason_code)

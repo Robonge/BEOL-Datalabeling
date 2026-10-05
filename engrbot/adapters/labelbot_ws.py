@@ -343,6 +343,55 @@ def _batches(ids, size=500):
         yield ids[k:k + size]
 
 
+# ---- 교정 장부(ledger)용 읽기 ------------------------------------------------------
+# 표·열이 없으면 빈 값을 돌려준다(이전 labelbot 작업 DB도 그대로 읽는다). 메모·값 열은 읽지 않는다.
+
+def _cols(con, table):
+    return {r[1] for r in con.execute("PRAGMA table_info(%s)" % table)}
+
+
+def correction_runs(ws_root):
+    """corrections 표의 review_run_id(= 라벨러 실행 ID) 목록(정렬). 표가 없으면 빈 목록."""
+    con = connect_ro(ws_root)
+    try:
+        if "review_run_id" not in _cols(con, "corrections"):
+            return []
+        return [r[0] for r in con.execute(
+            "SELECT DISTINCT review_run_id FROM corrections WHERE review_run_id IS NOT NULL ORDER BY review_run_id")]
+    finally:
+        con.close()
+
+
+def review_synonyms(ws_root):
+    """검수 화면에서 등록한 동의어(candidates의 source='review', kind='synonym'). 반환: [(alias, canonical)] 정렬."""
+    con = connect_ro(ws_root)
+    try:
+        if not {"kind", "content", "source"} <= _cols(con, "candidates"):
+            return []
+        out = set()
+        for r in con.execute("SELECT content FROM candidates WHERE source='review' AND kind='synonym'"):
+            alias, sep, canonical = (r[0] or "").partition("|")
+            alias, canonical = alias.strip(), canonical.strip()
+            if sep and alias and canonical:
+                out.add((alias, canonical))
+        return sorted(out)
+    finally:
+        con.close()
+
+
+def revisit_counts(ws_root):
+    """revisit_requests의 (reason, target_kind, target_key)별 건수. 반환: [(reason, target_kind, target_key, n)] 정렬."""
+    con = connect_ro(ws_root)
+    try:
+        if not {"reason", "target_kind", "target_key"} <= _cols(con, "revisit_requests"):
+            return []
+        return [(r[0] or "", r[1] or "", r[2] or "", r[3]) for r in con.execute(
+            "SELECT reason, target_kind, target_key, COUNT(*) FROM revisit_requests"
+            " GROUP BY reason, target_kind, target_key ORDER BY reason, target_kind, target_key")]
+    finally:
+        con.close()
+
+
 def load_units_only(ws_root, file_ids=None):
     """라벨 없이 파싱 결과만 번들로 만든다(L0 실측용). 레코드는 비어 있고 taxonomy는 빈 스냅샷이다."""
     ws_root = os.path.abspath(ws_root)

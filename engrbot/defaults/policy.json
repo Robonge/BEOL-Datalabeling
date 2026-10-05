@@ -22,5 +22,10 @@
   "l6": {"min_n": 30, "jsd_notice": 0.05, "jsd_alert": 0.10, "unknown_rate_alert": 0.3,
          "pass_rate_drop_alert": 0.10, "unused_runs": 2,
          "terms": {"min_df": 3, "min_lift": 1.5, "top_k": 50, "stoplist": []}},
-  "output": {"include_text": true, "excerpt_chars": 200}
+  "output": {"include_text": true, "excerpt_chars": 200},
+  "ledger": {"enabled": true, "dir": null, "auto_intake": true, "quote_chars": 300,
+             "judge_examples": {"enabled": true, "k_per_item": 2, "max_per_call": 6},
+             "candidates": {"min_support": 3, "min_files": 2, "min_confidence": 0.9, "min_lift": 0.1, "min_corrected": 1, "min_forbid": 2,
+                            "min_title": 2, "max_rules": 30},
+             "labeling": {"min_count": 2}}
 }

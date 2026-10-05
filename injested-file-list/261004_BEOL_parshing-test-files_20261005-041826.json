@@ -1,0 +1,13 @@
+{
+  "run_id": "20261004T191948-0484",
+  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261005-041826",
+  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "recorded_at": "2026-10-05T04:22:12",
+  "files": [
+    "260128_RDEOV037.66 V1 RSBM aniline pulse 주기 변경 평가 호환.pptx",
+    "260204_RXVMV022.6B M0 RSBM oxide HM 적용 평가 불가.pptx",
+    "260213_RDHJD098.6D M2 GCIB 가속전압 10 kV 조건 평가 조건부.pptx",
+    "260312_QQLDY.6C M1 CMP Ru touch-up polish 시간 증가 평가 호환.pptx",
+    "260318_QQKKK058.63 I2 etch CHF3 유량 +15% 변경 평가 호환.pptx"
+  ]
+}

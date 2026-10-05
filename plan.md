@@ -47,6 +47,7 @@ labelbot/
   label.py           3차 라벨링, 날짜·담당자 추출
   alerts.py          라벨 분포 점검과 사람 알림 (HITL H5)
   review.py          4차 불량 목록 추출, 검수 화면 생성, 교정 반영
+  feedback.py        검수 피드백 소비: 승인 파일(taxonomy/labeling_rules.json)의 규칙·사례 참조 → 다음 실행 프롬프트 블록(생산·승인은 engrbot/labeling_rules.py)
   metrics.py         사외 더미 정답표 대조 지표(축별 완전 일치율, Jaccard, 혼동 행렬). tools/evalgold.py만 쓴다
   export.py          산출 SQLite, SCHEMA.md
   querycheck.py      조회 질문 후보, LLM SQL 조회 검증
@@ -62,6 +63,8 @@ labelbot/
 prompts/             단계별 프롬프트 (.md)
 docs/supabase_schema.md  Supabase(pgvector) 표 정의 SQL 코드 블록 (.sql 파일은 두지 않는다)
 taxonomy/taxonomy.xlsx   기본 taxonomy (더미 동의어 포함)
+taxonomy/labeling_rules.json         검수 피드백 승인 규칙·사례 참조와 기각 ID(축·값·질문 ID·건수·문장, 사례는 작업 폴더 이름·chunk ID·본문 해시·확정 라벨만, 본문 없음, git 추적, 사람이 문장·enabled 편집). Engr-bot이 쓰고 labelbot이 읽는다
+workspaces/_engrbot/ledger/          Engr-bot 교정 장부(커밋 제외). labeling_candidates.md(라벨링 규칙·사례 승인 대기 후보, 본문 없음)
 taxonomy/taxonomy_revisit_requests/  apply가 검수 실행마다 쓰는 재검토 파일 taxonomy_revisit_<연월일_시분초>.md·.html·.json (taxonomy 시트 붙여넣기 행, 메모 포함, git 추적)
 dummy pptx files/    사외 검증 샘플 원천 (저장소 상대 경로). 어느 파일이든 쓸 수 있고 ingest 바이트 경로로만 읽는다
 parshing test files/ 사외 검증 입력 폴더(BEOL-labeling 기본 입력). 현재 파일 해시가 사외 전송 허용 목록에 더해진다. 사내 파일 반입 금지
@@ -109,10 +112,11 @@ logs/           .log (파일 ID와 사유 코드만)
 | `review` | `flagged_chunks` 생성, `reports/flagged_*` 작성, 검수 화면 `screens/review.html` 생성(LLM 호출 0회) | 안 함(검수 기준 실행 ID = 최신 또는 `--run`) | M5 |
 | `apply` | `inbox/`의 교정 `.json` 반영(교정 파일별 `SAVEPOINT`), `reports/taxonomy_revisit.*` 재작성, 반영한 검수 실행마다 요청이 있으면 `taxonomy.xlsx` 폴더의 `taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md·.html·.json` 작성 | 안 함(교정 파일의 실행 ID를 쓴다) | M5 |
 | `serve --port <포트>` | 화면 서버(127.0.0.1 전용). `screens/` 제공, 화면의 교정·대조 JSON을 `inbox/`에 저장, 검수 완료 버튼(`POST /inbox/review/done`)이면 교정 저장 뒤 `signals/review_done_<실행ID>.json` 작성 | 안 함 | M5 |
-| `run` | 수집부터 산출·조회 검증·리포트까지 전 단계. `embed`·`push-vectors`는 부르지 않는다 | 발급 | M6 |
+| `run [--no-feedback]` | 수집부터 산출·조회 검증·리포트까지 전 단계. `push-vectors`는 부르지 않는다. 승인된 검수 피드백 규칙·사례를 1차 분류·3차 라벨링 프롬프트에 넣는다(승인 사례가 있으면 유사도용으로 이번 chunk를 먼저 임베딩). `--no-feedback`이면 넣지 않는다 | 발급 | M6 |
 | `report --run <ID>` | 기준선 리포트(분포) 재계산, `reports/taxonomy_revisit.*` 재작성(LLM 호출 0회) | 안 함 | M6 |
 | `embed` | chunk 임베딩, `chunk_embeddings` | 안 함 | M6b |
 | `push-vectors` | Supabase 벡터 적재, `vector_push_log` | 안 함 | M6b |
+| `engrbot labeling-rules candidates\|approve\|reject\|status` (Engr-bot) | 검수 피드백 생산: `engrbot intake`가 모은 장부에서 라벨링 규칙·few-shot 사례 후보를 세고(`labeling_candidates.md`), 사람이 고른 것만 승인 파일에 적는다(`--ids FR-…,EX-…`, `--all`은 상충 제외, `--examples all`) | 안 함 | M5 |
 | `slide-images` | 슬라이드 근사 미리보기 JPG 렌더(`slide_images/<sha256>.b64`, `slide_images` 표), 산출 `chunks.slide_image` 갱신 | 안 함 | M6c |
 | `push-slides` | 슬라이드 JPG를 Storage 버킷에 올리고 벡터 행 `slide_image_*` 열 기록, `slide_image_push_log` | 안 함 | M6c |
 
@@ -555,6 +559,7 @@ logs/           .log (파일 ID와 사유 코드만)
 | H6 | 불량 목록의 chunk 검수. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 동의어 "검수 등록". taxonomy 재검토 요청(`reports/taxonomy_revisit.md`). 끝나면 "검수 완료" 버튼 → 반영·적재로 이어짐 | 대기(검수 완료 버튼까지) | `screens/review.html`, `review.py`, `candidates.py`, `revisit.py`, `serve.py`, `BEOL-labeling-feedback` 스킬(`wait_review_done.py`) | M5 |
 | H7 | 조회 질문 채택(`queries` 시트) | 대기 | `taxonomy.py`(`queries` 시트 읽기), `candidates.py`(`reports/query_candidates.md`), `querycheck.py` | M6 |
 | H8 | 동의어 후보 승인(`synonyms` 시트에 붙여넣기) | 계속(처리 전 후보는 시트에 넣지 않는다) | `candidates.py` | M2, M4 |
+| H9 | 검수 피드백 규칙·사례 승인(교정 패턴에서 나온 규칙 후보와 사람이 손댄 chunk 사례) | 계속(승인 전에는 프롬프트에 넣지 않는다. 라벨링 시작 때 승인 대기가 있으면 묻는다) | `engrbot/labeling_rules.py`(후보·승인), `labelbot/feedback.py`(소비), `BEOL-labeling` 1-2, `BEOL-labeling-feedback` 4-1·4-2 | M5 |
 | 게이트 | 사내 설정 변경(`llm`, `embedding`, `supabase` 블록), 벡터 DB 사용 가능 여부 확인, G-1~G-10 확인과 `gate record` 입력 | 대기(FAIL이면 100개 실행을 시작하지 않는다) | `selfcheck.py`, `gate.py` | M0, M7 |
 | 벡터 적재 | `supabase.enabled`를 켤지 정하고 `push-vectors` 실행 | 계속(실패해도 라벨링·산출은 진행한다) | `embed.py`, `vectorpush.py` | M6b, M7 |
 
@@ -821,4 +826,6 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 - 2026-10-04 사외 검증 폴더 허용: 사용자 승인에 따라 `parshing test files/`의 현재 파일 해시를 사외 전송 허용 목록(`dummy_hashes.jsonl`)에 더했다(`llm.DUMMY_DIRS`). 이 폴더 파일이 `EXTERNAL_NON_DUMMY`로 막히던 문제를 해결한다. 폴더 단위 허용이므로 이 폴더에 사내 파일을 넣지 않는 것을 운영 규칙으로 둔다. 바뀐 곳은 2절 디렉터리 구조와 M0 G19 사외 전송 조건이다.
 - 2026-10-04 검수 화면 슬라이드 근사 미리보기(B안): 사용자 결정에 따라 렌더링 없이 파서 좌표로 슬라이드 배치를 재구성해 검수 화면에 보여 준다. `pptx_parser.slide_layouts`, `review.py`의 보관본 메모리 재파싱(`layout`·`image_map`), `screens/review.html` 미리보기 카드를 더했다. 바뀐 곳은 M5(P2 항목과 완료 기준 2개)다.
 - 2026-10-04 검수 진행을 검수 반영 스킬로 이동: 사용자 결정에 따라 H6 검수는 `BEOL-labeling-feedback` 스킬이 검수 화면을 띄우고 "검수 완료" 버튼 신호를 기다리는 단계가 됐다(끝났는지 묻지 않는다). H2 대조는 그 스킬이 시작할 때 실행 여부를 묻는다. `BEOL-labeling`은 결과 대시보드만 띄운다. `serve.py`에 `POST /inbox/review/done`(교정 저장 뒤 `signals/review_done_<실행ID>.json`, 건수만)과 `/inbox/status`의 `done` 표시를, `screens/review.html`에 검수 완료 버튼(서버가 `done`을 알릴 때만 보임)을 더했다. 바뀐 곳은 2절 디렉터리 구조(`signals/`)와 명령 표(`serve`), 4절 H2·H6이다.
+- 2026-10-05 검수 교정 피드백 루프: 점검 결과 교정이 그 작업 폴더의 `corrections`에만 남고 다음 실행 프롬프트로 가는 길이 없었다. 사용자 결정(규칙 요약 + 유사 사례 few-shot, 사람 승인 후 적용)에 따라 `labelbot/feedback.py`를 더했다. `feedback harvest`가 교정(사람 값 ≠ 봇 값, 재검수·본문 변경·질문 문장 변경 제외)과 사례(사람이 교정했거나 유효하게 확인한 chunk, 활성 축 확정 라벨)를 `workspaces/_feedback/feedback.sqlite`로 모은다. 규칙 후보는 LLM 없이 패턴을 센다: REPLACE(실제 값 혼동, 특수값끼리), REMOVE(과잉), ADD(누락), ANSWER, GEN_ANSWER(`축=값`). 특수값 출발·도착은 REMOVE·ADD로 바꾸고, 지지 건수는 서로 다른 chunk 수, 기본 기준 2건, 반대 방향도 2건 이상이면 상충(`--all`이 승인하지 않음). 승인은 `taxonomy/labeling_rules.json`(본문 없음, git 추적)에, 사례 승인은 저장소에 남는다. `run`은 승인 규칙을 "검수 피드백 지침"으로, 유사도 상위 2개 승인 사례(같은 파일·같은 본문 해시·같은 dup_hash 제외, 사외 가드 통과 파일만)를 "검수 피드백 사례"로 넣고, `feedback_applied:<실행ID>` meta와 labels·runs의 `sheet_hashes.labeling_rules`에 적용 이력을 남긴다. 유사도는 임베딩(기본 하한 0.5), 안 되면 문자 3-gram Jaccard. 바뀐 곳은 2절 디렉터리 구조와 명령 표(`run`, `feedback`), 4절 H9, 스킬 `BEOL-labeling` 1-2·요약과 `BEOL-labeling-feedback` 4-1·보고다.
+- 2026-10-05 검수 피드백 소유를 Engr-bot으로 이동(사용자 결정): 교정 수집은 Engr-bot 장부(`engrbot intake`)가, 라벨링 규칙·few-shot 사례 후보와 승인은 `engrbot labeling-rules`가 맡는다. labelbot은 `taxonomy/labeling_rules.json`(v2: rules, rejected, examples, rejected_examples)만 읽는다. 사례는 (작업 폴더 이름, chunk ID, 본문 해시, 확정 라벨) 참조만 두고, 본문·임베딩은 실행할 때 원래 작업 폴더 `work.sqlite`에서 읽기 전용으로 가져온다(없거나 본문이 바뀌면 `EXAMPLE_SOURCE_GONE`·`EXAMPLE_TEXT_CHANGED`로 빠짐). `labelbot feedback` 명령과 `workspaces/_feedback/` 저장소는 없앴다. 바뀐 곳은 2절 디렉터리 구조와 명령 표, 4절 H9, 스킬 `BEOL-labeling` 1-2와 `BEOL-labeling-feedback` 4-1·4-2다.
 - 2026-10-05 실행별 taxonomy 재검토 파일: 사용자 결정에 따라 `apply`가 반영한 검수 실행마다(요청 1건 이상, `revisits` 키 있음) 그 실행의 요청만 담은 `taxonomy/taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`을 쓴다(`revisit.write_run_files`, 같은 이름이면 `_2` 접미). taxonomy 시트 A~K 그대로의 "바로 붙여넣기"(`NO_FIT_VALUE`)·"확인 필요"(이미 있는 값, 없는 상위값·축, `NEW_AXIS` 정의 행) 블록과 엑셀 행 없는 요청 목록으로 나뉜다. 메모가 담기지만 git 추적 대상이며 원격에 올라가도 된다(`PRD.md` 9.2). `report`·`run`은 쓰지 않는다. 바뀐 곳은 2절 디렉터리 구조와 명령 표(`apply`)다.

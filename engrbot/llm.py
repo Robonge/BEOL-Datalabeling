@@ -53,6 +53,10 @@ class JudgeLLM(object):
         """캐시 키에 넣을 요청 전체. HTTP 구현은 주소·모델·파라미터를 더한다."""
         return {"llm": type(self).__name__, "name": self.name, "messages": messages}
 
+    def allows(self, file_id):
+        """이 파일의 인용(judge 예시)을 이 전송 경로로 보내도 되는지. 기본은 막는다(판정을 구현한 adapter만 허용)."""
+        return False
+
     def sent_params(self):
         return {"transport": self.name}
 
@@ -95,6 +99,10 @@ class MockJudgeLLM(JudgeLLM):
 
     def __init__(self, responder=None):
         self.responder = responder
+
+    def allows(self, file_id):
+        """mock은 아무것도 내보내지 않으므로 모든 출처를 허용한다."""
+        return True
 
     def complete(self, messages, file_ids, hint=None):
         if self.responder is not None:
