@@ -14,3 +14,6 @@ __pycache__/
 # 작업 폴더(사내 자료 b64·DB 포함, 커밋하지 않는다)
 workspaces/
 codebot/out/
+
+# Office 잠금 파일
+~$*

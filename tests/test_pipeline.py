@@ -262,7 +262,7 @@ class SafetyTest(unittest.TestCase):
                 self.send_response(200)
                 self.end_headers()
 
-            def log_message(self, *a):
+            def log_message(self, *a):  # codebot: allow C4_PLACEHOLDER 테스트 서버 접속 로그를 끄려고 비운 오버라이드
                 pass
 
         sb = http.server.HTTPServer(("localhost", 0), B)
@@ -273,7 +273,7 @@ class SafetyTest(unittest.TestCase):
                 self.send_header("Location", "http://localhost:%d/x" % sb.server_port)
                 self.end_headers()
 
-            def log_message(self, *a):
+            def log_message(self, *a):  # codebot: allow C4_PLACEHOLDER 테스트 서버 접속 로그를 끄려고 비운 오버라이드
                 pass
 
         sa = http.server.HTTPServer(("localhost", 0), A)
@@ -293,7 +293,7 @@ class SafetyTest(unittest.TestCase):
             def do_POST(self):
                 self.connection.close()
 
-            def log_message(self, *a):
+            def log_message(self, *a):  # codebot: allow C4_PLACEHOLDER 테스트 서버 접속 로그를 끄려고 비운 오버라이드
                 pass
 
         s = http.server.HTTPServer(("localhost", 0), Drop)
