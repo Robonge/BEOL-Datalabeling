@@ -124,10 +124,53 @@ class ValidTaxonomyTest(Helpers):
 
 
 class FiveErrorsTest(Helpers):
-    def test_duplicate_value_in_axis(self):
+    def test_duplicate_value_rows_are_merged(self):
+        # 같은 값 행이 여럿이면 오류가 아니라 정의·예를 행 순서대로 모두 모은다(라벨러 LLM이 함께 참고)
         s = base_sheets()
-        s["taxonomy"].append(tax_row("구조/레이어", " m 1 "))
-        self.assertRejected(s, "DUPLICATE_VALUE", "taxonomy", 12, forbidden=["m 1"])
+        first = tax_row("구조/레이어", "Fx", definition="첫 정의", include="포함 A")
+        s["taxonomy"].append(first)
+        s["taxonomy"].append(tax_row("구조/레이어", " fx ", definition="둘째 정의", include="포함 A", exclude="제외 B"))
+        s["taxonomy"].append(tax_row("구조/레이어", "FX", definition="  첫   정의 "))  # 같은 문장은 한 번만
+        t = parse(s)
+        vals = [v for v in t.axis("구조/레이어").values if v.name == "Fx"]
+        self.assertEqual(len(vals), 1)
+        v = vals[0]
+        self.assertEqual((v.definition, v.include, v.exclude), ("첫 정의\n둘째 정의", "포함 A", "제외 B"))
+        self.assertEqual(v.row, 12)
+        self.assertEqual(t.warnings, [], "같은 값 여러 행은 정상 입력이라 경고도 내지 않는다")
+
+    def test_duplicate_value_with_other_parent_is_rejected(self):
+        s = base_sheets()
+        s["taxonomy"].append(tax_row("불량 모드", "em", "Short"))   # 7행 EM의 상위값은 Reliability
+        self.assertRejected(s, "DUPLICATE_VALUE_PARENT_CONFLICT", "taxonomy", 12, forbidden=["Short"])
+
+    def test_duplicate_value_same_or_blank_parent_is_fine(self):
+        s = base_sheets()
+        s["taxonomy"].append(tax_row("불량 모드", "EM", "reliability", definition="전자 이동"))
+        s["taxonomy"].append(tax_row("불량 모드", "EM", definition="EM 수명"))
+        v = parse(s).axis("불량 모드").value("EM")
+        self.assertEqual((v.parent, v.definition), ("Reliability", "전자 이동\nEM 수명"))
+
+    def test_duplicate_axis_rows_are_merged(self):
+        s = base_sheets()
+        s["taxonomy"].append(tax_row("구조/레이어", definition="둘째 축 정의", include="축 포함"))   # 속성 칸 비움
+        s["taxonomy"].append(axis_row("구조/레이어", definition="셋째 축 정의"))                     # 같은 속성
+        t = parse(s)
+        ax = t.axis("구조/레이어")
+        self.assertEqual((ax.definition, ax.include), ("정의\n둘째 축 정의\n셋째 축 정의", "축 포함"))
+        self.assertEqual((ax.multi, ax.kind, ax.row), (True, "분류", 2))
+        self.assertEqual(t.warnings, [])
+
+    def test_duplicate_axis_with_other_attrs_is_rejected(self):
+        s = base_sheets()
+        s["taxonomy"].append(axis_row("구조/레이어", multi="N", definition="다른 속성"))
+        self.assertRejected(s, "DUPLICATE_AXIS_ATTR_CONFLICT", "taxonomy", 12, forbidden=["다른 속성"])
+
+    def test_duplicate_disabled_row_is_ignored(self):
+        s = base_sheets()
+        s["taxonomy"].append(tax_row("구조/레이어", "m1", definition="꺼진 정의", use="N"))
+        t = parse(s)
+        self.assertNotIn("꺼진 정의", t.axis("구조/레이어").value("M1").definition or "")
 
     def test_same_value_in_other_axis_is_fine(self):
         s = base_sheets()

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "targets": ["labelbot", "domain_engrbot", "code_engrbot", "tests", ".claude/skills"],
+  "exclude": ["**/__pycache__/**", "code_engrbot/out/**"],
+  "layers": ["C1", "C2", "C3", "C4"],
+  "severity_overrides": {},
+  "allow": [
+    {"rule": "C2_SECRET_LITERAL", "path": "domain_engrbot/tests/test_judge.py", "reason": "키가 로그에 새지 않는지 보는 테스트용 가짜 키다"},
+    {"rule": "C1_OPEN_OUTSIDE_INGEST", "path": "labelbot/selfcheck.py", "reason": "자체 점검이 방금 쓴 왕복 확인 파일을 다시 읽는다"}
+  ],
+  "c1": {
+    "ingest_modules": ["labelbot/ingest.py"],
+    "forbidden_write_exts": [".pptx", ".xlsx", ".docx", ".csv", ".txt", ".pdf", ".hwp", ".ppt", ".doc", ".xls"],
+    "local_packages": ["labelbot", "domain_engrbot", "code_engrbot", "tests"],
+    "test_globs": ["tests/**", "domain_engrbot/tests/**", "code_engrbot/tests/**"]
+  },
+  "c2": {
+    "transport_modules": ["labelbot/llm.py"]
+  },
+  "c3": {
+    "cli_modules": {"labelbot": "labelbot/cli.py", "domain_engrbot": "domain_engrbot/cli.py", "code_engrbot": "code_engrbot/cli.py"},
+    "doc_globs": [".claude/skills/*/SKILL.md", "README.md"],
+    "contract": {"required": "domain_engrbot/adapters/labelbot_ws.py", "tables": "labelbot/store.py"},
+    "labelbot_import_allowed": ["domain_engrbot/adapters/labelbot_ws.py", "domain_engrbot/io.py", "domain_engrbot/llm_http.py"]
+  }
+}

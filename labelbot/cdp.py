@@ -5,11 +5,11 @@ CDP가 돌려준 base64 문자열 그대로 넘긴다(디코딩한 bytes를 파�
 """
 import base64
 import hashlib
-import http.client  # codebot: allow C2_TRANSPORT_BYPASS 127.0.0.1 DevTools(CDP) 전용, 사외 전송 아님(디버깅 포트를 127.0.0.1에만 연다)
+import http.client  # code_engrbot: allow C2_TRANSPORT_BYPASS 127.0.0.1 DevTools(CDP) 전용, 사외 전송 아님(디버깅 포트를 127.0.0.1에만 연다)
 import json
 import os
 import shutil
-import socket  # codebot: allow C2_TRANSPORT_BYPASS 127.0.0.1 DevTools 웹소켓 전용, 사외 전송 아님(WebSocket이 로컬 호스트 외 거부)
+import socket  # code_engrbot: allow C2_TRANSPORT_BYPASS 127.0.0.1 DevTools 웹소켓 전용, 사외 전송 아님(WebSocket이 로컬 호스트 외 거부)
 import struct
 import subprocess
 import tempfile
@@ -43,6 +43,26 @@ def find_browser(path=None):
         if p and os.path.isfile(p):
             return p
     raise CdpError("RENDERER_MISSING")
+
+
+_LAUNCH_RETRY = ("RENDERER_START_FAILED", "RENDERER_EXITED", "RENDERER_PORT_TIMEOUT")
+
+
+def launch_browser(path=None, timeout=30):
+    """지정 경로(없으면 후보 순서)의 브라우저를 띄운다. 어떤 브라우저가 떠나자마자 종료하면 다음 후보를 쓴다.
+    지정 경로가 파일이 아니면 RENDERER_MISSING이다. 대기 상한은 후보 수 × timeout이다."""
+    if path and not os.path.isfile(path):
+        raise CdpError("RENDERER_MISSING")
+    cands = [path] if path else [p for p in browser_candidates() if os.path.isfile(p)]
+    last = None
+    for exe in cands:
+        try:
+            return Browser(exe, timeout)
+        except CdpError as e:
+            if e.reason_code not in _LAUNCH_RETRY:
+                raise
+            last = e
+    raise last or CdpError("RENDERER_MISSING")
 
 
 # ---- WebSocket(RFC 6455) 최소 구현 ----------------------------------------------
@@ -259,8 +279,8 @@ class Browser:
         p = os.path.join(self.profile, "DevToolsActivePort")
         end = time.monotonic() + self.timeout
         while time.monotonic() < end:
-            if self.proc.poll() is not None:
-                raise CdpError("RENDERER_START_FAILED")
+            if self.proc.poll() is not None:  # 포트 파일을 쓰기 전에 종료(예: Edge가 기존 인스턴스에 넘기고 즉시 종료)
+                raise CdpError("RENDERER_EXITED")
             try:
                 with open(p, encoding="ascii") as f:
                     first = f.readline().strip()
@@ -269,7 +289,7 @@ class Browser:
             except OSError:
                 pass
             time.sleep(0.1)
-        raise CdpError("RENDER_TIMEOUT")
+        raise CdpError("RENDERER_PORT_TIMEOUT")
 
     def _http(self, method, path):
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=self.timeout)

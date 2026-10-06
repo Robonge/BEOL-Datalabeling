@@ -6,252 +6,503 @@
 <title>라벨링 결과</title>
 <style>
 :root{
-  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4;
-  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --surface:#F6F8FC; --surface-2:#E4EAF3;
-  --text-strong:#1E2D4A; --text-muted:#6F7F99; --text-footer:#B0BCCC;
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4; --primary-mid:#4A6BAF;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --dot:#A8BDD4; --line:#7A9CC0;
+  --surface:rgba(246,248,252,.9); --surface-solid:#F6F8FC; --surface-2:#E4EAF3;
+  --text-strong:#1E2D4A; --text-muted:#6F7F99; --text-faint:#9DAABF;
   --danger:#C25450; --warning:#C99A3B; --success:#3B8A6E;
-  --s-value:#4A5FA8; --s-unknown:#eb6834; --s-none:#C9D2DF;
+  --on-indigo:#EDF1F7; --on-indigo-dim:rgba(237,241,247,.7);
   --radius-sm:8px; --radius:12px;
-  --ease-elastic:cubic-bezier(0.34,1.56,0.64,1);
-  --font:'Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+  --shadow:0 2px 8px rgba(53,70,144,.06); --shadow-up:0 8px 20px rgba(53,70,144,.16);
+  --ease:cubic-bezier(0.34,1.56,0.64,1);
+  --font:'Pretendard','Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
   --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
 body{
   background-color:var(--bg-base);
-  background-image:linear-gradient(var(--bg-grid) 1px,transparent 1px),linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px);
-  background-size:48px 48px;background-position:-1px -1px;
-  font-family:var(--font);font-size:13.5px;line-height:1.55;letter-spacing:-0.02em;color:var(--text-strong);
+  background-image:linear-gradient(rgba(200,212,228,.5) .5px,transparent .5px),linear-gradient(90deg,rgba(200,212,228,.5) .5px,transparent .5px);
+  background-size:48px 48px;
+  font-family:var(--font);font-size:13px;line-height:1.5;letter-spacing:-0.02em;font-weight:400;color:var(--text-strong);
 }
+b,strong,h1,h2,h3{font-weight:700}
+h1,h2,h3,p{margin:0}
+button{font:inherit;letter-spacing:inherit;color:inherit}
 .mono{font-family:var(--mono);letter-spacing:-0.01em}
-.wrap{max-width:1280px;margin:0 auto;padding:28px 24px 64px}
-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
-h1{font-size:24px;font-weight:700;letter-spacing:-0.04em;margin:0}
-.sub{color:var(--text-muted);font-size:12px}
-h2{font-size:15px;font-weight:700;letter-spacing:-0.03em;margin:0 0 4px}
-.desc{color:var(--text-muted);font-size:12px;margin:0 0 14px}
-.card{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
-.kpi{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:14px 16px}
-.kpi .k{color:var(--text-muted);font-size:12px}
-.kpi .v{font-size:28px;font-weight:700;letter-spacing:-0.04em;line-height:1.2}
-.kpi .v small{font-size:13px;font-weight:400;color:var(--text-muted);margin-left:4px}
-.kpi .note{font-size:11.5px;color:var(--text-muted)}
-.kpi.hero{display:flex;gap:14px;align-items:center;border-left:4px solid var(--c)}
-.donut{--p:0;width:64px;height:64px;flex:0 0 64px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),var(--surface-2) 0);display:grid;place-items:center}
-.donut::before{content:"";grid-area:1/1;width:46px;height:46px;border-radius:50%;background:var(--surface)}
-.donut b{grid-area:1/1;z-index:1;font-size:12px;font-family:var(--mono);letter-spacing:-0.03em}
-.alert{display:flex;gap:8px;align-items:flex-start;border-left:3px solid var(--warning);background:#FBF6EC;border-radius:var(--radius-sm);padding:8px 12px;margin-top:8px;font-size:12.5px}
-.alert b{font-weight:700}
-.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-muted);margin-bottom:10px}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
-.stack-row{display:grid;grid-template-columns:120px 1fr 64px;gap:12px;align-items:center;padding:5px 0}
-.stack-row .lbl{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stack-row .tot{font-size:11.5px;color:var(--text-muted);text-align:right}
-.stack{display:flex;gap:2px;height:18px}
-.seg{height:100%;min-width:2px;position:relative;cursor:default}
-.seg:first-child{border-radius:4px 0 0 4px}.seg:last-child{border-radius:0 4px 4px 0}.seg:only-child{border-radius:4px}
-.seg span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-family:var(--mono);color:#fff}
-.seg.none span{color:var(--text-strong)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
-.mini{border:1px solid var(--surface-2);border-radius:var(--radius-sm);padding:12px 14px;background:#fff}
-.mini h3{font-size:13px;font-weight:700;margin:0 0 8px;display:flex;justify-content:space-between}
-.mini h3 .sub{font-weight:400}
-.bar-row{display:grid;grid-template-columns:110px 1fr 30px;gap:8px;align-items:center;padding:2px 0;cursor:default}
-.bar-row .lbl{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bar-row .n{font-family:var(--mono);font-size:11px;color:var(--text-muted);text-align:right}
-.track{height:10px}
-.bar{height:100%;background:var(--s-value);border-radius:0 4px 4px 0;min-width:2px}
-.bar-row:hover .bar{background:var(--primary-deep)}
-.empty{color:var(--text-footer);font-size:12px}
-.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-select,input[type=search]{font-family:var(--font);font-size:12.5px;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:6px 10px;background:#fff;color:var(--text-strong)}
-label.chk{font-size:12.5px;display:flex;gap:6px;align-items:center}
-.count{color:var(--text-muted);font-size:12px;margin-left:auto}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th{text-align:left;font-weight:700;color:var(--text-muted);font-size:11.5px;border-bottom:1px solid var(--bg-grid);padding:8px 6px;position:sticky;top:0;background:var(--surface)}
-td{border-bottom:1px solid var(--surface-2);padding:8px 6px;vertical-align:top}
-tr.row{cursor:pointer;transition:background .15s}
-tr.row:hover{background:#fff}
-tr.row.open{background:#fff}
-.chip{display:inline-block;border:1px solid var(--bg-grid);border-radius:999px;padding:0 8px;margin:1px 3px 1px 0;font-size:11px;background:#fff;white-space:nowrap}
-.chip .ax{color:var(--text-muted);margin-right:3px}
-.chip.unk{border-color:var(--s-unknown);color:#A9441A}
-.ans{font-family:var(--mono);font-weight:700;font-size:11.5px;border-radius:6px;padding:0 7px;border:1px solid}
-.ans.O{color:var(--primary-deep);border-color:var(--s-value);background:rgba(74,95,168,.10)}
-.ans.X{color:#A9441A;border-color:var(--s-unknown);background:rgba(235,104,52,.10)}
-.ans.NA{color:var(--text-muted);border-color:var(--bg-grid)}
-.flag{display:inline-block;font-family:var(--mono);font-size:10px;border-radius:5px;padding:0 5px;margin:1px 2px 1px 0;border:1px solid var(--danger);color:var(--danger)}
-.ok{color:var(--success);font-size:11.5px}
-.detail td{background:#fff;padding:14px 16px}
-.det{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px}
-.det pre{white-space:pre-wrap;word-break:break-word;font-family:var(--font);font-size:12.5px;background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius-sm);padding:10px 12px;margin:0;max-height:420px;overflow:auto}
-.det mark{background:rgba(74,95,168,.18);color:inherit;border-radius:3px;padding:0 1px}
-.ev{border-bottom:1px solid var(--surface-2);padding:6px 0;font-size:12px}
-.ev .h{display:flex;justify-content:space-between;gap:8px}
-.ev .q{color:var(--text-muted);margin-top:2px}
-.conf{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
-.tip{position:fixed;pointer-events:none;background:var(--text-strong);color:#fff;font-size:11.5px;padding:6px 9px;border-radius:6px;z-index:10;display:none;max-width:280px}
-.tbl-wrap{max-height:720px;overflow:auto;border:1px solid var(--surface-2);border-radius:var(--radius-sm)}
-footer{color:var(--text-footer);font-size:11px;margin-top:20px}
-@media (max-width:760px){.det{grid-template-columns:1fr}.stack-row{grid-template-columns:90px 1fr 48px}}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.wrap{max-width:1400px;margin:0 auto;padding:18px 28px 24px;min-height:100vh;display:flex;flex-direction:column;gap:14px}
+
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.top h1{font-size:22px;letter-spacing:-0.055em}
+.phase{font-size:11px;font-weight:700;border-radius:999px;padding:2px 10px;border:1px solid var(--success);color:var(--success);letter-spacing:-0.015em}
+.phase.pre{border-color:var(--warning);color:#8A6718}
+.run{font-family:var(--mono);font-size:11.5px;color:var(--text-muted)}
+.run b{color:var(--text-strong)}
+.sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--primary-deep);border-radius:var(--radius-sm);padding:8px 16px;font-weight:700;font-size:13px;text-decoration:none;color:var(--on-indigo);background:linear-gradient(148deg,#4A5FA8 0%,#354690 100%);transition:transform .28s var(--ease),box-shadow .28s var(--ease)}
+.btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-up)}
+.btn .c{font-family:var(--mono);font-size:11px;background:rgba(237,241,247,.2);border-radius:999px;padding:0 7px}
+.btn.ghost{color:var(--primary-deep);background:var(--surface-solid);border-color:var(--bg-grid)}
+.btn.ghost .c{background:rgba(74,95,168,.1)}
+
+.grid{flex:1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:minmax(0,auto);gap:14px}
+.s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s5{grid-column:span 5}.s4{grid-column:span 4}
+
+.card{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.ch{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.ch h2{font-size:15px;letter-spacing:-0.048em}
+.ch p{font-size:12px;color:var(--text-muted)}
+
+/* donut primitives */
+.dn{display:block;overflow:visible}
+.dn .seg{fill:none;cursor:pointer;transition:stroke-width .28s var(--ease),opacity .2s}
+.dn:hover .seg:not(:hover){opacity:.45}
+.dn .seg:hover{stroke-width:var(--hw)}
+.dn .track{fill:none}
+.lg{display:flex;flex-direction:column;gap:6px}
+.lg .it{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12.5px;padding:3px 6px;border-radius:6px;cursor:pointer;transition:background .2s}
+.lg .it:hover,.lg .it.on{background:rgba(74,95,168,.07)}
+.lg .it.nil{opacity:.45}
+.lg .sw{width:10px;height:10px;border-radius:3px}
+.lg .v{font-family:var(--mono);font-size:12px}
+.lg .v small{color:var(--text-muted);font-size:10.5px;margin-left:4px}
+
+/* hero */
+.hero{position:relative;overflow:hidden;border-radius:var(--radius);padding:22px 26px;color:var(--on-indigo);background:linear-gradient(148deg,#4A5FA8 0%,#354690 100%);box-shadow:0 12px 30px rgba(53,70,144,.24);display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:center}
+.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(237,241,247,.07) .5px,transparent .5px),linear-gradient(90deg,rgba(237,241,247,.07) .5px,transparent .5px);background-size:24px 24px;pointer-events:none}
+.hero > *{position:relative}
+.hero .ctr-n{font-size:46px;font-weight:700;letter-spacing:-0.06em;fill:var(--on-indigo)}
+.hero .ctr-k{font-size:12px;fill:var(--on-indigo-dim)}
+.hero h2{font-size:15px;letter-spacing:-0.048em}
+.hero .say{font-size:12.5px;color:var(--on-indigo-dim);margin:4px 0 14px}
+.hero .lg .it{color:var(--on-indigo)}
+.hero .lg .it:hover,.hero .lg .it.on{background:rgba(237,241,247,.10)}
+.hero .lg .v small{color:var(--on-indigo-dim)}
+.hstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid rgba(237,241,247,.2);margin-top:16px;padding-top:14px}
+.hstats.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.hs + .hs{border-left:1px solid rgba(237,241,247,.2);padding-left:16px}
+.hs .k{font-size:11.5px;color:var(--on-indigo-dim)}
+.hs .n{font-size:26px;font-weight:700;letter-spacing:-0.05em;line-height:1.2}
+.hs .n small{font-size:12px;font-weight:400;color:var(--on-indigo-dim);margin-left:3px;letter-spacing:-0.02em}
+.hs .n .ar{font-weight:400;color:var(--on-indigo-dim);margin:0 4px;font-size:18px}
+.hs .s{font-size:11px;color:var(--on-indigo-dim)}
+.hs.mini{display:flex;gap:10px;align-items:center}
+
+/* hero after: 검수 전 → 검수 후 */
+.cmp{display:flex;align-items:center;gap:6px}
+.cmp .side{display:flex;flex-direction:column;align-items:center;gap:6px}
+.cmp .cap{font-size:11.5px;color:var(--on-indigo-dim);letter-spacing:-0.015em}
+.cmp .cap b{color:var(--on-indigo)}
+.cmp .pre .ctr-n{font-size:34px}
+.cmp .arrow{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 6px;margin-bottom:22px}
+.cmp .arrow .pill{font-family:var(--mono);font-size:10.5px;border:1px solid rgba(237,241,247,.35);border-radius:999px;padding:1px 8px;color:var(--on-indigo);white-space:nowrap}
+.arrow svg path{stroke-dasharray:4 6;animation:flow 1.4s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-20}}
+.big{display:flex;align-items:baseline;gap:10px;font-weight:700;letter-spacing:-0.06em;line-height:1.05;margin:2px 0 4px}
+.big .from{font-size:30px;color:var(--on-indigo-dim);text-decoration:line-through;text-decoration-thickness:2px}
+.big .to{font-size:52px}
+.big .ar{font-size:24px;color:var(--on-indigo-dim);font-weight:400}
+.big .unit{font-size:15px;font-weight:400;color:var(--on-indigo-dim);letter-spacing:-0.02em}
+.hero.after .lg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px;row-gap:4px;max-width:620px}
+.rise{animation:rise .5s var(--ease) both}
+.rise.d1{animation-delay:.08s}.rise.d2{animation-delay:.16s}.rise.d3{animation-delay:.24s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* reasons (before) */
+.rbody{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+.rbody .ctr-n{font-size:30px;font-weight:700;letter-spacing:-0.05em;fill:var(--text-strong)}
+.rbody .ctr-k{font-size:11px;fill:var(--text-muted)}
+.none{font-size:12.5px;color:var(--success);display:flex;gap:8px;align-items:center}
+.zero{margin-top:12px;font-size:11px;color:var(--text-faint);line-height:1.6}
+
+/* reasons (before → after) */
+.rd{display:flex;flex-direction:column;gap:12px}
+.rr{display:grid;grid-template-columns:150px minmax(0,1fr) 128px;gap:14px;align-items:center;padding:4px 6px;border-radius:var(--radius-sm);transition:background .2s}
+.rr:hover{background:rgba(74,95,168,.05)}
+.rr .nm{font-size:12.5px;font-weight:700;letter-spacing:-0.03em}
+.rr .nm small{display:block;font-family:var(--mono);font-size:10px;font-weight:400;color:var(--text-faint)}
+.bar{position:relative;height:14px;border-radius:7px;background:var(--surface-2);overflow:hidden}
+.bar .fill{position:absolute;top:0;bottom:0;left:0;display:flex;border-radius:7px;overflow:hidden;transition:width .6s var(--ease)}
+.bar .fx{height:100%}
+.bar .fx.ok{background:var(--success);opacity:.85}
+.bar .fx.left{background:var(--danger)}
+.rr .num{font-family:var(--mono);font-size:12px;text-align:right;white-space:nowrap}
+.rr .num .ar{color:var(--text-faint);margin:0 3px}
+.rr .num .done{display:block;font-size:10.5px;color:var(--success);font-family:var(--font)}
+.rr .num .done.bad{color:var(--danger)}
+.bkey{display:flex;gap:16px;margin-top:12px;font-size:11.5px;color:var(--text-muted)}
+.bkey i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* outcome */
+.obody{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+.obody .ctr-n{font-size:30px;font-weight:700;letter-spacing:-0.05em;fill:var(--text-strong)}
+.obody .ctr-k{font-size:11px;fill:var(--text-muted)}
+.note{margin-top:12px;font-size:11.5px;color:var(--text-muted);line-height:1.6}
+.note b{color:var(--text-strong)}
+
+/* top changed */
+.hb{display:flex;flex-direction:column;gap:9px}
+.hr{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 34px;gap:12px;align-items:center}
+.hr .nm{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hr .nm .tag{font-family:var(--mono);font-size:9.5px;border-radius:4px;padding:0 5px;margin-right:6px;border:1px solid var(--bg-grid);color:var(--text-muted)}
+.hr .tr{height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.hr .tr span{display:block;height:100%;border-radius:5px;background:linear-gradient(148deg,#6B82C4 0%,#4A6BAF 100%);transition:width .6s var(--ease)}
+.hr .n{font-family:var(--mono);font-size:12px;text-align:right}
+.mix{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:4px 0 14px;background:var(--surface-2)}
+.mix span{height:100%}
+
+/* handoff */
+.ho{display:flex;flex-direction:column;gap:12px}
+.hi{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center}
+.hi .ic{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--on-indigo);background:linear-gradient(148deg,#6B82C4 0%,#4A6BAF 100%)}
+.hi .ic.ok{background:var(--success)}
+.hi .ic.off{background:var(--dot)}
+.hi b{font-size:12.5px;letter-spacing:-0.03em}
+.hi .ex{font-size:11px;color:var(--text-muted)}
+.hi .n{font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;white-space:nowrap}
+.hi .n small{font-weight:400;color:var(--text-muted);font-size:11px}
+.hi .pb{grid-column:2 / 4;height:5px;border-radius:3px;background:var(--surface-2);overflow:hidden;margin-top:-6px}
+.hi .pb span{display:block;height:100%;background:var(--primary);border-radius:3px}
+
+/* questions */
+.qrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.q{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 8px 10px;border-radius:var(--radius-sm);transition:background .2s}
+.q:hover{background:rgba(74,95,168,.05)}
+.q .ctr-n{font-size:26px;font-weight:700;letter-spacing:-0.05em;fill:var(--text-strong)}
+.q .ctr-k{font-size:10.5px;fill:var(--text-muted)}
+.q b{font-size:13px;letter-spacing:-0.03em;margin-top:8px}
+.q .what{font-size:11.5px;color:var(--text-muted);margin-top:2px;max-width:220px}
+.q .sig{margin-top:8px;font-size:11.5px;display:inline-flex;align-items:center;gap:6px}
+.q .sig.hot{color:var(--danger);font-weight:700}
+.q .sig.fine{color:var(--success)}
+.q .sig .d{width:7px;height:7px;border-radius:50%;background:currentColor}
+.qkey{display:flex;justify-content:center;gap:18px;margin-top:6px;font-size:11.5px;color:var(--text-muted)}
+.qkey i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* alerts */
+.gauges{display:flex;flex-direction:column;gap:14px}
+.g{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center}
+.g .ctr-n{font-size:17px;font-weight:700;letter-spacing:-0.04em;fill:var(--text-strong);font-family:var(--mono)}
+.g b{font-size:12.5px;letter-spacing:-0.03em}
+.g .st{font-size:11.5px;margin-top:2px}
+.g .st.bad{color:#8A6718}
+.g .st.ok{color:var(--success)}
+.g .ex{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+/* bottom strip */
+.strip{display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:10px 16px}
+.strip .k{font-size:12px;font-weight:700;letter-spacing:-0.03em}
+.strip .lgs{display:flex;gap:10px;font-size:10.5px;color:var(--text-muted)}
+.strip .lgs i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.axs{display:flex;gap:14px;flex-wrap:wrap;flex:1}
+.ax{display:flex;align-items:center;gap:6px}
+.ax .nm{font-size:10.5px;color:var(--text-muted);white-space:nowrap;max-width:88px;overflow:hidden;text-overflow:ellipsis}
+.ax.hot .nm{color:#8A6718;font-weight:700}
+.ax.pend .nm{color:var(--text-faint)}
+.newax{margin:-8px 0 0;font-size:12px;color:#8A6718}
+.toggle{border:1px solid var(--bg-grid);background:var(--surface-solid);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;cursor:pointer}
+.toggle:hover{border-color:var(--primary)}
+.list{display:none;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:12px 14px}
+.list.on{display:block}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-weight:700;color:var(--text-muted);font-size:11px;border-bottom:1px solid var(--bg-grid);padding:6px 8px}
+td{border-bottom:1px solid var(--surface-2);padding:7px 8px;vertical-align:top}
+.fl{font-family:var(--mono);font-size:10px;border:1px solid var(--danger);color:var(--danger);border-radius:5px;padding:0 5px;margin-right:3px}
+.fl.gone{border-color:var(--bg-grid);color:var(--text-faint);text-decoration:line-through}
+.okc{color:var(--success)}
+.oc{font-size:11px;border-radius:999px;padding:1px 8px;border:1px solid var(--bg-grid);white-space:nowrap}
+.oc.corrected,.oc.confirmed{border-color:var(--success);color:var(--success)}
+.oc.undecidable{border-color:var(--warning);color:#8A6718}
+.oc.recheck,.oc.unreviewed{border-color:var(--danger);color:var(--danger)}
+
+.tip{position:fixed;pointer-events:none;background:var(--text-strong);color:var(--on-indigo);font-size:11.5px;padding:6px 10px;border-radius:8px;z-index:20;display:none;max-width:320px;box-shadow:var(--shadow-up)}
+.tip .m{font-family:var(--mono);font-size:10.5px;color:var(--on-indigo-dim)}
+
+@media (max-width:1100px){.s8,.s7,.s5,.s4{grid-column:span 12}.hstats.four{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:12px}.hstats.four .hs:nth-child(3){border-left:0;padding-left:0}}
+@media (max-width:820px){.hero.after{grid-template-columns:1fr;justify-items:center}}
+@media (max-width:680px){.wrap{padding:14px 16px}.hero{grid-template-columns:1fr;justify-items:center}.qrow{grid-template-columns:1fr}.rbody,.obody{grid-template-columns:1fr;justify-items:center}.hstats,.hstats.four{grid-template-columns:1fr}.hs + .hs{border-left:0;padding-left:0}.rr{grid-template-columns:1fr}.rr .num{text-align:left}.hr{grid-template-columns:minmax(0,1fr) 34px}.hr .tr{display:none}.cmp{transform:scale(.86)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
+<div id="root">
 <div class="wrap" id="app"></div>
 <div class="tip" id="tip"></div>
+</div>
 <script>
 const DATA = /*__DATA__*/null;
 (function(){
-  const app = document.getElementById('app');
-  const tip = document.getElementById('tip');
+  const app = document.getElementById('app'), tip = document.getElementById('tip');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const pct = (n, d) => d ? (100 * n / d).toFixed(1) + '%' : '-';
-  const donut = (ratio, label) => { const t = ratio == null ? '-' : (ratio * 100).toFixed(1) + '%';
-    return `<div class="donut" style="--p:${ratio == null ? 0 : (ratio * 100).toFixed(1)}" role="img" aria-label="${esc(label)} ${t}"><b>${t}</b></div>`; };
-  if (!DATA) { app.innerHTML = '<div class="card"><h2>표시할 결과가 없습니다</h2><p class="desc">python -m labelbot dashboard 로 생성하세요.</p></div>'; return; }
+  const pct = (n, d) => d ? Math.round(100 * n / d) + '%' : '-';
+  if (!DATA) { app.innerHTML = '<div class="card"><h2>표시할 결과가 없습니다</h2><p>python -m labelbot dashboard 로 만드세요.</p></div>'; return; }
+  const k = DATA.kpi, RL = DATA.reason_labels || {}, AL = DATA.alert_labels || {};
+  const UMIN = (DATA.flag && DATA.flag.unknown_ratio_min) || 0.5;
+  const R = DATA.review || {applied:false}, AFTER = !!R.applied;
 
-  function bindTips(root){
-    root.querySelectorAll('[data-tip]').forEach(el => {
-      el.addEventListener('mousemove', e => { tip.textContent = el.dataset.tip; tip.style.display = 'block';
-        tip.style.left = Math.min(e.clientX + 12, innerWidth - 300) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; });
-      el.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  // ---- donut: segs [{n, color, name, key}]
+  function donut(o){
+    const size = o.size, th = o.thick, r = (size - th) / 2 - 2, c = size / 2, C = 2 * Math.PI * r;
+    const segs = o.segs.filter(s => s.n > 0), tot = segs.reduce((a, s) => a + s.n, 0);
+    const gap = segs.length > 1 ? (o.gap == null ? 2 : o.gap) : 0;
+    let off = 0, arcs = '';
+    segs.forEach(s => {
+      const len = Math.max(0, C * s.n / tot - gap);
+      arcs += `<circle class="seg" data-key="${esc(s.key || s.name)}" data-tip="${esc(s.tip || (s.name + ' ' + s.n + '건 (' + pct(s.n, tot) + ')'))}" cx="${c}" cy="${c}" r="${r.toFixed(2)}" stroke="${s.color}" stroke-width="${th}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" style="--hw:${th + 4}px"/>`;
+      off += C * s.n / tot;
     });
+    let tick = '';
+    if (o.tick != null) { const a = 2 * Math.PI * o.tick, x1 = c + (r - th / 2 - 3) * Math.cos(a), y1 = c + (r - th / 2 - 3) * Math.sin(a), x2 = c + (r + th / 2 + 3) * Math.cos(a), y2 = c + (r + th / 2 + 3) * Math.sin(a);
+      tick = `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${o.tickColor || 'var(--text-strong)'}" stroke-width="2" stroke-linecap="round"/>`; }
+    const center = o.center ? `<g transform="rotate(90 ${c} ${c})">${o.center(c)}</g>` : '';
+    return `<svg class="dn" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(o.label || '')}" style="transform:rotate(-90deg)">
+      <circle class="track" cx="${c}" cy="${c}" r="${r.toFixed(2)}" stroke="${o.track || 'var(--surface-2)'}" stroke-width="${th}"/>${tot ? arcs : ''}${tick}${center}</svg>`;
+  }
+  const ctr = (n, sub, dy) => c => `<text x="${c}" y="${c + (dy || 0)}" text-anchor="middle" class="ctr-n">${n}</text>${sub ? `<text x="${c}" y="${c + (dy || 0) + 18}" text-anchor="middle" class="ctr-k">${sub}</text>` : ''}`;
+  const legend = (items, total) => `<div class="lg">${items.map(s => `<div class="it${s.n ? '' : ' nil'}" data-key="${esc(s.key)}"><span class="sw" style="background:${s.color}"></span><span>${esc(s.name)}</span><span class="v">${s.n}<small>${pct(s.n, total)}</small></span></div>`).join('')}</div>`;
+  const when = s => { if (!s) return ''; const d = new Date(s); if (isNaN(d)) return String(s).slice(0, 16).replace('T', ' ');
+    const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+
+  // ---- data shaping
+  const failed = c => !c.chunk_type || !Object.keys(c.answers || {}).length;
+  const flagN = k.flagged, failN = DATA.chunks.filter(c => !c.reasons.length && failed(c)).length, okN = Math.max(0, k.chunks - flagN - failN);
+  const ST = {flag:'#F2AFAA', fail:'#E6C987', ok:'rgba(237,241,247,.42)'};
+  // 검수 후 처리 결과 색. 인디고 위(hero)와 밝은 카드 위 두 벌
+  const OC_HERO = {remain:'#F2AFAA', corrected:'#9FD6BF', confirmed:'#C9D4F2', undecidable:'#E6C987', fail:'#E6C987', ok:'rgba(237,241,247,.42)'};
+  const OC_CARD = {recheck:'#C25450', unreviewed:'#E3A29F', corrected:'#3B8A6E', confirmed:'#4A5FA8', undecidable:'#C99A3B'};
+  const rk = Object.keys(DATA.reasons).filter(c => DATA.reasons[c]).sort((a, b) => DATA.reasons[b] - DATA.reasons[a]);
+  const zero = Object.keys(DATA.reasons).filter(c => !DATA.reasons[c]);
+  const RC = ['#4A5FA8', '#C25450', '#C99A3B', '#2E8A63'];
+  const QI = {
+    'Q-GEN': {name:'1차 라벨이 본문과 맞는가', what:'X는 라벨을 다시 볼 신호입니다', sig:'X'},
+    'Q-CTL': {name:'함정질문', what:'붙지 않은 라벨을 물었습니다. O는 놓친 라벨이나 과잉 판정 신호입니다', sig:'O'},
+  };
+  // 첫 공통 질문(questions 시트, 우선순위·ID 순). 없으면 BEOL 연관 열은 '-'다.
+  const PQ = DATA.primary_qid || null;
+  const PQT = ((DATA.questions || []).find(q => q.qid === PQ) || {}).text || '';  // 질문 문장은 DATA에서, 없으면 질문 ID
+  if (PQ) QI[PQ] = {name:PQT || PQ, what:'O가 많아야 정상입니다', sig:'X'};
+  const gen = when(DATA.generated_at);
+  const qinfo = q => QI[q] || QI[q.slice(0, 5)] || {name:q, what:'', sig:''};
+  const AC = {O:'#4A5FA8', X:'#7A9CC0', NA:'#C8D4E4'};
+
+  // ================= sections =================
+  function header(){
+    if (!AFTER) return `<header class="top"><h1>라벨링 결과</h1><span class="phase pre">검수 전</span>
+      <span class="run">run <b>${esc(DATA.run_id)}</b>&nbsp;&nbsp;${esc(DATA.model)}${gen ? '&nbsp;&nbsp;' + esc(gen) : ''}</span>
+      <span class="sp"></span><a id="go-compare" class="btn ghost" href="review.html" data-start="compare" title="검수 화면과 파싱 대조 화면을 함께 연다">검수 + 파싱 대조</a>
+      <a id="go-review" class="btn" href="review.html" data-start="review">검수 시작 <span class="c">${flagN}</span></a></header>`;
+    const left = R.after.remaining;
+    return `<header class="top"><h1>검수 반영 결과</h1><span class="phase">검수 반영됨</span>
+      <span class="run">run <b>${esc(DATA.run_id)}</b>&nbsp;&nbsp;${esc(DATA.model)}&nbsp;&nbsp;반영 ${esc(when(R.applied_at))}</span>
+      <span class="sp"></span><a id="go-review" class="btn${left ? '' : ' ghost'}" href="review.html">${left ? '남은 불량 검수' : '검수 화면 보기'} <span class="c">${left}</span></a></header>`;
   }
 
-  function stack(label, parts, total){
-    const segs = parts.filter(p => p.n > 0).map(p =>
-      `<div class="seg ${p.cls}" style="flex:${p.n};background:var(${p.color})" data-tip="${esc(label)} · ${esc(p.name)} ${p.n}건 (${pct(p.n,total)})"><span>${p.n / total >= 0.08 ? p.n : ''}</span></div>`).join('');
-    return `<div class="stack-row"><div class="lbl" title="${esc(label)}">${esc(label)}</div><div class="stack">${segs || '<div class="empty">없음</div>'}</div><div class="tot mono">${total}</div></div>`;
+  function heroBefore(span){
+    return `<section class="hero ${span}" aria-label="chunk 상태">
+    <div>${donut({size:236, thick:30, gap:3, track:'rgba(237,241,247,.12)', label:'chunk 상태', center:ctr(flagN, `검수할 chunk / ${k.chunks}`, 6),
+      segs:[{n:flagN, color:ST.flag, name:'검수 필요', key:'flag'}, {n:failN, color:ST.fail, name:'분류·라벨 실패', key:'fail'}, {n:okN, color:ST.ok, name:'정상', key:'ok'}]})}</div>
+    <div><h2>chunk 상태</h2><p class="say">${flagN ? `${k.chunks}개 중 ${flagN}개(${pct(flagN, k.chunks)})를 사람이 확인해야 합니다` : '사람이 확인할 chunk가 없습니다'}</p>
+      ${legend([{key:'flag', name:'검수 필요', n:flagN, color:ST.flag}, {key:'fail', name:'분류·라벨 실패', n:failN, color:ST.fail}, {key:'ok', name:'정상', n:okN, color:ST.ok}], k.chunks)}
+      <div class="hstats">
+        <div class="hs"><div class="k">읽은 파일</div><div class="n">${k.files}<small>개</small></div><div class="s">${k.failed_files ? `못 읽은 파일 ${k.failed_files}` : '모두 읽음'}</div></div>
+        <div class="hs"><div class="k">chunk</div><div class="n">${k.chunks}<small>개</small></div><div class="s">내용 chunk ${k.content}</div></div>
+        <div class="hs mini">${donut({size:52, thick:8, track:'rgba(237,241,247,.16)', label:'BEOL 연관 비율', segs:[{n:k.risk_o, color:'#EDF1F7', name:'BEOL 연관 O'}, {n:Math.max(0, k.answers - k.risk_o), color:'rgba(237,241,247,.38)', name:'O 아님'}]})}
+          <div><div class="k">BEOL 연관</div><div class="n">${k.risk_o}<small>/ ${k.answers}</small></div></div></div>
+      </div></div></section>`;
   }
 
-  const k = DATA.kpi;
-  let html = `<header><div><h1>라벨링 결과</h1><div class="sub">실행 <span class="mono">${esc(DATA.run_id)}</span> · 모델 ${esc(DATA.model)} · 생성 ${esc(DATA.generated_at)}</div></div>
-    <div class="sub">사외 파일럿 · 더미 자료</div></header>`;
-  html += `<div class="kpis">
-    <div class="kpi"><div class="k">파일</div><div class="v">${k.files}<small>개</small></div><div class="note">실패 파일 ${k.failed_files}</div></div>
-    <div class="kpi"><div class="k">chunk</div><div class="v">${k.chunks}<small>개</small></div><div class="note">내용 ${k.content} · 분류 실패 ${k.classify_failed} · 라벨 실패 ${k.label_failed}</div></div>
-    <div class="kpi hero" style="--c:var(--danger)">${donut(k.chunks ? k.flagged / k.chunks : null, '불량 chunk 비율')}<div><div class="k">불량 chunk (검수 대상)</div><div class="v">${k.flagged}<small>${pct(k.flagged, k.chunks)}</small></div><div class="note">사유 코드 6종 기준</div></div></div>
-    <div class="kpi"><div class="k">BEOL 관련자료 여부</div><div class="v">${k.risk_o}<small>${pct(k.risk_o, k.answers)}</small></div><div class="note">답 ${k.answers}개 중</div></div>
-    <div class="kpi hero" style="--c:var(${DATA.alerts.some(a => a.condition === 'DUP_LABEL_HIGH') ? '--warning' : '--primary'})">${donut(k.dup_ratio, '중복 라벨링 비율')}<div><div class="k">중복 라벨링 비율</div><div class="v">${k.dup_ratio == null ? '-' : (k.dup_ratio*100).toFixed(1) + '%'}</div><div class="note">N/A 비율 ${k.na_ratio == null ? '-' : (k.na_ratio*100).toFixed(1) + '%'}</div></div></div>
-  </div>`;
-  if (DATA.alerts.length) {
-    html += '<div class="card"><h2>라벨 분포 알림 (H5)</h2>' + DATA.alerts.map(a =>
-      `<div class="alert"><b>⚠ 알림</b><span>${esc(DATA.alert_labels[a.condition] || a.condition)}: 값 ${(a.value*100).toFixed(1)}%, 기준 ${(a.threshold*100).toFixed(0)}%</span></div>`).join('') + '</div>';
+  function heroAfter(){
+    const O = R.outcomes, B = R.before.flagged, A = R.after.remaining, handled = B - A, L = R.labels;
+    const segsAfter = [
+      {n:A, color:OC_HERO.remain, name:'남은 불량', key:'remain', tip:`남은 불량 ${A}개 (재검수 필요 ${O.recheck} · 검수하지 않음 ${O.unreviewed})`},
+      {n:O.corrected, color:OC_HERO.corrected, name:'사람이 교정', key:'corrected'},
+      {n:O.confirmed, color:OC_HERO.confirmed, name:'사람이 확인', key:'confirmed'},
+      {n:O.undecidable, color:OC_HERO.undecidable, name:'판단 불가', key:'undecidable'},
+      {n:failN, color:OC_HERO.fail, name:'분류·라벨 실패', key:'fail'},
+      {n:okN, color:OC_HERO.ok, name:'정상(불량 아님)', key:'ok'}];
+    const acc = L.bot_labels ? Math.max(0, L.bot_labels - L.wrong) : 0;
+    const say = !B ? '이 실행에는 불량 chunk가 없었습니다'
+      : A ? `불량 chunk ${B}개 중 ${handled}개를 사람이 처리했고 ${A}개가 남았습니다`
+      : `불량 chunk ${B}개를 모두 사람이 처리했습니다 · 교정 ${O.corrected}${O.confirmed ? ` · 확인 ${O.confirmed}` : ''}${O.undecidable ? ` · 판단 불가 ${O.undecidable}` : ''}`;
+    return `<section class="hero after s12" aria-label="검수 전후 불량 chunk">
+      <div class="cmp">
+        <div class="side pre rise">${donut({size:150, thick:18, gap:3, track:'rgba(237,241,247,.12)', label:'검수 전', center:ctr(B, `불량 / ${k.chunks}`, 4),
+          segs:[{n:B, color:ST.flag, name:'불량', key:'b-flag'}, {n:failN, color:ST.fail, name:'분류·라벨 실패', key:'b-fail'}, {n:okN, color:ST.ok, name:'정상', key:'b-ok'}]})}
+          <span class="cap"><b>검수 전</b> · 봇 판정</span></div>
+        <div class="arrow rise d1"><span class="pill">사람 검수</span>
+          <svg width="74" height="18" viewBox="0 0 74 18" aria-hidden="true"><path d="M2 9 H64" stroke="rgba(237,241,247,.75)" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M60 3 L70 9 L60 15" stroke="rgba(237,241,247,.9)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="animation:none;stroke-dasharray:none"/></svg>
+          <span class="pill">교정 ${L.changed}</span></div>
+        <div class="side rise d2">${donut({size:210, thick:26, gap:3, track:'rgba(237,241,247,.12)', label:'검수 후', center:ctr(A, `남은 불량 / ${k.chunks}`, 6), segs:segsAfter})}
+          <span class="cap"><b>검수 후</b> · 확정 라벨</span></div>
+      </div>
+      <div class="rise d3"><h2>검수로 줄어든 불량 chunk</h2>
+        <div class="big"><span class="from">${B}</span><span class="ar">→</span><span class="to">${A}</span><span class="unit">개 · ${B ? `${pct(handled, B)} 해소` : '불량 없음'}</span></div>
+        <p class="say">${esc(say)}</p>
+        ${legend(segsAfter.map(s => ({...s})), k.chunks)}
+        <div class="hstats four">
+          <div class="hs"><div class="k">사람이 바로잡은 라벨</div><div class="n">${L.changed}<small>개</small></div><div class="s">축 ${L.axis} · 질문 답 ${L.answer}</div></div>
+          <div class="hs"><div class="k">사람이 본 라벨 중 봇이 맞힌 비율</div><div class="n">${L.bot_labels ? pct(acc, L.bot_labels) : '-'}</div><div class="s">${L.bot_labels ? `${L.bot_labels}개 중 ${L.wrong}개 틀림` : '교정·확인한 chunk 없음'}${L.added ? ` · 사람이 더한 값 ${L.added}` : ''}</div></div>
+          <div class="hs"><div class="k">unknown 축 (전체 chunk)</div><div class="n">${R.unknown.before}<span class="ar">→</span>${R.unknown.after}</div><div class="s">${R.unknown.before > R.unknown.after ? `${R.unknown.before - R.unknown.after}개 값 확정` : '변화 없음'}</div></div>
+          <div class="hs"><div class="k">근거를 남긴 교정</div><div class="n">${R.evidence.with}<small>/ ${R.evidence.total}</small></div><div class="s">다음 라벨링 사례 후보</div></div>
+        </div></div></section>`;
   }
 
-  // 축별 3상태
-  html += `<div class="card"><h2>축별 라벨 상태</h2><p class="desc">chunk마다 축 하나에 값, 해당 없음, unknown 중 무엇이 붙었는지. 막대 위에 마우스를 올리면 건수와 비율이 나온다.</p>
-    <div class="legend"><span><i style="background:var(--s-value)"></i>값</span><span><i style="background:var(--s-unknown)"></i>unknown</span><span><i style="background:var(--s-none)"></i>해당 없음</span></div>`;
-  DATA.axes.forEach(a => {
-    const s = a.states, t = s.value + s.unknown + s.na;
-    html += stack(a.name + (a.active ? '' : ' (비활성)'), [
-      {name:'값', n:s.value, color:'--s-value', cls:''},
-      {name:'unknown', n:s.unknown, color:'--s-unknown', cls:''},
-      {name:'해당 없음', n:s.na, color:'--s-none', cls:'none'}], t);
-  });
-  html += '</div>';
-
-  // 축별 값 분포
-  html += `<div class="card"><h2>축별 값 분포</h2><p class="desc">각 값이 붙은 chunk 수. 다중값 축은 한 chunk가 여러 값에 들어간다.</p><div class="grid">`;
-  DATA.axes.filter(a => a.active).forEach(a => {
-    const vals = a.values.slice().sort((x, y) => y.n - x.n);
-    const max = Math.max(1, ...vals.map(v => v.n));
-    html += `<div class="mini"><h3>${esc(a.name)}<span class="sub">${a.kind}${a.multi ? ' · 다중' : ' · 단일'}</span></h3>` +
-      vals.map(v => `<div class="bar-row" data-tip="${esc(a.name)} = ${esc(v.name)} · ${v.n}건${v.definition ? ' · ' + esc(v.definition) : ''}">
-        <div class="lbl" title="${esc(v.name)}">${esc(v.name)}</div><div class="track"><div class="bar" style="width:${(100*v.n/max).toFixed(1)}%;${v.n ? '' : 'opacity:0'}"></div></div><div class="n">${v.n}</div></div>`).join('') + '</div>';
-  });
-  html += '</div></div>';
-
-  // 질문과 불량 사유
-  html += '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px">';
-  html += `<div class="card" style="margin:0"><h2>질문 답 분포</h2><p class="desc">O: 해당 진술 있음 · X: 다루면서 해당 없다고 밝힘 · N/A: 언급 없음</p>
-    <div class="legend"><span><i style="background:var(--s-value)"></i>O</span><span><i style="background:var(--s-unknown)"></i>X</span><span><i style="background:var(--s-none)"></i>N/A</span></div>`;
-  DATA.questions.forEach(q => {
-    html += stack(q.qid, [{name:'O', n:q.O, color:'--s-value', cls:''}, {name:'X', n:q.X, color:'--s-unknown', cls:''}, {name:'N/A', n:q.NA, color:'--s-none', cls:'none'}], q.O + q.X + q.NA);
-    html += `<p class="desc" style="margin:2px 0 10px">${esc(q.text)}</p>`;
-  });
-  html += '</div>';
-  const rmax = Math.max(1, ...Object.values(DATA.reasons));
-  html += `<div class="card" style="margin:0"><h2>불량 사유</h2><p class="desc">한 chunk에 여러 사유가 걸릴 수 있다. 전체 chunk ${k.chunks}개 대비.</p>` +
-    Object.keys(DATA.reasons).map(c => `<div class="bar-row" style="grid-template-columns:150px 1fr 70px" data-tip="${esc(c)} · ${DATA.reasons[c]}건">
-      <div class="lbl">${esc(DATA.reason_labels[c] || c)}</div><div class="track"><div class="bar" style="width:${(100*DATA.reasons[c]/rmax).toFixed(1)}%;${DATA.reasons[c] ? '' : 'opacity:0'}"></div></div>
-      <div class="n">${DATA.reasons[c]} · ${pct(DATA.reasons[c], k.chunks)}</div></div>`).join('') + '</div>';
-  html += '</div><div style="height:16px"></div>';
-
-  // chunk 목록
-  const axesActive = DATA.axes.filter(a => a.active);
-  html += `<div class="card"><h2>chunk별 라벨</h2><p class="desc">행을 누르면 본문, 축별 근거, 질문 답이 펼쳐진다. 해당 없음은 목록에서 생략한다.</p>
-    <div class="filters">
-      <select id="fFile"><option value="">전체 파일</option>${DATA.files.map(f => `<option value="${esc(f.file_id)}">${esc(f.file_name)} (${f.chunks})</option>`).join('')}</select>
-      <select id="fAxis"><option value="">축 값 전체</option>${axesActive.map(a => `<optgroup label="${esc(a.name)}">${a.values.filter(v => v.n).map(v => `<option value="${esc(a.name)}\u0001${esc(v.name)}">${esc(a.name)} = ${esc(v.name)} (${v.n})</option>`).join('')}<option value="${esc(a.name)}\u0001unknown">${esc(a.name)} = unknown</option></optgroup>`).join('')}</select>
-      <select id="fAns"><option value="">Q-COM-001 전체</option><option>O</option><option>X</option><option>N/A</option></select>
-      <label class="chk"><input type="checkbox" id="fFlag"> 불량만</label>
-      <input type="search" id="fText" placeholder="제목·본문 검색">
-      <span class="count" id="cnt"></span>
-    </div>
-    <div class="tbl-wrap"><table><thead><tr><th style="width:22%">파일 · 슬라이드</th><th style="width:20%">제목</th><th>축 값</th><th style="width:70px">Q-COM-001</th><th style="width:130px">불량 사유</th></tr></thead><tbody id="tb"></tbody></table></div></div>`;
-  html += '<footer>로컬 파일 화면. 외부 주소를 참조하지 않는다. 표시용이며 교정은 검수 화면(review.html)에서 한다.</footer>';
-  app.innerHTML = html;
-  bindTips(app);
-
-  const tb = document.getElementById('tb');
-  const open = new Set();
-  function chips(c){
-    const out = [];
-    axesActive.forEach(a => { const v = c.axes[a.name]; if (!v) return;
-      if (v.status === 'unknown') out.push(`<span class="chip unk"><span class="ax">${esc(a.name)}</span>unknown</span>`);
-      else if (v.status === 'value') v.values.forEach(x => out.push(`<span class="chip"><span class="ax">${esc(a.name)}</span>${esc(x)}</span>`)); });
-    return out.join('') || '<span class="empty">값 없음</span>';
+  function reasonsBefore(){
+    const top = rk.length > 4 ? rk.slice(0, 3) : rk, rest = rk.slice(top.length), restN = rest.reduce((a, c) => a + DATA.reasons[c], 0);
+    const rsegs = top.map((c, i) => ({n:DATA.reasons[c], color:RC[i], name:RL[c] || c, key:c, tip:`${RL[c] || c} (${c}) ${DATA.reasons[c]}건`}))
+      .concat(restN ? [{n:restN, color:'#A8BDD4', name:'그 외', key:'_rest'}] : []);
+    const rsum = rk.reduce((a, c) => a + DATA.reasons[c], 0);
+    return `<section class="card s5" aria-label="불량 사유"><div class="ch"><h2>불량 사유</h2><p>한 chunk에 사유가 여럿일 수 있습니다</p></div>
+      ${rk.length ? `<div class="rbody">${donut({size:170, thick:24, label:'불량 사유 비중', center:ctr(rsum, '사유 건수', 4), segs:rsegs})}
+        ${legend(rsegs, k.chunks)}</div>` : `<div class="none"><span>●</span>불량 사유가 없습니다</div>`}
+      ${zero.length ? `<div class="zero">0건: ${zero.map(c => esc(RL[c] || c)).join(', ')}</div>` : ''}</section>`;
   }
-  function highlight(text, quotes){
-    let t = esc(text);
-    quotes.filter(q => q && q.length >= 6).forEach(q => {
-      q.split(/\s*(?:…|\.{3,})\s*|\n/).filter(p => p.trim().length >= 6).forEach(p => {
-        const e = esc(p.trim()); const i = t.indexOf(e);
-        if (i >= 0) t = t.slice(0, i) + '<mark>' + e + '</mark>' + t.slice(i + e.length);
-      });
+
+  function reasonsDelta(){
+    const b = R.before.by_reason, a = R.after.by_reason;
+    const codes = Object.keys(b).filter(c => b[c]).sort((x, y) => b[y] - b[x]);
+    const max = Math.max(1, ...codes.map(c => b[c]));
+    const zeros = Object.keys(b).filter(c => !b[c]);
+    return `<section class="card s7" aria-label="불량 사유별 검수 전후"><div class="ch"><h2>불량 사유별 검수 전 → 후</h2><p>막대 길이는 검수 전 건수, 초록은 사람이 처리한 몫입니다</p></div>
+      ${codes.length ? `<div class="rd">${codes.map(c => { const done = b[c] - a[c];
+        return `<div class="rr" data-tip="${esc(`${RL[c] || c} (${c}): 검수 전 ${b[c]} → 검수 후 ${a[c]}`)}"><span class="nm">${esc(RL[c] || c)}<small>${esc(c)}</small></span>
+          <div class="bar"><div class="fill" style="width:${(100 * b[c] / max).toFixed(1)}%"><span class="fx ok" style="flex:${done}"></span><span class="fx left" style="flex:${a[c]}"></span></div></div>
+          <span class="num">${b[c]}<span class="ar">→</span><b>${a[c]}</b><span class="done${a[c] ? ' bad' : ''}">${a[c] ? `${a[c]}건 남음` : `${done}건 모두 처리`}</span></span></div>`; }).join('')}</div>
+        <div class="bkey"><span><i style="background:var(--success)"></i>사람이 처리</span><span><i style="background:var(--danger)"></i>남은 불량</span></div>`
+      : `<div class="none"><span>●</span>불량 사유가 없었습니다</div>`}
+      ${zeros.length ? `<div class="zero">검수 전부터 0건: ${zeros.map(c => esc(RL[c] || c)).join(', ')}</div>` : ''}</section>`;
+  }
+
+  function outcomeCard(){
+    const O = R.outcomes, B = R.before.flagged, OL = R.outcome_labels || {};
+    const order = ['corrected', 'confirmed', 'undecidable', 'recheck', 'unreviewed'];
+    const segs = order.map(o => ({n:O[o] || 0, color:OC_CARD[o], name:OL[o] || o, key:o}));
+    const notes = [];
+    if (O.recheck) notes.push(`<b>재검수 필요 ${O.recheck}</b>: 교정 뒤 본문이나 질문 문장이 바뀌었습니다. 검수 화면에서 다시 봐 주세요.`);
+    if (O.unreviewed) notes.push(`<b>검수하지 않음 ${O.unreviewed}</b>: 아직 사람 판단이 없습니다. 봇 값 그대로 남습니다.`);
+    if (O.undecidable) notes.push(`<b>판단 불가 ${O.undecidable}</b>: 이미지만으로 판단할 수 없다고 표시했습니다.`);
+    if (!notes.length && B) notes.push('불량 chunk가 모두 사람 값(교정·확인)으로 확정됐습니다.');
+    return `<section class="card s5" aria-label="검수 처리 결과"><div class="ch"><h2>불량 chunk 처리 결과</h2><p>검수 전 불량 ${B}개 기준</p></div>
+      <div class="obody">${donut({size:170, thick:24, label:'처리 결과', center:ctr(B - R.after.remaining, `처리 / ${B}`, 4), segs})}
+        ${legend(segs, B)}</div><div class="note">${notes.join('<br>')}</div></section>`;
+  }
+
+  function topChanged(){
+    const T = R.top_changed || [], L = R.labels, max = Math.max(1, ...T.map(t => t.n));
+    const nm = t => t.kind === 'axis' ? {tag:'축', name:t.key, tip:`축 ${t.key}: 값 교정 ${t.n}건`}
+      : t.kind === 'gen' ? {tag:'검증', name:t.key || '축 미상', tip:`1차 라벨 검증 질문(${t.key}) 답 교정 ${t.n}건`}
+      : {tag:'질문', name:qinfo(t.key).name, tip:`${t.key}: ${t.text || ''} · 답 교정 ${t.n}건`};
+    return `<section class="card s7" aria-label="많이 바로잡은 축과 질문"><div class="ch"><h2>사람이 많이 바로잡은 곳</h2><p>값이 실제로 바뀐 교정 ${L.changed}건 · 다음 라벨링 규칙 후보가 나오는 곳입니다</p></div>
+      <div class="mix" data-tip="${esc(`축 교정 ${L.axis} · 질문 답 교정 ${L.answer}`)}"><span style="flex:${L.axis};background:var(--primary)"></span><span style="flex:${L.answer};background:var(--line)"></span></div>
+      ${T.length ? `<div class="hb">${T.map(t => { const x = nm(t);
+        return `<div class="hr" data-tip="${esc(x.tip)}"><span class="nm"><span class="tag">${x.tag}</span>${esc(x.name)}</span><span class="tr"><span style="width:${(100 * t.n / max).toFixed(1)}%"></span></span><span class="n">${t.n}</span></div>`; }).join('')}</div>`
+        : `<div class="none"><span>●</span>값을 바꾼 교정이 없습니다(확인·판단 불가만 있음)</div>`}
+      <div class="bkey"><span><i style="background:var(--primary)"></i>축 ${L.axis}</span><span><i style="background:var(--line)"></i>질문 답 ${L.answer}</span></div></section>`;
+  }
+
+  function handoff(){
+    const H = R.handoff, n = k.chunks;
+    const row = (cls, ic, name, ex, val, tot) => `<div class="hi"><span class="ic ${cls}">${ic}</span><div><b>${name}</b><div class="ex">${ex}</div></div>
+      <span class="n">${val}${tot != null ? `<small> / ${tot}</small>` : ''}</span>${tot ? `<span class="pb"><span style="width:${Math.min(100, 100 * val / tot).toFixed(1)}%"></span></span>` : ''}</div>`;
+    return `<section class="card s5" aria-label="다음 단계로 넘어간 것"><div class="ch"><h2>검수 뒤 이어진 것</h2><p>확정 라벨이 어디까지 갔는지</p></div><div class="ho">
+      ${row(H.embedded >= n ? 'ok' : '', H.embedded >= n ? '✓' : '1', '임베딩', '확정 라벨 chunk 벡터', H.embedded, n)}
+      ${row(H.pushed >= n ? 'ok' : H.pushed ? '' : 'off', H.pushed >= n ? '✓' : '2', 'Supabase 적재', '검수 반영 뒤 확정 라벨로 올라간 chunk', H.pushed, n)}
+      ${row(R.evidence.with ? '' : 'off', '3', '라벨링 사례 후보', '근거를 남긴 교정 → Domain-Engr-bot 질문 화면에서 사람이 확정한 뒤 다음 실행에 반영', R.evidence.with, R.evidence.total)}
+      ${row(H.revisits ? '' : 'off', '4', 'taxonomy 재검토 요청', '라벨은 바꾸지 않음 · 리포트로만 전달', H.revisits)}
+      ${row(H.synonyms ? '' : 'off', '5', '검수 등록 동의어', 'synonyms 시트 후보', H.synonyms)}
+    </div></section>`;
+  }
+
+  function questions(span){
+    let h = `<section class="card ${span}" aria-label="질문 답 분포"><div class="ch"><h2>질문 답 분포</h2><p>${AFTER ? '사람 교정을 반영한 확정 답입니다. ' : ''}가운데 숫자는 확인이 필요한 답의 수입니다</p></div><div class="qrow">`;
+    // 대조 질문 답은 교정하지 않는 품질 신호다. 검수 후 그 불량(CONTROL_O)이 모두 처리됐으면 확인 필요로 세지 않는다.
+    const ctlDone = AFTER && R.before.by_reason.CONTROL_O > 0 && !R.after.by_reason.CONTROL_O;
+    DATA.questions.forEach(q => {
+      const inf = qinfo(q.qid), t = q.O + q.X + q.NA, raw = inf.sig === 'O' ? q.O : inf.sig === 'X' ? q.X : 0;
+      const done = ctlDone && q.qid.startsWith('Q-CTL') && raw, sigN = done ? 0 : raw;
+      h += `<div class="q" title="${esc(q.qid)}: ${esc(q.text)}">${donut({size:150, thick:20, label:inf.name, center:ctr(raw, `${inf.sig} 답 / ${t}`, 4),
+          segs:[{n:q.O, color:AC.O, name:'O'}, {n:q.X, color:AC.X, name:'X'}, {n:q.NA, color:AC.NA, name:'N/A'}].map(s => ({...s, tip:`${inf.name}: ${s.name} ${s.n}건 (${pct(s.n, t)})`}))})}
+        <b>${esc(inf.name)}</b><span class="what">${esc(inf.what)}</span>
+        <span class="sig ${sigN ? 'hot' : 'fine'}"><span class="d"></span>${sigN ? `${inf.sig} ${sigN}건 확인 필요` : done ? `${inf.sig} ${raw}건 · 해당 chunk 검수 완료` : '확인할 답 없음'}</span></div>`;
     });
-    return t;
+    return h + `</div><div class="qkey"><span><i style="background:${AC.O}"></i>O</span><span><i style="background:${AC.X}"></i>X</span><span><i style="background:${AC.NA}"></i>N/A</span></div></section>`;
   }
-  function detail(c){
-    const evid = axesActive.map(a => { const v = c.axes[a.name]; if (!v || v.status === 'na') return '';
-      return `<div class="ev"><div class="h"><b>${esc(a.name)}: ${esc(v.values.join(', '))}</b><span class="conf">확신도 ${v.confidence == null ? '-' : v.confidence.toFixed(2)}</span></div>${v.evidence ? `<div class="q">“${esc(v.evidence)}”</div>` : ''}</div>`; }).join('');
-    const ans = Object.keys(c.answers).map(q => { const a = c.answers[q];
-      return `<div class="ev"><div class="h"><b>${esc(q)}: <span class="ans ${a.answer === 'N/A' ? 'NA' : a.answer}">${esc(a.answer)}</span></b><span class="conf">확신도 ${a.confidence == null ? '-' : a.confidence.toFixed(2)}</span></div>${a.quote ? `<div class="q">“${esc(a.quote)}”</div>` : ''}</div>`; }).join('');
-    const ext = c.extracted.length ? '<div class="ev"><b>추출 값</b>' + c.extracted.map(e => `<div class="q">${esc(e.item)}: ${esc(e.value)}</div>`).join('') + '</div>' : '';
-    const quotes = Object.values(c.axes).filter(v => v.status === 'value').map(v => v.evidence).concat(Object.values(c.answers).map(a => a.quote));
-    return `<tr class="detail"><td colspan="5"><div class="det"><div><h2 style="font-size:13px">본문</h2><pre>${highlight(c.text, quotes)}</pre></div>
-      <div><h2 style="font-size:13px">분류 근거</h2>${evid || '<div class="empty">값이 붙은 축이 없다</div>'}<h2 style="font-size:13px;margin-top:12px">질문 답</h2>${ans || '<div class="empty">답 없음</div>'}${ext}</div></div></td></tr>`;
-  }
-  function render(){
-    const ff = document.getElementById('fFile').value, fa = document.getElementById('fAxis').value,
-      fq = document.getElementById('fAns').value, fl = document.getElementById('fFlag').checked,
-      ft = document.getElementById('fText').value.trim().toLowerCase();
-    const rows = DATA.chunks.filter(c => {
-      if (ff && c.file_id !== ff) return false;
-      if (fa) { const [ax, val] = fa.split('\u0001'); const v = c.axes[ax]; if (!v) return false;
-        if (val === 'unknown' ? v.status !== 'unknown' : !v.values.includes(val)) return false; }
-      if (fq && !(c.answers['Q-COM-001'] && c.answers['Q-COM-001'].answer === fq)) return false;
-      if (fl && !c.reasons.length) return false;
-      if (ft && !(c.title + '\n' + c.text).toLowerCase().includes(ft)) return false;
-      return true;
+
+  function alertsCard(span){
+    const GA = [
+      {cond:'NA_RATIO_LOW', name:'N/A 비율', val:k.na_ratio, th:(DATA.alerts.find(a => a.condition === 'NA_RATIO_LOW') || {}).threshold ?? 0.3, ex:'질문이 대부분 답할 수 있는 것이면 낮게 나옵니다. 기준보다 낮으면 질문이 쉬운지 확인'},
+      {cond:'DUP_LABEL_HIGH', name:'중복 라벨 비율', val:k.dup_ratio, th:(DATA.alerts.find(a => a.condition === 'DUP_LABEL_HIGH') || {}).threshold ?? 0.4, ex:'한 축에 값이 둘 이상 붙은 비율. 기준보다 높으면 값 정의가 겹치는지 확인'},
+    ];
+    let h = `<section class="card ${span}" aria-label="분포 알림"><div class="ch"><h2>분포 알림</h2><p>봇 실행 기준 · 검은 눈금이 기준입니다</p></div><div class="gauges">`;
+    GA.forEach(g => {
+      const on = DATA.alerts.some(a => a.condition === g.cond), v = g.val == null ? 0 : g.val;
+      h += `<div class="g">${donut({size:86, thick:11, label:`${g.name} ${pct(v, 1)}, 기준 ${pct(g.th, 1)}`, tick:g.th, center:ctr(g.val == null ? '-' : Math.round(100 * v) + '%', '', 6),
+          segs:[{n:v, color:on ? 'var(--warning)' : 'var(--primary)', name:g.name, tip:`${g.name} ${pct(v, 1)} · 기준 ${pct(g.th, 1)}`}, {n:Math.max(0, 1 - v), color:'transparent', name:'', tip:''}]})}
+        <div><b>${g.name}</b><div class="st ${on ? 'bad' : 'ok'}">${on ? `${AL[g.cond] || g.cond}` : '기준 안'}</div><div class="ex">${esc(g.ex)}</div></div></div>`;
     });
-    document.getElementById('cnt').textContent = rows.length + ' / ' + DATA.chunks.length + ' chunk';
-    tb.innerHTML = rows.map(c => {
-      const a = c.answers['Q-COM-001'];
-      const r = `<tr class="row${open.has(c.chunk_id) ? ' open' : ''}" data-id="${esc(c.chunk_id)}"><td>${esc(c.file_name)}<div class="sub mono">슬라이드 ${c.slide_no} · ${esc(c.chunk_type || '-')}</div></td>
-        <td>${esc(c.title)}</td><td>${chips(c)}</td>
-        <td>${a ? `<span class="ans ${a.answer === 'N/A' ? 'NA' : a.answer}">${esc(a.answer)}</span>` : '<span class="empty">-</span>'}</td>
-        <td>${c.reasons.length ? c.reasons.map(x => `<span class="flag" title="${esc(DATA.reason_labels[x] || x)}">${esc(x)}</span>`).join('') : '<span class="ok">✓ 정상</span>'}</td></tr>`;
-      return r + (open.has(c.chunk_id) ? detail(c) : '');
-    }).join('') || '<tr><td colspan="5" class="empty">조건에 맞는 chunk가 없다</td></tr>';
+    return h + `</div></section>`;
   }
-  tb.addEventListener('click', e => { const tr = e.target.closest('tr.row'); if (!tr) return;
-    const id = tr.dataset.id; open.has(id) ? open.delete(id) : open.add(id); render(); });
-  ['fFile', 'fAxis', 'fAns', 'fFlag', 'fText'].forEach(id => document.getElementById(id).addEventListener('input', render));
-  render();
+
+  function strip(){
+    const axes = DATA.axes.filter(a => a.active);
+    const head = AFTER ? '<th style="width:170px">불량 사유(검수 전)</th><th style="width:110px">처리 결과</th><th style="width:70px">바뀐 라벨</th>' : '<th style="width:170px">불량 사유</th>';
+    return `<section class="strip" aria-label="축 상태"><span class="k">축 상태${AFTER ? '(확정)' : ''}</span><span class="lgs"><span><i style="background:var(--primary)"></i>값</span><span><i style="background:var(--warning)"></i>unknown</span><span><i style="background:var(--bg-grid)"></i>해당 없음</span></span>
+      <div class="axs">${axes.map(a => { const s = a.states, hot = !a.pending && (s.value + s.unknown + s.na) && s.unknown / (s.value + s.unknown + s.na) >= UMIN - 1e-12;
+        // 실행 뒤 더해진 축: 이 실행에 값이 없으니 회색 점선 고리만 그리고 unknown 강조에서 뺀다
+        if (a.pending) return `<div class="ax pend" data-tip="${esc(`${a.name}: 다음 실행부터 라벨링됩니다`)}"><svg class="dn" width="30" height="30" viewBox="0 0 30 30" role="img" aria-label="${esc(a.name)} 다음 실행부터"><circle cx="15" cy="15" r="11" fill="none" stroke="var(--text-faint)" stroke-width="2" stroke-dasharray="3 3"/></svg><span class="nm" title="${esc(a.name)}">${esc(a.name)}</span></div>`;
+        return `<div class="ax${hot ? ' hot' : ''}">${donut({size:30, thick:6, gap:1.5, label:a.name, segs:[{n:s.value, color:'#4A5FA8', name:'값'}, {n:s.unknown, color:'#C99A3B', name:'unknown'}, {n:s.na, color:'#C8D4E4', name:'해당 없음'}].map(x => ({...x, tip:`${a.name}: ${x.name} ${x.n}`}))})}<span class="nm" title="${esc(a.name)}">${esc(a.name)}</span></div>`; }).join('')}</div>
+      <button type="button" class="toggle" id="tgl" aria-expanded="false">chunk 목록 보기</button></section>
+      <section class="list" id="list"><table><thead><tr><th>파일</th><th style="width:60px">슬라이드</th><th>제목</th><th style="width:70px" title="${esc(PQT)}">${esc(PQ || 'BEOL')}</th>${head}</tr></thead><tbody id="tb"></tbody></table></section>`;
+  }
+
+  // ================= layout =================
+  const NEW = DATA.new_axes || [];
+  let h = header() + (NEW.length ? `<p class="newax" role="status" title="${esc(NEW.join(', '))}">taxonomy에 새 축 ${NEW.length}개 → 다시 라벨링하면 반영됩니다</p>` : '') + '<main class="grid">';
+  if (AFTER) h += heroAfter() + reasonsDelta() + outcomeCard() + topChanged() + handoff() + questions('s8') + alertsCard('s4');
+  else h += heroBefore('s7') + reasonsBefore() + questions('s8') + alertsCard('s4');
+  h += '</main>' + strip();
+  app.innerHTML = h;
+
+  // ---- interactions
+  const $ = id => document.getElementById(id);
+  // 검수 시작: 화면 서버에 시작 신호(실행 ID·파싱 대조 여부)를 남기면, 기다리던 Claude가 BEOL-labeling-feedback을 시작한다.
+  // 서버가 없거나(파일로 연 화면, 예전 서버) 신호가 실패해도 검수 화면은 그대로 연다.
+  app.querySelectorAll('[data-start]').forEach(a => a.addEventListener('click', ev => {
+    ev.preventDefault();
+    const compare = a.dataset.start === 'compare';
+    if (compare) window.open('compare.html', '_blank');
+    const go = () => { location.href = 'review.html'; };
+    if (location.protocol === 'file:') return go();
+    const post = fetch('signals/review_start', {method:'POST', headers:{'Content-Type':'application/json'}, keepalive:true,
+      body: JSON.stringify({kind:'review_start', run_id: DATA.run_id, compare})}).catch(() => null);
+    Promise.race([post, new Promise(r => setTimeout(r, 1500))]).then(go);
+  }));
+  function bind(el, html){ el.addEventListener('mousemove', e => { tip.innerHTML = html; tip.style.display = 'block';
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - 330) + 'px'; tip.style.top = (e.clientY + 16) + 'px'; });
+    el.addEventListener('mouseleave', () => { tip.style.display = 'none'; }); }
+  app.querySelectorAll('[data-tip]').forEach(el => { if (el.dataset.tip) bind(el, esc(el.dataset.tip)); });
+  // legend ↔ donut segment highlight (같은 key를 가진 도넛 조각만 강조한다)
+  app.querySelectorAll('.lg').forEach(lg => {
+    const sec = lg.closest('section'), keys = new Set([...lg.querySelectorAll('.it')].map(it => it.dataset.key));
+    const svg = [...sec.querySelectorAll('svg.dn')].find(s => [...s.querySelectorAll('.seg')].some(x => keys.has(x.dataset.key)));
+    if (!svg) return;
+    lg.querySelectorAll('.it').forEach(it => {
+      const set = on => { svg.querySelectorAll('.seg').forEach(s => { s.style.opacity = on && s.dataset.key !== it.dataset.key ? '.3' : '';
+          s.style.strokeWidth = on && s.dataset.key === it.dataset.key ? (parseFloat(s.getAttribute('stroke-width')) + 4) + 'px' : ''; });
+        it.classList.toggle('on', on); };
+      it.addEventListener('mouseenter', () => set(true)); it.addEventListener('mouseleave', () => set(false));
+    });
+  });
+  const OL = R.outcome_labels || {};
+  $('tb').innerHTML = DATA.chunks.map(c => { const a = PQ ? c.answers[PQ] : null;
+    const gone = AFTER && c.outcome && ['corrected', 'confirmed', 'undecidable'].includes(c.outcome);
+    const rs = c.reasons.length ? c.reasons.map(x => `<span class="fl${gone ? ' gone' : ''}" title="${esc(RL[x] || x)}">${esc(x)}</span>`).join('') : '<span class="okc">정상</span>';
+    const extra = AFTER ? `<td>${c.outcome ? `<span class="oc ${esc(c.outcome)}">${esc(OL[c.outcome] || c.outcome)}</span>` : '<span class="okc">-</span>'}</td><td class="mono">${c.changes || (c.outcome ? 0 : '-')}</td>` : '';
+    return `<tr><td>${esc(c.file_name)}</td><td class="mono">${c.slide_no}</td><td>${esc(c.title)}</td><td class="mono">${a ? esc(a.answer) : '-'}</td><td>${rs}</td>${extra}</tr>`; }).join('');
+  $('tgl').addEventListener('click', () => { const on = !$('list').classList.contains('on');
+    $('list').classList.toggle('on', on); $('tgl').setAttribute('aria-expanded', String(on)); $('tgl').textContent = on ? 'chunk 목록 접기' : 'chunk 목록 보기';
+    if (on) $('list').scrollIntoView({behavior:'smooth', block:'start'}); });
 })();
 </script>
 </body>

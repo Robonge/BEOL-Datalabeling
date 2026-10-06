@@ -62,7 +62,7 @@
 | H6 | 라벨링 후 | 불량 목록의 chunk를 검수한다. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 검수 중 발견한 동의어는 교정 파일(`.json`)에 담기고, 후보 리포트의 "검수 등록" 행으로 나온다. taxonomy가 내용을 담지 못하는 축·질문은 재검토 요청(사유 코드, 제안 값, 메모 500자)으로 남기며, `reports/taxonomy_revisit.md`로 나온다. 다 끝나면 검수 화면의 "검수 완료" 버튼을 누르고(교정이 없어도 누른다), 그 신호로 반영·임베딩·적재가 이어진다. | 검수 화면, `reports/taxonomy_revisit.md` | 대기(검수 완료 버튼까지) |
 | H7 | 산출 후 | 봇이 `reports/query_candidates.md`에 올린 조회 질문 후보 중 검증에 쓸 질문을 `queries` 시트에 붙여넣고 채택 열을 Y로 둔다. | `reports/query_candidates.md`, `taxonomy.xlsx`(`queries` 시트) | 대기 |
 | H8 | 1차 분류 후, 라벨링 후 | 봇이 올린 동의어 후보를 보고 승인할 것을 `synonyms` 시트에 붙여넣는다. 시트에 옮긴 동의어는 다음 실행부터 쓰인다(6.2절). | `reports/candidates.md`, `taxonomy.xlsx`(`synonyms` 시트) | 계속(처리 전 후보는 시트에 넣지 않는다) |
-| H9 | 검수 반영 후, 다음 실행 전 | 검수 교정에서 Engr-bot이 센 규칙 후보(축 값 혼동·과잉·누락, 질문 답 뒤집힘)와 사람이 손댄 chunk 사례를 보고 승인·기각한다. 승인한 규칙은 다음 실행의 1차 분류·3차 라벨링 프롬프트에 "검수 피드백 지침"으로, 승인한 사례는 비슷한 chunk의 1차 분류에 few-shot으로 들어간다. 규칙 문장은 사람이 고칠 수 있다. | `workspaces/_engrbot/ledger/labeling_candidates.md`(실행 시 생성), `taxonomy/labeling_rules.json`(승인 시 생성), `engrbot labeling-rules approve·reject` | 계속(승인 전에는 넣지 않는다) |
+| H9 | 검수 반영 후, 다음 실행 전 | Domain-Engr-bot이 검수 결과(교정·재검토 요청·검수 등록 동의어)와 누적 교정 장부(규칙 후보·사례 후보 포함)로 만든 도메인 질문에 답하고, 답마다 나온 초안(규칙 문장·taxonomy 행)을 근거(검수자가 남긴 인용·이유, 슬라이드 미리보기)를 보며 고쳐 확정한다. 확정한 규칙·사례만 다음 실행의 1차 분류·3차 라벨링 프롬프트에 "검수 피드백 지침"과 few-shot으로 들어가고, 확정한 taxonomy 행은 taxonomy 수정 보드(출처 S7 엔지니어 답변)로 가서 사람이 `taxonomy.xlsx`에 붙여넣는다. 이미 승인된 규칙·사례는 승인 규칙 관리 화면에서 끄기·켜기·문장 수정·승인 취소를 한다(2026-10-06 사용자 결정: 사람이 이미 검수한 chunk를 Domain-Engr-bot이 다시 도메인 검수하지 않고, 기존 후보 승인은 질문 화면으로 합친다). | 질문 화면 `workspaces/_domain_engrbot/questions/engr_questions.html`(`domain_engrbot questions serve`, `/BEOL-labeling-Domain-Engr-bot`), 승인 규칙 관리 화면 `workspaces/_domain_engrbot/ledger/labeling_review.html`, `taxonomy/labeling_rules.json`(승인 시 생성), `domain_engrbot questions generate·apply` | 계속(확정 전에는 넣지 않는다) |
 
 **H5 라벨 분포 알림 조건**
 
@@ -249,6 +249,8 @@ taxonomy는 화면이 아니라 `taxonomy.xlsx`를 Excel에서 직접 고친다(
 - **임베딩 저장**: `chunk_embeddings(chunk_id, model, dim, text_hash, vector, run_id)`이며 벡터는 float32로 직렬화한 BLOB이다. `text_hash`와 `model`이 같으면 다시 호출하지 않는다. 모델마다 차원이 다르므로 모델이 다른 벡터는 같은 조회에서 섞지 않고, 모델을 바꾸면 그 모델로 다시 만든다.
 - **적재 호출**: `push-vectors`는 `urllib`로 `POST {url}/rest/v1/{table}`을 부르며, 헤더는 `apikey`, `Authorization: Bearer`, `Prefer: resolution=merge-duplicates`이고 chunk ID와 모델 기준으로 upsert한다. `batch_size`개씩 묶어 보내고, 리다이렉트는 따라가지 않는다. 키는 `supabase.key_env`가 가리키는 환경변수에서만 읽고 설정, 로그, 캐시, DB에 넣지 않는다. 모델이 다른 벡터를 같은 표에 섞어 올리려 하면 거부한다. 보낼 대상이 0개면 호출이 0회다.
 - **보내는 열**: chunk ID, 파일 ID(sha256), chunk 순번, 모델, 차원, 벡터, chunk 본문, 확정 라벨(JSON 값), 실행 ID. 파일명과 경로는 보내지 않는다. 확정 라벨은 검수 교정이 있으면 교정 값, 없으면 봇 값이다.
+> PoC(2026-10-05 사용자 결정)에서는 사외·사내를 구분하지 않으며 이 항목은 적용하지 않는다. 코드에서 `check_send`·`SendBlocked`·`host_class`·`internal_host_suffixes`·더미 해시 대조를 제거했다. 사내 반입 전에 되돌린다.
+
 - **사외 전송 조건**: `supabase.url`의 호스트를 LLM 호출과 같은 방식으로 판정한다. 호스트가 `internal_host_suffixes`에 맞지 않으면 사외이고, 사외에는 파일 해시가 더미 해시 목록(`tests/gold/dummy_hashes.jsonl` 또는 사외 검증 폴더 `parshing test files/`(저장소 상대 경로, `llm.DUMMY_DIRS`)의 현재 파일 해시)에 있는 chunk만 보낸다. 나머지 chunk는 보내지 않고 사유 코드를 남긴다. 판정이 불확실하면 보내지 않는다.
 - **멱등**: 작업 DB에 `vector_push_log(chunk_id, model, text_hash, label_hash, target_host_hash, pushed_at, result_code)`를 둔다. `label_hash`는 `{축 ID: 정렬한 값 목록, 질문 ID: 답}`만 넣어 키 순으로 정렬한 JSON의 sha256이며 확신도, 근거, 검수 상태, 시각은 넣지 않는다(정의는 `plan.md` 2절 "ID와 해시 정의"). 라벨 실패 chunk는 적재하지 않는다. 같은 대상 호스트에 같은 chunk ID·모델·`text_hash`·`label_hash`가 이미 성공으로 기록되어 있으면 다시 보내지 않으므로, 같은 내용으로 재실행하면 호출이 0회다. 검수 교정으로 확정 라벨이 바뀌면 `label_hash`가 달라지므로 그 chunk만 다시 올린다(upsert). 이 표에도 본문, 파일명, 키를 넣지 않는다.
 - **Supabase 표 정의**: 표 이름, 열, pgvector 차원(임베딩 모델 차원과 같아야 한다), 충돌 키는 저장소의 `docs/supabase_schema.md`에 SQL 코드 블록으로 둔다. `.sql`은 `CLAUDE.md` 쓰기 규칙의 허용 목록에 없으므로 `.md`로 쓴다. 봇은 Supabase 표를 만들거나 지우지 않는다.
@@ -273,7 +275,8 @@ taxonomy는 화면이 아니라 `taxonomy.xlsx`를 Excel에서 직접 고친다(
 - `taxonomy` 시트에서 값 열(B)이 빈 행은 축 정의 행이다. 다중값(D), 계층(E), 중복 알림 제외(F)는 Y/N, 종류(G)는 분류/상태이며, 모두 축 정의 행에서 필수이고 값 행에 적혀 있으면 오류다. 상위값(C)을 비우면 최상위 값이다. 사용 여부(K)를 비우면 Y다. 사용 여부=N인 값은 없는 값으로 본다.
 - 같은 축 안에서 NFKC·소문자·공백 제거 후 중복인 값은 오류다.
 - 예약어 `해당 없음`, `unknown`과 그 변형(`해당없음`, `Unknown`, `N/A`, `NA`)을 값으로 적으면 오류다(gap-fill).
-- 다음 오류는 시트 이름과 행 번호를 알려 주고 실행을 거부한다: 같은 축 안의 중복 값, 존재하지 않는 상위값, 축 정의 행이 없는 값, 축 속성이 값 행에 적힌 경우, 표준어가 빈 동의어. 예약어 값, 시트 누락과 머리글 불일치, 병합 셀(gap-fill), 캐시된 결과가 없는 수식 셀도 거부한다.
+- 같은 축 안에 같은 값 행이 여럿이면 거부하지 않고, 정의·포함 예·제외 예를 행 순서대로 모두 모아 라벨러 프롬프트에 함께 넣는다(오류·경고 없음). 상위값이 서로 다르게 적혀 있으면 거부한다(DUPLICATE_VALUE_PARENT_CONFLICT).
+- 다음 오류는 시트 이름과 행 번호를 알려 주고 실행을 거부한다: 상위값이 다른 중복 값, 존재하지 않는 상위값, 축 정의 행이 없는 값, 축 속성이 값 행에 적힌 경우, 표준어가 빈 동의어. 예약어 값, 시트 누락과 머리글 불일치, 병합 셀(gap-fill), 캐시된 결과가 없는 수식 셀도 거부한다.
 - 숨김 행이나 자동 필터가 있으면 "숨김 행도 읽는다. 제외는 사용 여부=N"이라고 경고한다(gap-fill). 값·동의어·표준어 열의 숫자 셀(Excel 자동 변환 의심)도 경고한다(gap-fill).
 - `questions`의 적용 대상은 `공통` 또는 `축=값`이다. 우선순위는 숫자가 작을수록 먼저 chunk당 상한 안에 들어가고(1이 가장 먼저), 같은 숫자면 질문 ID 오름차순이다(FR-3). group 열이나 호출당 별도 상한은 두지 않는다.
 - `rejected`의 종류는 값/동의어/질문이고, 내용은 후보 붙여넣기 행의 첫 두 열을 `|`로 이은 문자열이다(예: `물리 현상|erosion`). 여기 적힌 후보는 리포트에 다시 올리지 않는다.
@@ -495,6 +498,8 @@ flowchart LR
 - 새 zip으로 코드 폴더를 통째로 바꿔도 작업 폴더는 그대로다.
 
 ### 9.3 보안
+
+> PoC(2026-10-05 사용자 결정)에서는 사외·사내를 구분하지 않으며 이 절의 외부 전송 조건(호스트 판정, 더미 해시)은 적용하지 않는다. 코드에서 `check_send`·`SendBlocked`·`host_class`·`internal_host_suffixes`·더미 해시 대조를 제거했다. 사내 반입 전에 되돌린다.
 
 - 로그, 오류 메시지, 콘솔 출력, 리포트(후보 리포트·taxonomy 재검토 리포트 제외), `alerts.json`, 교정 파일, 게이트 기록에는 문서 본문, 파일명과 경로, 담당자 이름, 동의어 시트의 표현을 넣지 않고 사유 코드와 파일 ID만 남긴다. 단, 검수 화면의 taxonomy 재검토 메모(500자 이하)는 예외다. 메모는 화면의 브라우저 저장소, 교정 파일과 그 보관본(`inputs/<sha256>.b64`), 로컬 파일로 연 화면의 JSON 저장 파일(Downloads)과 내려받기가 막혔을 때 그 내용을 보여 주는 대체 텍스트 창, `work.sqlite`의 `revisit_requests`, `reports/taxonomy_revisit.md`·`.jsonl`, 실행별 재검토 파일(`taxonomy/taxonomy_revisit_requests/`, git 추적 대상, 9.2절)에만 담고, 로그·오류 메시지·콘솔·다른 리포트·클립보드 복사 텍스트에는 넣지 않는다(복사 텍스트에는 메모 건수만 낸다). Downloads의 JSON 저장 파일은 작업 폴더 밖에 있으므로 복사하지 않고 `inbox/`로 이동해 밖에 남기지 않는다. 시트 오류는 시트 이름과 행 번호만 알린다. 사내에서 생긴 오류를 사외로 전달할 때 내용이 섞이지 않게 하기 위해서다. 상대 경로와 파일명은 work.sqlite, 산출 SQLite, 검수 화면 HTML에만 있다. 정답표 10개 파일로 끝까지 돌린 통합 테스트에서 이 대상들에 파일명, 테스트 폴더명, 입력 루트 경로가 0건인지 확인한다.
 - 원본 경로와 사람 입력을 여는 곳은 `ingest.read_input` 하나다. 통합 테스트는 `builtins.open`과 `io.open`을 감싸, 입력 루트 아래 경로나 입력 전용 파일을 연 호출이 모두 `read_input`에서 나왔는지 확인한다. self-check의 `write_roundtrip` 임시 파일만 예외다.
@@ -770,7 +775,7 @@ flowchart LR
 - 점검: 사람 교정은 그 작업 폴더의 `corrections`에만 남아 최종 라벨만 바꾸고, 실행마다 새 작업 폴더를 쓰므로 다음 실행의 1차 분류·3차 라벨링에 되먹이는 길이 없었다.
 - 사용자 결정: 규칙 요약과 유사 사례 few-shot을 함께 쓰고, 사람이 승인한 것만 적용한다(H9). 봇은 승인하지 않는다.
 - 저장 위치: 승인 규칙과 사례 참조(작업 폴더 이름, chunk ID, 본문 해시, 확정 라벨)는 본문 없는 `taxonomy/labeling_rules.json`(승인 시 생성)(git 추적)에 둔다. 사례 본문은 실행할 때 원래 작업 폴더 DB에서 읽기 전용으로 가져오므로 따로 복사본을 두지 않는다. 사례는 사외 전송 가드를 통과한 파일에서만 고르고, 같은 파일·같은 본문의 사례는 그 chunk에 쓰지 않는다.
-- 2026-10-05 소유 이동(사용자 결정): 교정 수집·규칙·사례 후보·승인은 Engr-bot(`engrbot intake`, `engrbot labeling-rules`)이 맡고, labelbot은 승인 파일만 읽는다. 처음 둔 labelbot 쪽 수집 저장소(`workspaces/_feedback/`)와 `labelbot feedback` 명령은 없앴다.
+- 2026-10-05 소유 이동(사용자 결정): 교정 수집·규칙·사례 후보·승인은 Domain-Engr-bot(`domain_engrbot intake`, `domain_engrbot labeling-rules`)이 맡고, labelbot은 승인 파일만 읽는다. 처음 둔 labelbot 쪽 수집 저장소(`workspaces/_feedback/`)와 `labelbot feedback` 명령은 없앴다.
 
 ### 2026-10-05 실행별 taxonomy 재검토 파일
 

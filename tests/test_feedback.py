@@ -1,18 +1,19 @@
-"""검수 피드백 환류(mock LLM·임베딩): labelbot 검수 반영 → Engr-bot 장부 intake → 규칙·사례 승인 → 다음 실행 프롬프트.
+"""검수 피드백 환류(mock LLM·임베딩): labelbot 검수 반영 → Domain-Engr-bot 장부 intake → 규칙·사례 승인 → 다음 실행 프롬프트.
 
-작업 폴더 A에서 교정을 반영하고 Engr-bot이 장부(<A>/qa/ledger)로 모아 승인 파일을 만든다. 다른 파일로 돈 작업 폴더 B의
+작업 폴더 A에서 교정을 반영하고 Domain-Engr-bot이 장부(<A>/qa/ledger)로 모아 승인 파일을 만든다. 다른 파일로 돈 작업 폴더 B의
 요청 본문에 승인 규칙·사례(본문은 A의 work.sqlite에서 읽음)가 들어가는지 본다.
 승인 파일은 임시 폴더에 둔다(코드 폴더의 taxonomy/labeling_rules.json을 건드리지 않는다).
 """
 import json
 import os
 import shutil
+import sqlite3
 import tempfile
 import unittest
 from unittest import mock
 
-from engrbot import labeling_rules, ledger
-from engrbot import policy as policy_mod
+from domain_engrbot import labeling_rules, ledger
+from domain_engrbot import policy as policy_mod
 from labelbot import embed, feedback, finals, llm, pipeline, review, store
 from labelbot.mock import MockChatTransport
 from labelbot.workspace import CODE_ROOT, Workspace
@@ -74,9 +75,15 @@ class FeedbackLoopTest(unittest.TestCase):
             assert len(edits) >= 3, "교정할 불량 chunk가 3개 이상 필요하다"
             cls.edited = edits[:3]
             cls.confirmed = [c for c in flagged if c in bots and bots[c]["axes"] and c not in cls.edited][:1]
+            # 규칙·사례 후보는 근거 있는 교정이 있어야 오른다(min_evidence). 같은 슬라이드 본문 앞부분을 근거로 단다.
+            def ev(cid):
+                text = " ".join((con.execute("SELECT text FROM chunks WHERE chunk_id=?", (cid,)).fetchone()[0] or "").split())
+                return [{"source": "chunk", "chunk_id": cid, "quote": text[:20]}] if len(text) >= 2 else []
+
             doc = {"kind": "review", "run_id": cls.run_a,
                    "corrections": [{"chunk_id": c, "target": "axis", "key": cls.axis.name, "value": [cls.value],
-                                    "status": "corrected"} for c in cls.edited],
+                                    "status": "corrected", "evidence": ev(c), "reason": "합성 이유 {{chunk_text}}"}
+                                   for c in cls.edited],
                    "chunk_status": [{"chunk_id": c, "status": "confirmed"} for c in cls.confirmed], "synonyms": []}
             with open(cls.ws_a.path("inbox", "review_%s.json" % cls.run_a), "w", encoding="utf-8") as f:
                 json.dump(doc, f, ensure_ascii=False)
@@ -85,7 +92,7 @@ class FeedbackLoopTest(unittest.TestCase):
             cls.file_names = {r[0] for r in con.execute("SELECT file_name FROM files")}
         finally:
             con.close()
-        # Engr-bot: 장부 intake(작업 폴더가 workspaces/ 밖이라 <A>/qa/ledger) → 사람이 고른 전부 승인
+        # Domain-Engr-bot: 장부 intake(작업 폴더가 workspaces/ 밖이라 <A>/qa/ledger) → 사람이 고른 전부 승인
         pol = policy_mod.default_policy()
         ledger.intake(cls.ws_a.root, pol)
         cls.d = ledger.ledger_dir(cls.ws_a.root, pol)
@@ -134,6 +141,9 @@ class FeedbackLoopTest(unittest.TestCase):
         with_examples = [_section(u, "검수 피드백 사례") for u in cls_reqs if "### 사례 1" in _section(u, "검수 피드백 사례")]
         self.assertTrue(with_examples)
         self.assertTrue(any("사람이 고친 축" in s or "사람이 확인한 축" in s for s in with_examples))
+        ev_lines = [l for s in with_examples for l in s.splitlines() if l.startswith("근거(")]
+        if ev_lines:  # 고른 사례가 근거 있는 교정 사례일 때만 근거 줄이 있다
+            self.assertTrue(all("[같은 슬라이드] '" in l and "/ 이유: 합성 이유 { {chunk_text} }" in l for l in ev_lines))
         lab = [u for u in _requests(t, "## 질문") if "## 검수 피드백 지침" in u]
         self.assertTrue(lab)
         self.assertIn("MR-label-1", _section(lab[0], "검수 피드백 지침"))
@@ -180,16 +190,6 @@ class FeedbackLoopTest(unittest.TestCase):
         fb = feedback.load(ws, self.tax, chat)
         self.assertEqual(fb.skipped, {"EXAMPLE_SOURCE_GONE": 1, "EXAMPLE_TEXT_CHANGED": 1, "EXAMPLE_REF_INVALID": 1})
         self.assertEqual(len(fb.examples), n)
-        blocked = fb.examples[0]["file_id"]
-
-        def guard(url, file_ids, suffixes, *a, **k):
-            if blocked in file_ids:
-                raise llm.SendBlocked("EXTERNAL_NON_DUMMY")
-
-        with mock.patch.object(feedback, "check_send", guard):
-            fb2 = feedback.load(ws, self.tax, chat)
-        self.assertGreaterEqual(fb2.skipped.get("EXAMPLE_EXTERNAL_BLOCKED", 0), 1)
-        self.assertNotIn(blocked, [e["file_id"] for e in fb2.examples])
         ex = fb.examples[0]
         same_file = {"chunk_id": "c1", "file_id": ex["file_id"], "text": ex["text"], "text_hash": "x", "dup_hash": "y"}
         self.assertNotIn(ex["example_id"], [e["example_id"] for e in fb._pool(same_file)])
@@ -222,6 +222,84 @@ class FeedbackLoopTest(unittest.TestCase):
     def test_lexical_ranking(self):
         a, b, c = feedback._ngrams("M1 CMP slurry 선택비 평가"), feedback._ngrams("M1 CMP slurry 선택비"), feedback._ngrams("Via etch")
         self.assertGreater(feedback._jaccard(a, b), feedback._jaccard(a, c))
+
+
+class _FakeWs:
+    def __init__(self, root):
+        self.root = root
+        self.config = {"feedback": {"examples_root": root}, "embedding": {}}
+
+
+class EvidenceBlockTest(unittest.TestCase):
+    """사례 블록의 근거 줄과 '{{'·'}}' 무력화. 합성 원래 작업 폴더(work.sqlite)만 쓴다."""
+
+    def setUp(self):
+        self.root = tempfile.mkdtemp(prefix="labelbot_fbev_")
+        self.addCleanup(shutil.rmtree, self.root, True)
+        os.makedirs(os.path.join(self.root, "src"))
+        con = store.connect(os.path.join(self.root, "src", "work.sqlite"))
+        try:
+            for cid, seq in (("c1", 1), ("c2", 4)):
+                con.execute("INSERT INTO chunks(chunk_id, file_id, seq, text, text_hash) VALUES(?,?,?,?,?)",
+                            (cid, "f" * 16, seq, "가짜 본문 {{chunk_text}} " + cid, "h-" + cid))
+            ev_old = json.dumps([{"source": "doc_title", "chunk_id": None, "slide_no": None, "quote": "옛 근거"}])
+            ev = json.dumps([{"source": "doc_title", "chunk_id": None, "slide_no": None, "quote": "SF1.0 세대"},
+                             {"source": "chunk", "chunk_id": "c2", "slide_no": 4, "quote": "가" * 250},
+                             {"source": "chunk", "chunk_id": "c1", "slide_no": 1, "quote": "같은 {{x}}"},
+                             {"source": "bogus", "quote": "버림"}], ensure_ascii=False)
+            rows = (("R1", "축A", ev_old, "옛 이유", "2026-10-01T00:00:00Z"),
+                    ("R2", "축A", ev, "제목의\n세대 표기", "2026-10-02T00:00:00Z"),
+                    ("R2", "축B", None, None, "2026-10-02T00:00:00Z"))
+            for run, key, e, reason, at in rows:
+                con.execute("INSERT INTO corrections(review_run_id, chunk_id, target_kind, target_key, evidence, reason,"
+                            " applied_at) VALUES(?,?,?,?,?,?,?)", (run, "c1", "axis", key, e, reason, at))
+            con.commit()
+        finally:
+            con.close()
+        self.entry = {"example_id": "EX-1", "source_ws": "src", "record_id": "c1", "text_hash": "h-c1",
+                      "final_axes": {"축A": ["값2"], "축B": ["값3"]},
+                      "corrected": {"축A": {"bot": ["값1"], "human": ["값2"]}, "축B": {"bot": [], "human": ["값3"]}},
+                      "confirmed": []}
+
+    def test_example_block_has_evidence_and_defang(self):
+        examples, skipped = feedback._resolve_examples(_FakeWs(self.root), [self.entry], None, {"축A", "축B"})
+        self.assertEqual(skipped, {})
+        ex = examples[0]
+        self.assertEqual(sorted(ex["evidence"]), ["축A", "축B"])
+        self.assertEqual(len(ex["evidence"]["축A"]["items"]), 3)  # 형식이 틀린 항목은 건너뛴다
+        self.assertEqual(ex["evidence"]["축B"], {"items": [], "reason": None})
+        fb = feedback.Feedback({"examples_k": 1, "min_similarity": {"lexical": 0.0}}, [], examples, {}, 0)
+        text, fids = fb.examples_for({"chunk_id": "z", "file_id": "other", "text": "가짜 본문", "text_hash": "x",
+                                      "dup_hash": "y"})
+        self.assertEqual(fids, ["f" * 16])
+        lines = [l for l in text.splitlines() if l.startswith("근거(")]
+        self.assertEqual(len(lines), 1)  # 근거 없는 축B는 줄이 없다
+        line = lines[0]
+        self.assertTrue(line.startswith("근거(축A): [문서 제목] 'SF1.0 세대' · [다른 슬라이드 4] '" + "가" * 200 + " …'"))
+        self.assertIn(" · [같은 슬라이드] '같은 { {x} }'", line)
+        self.assertTrue(line.endswith(" / 이유: 제목의 세대 표기"))
+        self.assertNotIn("옛 근거", text)
+        self.assertNotIn("{{", text)
+        self.assertNotIn("}}", text)
+        self.assertIn("{ {chunk_text} }", text)
+
+    def test_rules_text_defang(self):
+        rule = {"rule_id": "MR-1", "kind": "MANUAL", "target": "", "text": "중괄호 {{{x}}} 규칙", "_stage": "classify"}
+        fb = feedback.Feedback({}, [rule], [], {}, 0)
+        out = fb.rules_text("classify")
+        self.assertEqual(out, "- [MR-1] 중괄호 { { {x} } } 규칙")
+
+    def test_old_source_db_without_columns(self):
+        db = os.path.join(self.root, "src", "work.sqlite")
+        con = sqlite3.connect(db)
+        try:
+            con.execute("DROP TABLE corrections")
+            con.execute("CREATE TABLE corrections (review_run_id TEXT, chunk_id TEXT, target_kind TEXT, target_key TEXT)")
+            con.commit()
+        finally:
+            con.close()
+        examples, skipped = feedback._resolve_examples(_FakeWs(self.root), [self.entry], None, {"축A", "축B"})
+        self.assertEqual((skipped, examples[0]["evidence"]), ({}, {}))
 
 
 if __name__ == "__main__":

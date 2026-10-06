@@ -1,4 +1,5 @@
 """작업 DB(work.sqlite) 스키마와 연결. schema_version으로 관리하고 마이그레이션은 표·열 추가만 한다."""
+import json
 import pathlib
 import sqlite3
 
@@ -19,7 +20,7 @@ TABLES = {
         "file_id TEXT PRIMARY KEY, file_name TEXT NOT NULL CHECK(file_name <> ''), "
         "rel_path TEXT NOT NULL CHECK(rel_path <> ''), ext TEXT, size INTEGER, status TEXT, "
         "reason_code TEXT, title TEXT, author TEXT, authored_at TEXT, author_source TEXT, "
-        "date_source TEXT, near_dup_group TEXT, first_seen_run TEXT, chunk_method TEXT"
+        "date_source TEXT, near_dup_group TEXT, first_seen_run TEXT, chunk_method TEXT, doc_meta TEXT"
     ),
     "file_locations": (
         "file_id TEXT NOT NULL, rel_path TEXT NOT NULL CHECK(rel_path <> ''), "
@@ -45,14 +46,21 @@ TABLES = {
         "qid TEXT PRIMARY KEY, chunk_id TEXT, axis TEXT, value TEXT, text TEXT NOT NULL,"
         " prompt_version TEXT, created_at TEXT"
     ),
+    # 대조 질문(Q-CTL-): 이 chunk에 붙지 않은 라벨로 만든 질문. 답은 labels에 kind='control'로 남는다.
+    "ctl_questions": (
+        "qid TEXT PRIMARY KEY, chunk_id TEXT, axis TEXT, value TEXT, text TEXT NOT NULL,"
+        " prompt_version TEXT, created_at TEXT"
+    ),
     "flagged_chunks": (
         "run_id TEXT, chunk_id TEXT, reason_codes TEXT, unknown_ratio REAL, min_confidence REAL, "
-        "text_hash TEXT, weak_quotes INTEGER, PRIMARY KEY(run_id, chunk_id)"
+        "text_hash TEXT, weak_quotes INTEGER, reason_axes TEXT DEFAULT '{}', PRIMARY KEY(run_id, chunk_id)"
     ),
+    # evidence는 검증을 통과한 근거 JSON 목록(본문 인용 포함), reason은 이유, evidence_dropped는 버린 근거 수다.
     "corrections": (
         "review_run_id TEXT, chunk_id TEXT, target_kind TEXT, target_key TEXT, human_value TEXT, "
         "bot_value TEXT, review_status TEXT, recheck INTEGER, text_hash TEXT, question_hash TEXT, "
-        "file_sha256 TEXT, applied_at TEXT, PRIMARY KEY(review_run_id, chunk_id, target_kind, target_key)"
+        "file_sha256 TEXT, applied_at TEXT, evidence TEXT, reason TEXT, evidence_dropped INTEGER, "
+        "PRIMARY KEY(review_run_id, chunk_id, target_kind, target_key)"
     ),
     # taxonomy 재검토 요청. corrections와 분리한다(finals.corrections()가 그 표 전체를 라벨 교정으로 읽는다).
     "revisit_requests": (
@@ -157,16 +165,37 @@ def meta_get(con, key, default=None):
     return r[0] if r else default
 
 
+def meta_json(con, key):
+    """meta 값을 JSON으로 읽는다. 없거나 JSON이 아니면 None."""
+    try:
+        return json.loads(meta_get(con, key) or "null")
+    except ValueError:
+        return None
+
+
 def meta_set(con, key, value):
     con.execute("INSERT OR REPLACE INTO meta(key, value) VALUES(?, ?)", (key, value))
 
 
-def latest_run(con, commands=("run", "ingest")):
-    q = "SELECT run_id FROM runs WHERE command IN (%s) ORDER BY run_id DESC LIMIT 1" % ",".join(
-        "?" * len(commands)
-    )
+# 라벨이 남는 실행 종류. axis-update는 이전 실행의 라벨을 이어받아 바뀐 축만 다시 분류한 실행이다.
+LABEL_COMMANDS = ("run", "axis-update")
+
+
+def _latest(con, commands, finished_only):
+    q = "SELECT run_id FROM runs WHERE command IN (%s)%s ORDER BY run_id DESC LIMIT 1" % (
+        ",".join("?" * len(commands)), " AND finished_at IS NOT NULL" if finished_only else "")
     r = con.execute(q, commands).fetchone()
     return r[0] if r else None
+
+
+def latest_run(con, commands=LABEL_COMMANDS + ("ingest",), finished=True):
+    """기본 --run 등 '최신 실행'. finished=True면 끝난 실행을 먼저 고르고, 끝난 실행이 없을 때만 진행 중 실행을 고른다."""
+    return (_latest(con, commands, True) if finished else None) or _latest(con, commands, False)
+
+
+def latest_label_run(con, finished=False):
+    """최신 라벨 실행(run·axis-update). finished=True면 끝난 실행만 본다."""
+    return _latest(con, LABEL_COMMANDS, finished)
 
 
 def add_failure(con, run_id, stage, target_id, reason_code):

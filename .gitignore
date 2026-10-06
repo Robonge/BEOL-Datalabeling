@@ -13,7 +13,7 @@ __pycache__/
 
 # 작업 폴더(사내 자료 b64·DB 포함, 커밋하지 않는다)
 workspaces/
-codebot/out/
+code_engrbot/out/
 
 # Office 잠금 파일
 ~$*
@@ -22,3 +22,8 @@ codebot/out/
 change-dashboard/data/
 change-dashboard/reports/
 change-dashboard/index.html
+
+.superdesign/tmp/
+
+# 하위 폴더에 생긴 oh-my-claudecode 상태(루트 .omc/skills만 커밋한다)
+*/**/.omc/

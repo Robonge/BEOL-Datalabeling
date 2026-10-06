@@ -63,7 +63,8 @@ button,input,textarea,select{font:inherit;letter-spacing:inherit;color:inherit}
 .item.on{border-color:var(--primary);box-shadow:0 5px 16px rgba(53,70,144,.14)}
 .item .l1{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text-muted)}
 .item .l1 .id{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.item .l2{font-weight:700;font-size:13px;margin:2px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .l2{font-weight:700;font-size:13px;margin:0 0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .l1{margin-bottom:5px}
 .tags{display:flex;gap:4px;flex-wrap:wrap}
 .tag{font-family:var(--mono);font-size:9.5px;letter-spacing:-0.01em;border:1px solid var(--bg-grid);border-radius:5px;padding:0 5px;color:var(--text-muted)}
 .tag.hard{border-color:var(--danger);color:var(--danger)}
@@ -74,14 +75,21 @@ button,input,textarea,select{font:inherit;letter-spacing:inherit;color:inherit}
 .mark.fix{color:var(--primary-deep);border-color:var(--primary-soft);background:rgba(107,130,196,.14)}
 .mark.rv{color:#8a6718;border-color:var(--warning);background:rgba(201,154,59,.1)}
 
-.detail{overflow:auto;min-height:0;padding:18px 24px 60px}
-.dh{margin-bottom:12px}
+.detail{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.dh{display:flex;gap:8px 24px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;padding:14px 24px 12px;border-bottom:1px solid var(--bg-grid);background:rgba(237,241,247,.92)}
+.dh-main{min-width:0;flex:1 1 380px}
 .dh h2{font-size:20px;letter-spacing:-0.055em;word-break:break-all}
-.dh .path{font-size:11.5px;color:var(--text-muted);word-break:break-all}
-.dh .metrics{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.dh .path{font-size:11.5px;color:var(--text-muted);word-break:break-all;margin-top:2px}
+.dh .metrics{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
 .metric{font-size:12px}
 .metric .k{color:var(--text-muted);margin-right:5px}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 14px}
+.work{flex:1;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);min-height:0}
+.pane{overflow:auto;min-height:0;padding:16px 20px 28px;overscroll-behavior:contain}
+.pane.ev{border-right:1px solid var(--bg-grid)}
+.pane > .card:last-child{margin-bottom:0}
+.dock{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 20px;border-top:1px solid var(--bg-grid);background:rgba(237,241,247,.96);box-shadow:0 -6px 16px rgba(53,70,144,.06)}
+.dock-st{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dock-nav{display:flex;gap:8px;margin-left:auto;white-space:nowrap}
 .btn{
   border:1px solid var(--bg-grid);background:var(--surface);border-radius:var(--radius-sm);padding:6px 12px;cursor:pointer;font-weight:700;font-size:12.5px;
   transition:all .28s var(--ease-elastic);
@@ -93,7 +101,6 @@ button,input,textarea,select{font:inherit;letter-spacing:inherit;color:inherit}
 .btn.on-ok{border-color:var(--success);color:var(--success);background:rgba(59,138,110,.1)}
 .btn.on-img{border-color:var(--primary);color:var(--primary-deep);background:rgba(74,95,168,.12)}
 
-.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start}
 .card{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:13px 15px;margin-bottom:14px;box-shadow:0 2px 8px rgba(53,70,144,.06)}
 .card h3{font-size:14px;letter-spacing:-0.048em;margin-bottom:8px;display:flex;align-items:center;gap:8px}
 .sec{font-size:11px;color:var(--text-muted);margin:0 0 6px}
@@ -126,6 +133,26 @@ mark.s{background:rgba(74,95,168,.16);box-shadow:inset 0 -2px 0 var(--primary);c
 .rvbox select,.rvbox input,.rvbox textarea{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--bg-base);min-width:0}
 .rvbox textarea{width:100%;height:72px;resize:vertical;line-height:1.5}
 .rvbox .cnt{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
+.evbox{margin-top:8px;border:1px dashed var(--primary-soft);border-radius:var(--radius-sm);padding:8px 10px;background:rgba(107,130,196,.06)}
+.evbox.on{border-style:solid;border-color:var(--primary)}
+.evbox .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.evbox .row:first-child{margin-top:0}
+.evbox .k{font-size:11px;color:var(--text-muted)}
+.evbox .btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+.evbox textarea{width:100%;height:52px;resize:vertical;line-height:1.5;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--bg-base)}
+.evbox .cnt{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
+.evit{display:flex;gap:6px;align-items:baseline;font-size:12px;margin-top:4px;word-break:break-word}
+.evit .src{font-size:10.5px;font-weight:700;color:var(--primary-deep);border:1px solid var(--primary-soft);border-radius:5px;padding:0 5px;white-space:nowrap}
+.evhint{font-size:11.5px;color:var(--primary-deep)}
+.evon{outline:2px dashed var(--primary);outline-offset:3px;cursor:text}
+.ctxwrap{max-height:420px;overflow:auto;padding-right:4px}
+.ctxline{font-size:12px;margin-bottom:4px;word-break:break-all}
+.ctxline .k{color:var(--text-muted);font-size:11px;margin-right:6px}
+.ctxs{border-top:1px dashed var(--bg-grid);padding:6px 4px}
+.ctxs.cur{background:rgba(74,95,168,.07);border-radius:var(--radius-sm)}
+.ctxs .no{font-family:var(--mono);font-size:11px;color:var(--primary)}
+.ctxs .t{font-weight:700;font-size:12.5px}
+.ctxs .b{white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.6}
 .rvnote{font-size:12px;color:#8a6718;border:1px dashed var(--warning);border-radius:var(--radius-sm);padding:5px 9px;margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
 .axis{padding:10px 0;border-top:1px dashed var(--bg-grid)}
@@ -157,6 +184,8 @@ mark.s{background:rgba(74,95,168,.16);box-shadow:inset 0 -2px 0 var(--primary);c
 .opt[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#EDF1F7;font-weight:700}
 .opt.sp{border-style:dashed}
 .opt.sp[aria-pressed="true"]{background:var(--text-strong);border-color:var(--text-strong)}
+.opt:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.axjump{margin:2px 0 8px}
 .changed{font-size:10.5px;color:var(--primary-deep);font-weight:700;border:1px solid var(--primary-soft);background:rgba(107,130,196,.14);border-radius:999px;padding:0 7px}
 .qhead{display:flex;gap:8px;align-items:baseline}
 .qhead .qid{font-size:11px;color:var(--primary)}
@@ -178,7 +207,7 @@ dialog p{margin:0 0 10px;font-size:12.5px;color:var(--text-muted)}
 .zoom img{max-width:92vw;max-height:92vh;border-radius:var(--radius-sm);background:var(--bg-base)}
 .zoom .zcap{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);color:#fff;font-size:12px;background:rgba(0,0,0,.45);padding:3px 10px;border-radius:var(--radius-sm)}
 .sibs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
-.sib-view{display:block;width:100%;max-height:360px;object-fit:contain;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);cursor:zoom-in}
+.sib-view{display:block;width:100%;max-height:300px;object-fit:contain;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);cursor:zoom-in}
 .sib-cap{font-size:11.5px;color:var(--text-muted);margin:4px 0 8px}
 .sib{flex:0 0 auto;position:relative;padding:0;border:2px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);cursor:pointer}
 .sib img{display:block;height:72px;border-radius:var(--radius-sm)}
@@ -188,15 +217,95 @@ dialog p{margin:0 0 10px;font-size:12.5px;color:var(--text-muted)}
 .toast{position:fixed;right:20px;bottom:20px;background:var(--text-strong);color:#EDF1F7;padding:8px 14px;border-radius:var(--radius-sm);font-size:12.5px;opacity:0;transform:translateY(8px);transition:all .32s var(--ease-elastic);pointer-events:none;z-index:60}
 .toast.on{opacity:1;transform:none}
 
-@media (max-width:1180px){ .two{grid-template-columns:1fr} }
+@media (max-width:1180px){
+  .detail{display:block;overflow:auto}
+  .work{display:block}
+  .pane{overflow:visible;padding:14px 20px}
+  .pane.ev{border-right:0;border-bottom:1px solid var(--bg-grid)}
+  .dock{position:sticky;bottom:0;z-index:5}
+}
 @media (max-width:860px){
   .app{height:auto}
   .cols{grid-template-columns:1fr}
   .list{border-right:0;border-bottom:1px solid var(--bg-grid)}
   .items{max-height:260px}
-  .detail{padding:14px 14px 60px}
+  .detail{overflow:visible;min-width:0}
+  .dh{padding:12px 14px 10px}
+  .pane{padding:12px 14px}
+  .dock{padding:8px 14px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.axsum{display:none}
+.qtext{margin:2px 0 6px}
+.caret{font-size:11px;color:var(--primary);width:12px;display:inline-block}
+
+/* 집중 모드: 목록은 좁은 레일, 축·질문은 하나씩 펼친다 */
+.cols{grid-template-columns:92px 1fr}
+.bar .filters{flex-basis:100%;border:0;padding:2px 0 0;display:flex;gap:6px 14px;align-items:center;flex-wrap:wrap}
+.bar .filters .lbl{display:none}
+.bar .filters .chips{margin:0 !important}
+.items{padding:8px 8px 30px}
+.item{padding:9px 6px;text-align:center}
+.item .l2, .item .tags, .item .l1 .id, .grp .gh{display:none}
+.item .l1{flex-direction:column;gap:4px;margin:0;font-size:12px;color:var(--text-strong)}
+.item .l1 > .mono{font-size:13px;font-weight:700}
+.grp{padding-left:4px}
+.work{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+.axis{padding:0;border-top:1px solid var(--bg-grid)}
+.axis:first-of-type{border-top:1px solid var(--bg-grid)}
+.axis > .axhead, .axis > .qhead{cursor:pointer;padding:10px 4px;border-radius:var(--radius-sm);align-items:center}
+.axis > .axhead:hover, .axis > .qhead:hover{background:rgba(107,130,196,.08)}
+.axis:not(.closed){padding:0 0 14px}
+.axis:not(.closed) > .axhead, .axis:not(.closed) > .qhead{background:rgba(74,95,168,.07)}
+.axis:not(.closed) > :not(.axhead):not(.qhead){margin-left:16px}
+.axis.closed > :not(.axhead):not(.qhead){display:none}
+.axsum{display:inline;margin-left:auto;font-size:12px;color:var(--primary-deep);font-weight:700;max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.axis:not(.closed) .axsum{display:none}
+.axis:not(.closed) .edit .opt{padding:5px 14px;font-size:13px}
+.axhead:focus-visible,.qhead:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+/* axis-update 실행: 이번 축 변경 대상이 아닌 축(읽기 전용) 묶음 */
+.lockgrp{margin-top:10px;border-top:1px solid var(--bg-grid);padding-top:8px}
+.lockgrp > summary{cursor:pointer;font-size:12px;color:var(--text-muted);padding:4px}
+.lockgrp > summary:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.lockgrp .axis > .axhead b{color:var(--text-muted)}
+@media (max-width:860px){
+  .cols{grid-template-columns:1fr}
+  .item{text-align:left;padding:8px 10px}
+  .item .l2, .item .tags{display:block}
+  .item .tags{display:flex}
+  .item .l1{flex-direction:row}
+}
+
+/* 사유 코드 원그래프(사이드바 맨 아래) */
+.rsum{flex:none;border-top:1px solid var(--bg-grid);padding:10px 8px 12px;background:rgba(237,241,247,.94)}
+.rcap{font-size:10px;color:var(--text-muted);text-align:center;margin-bottom:6px}
+.rpie{position:relative;width:100%;max-width:76px;aspect-ratio:1;margin:0 auto 8px}
+.rpie svg{display:block;width:100%;height:100%;overflow:visible}
+.rseg{cursor:pointer;transition:opacity .2s ease-out,stroke-width .2s ease-out}
+.rseg.dim{opacity:.22}
+.rseg.hot{stroke-width:14}
+.rall{position:absolute;inset:17px;border:0;border-radius:50%;background:transparent;cursor:pointer;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
+.rall b{font-family:var(--mono);font-size:15px;letter-spacing:-0.02em}
+.rall span{font-size:9.5px;color:var(--text-muted)}
+.rall[aria-pressed="false"] span{color:var(--primary);font-weight:700}
+.rall:focus-visible,.rrow:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.rleg{display:flex;flex-direction:column;gap:2px}
+.rrow{display:flex;align-items:center;gap:4px;width:100%;border:1px solid transparent;background:transparent;border-radius:5px;padding:1px 3px;cursor:pointer;font-family:var(--mono);font-size:9.5px;letter-spacing:-0.01em;color:var(--text-strong);text-align:left}
+.rrow .sw{flex:none;width:7px;height:7px;border-radius:2px}
+.rrow .rc{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .rn{flex:none;color:var(--text-muted)}
+.rrow:hover,.rrow.hot{border-color:var(--bg-grid);background:var(--surface)}
+.rrow[aria-pressed="true"]{border-color:var(--primary);background:rgba(74,95,168,.1);font-weight:700}
+.rleg.filtering .rrow[aria-pressed="false"]{opacity:.55}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.samefile{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:11.5px;color:var(--text-muted)}
+@media (max-width:860px){
+  .rsum{display:flex;gap:14px;align-items:center}
+  .rcap{display:none}
+  .rpie{flex:none;width:76px;margin:0}
+  .rleg{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+}
 </style>
 </head>
 <body>
@@ -247,11 +356,26 @@ const DATA = /*__DATA__*/null;
   }
 
   var SPECIAL = ["해당 없음", "unknown", "판단 불가"];
+  var ACC = true;                 // 축·질문을 하나씩 펼친다(머리를 누르면 그것만 펼친다)
+  var accOpen = null;             // 펼친 축·질문 키("a:축"·"q:qid")
+  function accToggle(key){
+    accOpen = accOpen === key ? null : key;
+    renderDetail(true);
+    var el = document.querySelector('#decpane [data-acc="' + key.replace(/"/g, '\\"') + '"] > [role="button"]');
+    if (el) el.focus({preventScroll:true});
+  }
   var ANSWERS = ["O", "X", "N/A", "판단 불가"];
-  var COM_Q = "Q-COM-001";
+  var COM_Q = DATA.primary_qid || null;  // questions 시트의 첫 공통 질문(분류 실패 chunk가 판정하는 질문)
   var flag = DATA.flag || {};
   var reasonLabels = DATA.reason_labels || {};
   var axes = DATA.axes || [];
+  // 이 실행이 라벨링한 축만 고칠 수 있다. pending(실행 뒤 더해진 축)·removed(taxonomy에서 빠진 축)는 읽기 전용이다.
+  // editable 칸이 없는 예전 화면 데이터는 모두 고칠 수 있다.
+  function canEdit(ax){ return ax.editable !== false; }
+  var editAxes = axes.filter(canEdit);
+  // axis-update 실행: 대상 축만 고친다. locked 축(이번 축 변경 대상 아님)은 접힌 읽기 전용 묶음, 질문 답 편집 영역은 숨긴다.
+  var AXU = DATA.axis_update || null;
+  var firstAcc = editAxes.length ? "a:" + editAxes[0].name : null;
   var qtext = {};
   (DATA.questions || []).forEach(function(q){ qtext[q.qid] = q.text; });
   var chunks = DATA.chunks || [];
@@ -270,6 +394,16 @@ const DATA = /*__DATA__*/null;
   var onlyRevisit = false;
   var selId = null;
   var pendingAlias = "";
+  // 교정 근거: chunk_id -> {"a:축"|"q:qid": {items:[{source, chunk_id, quote}], reason}}. edits와 같은 저장 키에 둔다.
+  // DATA.file_ctx가 없으면(예전 화면 데이터) 기능을 숨긴다.
+  var evid = {};
+  var evMode = null;  // 근거 지정 중이면 {chunk_id, key}. 이때 드래그는 동의어 제안 대신 근거로 잡는다.
+  var FILE_CTX = DATA.file_ctx || null;
+  var evOn = !!FILE_CTX;
+  var EV_MAX = DATA.evidence_max || 3;
+  var EV_QUOTE_MAX = DATA.evidence_quote_max || 300;
+  var EV_REASON_MAX = DATA.evidence_reason_max || 300;
+  var EV_SOURCES = ["chunk", "file_name", "doc_title"];
 
   // taxonomy 재검토 요청: DATA에 규칙이 없으면(예전 화면 데이터) 기능을 숨긴다.
   var RV_REASONS = DATA.revisit_reasons || null;
@@ -291,13 +425,14 @@ const DATA = /*__DATA__*/null;
       if (o.status) status = o.status;
       if (o.syns) syns = o.syns;
       if (Array.isArray(o.revisits)){ revisits = o.revisits.filter(function(r){ return r && typeof r === "object"; }); rvByChunk = null; }
+      if (o.evid && typeof o.evid === "object" && !Array.isArray(o.evid)) evid = o.evid;
     } catch(e){}
   }
   var saveT = null;
   function save(){
     clearTimeout(saveT);
     saveT = setTimeout(function(){
-      try { window.localStorage.setItem(KEY, JSON.stringify({edits:edits, status:status, syns:syns, revisits:revisits})); } catch(e){}
+      try { window.localStorage.setItem(KEY, JSON.stringify({edits:edits, status:status, syns:syns, revisits:revisits, evid:evid})); } catch(e){}
       inboxSave();
     }, 150);
   }
@@ -319,7 +454,7 @@ const DATA = /*__DATA__*/null;
         if (!o || !o.ok) return;
         inboxOn = true;
         setInbox("체크하면 작업 폴더 inbox에 자동 저장");
-        if (o.done && doneBtn) doneBtn.removeAttribute("hidden");
+        if (o.done && doneBtn){ doneBtn.disabled = false; doneBtn.title = "마지막 교정을 저장하고 반영·적재로 넘깁니다"; }
         if (hasState()) inboxSave();
       }).catch(function(){});
   }
@@ -334,7 +469,7 @@ const DATA = /*__DATA__*/null;
       .catch(function(){ setInbox("inbox 저장 실패: JSON 저장 버튼으로 내려받으세요", true); return false; });
   }
 
-  // ---------- 검수 완료(검수 완료 신호를 받는 labelbot serve로 열었을 때만 보인다) ----------
+  // ---------- 검수 완료(늘 보이고, 검수 완료 신호를 받는 labelbot serve로 열었을 때만 누를 수 있다) ----------
   // 마지막 교정을 inbox에 저장하고 완료 신호를 남긴다. BEOL-labeling-feedback 스킬이 신호를 보고 반영·적재로 넘어간다.
   var doneBtn = null;
   function reviewDone(){
@@ -345,7 +480,7 @@ const DATA = /*__DATA__*/null;
       "\n교정할 것이 없어도 완료할 수 있습니다.";
     if (!window.confirm(msg)) return;
     clearTimeout(saveT);
-    try { window.localStorage.setItem(KEY, JSON.stringify({edits:edits, status:status, syns:syns, revisits:revisits})); } catch(e){}
+    try { window.localStorage.setItem(KEY, JSON.stringify({edits:edits, status:status, syns:syns, revisits:revisits, evid:evid})); } catch(e){}
     doneBtn.disabled = true;
     fetch("inbox/review/done", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(o)})
       .then(function(r){
@@ -389,22 +524,41 @@ const DATA = /*__DATA__*/null;
   }
   function chunkCorrections(c){
     var out = [], e = edits[c.chunk_id] || {};
-    axes.forEach(function(ax){
+    editAxes.forEach(function(ax){
       var v = e["a:" + ax.name];
       if (!v || !v.length) return;
       var b = botAxis(c, ax.name);
-      if (!b || !sameSet(b.values, v)) out.push({chunk_id:c.chunk_id, target:"axis", key:ax.name, value:v.slice(), status:"corrected"});
+      if (!b || !sameSet(b.values, v)) out.push(evAttach(c.chunk_id, "a:" + ax.name, {chunk_id:c.chunk_id, target:"axis", key:ax.name, value:v.slice(), status:"corrected"}));
     });
     questionIds(c).forEach(function(qid){
       var v = e["q:" + qid];
       if (!v) return;
       var b = botAnswer(c, qid);
-      if (!b || b.answer !== v) out.push({chunk_id:c.chunk_id, target:"answer", key:qid, value:v, status:"corrected"});
+      if (!b || b.answer !== v) out.push(evAttach(c.chunk_id, "q:" + qid, {chunk_id:c.chunk_id, target:"answer", key:qid, value:v, status:"corrected"}));
     });
     return out;
   }
+  // 교정 항목에 근거·이유를 붙인다. 있을 때만 키를 넣어, 근거 없는 교정은 예전 출력과 같다.
+  function evValid(x){
+    return !!x && typeof x === "object" && EV_SOURCES.indexOf(x.source) >= 0 && typeof x.quote === "string" &&
+      (x.source !== "chunk" || typeof x.chunk_id === "string");
+  }
+  function evAttach(cid, k, item){
+    var ev = evOn && evid[cid] && evid[cid][k];
+    if (!ev) return item;
+    var items = (Array.isArray(ev.items) ? ev.items : []).filter(evValid).slice(0, EV_MAX).map(function(x){
+      var o = {source:x.source, quote:x.quote};
+      if (x.source === "chunk") o.chunk_id = x.chunk_id;
+      return o;
+    });
+    if (items.length) item.evidence = items;
+    var r = String(ev.reason || "").replace(/\s+/g, " ").trim();
+    if (r) item.reason = Array.from(r).slice(0, EV_REASON_MAX).join("");
+    return item;
+  }
   function questionIds(c){
-    if (c.classify_failed) return [COM_Q];
+    if (AXU) return [];
+    if (c.classify_failed) return COM_Q ? [COM_Q] : [];
     var seen = {}, out = [];
     (c.mapped_questions || []).forEach(function(q){ if (!seen[q]){ seen[q] = 1; out.push(q); } });
     return out;
@@ -690,10 +844,10 @@ const DATA = /*__DATA__*/null;
     if (fix) mk.push(h("span", {class:"mark fix", text:"교정 " + fix}));
     var nrv = rvFor(c).length;
     if (nrv) mk.push(h("span", {class:"mark rv", text:"재검토 " + nrv}));
-    var b = h("button", {class:"item" + (c.chunk_id === selId ? " on" : ""), type:"button", "data-id":c.chunk_id, "aria-current": c.chunk_id === selId ? "true" : false,
+    var b = h("button", {class:"item" + (c.chunk_id === selId ? " on" : ""), type:"button", "data-id":c.chunk_id, title:(c.title || "") + " · " + c.file_name + " p." + c.slide_no, "aria-current": c.chunk_id === selId ? "true" : false,
       onclick:function(){ select(c.chunk_id); }}, [
-      h("div", {class:"l1"}, [h("span", {class:"id mono", text:c.chunk_id}), h("span", {class:"mono", text:"p." + c.slide_no})].concat(mk)),
       h("div", {class:"l2", text:c.title || c.file_name}),
+      h("div", {class:"l1"}, [h("span", {class:"id mono", text:c.chunk_id}), h("span", {class:"mono", text:"p." + c.slide_no})].concat(mk)),
       h("div", {class:"tags"}, (c.reason_codes || []).map(tagFor))
     ]);
     return b;
@@ -702,20 +856,9 @@ const DATA = /*__DATA__*/null;
   var listEl, itemsEl, filtersEl, detailEl, statEl;
 
   function renderFilters(){
+    // 사유 코드 필터는 사이드바 맨 아래 원그래프(renderReasonChart)에 있다
     filtersEl.textContent = "";
-    filtersEl.appendChild(h("div", {class:"lbl", text:"사유 코드로 거르기 (여러 개 선택 시 하나라도 해당)"}));
-    var chips = h("div", {class:"chips", role:"group", "aria-label":"사유 코드 필터"});
-    var anyOn = Object.keys(activeReasons).some(function(k){ return activeReasons[k]; });
-    chips.appendChild(h("button", {class:"chip" + (!anyOn ? " on" : ""), type:"button", "aria-pressed":String(!anyOn),
-      onclick:function(){ activeReasons = {}; renderList(); ensureSel(); renderDetail(); }}, ["전체", h("span", {class:"n", text:String(chunks.length)})]));
-    reasonCodes().forEach(function(r){
-      var on = !!activeReasons[r.code];
-      chips.appendChild(h("button", {class:"chip" + (on ? " on" : ""), type:"button", title:reasonLabels[r.code] || r.code, "aria-pressed":String(on),
-        onclick:function(){ activeReasons[r.code] = !activeReasons[r.code]; renderList(); ensureSel(); renderDetail(); }},
-        [r.code, h("span", {class:"n", text:String(r.n)})]));
-    });
-    filtersEl.appendChild(chips);
-    filtersEl.appendChild(h("div", {class:"chips", style:"margin-top:8px"}, [
+    filtersEl.appendChild(h("div", {class:"chips"}, [
       h("button", {class:"chip" + (onlyTodo ? " on" : ""), type:"button", "aria-pressed":String(onlyTodo),
         onclick:function(){ onlyTodo = !onlyTodo; renderList(); ensureSel(); renderDetail(); }, text:"처리 전만 보기"}),
       rvOn ? h("button", {class:"chip" + (onlyRevisit ? " on" : ""), type:"button", "aria-pressed":String(onlyRevisit),
@@ -723,10 +866,83 @@ const DATA = /*__DATA__*/null;
         ["재검토 요청 있음", h("span", {class:"n", text:String(chunks.filter(function(c){ return rvFor(c).length > 0; }).length)})]) : null
     ]));
   }
+
+  // ---------- 사유 코드 원그래프(사이드바 맨 아래) ----------
+  // 색은 사유 코드에 고정한다(필터로 조각 수가 바뀌어도 남은 조각 색이 바뀌지 않게). 순서는 이웃 색이 구별되게 정했다.
+  var REASON_COLORS = {UNKNOWN_HIGH:"#C99A3B", LOW_CONFIDENCE:"#4A5FA8", CLASSIFY_FAILED:"#C25450", CONTROL_O:"#1E96B0",
+    LABEL_FAILED:"#A3407F", QUOTE_NOT_FOUND:"#2F9468", PARSE_WARNING:"#7C5CC4", UNKNOWN_O:"#8A6718"};
+  var REASON_ORDER = Object.keys(REASON_COLORS);
+  var OTHER_COLOR = "#7A9CC0";   // 목록에 없는 사유(예전·새 코드)
+  var reasonEl = null;
+  function reasonColor(code){ return REASON_COLORS[code] || OTHER_COLOR; }
+  // SVG 이름공간은 HTML 파서가 만든 <svg>에서 얻는다(화면 템플릿에는 주소 문자열을 두지 않는다).
+  var SVG_NS = new DOMParser().parseFromString("<svg></svg>", "text/html").body.firstChild.namespaceURI;
+  function svgEl(tag, attrs){
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function toggleReason(code){ activeReasons[code] = !activeReasons[code]; renderList(); ensureSel(); renderDetail(); }
+  function hotReason(code, on){
+    var els = reasonEl.querySelectorAll('[data-code="' + code.replace(/"/g, '\\"') + '"]');
+    for (var i = 0; i < els.length; i++) els[i].classList.toggle("hot", on);
+  }
+  function renderReasonChart(){
+    reasonEl.textContent = "";
+    var rows = reasonCodes().filter(function(r){ return r.n > 0; });
+    rows.sort(function(a, b){
+      var x = REASON_ORDER.indexOf(a.code), y = REASON_ORDER.indexOf(b.code);
+      return (x < 0 ? 99 : x) - (y < 0 ? 99 : y);
+    });
+    var anyOn = rows.some(function(r){ return activeReasons[r.code]; });
+    var sum = rows.reduce(function(s, r){ return s + r.n; }, 0);
+    reasonEl.appendChild(h("div", {class:"rcap", text:"사유별 불량"}));
+    var pie = h("div", {class:"rpie"});
+    var R = 30, SW = 11, CIRC = 2 * Math.PI * R, GAP = rows.length > 1 ? 2 : 0;
+    var box = svgEl("svg", {viewBox:"0 0 76 76", role:"img",
+      "aria-label":"사유별 불량 chunk: " + rows.map(function(r){ return r.code + " " + r.n; }).join(", ")});
+    var track = svgEl("circle", {cx:38, cy:38, r:R, fill:"none", "stroke-width":SW});
+    track.style.stroke = "var(--surface-2)";
+    box.appendChild(track);
+    var at = 0;
+    rows.forEach(function(r){
+      var len = sum ? CIRC * r.n / sum : 0, vis = Math.max(len - GAP, 0.6);
+      var seg = svgEl("circle", {cx:38, cy:38, r:R, fill:"none", "stroke-width":SW, transform:"rotate(-90 38 38)",
+        "stroke-dasharray":vis + " " + (CIRC - vis), "stroke-dashoffset":String(-at), "data-code":r.code,
+        "class":"rseg" + (anyOn && !activeReasons[r.code] ? " dim" : "")});
+      seg.style.stroke = reasonColor(r.code);
+      var t = svgEl("title", {}); t.textContent = r.code + " · " + (reasonLabels[r.code] || "") + " · " + r.n + "건";
+      seg.appendChild(t);
+      seg.addEventListener("click", function(){ toggleReason(r.code); });
+      seg.addEventListener("mouseenter", function(){ hotReason(r.code, true); });
+      seg.addEventListener("mouseleave", function(){ hotReason(r.code, false); });
+      box.appendChild(seg);
+      at += len;
+    });
+    pie.appendChild(box);
+    pie.appendChild(h("button", {class:"rall", type:"button", "aria-pressed":String(!anyOn),
+      title:"사유 필터를 모두 풀고 전체 " + chunks.length + "건을 봅니다",
+      onclick:function(){ activeReasons = {}; renderList(); ensureSel(); renderDetail(); }},
+      [h("b", {text:String(chunks.length)}), h("span", {text:anyOn ? "전체 보기" : "전체"})]));
+    reasonEl.appendChild(pie);
+    var leg = h("div", {class:"rleg" + (anyOn ? " filtering" : ""), role:"group", "aria-label":"사유 코드 필터"});
+    rows.forEach(function(r){
+      var on = !!activeReasons[r.code];
+      var sw = h("span", {class:"sw"}); sw.style.background = reasonColor(r.code);
+      leg.appendChild(h("button", {class:"rrow", type:"button", "aria-pressed":String(on), "data-code":r.code,
+        title:r.code + " · " + (reasonLabels[r.code] || "") + " · " + r.n + "건",
+        onclick:function(){ toggleReason(r.code); },
+        onmouseenter:function(){ hotReason(r.code, true); }, onmouseleave:function(){ hotReason(r.code, false); }},
+        [sw, h("span", {class:"rc", text:r.code}), h("span", {class:"rn", text:String(r.n)})]));
+    });
+    if (!rows.length) leg.appendChild(h("div", {class:"rcap", text:"사유 없음"}));
+    reasonEl.appendChild(leg);
+  }
   function renderList(){
     var y = itemsEl.scrollTop;
     rvByChunk = null; // 렌더마다 한 번만 다시 묶는다
     renderFilters();
+    renderReasonChart();
     itemsEl.textContent = "";
     var blocks = visibleChunks(), total = 0;
     blocks.forEach(function(b){
@@ -767,7 +983,7 @@ const DATA = /*__DATA__*/null;
       if (rvDraft.dirty) toast("저장하지 않은 재검토 요청 초안을 닫았습니다");
       rvDraft = null;
     }
-    selId = id; pendingAlias = "";
+    selId = id; pendingAlias = ""; evMode = null; accOpen = firstAcc;
     renderList2(); renderDetail(true);
   }
 
@@ -803,6 +1019,7 @@ const DATA = /*__DATA__*/null;
     if (!c.label_failed){
       Object.keys(c.answers || {}).forEach(function(k){ quotes.push(c.answers[k].quote); });
       (c.extracted || []).forEach(function(x){ quotes.push(x.quote); });
+      (c.controls || []).forEach(function(x){ if (x.answer === "O") quotes.push(x.quote); });
     }
     quotes.forEach(function(q){
       quotePieces(q).forEach(function(p){
@@ -815,7 +1032,8 @@ const DATA = /*__DATA__*/null;
     aliases.forEach(function(s){
       findAll(text, s.alias, true).forEach(function(r){ for (var j = r[0]; j < r[1]; j++){ type[j] = 2; info[j] = s.canonical; } });
     });
-    var el = h("div", {class:"text", id:"bodytext", tabindex:"0", "aria-label":"chunk 본문"});
+    var el = h("div", {class:"text", id:"bodytext", tabindex:"0", "aria-label":"chunk 본문",
+      "data-ev-source":"chunk", "data-ev-chunk":c.chunk_id});
     var start = 0;
     for (i = 1; i <= text.length; i++){
       if (i === text.length || type[i] !== type[start] || info[i] !== info[start]){
@@ -833,6 +1051,7 @@ const DATA = /*__DATA__*/null;
   }
   var synBox = null;
   function onSelect(){
+    if (evMode){ evCapture(); return; } // 근거 지정 중에는 동의어 제안을 띄우지 않는다
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed) return;
     var bt = document.getElementById("bodytext");
@@ -844,7 +1063,7 @@ const DATA = /*__DATA__*/null;
   }
   function allValueNames(){
     var out = [];
-    axes.forEach(function(ax){ (ax.values || []).forEach(function(v){ out.push({axis:ax.name, name:v.name}); }); });
+    editAxes.forEach(function(ax){ (ax.values || []).forEach(function(v){ out.push({axis:ax.name, name:v.name}); }); });
     return out;
   }
   function renderSynBox(){
@@ -854,7 +1073,7 @@ const DATA = /*__DATA__*/null;
     if (pendingAlias){
       var sel = h("select", {"aria-label":"표준어 선택"});
       sel.appendChild(h("option", {value:"", text:"표준어 선택…"}));
-      axes.forEach(function(ax){
+      editAxes.forEach(function(ax){
         var og = h("optgroup", {label:ax.name});
         (ax.values || []).forEach(function(v){ og.appendChild(h("option", {value:v.name, text:v.name})); });
         sel.appendChild(og);
@@ -886,6 +1105,156 @@ const DATA = /*__DATA__*/null;
       });
       synBox.appendChild(list);
     }
+  }
+
+  // ---------- 교정 근거(드래그로 지정) ----------
+  // 근거 칸은 data-ev-source(chunk·file_name·doc_title)와 data-ev-chunk를 단 요소다: 본문(#bodytext),
+  // '같은 파일 슬라이드 텍스트' 패널의 슬라이드 제목·본문, 파일명·문서 제목 줄. 한 칸 안에서 드래그한 것만 받는다.
+  function evGet(cid, k, create){
+    var m = evid[cid];
+    if (!m || typeof m !== "object"){ if (!create) return null; m = evid[cid] = {}; }
+    var ev = m[k];
+    if (!ev || typeof ev !== "object" || !Array.isArray(ev.items)){
+      if (!create) return null;
+      ev = m[k] = {items:[], reason:""};
+    }
+    return ev;
+  }
+  function evPrune(cid, k){
+    var ev = evGet(cid, k, false);
+    if (ev && !ev.items.length && !String(ev.reason || "").trim()) delete evid[cid][k];
+    if (evid[cid] && !Object.keys(evid[cid]).length) delete evid[cid];
+  }
+  function evKeys(c){ // 이 chunk에서 교정된 축·질문 키("a:축", "q:qid")
+    return chunkCorrections(c).map(function(x){ return (x.target === "axis" ? "a:" : "q:") + x.key; });
+  }
+  function evKeyLabel(k){ return k.slice(2); }
+  function evSlideNo(c, cid){
+    var ctx = FILE_CTX && FILE_CTX[c.file_id];
+    var s = ctx ? (ctx.slides || []).filter(function(x){ return x.chunk_id === cid; })[0] : null;
+    return s ? s.slide_no : null;
+  }
+  function evWhere(c, x){
+    if (x.source === "file_name") return "파일명";
+    if (x.source === "doc_title") return "문서 제목";
+    if (x.chunk_id === c.chunk_id) return "같은 슬라이드";
+    var no = evSlideNo(c, x.chunk_id);
+    return "다른 슬라이드" + (no === null || no === undefined ? "" : " p." + no);
+  }
+  function evRegion(node){
+    var n = node && node.nodeType === 1 ? node : node && node.parentNode;
+    while (n && n !== document.body){
+      if (n.getAttribute && n.getAttribute("data-ev-source")) return n;
+      n = n.parentNode;
+    }
+    return null;
+  }
+  function evCapture(){
+    var sel = window.getSelection();
+    if (!evMode || !sel || sel.isCollapsed) return;
+    var c = byId[selId];
+    if (!c || evMode.chunk_id !== c.chunk_id || evKeys(c).indexOf(evMode.key) < 0){ evMode = null; renderDetail(true); return; }
+    var a = evRegion(sel.anchorNode), b = evRegion(sel.focusNode);
+    if (!a || a !== b){ toast("근거는 본문·슬라이드 제목·슬라이드 본문·파일명·문서 제목 중 한 칸 안에서 드래그하세요"); return; }
+    var q = sel.toString().replace(/\s+/g, " ").trim(), n = rvLen(q);
+    if (n < 2 || n > EV_QUOTE_MAX){ toast("근거 인용은 2~" + EV_QUOTE_MAX + "자로 드래그하세요"); return; }
+    var item = {source:a.getAttribute("data-ev-source"), quote:q};
+    if (item.source === "chunk") item.chunk_id = a.getAttribute("data-ev-chunk");
+    var ev = evGet(c.chunk_id, evMode.key, true);
+    if (ev.items.some(function(x){ return x.source === item.source && x.chunk_id === item.chunk_id && x.quote === q; })){
+      toast("이미 넣은 근거입니다"); return;
+    }
+    if (ev.items.length >= EV_MAX){ toast("근거는 " + EV_MAX + "개까지 넣을 수 있습니다"); return; }
+    ev.items.push(item);
+    if (ev.items.length >= EV_MAX) evMode = null;
+    try { sel.removeAllRanges(); } catch(e){}
+    save(); renderDetail(true);
+    toast("근거를 넣었습니다 (" + ev.items.length + "/" + EV_MAX + ")");
+  }
+  function onEvSelect(){ if (evMode) evCapture(); }
+  function evCopyToOthers(c, k){
+    var src = evGet(c.chunk_id, k, false);
+    if (!src) return;
+    var others = evKeys(c).filter(function(x){ return x !== k; });
+    others.forEach(function(o){
+      var ev = evGet(c.chunk_id, o, true);
+      src.items.forEach(function(x){
+        if (ev.items.length >= EV_MAX) return;
+        if (!ev.items.some(function(y){ return y.source === x.source && y.chunk_id === x.chunk_id && y.quote === x.quote; }))
+          ev.items.push({source:x.source, chunk_id:x.chunk_id, quote:x.quote});
+      });
+      if (!String(ev.reason || "").trim() && src.reason) ev.reason = src.reason;
+      evPrune(c.chunk_id, o);
+    });
+    save(); renderDetail(true);
+    toast("근거를 다른 고친 축·질문 " + others.length + "곳에 복사했습니다");
+  }
+  // 교정된 축·질문 카드 아래의 근거 상자. 근거 기능이 꺼져 있으면 null.
+  function evBox(c, k){
+    if (!evOn) return null;
+    var ev = evGet(c.chunk_id, k, false) || {items:[], reason:""};
+    var active = !!evMode && evMode.chunk_id === c.chunk_id && evMode.key === k;
+    var full = ev.items.length >= EV_MAX;
+    var others = evKeys(c).filter(function(x){ return x !== k; });
+    var box = h("div", {class:"evbox" + (active ? " on" : ""), role:"group", "aria-label":evKeyLabel(k) + " 교정 근거"});
+    box.appendChild(h("div", {class:"row"}, [
+      h("span", {class:"k", text:"근거 " + ev.items.length + "/" + EV_MAX}),
+      h("button", {class:"btn sm" + (active ? " primary" : ""), type:"button", "aria-pressed":String(active),
+        disabled:full && !active ? "disabled" : null, text:active ? "근거 지정 끝내기" : "근거 드래그로 지정",
+        onclick:function(){ evMode = active ? null : {chunk_id:c.chunk_id, key:k}; pendingAlias = ""; renderDetail(true); }}),
+      others.length ? h("button", {class:"btn sm", type:"button",
+        text:"이 근거를 다른 고친 축에도", title:"이 근거와 이유를 이 chunk의 다른 교정 " + others.length + "곳에 더합니다",
+        onclick:function(){ evCopyToOthers(c, k); }}) : null
+    ]));
+    if (active) box.appendChild(h("div", {class:"row evhint",
+      text:"왼쪽 본문 또는 '같은 파일 슬라이드 텍스트'(슬라이드 제목·본문, 파일명, 문서 제목)에서 근거 부분을 드래그하세요."}));
+    ev.items.forEach(function(x, i){
+      box.appendChild(h("div", {class:"evit"}, [
+        h("span", {class:"src", text:evWhere(c, x)}), h("span", {text:"'" + x.quote + "'"}),
+        h("button", {class:"x", type:"button", "aria-label":"근거 삭제", text:"삭제", onclick:function(){
+          ev.items.splice(i, 1); evPrune(c.chunk_id, k); save(); renderDetail(true);
+        }})
+      ]));
+    });
+    var ta = h("textarea", {maxlength:String(EV_REASON_MAX), "aria-label":evKeyLabel(k) + " 교정 이유", placeholder:"이유(선택)"});
+    ta.value = ev.reason || "";
+    var cnt = h("span", {class:"cnt"});
+    function count(){ cnt.textContent = rvLen(ta.value) + "/" + EV_REASON_MAX; }
+    ta.addEventListener("input", function(){
+      var e2 = evGet(c.chunk_id, k, true);
+      e2.reason = ta.value; evPrune(c.chunk_id, k); count(); save();
+    });
+    count();
+    box.appendChild(h("div", {class:"row"}, [ta]));
+    box.appendChild(h("div", {class:"row"}, [cnt]));
+    return box;
+  }
+  // '같은 파일 슬라이드 텍스트' 패널: 파일명·문서 제목과 같은 파일 모든 슬라이드의 제목·본문. 근거 지정 중에만 드래그를 받는다.
+  function ctxCard(c){
+    var ctx = FILE_CTX && FILE_CTX[c.file_id];
+    if (!ctx) return null;
+    var slides = ctx.slides || [];
+    var on = !!evMode && evMode.chunk_id === c.chunk_id;
+    function region(tag, cls, src, cid, text){
+      var e = h(tag, {class:cls, "data-ev-source":src, "data-ev-chunk":cid || null, text:text});
+      e.addEventListener("mouseup", onEvSelect);
+      e.addEventListener("keyup", onEvSelect);
+      return e;
+    }
+    var wrap = h("div", {class:"ctxwrap" + (on ? " evon" : ""), id:"ctxtext", "aria-label":"같은 파일 슬라이드 텍스트"});
+    wrap.appendChild(h("div", {class:"ctxline"}, [h("span", {class:"k", text:"파일명"}), region("span", "", "file_name", null, ctx.file_name || "")]));
+    wrap.appendChild(h("div", {class:"ctxline"}, [h("span", {class:"k", text:"문서 제목"}),
+      ctx.doc_title ? region("span", "", "doc_title", null, ctx.doc_title) : h("span", {class:"muted", text:"(없음)"})]));
+    slides.forEach(function(s){
+      wrap.appendChild(h("div", {class:"ctxs" + (s.chunk_id === c.chunk_id ? " cur" : "")}, [
+        h("div", {class:"no", text:"p." + s.slide_no + (s.chunk_id === c.chunk_id ? "  ·  지금 슬라이드" : "")}),
+        s.title ? region("div", "t", "chunk", s.chunk_id, s.title) : null,
+        region("div", "b", "chunk", s.chunk_id, s.text || "")
+      ]));
+    });
+    return h("div", {class:"card"}, [h("h3", {text:"같은 파일 슬라이드 텍스트 " + slides.length + "장"}),
+      h("div", {class:"sec", text:on ? "근거 지정 중: 드래그한 부분이 근거로 들어갑니다." : "고친 축의 '근거 드래그로 지정'을 누른 뒤 여기서 드래그하면 근거로 들어갑니다."}),
+      wrap]);
   }
 
   // ---------- axis & question editors ----------
@@ -1052,17 +1421,30 @@ const DATA = /*__DATA__*/null;
   function axisCard(c, ax){
     var wrap = h("div", {class:"axis"});
     var multi = !!ax.multi;
-    var cur = curAxis(c, ax.name);
+    var editable = canEdit(ax);
     var bot = botAxis(c, ax.name);
-    var edited = edits[c.chunk_id] && edits[c.chunk_id]["a:" + ax.name];
+    var cur = editable ? curAxis(c, ax.name) : (bot ? bot.values.slice() : []);
+    var edited = editable && edits[c.chunk_id] && edits[c.chunk_id]["a:" + ax.name];
     var changed = edited && edited.length && (!bot || !sameSet(bot.values, edited));
-    wrap.appendChild(h("div", {class:"axhead"}, [
+    var lock = ax.locked ? "이번 축 변경 대상 아님" : ax.pending ? "다음 실행부터 라벨링되는 새 축" : ax.inactive ? "비활성이 된 축" : ax.removed ? "taxonomy에서 빠진 축" : null;
+    var accKey = "a:" + ax.name;
+    wrap.setAttribute("data-acc", accKey);
+    if (ACC && accOpen !== accKey) wrap.classList.add("closed");
+    wrap.appendChild(h("div", {class:"axhead", tabindex:"0", role:"button", "aria-expanded":String(accOpen === accKey),
+      onclick:function(ev){ if (ev.target.closest("button")) return; accToggle(accKey); },
+      onkeydown:function(ev){ if (ev.target !== ev.currentTarget || (ev.key !== "Enter" && ev.key !== " ")) return; ev.preventDefault(); accToggle(accKey); }}, [
+      h("span", {class:"caret", text:accOpen === accKey ? "▾" : "▸", "aria-hidden":"true"}),
       h("b", {text:ax.name}), h("span", {class:"badge", text:ax.kind}), h("span", {class:"badge", text:multi ? "복수 선택" : "단일 선택"}),
-      changed ? h("span", {class:"changed", text:"교정됨"}) : null, rvBadge(c, "axis", ax.name)
+      changed ? h("span", {class:"changed", text:"교정됨"}) : null, lock ? h("span", {class:"rvbadge", text:lock}) : rvBadge(c, "axis", ax.name),
+      h("span", {class:"axsum", text:ax.pending ? "이 실행에 없음" : cur.length ? cur.join(", ") : "값 없음"})
     ]));
     if (ax.definition) wrap.appendChild(h("div", {class:"axdef", text:ax.definition}));
 
-    if (!c.classify_failed){
+    if (ax.pending) wrap.appendChild(h("div", {class:"note", text:"이 실행 뒤에 taxonomy에 더해진 축이라 라벨이 없고 고칠 수 없습니다. 다시 라벨링하면 값이 붙습니다."}));
+    else if (ax.inactive) wrap.appendChild(h("div", {class:"note", text:"이 실행은 라벨링했지만 지금 taxonomy에서는 사용하지 않는(비활성) 축입니다. 봇 값만 보여 주며 고칠 수 없습니다."}));
+    else if (ax.removed) wrap.appendChild(h("div", {class:"note", text:"이 실행은 라벨링했지만 지금 taxonomy에는 없는 축입니다. 봇 값만 보여 주며 고칠 수 없습니다."}));
+    else if (ax.locked) wrap.appendChild(h("div", {class:"note", text:"이전 실행에서 이어받은 값입니다. 이번 축 변경 검수에서는 고칠 수 없습니다."}));
+    if (!c.classify_failed && !ax.pending){
       var line = h("div", {class:"botline"}, [h("span", {class:"k", text:"봇"})]);
       if (bot){
         bot.values.forEach(function(v){ line.appendChild(botChip(ax, v)); });
@@ -1082,18 +1464,22 @@ const DATA = /*__DATA__*/null;
       wrap.appendChild(h("details", {class:"defs"}, [h("summary", {text:"값 정의·판정 규칙 보기 (" + ax.values.length + ")"}), dl]));
     }
 
+    if (ax.locked) return wrap;  // 읽기 전용: 교정 칸·재검토 요청을 두지 않는다
     var ed = h("div", {class:"edit", role:"group", "aria-label":ax.name + " 교정"}, [h("span", {class:"k", text:"교정"})]);
     function opt(name, special){
       var on = cur.indexOf(name) >= 0;
       var v = valueDef(ax, name);
       return h("button", {class:"opt" + (special ? " sp" : ""), type:"button", "aria-pressed":String(on),
         title: special ? "" : defText(v), text:(v && v.parent ? v.parent + " › " : "") + name,
-        onclick:function(){ toggleAxis(c, ax, name, special); }});
+        disabled:editable ? null : "disabled",
+        onclick:function(){ if (editable) toggleAxis(c, ax, name, special); }});
     }
     (ax.values || []).forEach(function(v){ ed.appendChild(opt(v.name, false)); });
     SPECIAL.forEach(function(s){ ed.appendChild(opt(s, true)); });
     wrap.appendChild(ed);
-    if (rvOn) wrap.appendChild(h("div", {class:"rvwrap"}, [rvButton(c, "axis", ax.name, "taxonomy 재검토 요청"), rvPanel(c, "axis", ax.name, ax, false)]));
+    var eb = changed ? evBox(c, "a:" + ax.name) : null;
+    if (eb) wrap.appendChild(eb);
+    if (rvOn && editable) wrap.appendChild(h("div", {class:"rvwrap"}, [rvButton(c, "axis", ax.name, "taxonomy 재검토 요청"), rvPanel(c, "axis", ax.name, ax, false)]));
     return wrap;
   }
   function toggleAxis(c, ax, name, special){
@@ -1125,7 +1511,7 @@ const DATA = /*__DATA__*/null;
     var srcQ = questionIds(c);
     targets.forEach(function(t){
       var e = edits[t.chunk_id] || (edits[t.chunk_id] = {});
-      axes.forEach(function(ax){
+      editAxes.forEach(function(ax){
         var v = curAxis(c, ax.name).slice(), b = botAxis(t, ax.name);
         if (!v.length || (b && sameSet(b.values, v))) delete e["a:" + ax.name];
         else e["a:" + ax.name] = v;
@@ -1147,10 +1533,17 @@ const DATA = /*__DATA__*/null;
     var bot = botAnswer(c, qid), cur = curAnswer(c, qid);
     var edited = edits[c.chunk_id] && edits[c.chunk_id]["q:" + qid];
     var changed = edited && (!bot || bot.answer !== edited);
-    wrap.appendChild(h("div", {class:"qhead"}, [
-      h("span", {class:"qid mono", text:qid}), changed ? h("span", {class:"changed", text:"교정됨"}) : null, rvBadge(c, "question", qid)
+    var accKey = "q:" + qid;
+    wrap.setAttribute("data-acc", accKey);
+    if (ACC && accOpen !== accKey) wrap.classList.add("closed");
+    wrap.appendChild(h("div", {class:"qhead", tabindex:"0", role:"button", "aria-expanded":String(accOpen === accKey),
+      onclick:function(ev){ if (ev.target.closest("button")) return; accToggle(accKey); },
+      onkeydown:function(ev){ if (ev.target !== ev.currentTarget || (ev.key !== "Enter" && ev.key !== " ")) return; ev.preventDefault(); accToggle(accKey); }}, [
+      h("span", {class:"caret", text:accOpen === accKey ? "▾" : "▸", "aria-hidden":"true"}),
+      h("span", {class:"qid mono", text:qid}), changed ? h("span", {class:"changed", text:"교정됨"}) : null, rvBadge(c, "question", qid),
+      h("span", {class:"axsum", text:cur || "답 없음"})
     ]));
-    wrap.appendChild(h("div", {style:"margin:2px 0 6px", text:qtext[qid] || "(질문 문장 없음)"}));
+    wrap.appendChild(h("div", {class:"qtext", text:qtext[qid] || "(질문 문장 없음)"}));
     if (!c.label_failed){
       var line = h("div", {class:"botline"}, [h("span", {class:"k", text:"봇"})]);
       if (bot){ line.appendChild(h("span", {class:"ans", text:bot.answer})); line.appendChild(confEl(bot.confidence)); }
@@ -1171,15 +1564,21 @@ const DATA = /*__DATA__*/null;
         }}));
     });
     wrap.appendChild(ed);
+    var eb = changed ? evBox(c, "q:" + qid) : null;
+    if (eb) wrap.appendChild(eb);
     if (rvOn) wrap.appendChild(h("div", {class:"rvwrap"}, [rvButton(c, "question", qid, "taxonomy 재검토 요청"), rvPanel(c, "question", qid, null, false)]));
     return wrap;
   }
 
   // ---------- detail ----------
   function renderDetail(keep){
-    var y = detailEl.scrollTop;
+    var evP = document.getElementById("evpane"), decP = document.getElementById("decpane");
+    var y = {d:detailEl.scrollTop, ev:evP ? evP.scrollTop : 0, dec:decP ? decP.scrollTop : 0};
+    var ctxEl = document.getElementById("ctxtext"), ctxY = ctxEl ? ctxEl.scrollTop : 0;
     detailEl.textContent = "";
     var c = byId[selId];
+    // 교정을 되돌려 근거 대상이 사라졌으면 근거 지정을 끝낸다.
+    if (evMode && (!c || evMode.chunk_id !== c.chunk_id || evKeys(c).indexOf(evMode.key) < 0)) evMode = null;
     if (!c){
       detailEl.appendChild(h("div", {class:"emptystate"}, [h("h2", {text:"검수할 chunk가 없습니다"}), h("p", {text:"필터를 바꾸거나 해제해 보세요."})]));
       return;
@@ -1188,8 +1587,10 @@ const DATA = /*__DATA__*/null;
     var confWarn = c.min_confidence !== null && c.min_confidence !== undefined && flag.confidence_min !== undefined && c.min_confidence < flag.confidence_min;
     function num(x){ return x === null || x === undefined ? "-" : Number(x).toFixed(2); }
     detailEl.appendChild(h("div", {class:"dh"}, [
-      h("h2", {text:c.file_name}),
-      h("div", {class:"path mono", text:c.rel_path + "  ·  슬라이드 " + c.slide_no + "  ·  " + c.chunk_id + (c.dup_group ? "  ·  중복 묶음 " + c.dup_group : "")}),
+      h("div", {class:"dh-main"}, [
+        h("h2", {text:c.file_name}),
+        h("div", {class:"path mono", text:c.rel_path + "  ·  슬라이드 " + c.slide_no + "  ·  " + c.chunk_id + (c.dup_group ? "  ·  중복 묶음 " + c.dup_group : "")})
+      ]),
       h("div", {class:"metrics"}, [
         h("div", {class:"tags"}, (c.reason_codes || []).map(function(r){
           var t = tagFor(r); t.textContent = r + " · " + (reasonLabels[r] || ""); t.style.fontSize = "10.5px"; return t;
@@ -1201,20 +1602,19 @@ const DATA = /*__DATA__*/null;
 
     var st = status[c.chunk_id];
     var nSame = sameFileFlagged(c).length;
-    detailEl.appendChild(h("div", {class:"actions"}, [
-      nSame ? h("button", {class:"btn", type:"button", text:"같은 파일 " + nSame + "장에 이 라벨 적용",
-        title:"검수 목록에 있는 같은 파일 슬라이드에 이 슬라이드의 분류 축 값과 공통 질문 답을 똑같이 넣습니다",
-        onclick:function(){ applyToSameFile(c); }}) : null,
+    // 판정·이동은 두 칸 아래 고정 줄(dock). 어디까지 스크롤했든 바로 누를 수 있다.
+    var dock = h("div", {class:"dock", role:"group", "aria-label":"이 chunk 판정과 이동"}, [h("div", {class:"dock-st"}, [
       h("button", {class:"btn" + (st === "confirmed" ? " on-ok" : ""), type:"button", "aria-pressed":String(st === "confirmed"), text:"확인, 이상 없음",
         onclick:function(){ setStatus(c, "confirmed"); }}),
       h("button", {class:"btn" + (st === "undecidable_image" ? " on-img" : ""), type:"button", "aria-pressed":String(st === "undecidable_image"), text:"판단 불가: 정보가 이미지에만 있음",
-        onclick:function(){ setStatus(c, "undecidable_image"); }}),
-      h("button", {class:"btn", type:"button", text:"다음 ▸ (j)", onclick:function(){ step(1); }}),
-      h("button", {class:"btn", type:"button", text:"◂ 이전 (k)", onclick:function(){ step(-1); }})
-    ]));
+        onclick:function(){ setStatus(c, "undecidable_image"); }})]),
+      h("div", {class:"dock-nav"}, [
+        h("button", {class:"btn", type:"button", text:"◂ 이전 (k)", onclick:function(){ step(-1); }}),
+        h("button", {class:"btn", type:"button", text:"다음 ▸ (j)", onclick:function(){ step(1); }})])
+    ]);
 
-    // left column
-    var left = h("div");
+    // 근거 칸
+    var left = h("section", {class:"pane ev", id:"evpane", "aria-label":"근거"});
     var sp = slidePreview(c);
     if (sp){
       var sc = h("div", {class:"card"}, [
@@ -1227,9 +1627,10 @@ const DATA = /*__DATA__*/null;
       ]);
       left.appendChild(sc);
     }
-    left.appendChild(sibCard(c));
     var bodyCard = h("div", {class:"card"}, [h("h3", {text:"본문"})]);
-    bodyCard.appendChild(textNode(c));
+    var bodyEl = textNode(c);
+    if (evMode) bodyEl.classList.add("evon");
+    bodyCard.appendChild(bodyEl);
     bodyCard.appendChild(h("div", {class:"legend"}, [
       h("span", {}, [h("mark", {class:"q", text:"근거"}), " 근거 인용"]),
       h("span", {}, [h("mark", {class:"s", text:"동의어"}), " 동의어 일치 (마우스를 올리면 표준어)"])
@@ -1237,7 +1638,6 @@ const DATA = /*__DATA__*/null;
     synBox = h("div", {class:"syn"});
     bodyCard.appendChild(synBox);
     left.appendChild(bodyCard);
-
     if (c.images && c.images.length){
       var ic = h("div", {class:"card"}, [h("h3", {text:"이미지 " + c.images.length + "개"})]);
       var box = h("div", {class:"imgs"});
@@ -1248,6 +1648,9 @@ const DATA = /*__DATA__*/null;
       });
       ic.appendChild(box); left.appendChild(ic);
     }
+    left.appendChild(sibCard(c));
+    var cc = evOn ? ctxCard(c) : null;
+    if (cc) left.appendChild(cc);
     if (!c.label_failed && c.extracted && c.extracted.length){
       var tb = h("table"), thead = h("thead"), tr0 = h("tr");
       ["항목", "값", "근거"].forEach(function(t){ tr0.appendChild(h("th", {text:t})); });
@@ -1260,15 +1663,60 @@ const DATA = /*__DATA__*/null;
       tb.appendChild(tbody);
       left.appendChild(h("div", {class:"card"}, [h("h3", {text:"추출된 날짜·담당자"}), tb]));
     }
+    // 대조 질문(Q-CTL-): 이 chunk에 붙지 않은 라벨로 만든 질문. 읽기 전용이며 확정 라벨에 들어가지 않는다.
+    // 축 교정으로 이어지므로 판정 칸 맨 위에 둔다.
+    var ctlCard = null;
+    if (!c.label_failed && c.controls && c.controls.length){
+      var ctb = h("table"), cth = h("thead"), ctr0 = h("tr");
+      ["대조 라벨", "질문", "답", "근거"].forEach(function(t){ ctr0.appendChild(h("th", {text:t})); });
+      cth.appendChild(ctr0); ctb.appendChild(cth);
+      var ctbody = h("tbody");
+      c.controls.forEach(function(x){
+        var tr = h("tr");
+        tr.appendChild(h("td", {text:(x.axis || "") + " = " + (x.value || "")}));
+        tr.appendChild(h("td", {text:x.text || x.qid}));
+        tr.appendChild(h("td", {text:x.answer, style:x.answer === "O" ? "font-weight:700;color:#b42318" : ""}));
+        tr.appendChild(h("td", {text:x.quote || ""}));
+        ctbody.appendChild(tr);
+      });
+      ctb.appendChild(ctbody);
+      var ctlCard = h("div", {class:"card"}, [h("h3", {text:"대조 질문 (붙지 않은 라벨)"}),
+        h("div", {class:"note", text:"O가 나온 라벨은 1차 분류가 놓쳤거나 3차가 과하게 판정한 것입니다. 맞으면 아래 축에서 값을 더해 교정하세요."}),
+        ctb]);
+    }
 
-    // right column
-    var right = h("div");
+    // 판정 칸
+    var right = h("section", {class:"pane", id:"decpane", "aria-label":"판정"});
+    if (nSame) right.appendChild(h("div", {class:"samefile"}, [
+      h("button", {class:"btn", type:"button", text:"같은 파일 " + nSame + "장에 이 라벨 적용",
+        title:"검수 목록에 있는 같은 파일 슬라이드에 이 슬라이드의 분류 축 값과 공통 질문 답을 똑같이 넣습니다",
+        onclick:function(){ applyToSameFile(c); }}),
+      h("span", {text:"분류 축 값과 공통 질문 답을 같은 파일 불량 슬라이드에 똑같이 넣습니다"})
+    ]));
+    if (ctlCard) right.appendChild(ctlCard);
     var axCard = h("div", {class:"card"}, [h("h3", {}, ["분류 · 상태 축",
       rvOn ? rvButton(c, "new_axis", "", "새 축 제안", "margin-left:auto") : null])]);
     var naPanel = rvOn ? rvPanel(c, "new_axis", "", null, true) : null;
     if (naPanel) axCard.appendChild(naPanel);
     if (c.classify_failed) axCard.appendChild(h("div", {class:"note", text:"1차 분류가 실패했습니다. 봇 값 없이 판정 칸만 표시합니다."}));
-    axes.forEach(function(ax){ axCard.appendChild(axisCard(c, ax)); });
+    var jumpAxes = axes.filter(function(ax){ return !ax.removed && !ax.locked; });
+    var nActive = jumpAxes.length;
+    if (nActive > 12){
+      // 축이 많으면 위에 점프 칩을 두어 아코디언을 길게 내리지 않고 바로 펼친다
+      axCard.appendChild(h("div", {class:"chips axjump", role:"group", "aria-label":"축으로 이동"}, jumpAxes.map(function(ax){
+        return h("button", {class:"chip" + (accOpen === "a:" + ax.name ? " on" : ""), type:"button", text:ax.name,
+          onclick:function(){
+            accOpen = "a:" + ax.name; renderDetail(true);
+            var el = document.querySelector('#decpane [data-acc="' + accOpen.replace(/"/g, '\\"') + '"]');
+            if (el && el.scrollIntoView) el.scrollIntoView({block:"nearest"});
+          }});
+      })));
+    }
+    var locked = axes.filter(function(ax){ return ax.locked; });
+    axes.forEach(function(ax){ if (!ax.locked) axCard.appendChild(axisCard(c, ax)); });
+    if (locked.length) axCard.appendChild(h("details", {class:"lockgrp"}, [
+      h("summary", {text:"이번 축 변경 대상이 아닌 축 " + locked.length + "개 (읽기 전용)"})
+    ].concat(locked.map(function(ax){ return axisCard(c, ax); }))));
     if (!axes.length) axCard.appendChild(h("div", {class:"muted", text:"축 정의가 없습니다."}));
     right.appendChild(axCard);
 
@@ -1277,15 +1725,20 @@ const DATA = /*__DATA__*/null;
       rvOn ? rvButton(c, "question", "", "필요한 질문 제안", "margin-left:auto") : null])]);
     var nqPanel = rvOn ? rvPanel(c, "question", "", null, true) : null;
     if (nqPanel) qCard.appendChild(nqPanel);
-    if (c.classify_failed) qCard.appendChild(h("div", {class:"note", text:"분류 실패 chunk는 질문 " + COM_Q + "만 판정합니다."}));
+    if (c.classify_failed) qCard.appendChild(h("div", {class:"note", text:COM_Q ? "분류 실패 chunk는 질문 " + COM_Q + "만 판정합니다." : "분류 실패 chunk라 판정할 공통 질문이 없습니다."}));
     if (c.label_failed) qCard.appendChild(h("div", {class:"note", text:"3차 라벨링이 실패했습니다. 봇 답 없이 판정 칸만 표시합니다."}));
     qids.forEach(function(q){ qCard.appendChild(questionCard(c, q)); });
     if (!qids.length) qCard.appendChild(h("div", {class:"muted", text:"이 chunk에 매핑된 질문이 없습니다."}));
-    right.appendChild(qCard);
+    if (!AXU) right.appendChild(qCard);  // axis-update 실행은 2·3차를 다시 돌리지 않으므로 질문 답을 검수하지 않는다
 
-    detailEl.appendChild(h("div", {class:"two"}, [left, right]));
+    detailEl.appendChild(h("div", {class:"work"}, [left, right]));
+    detailEl.appendChild(dock);
     renderSynBox();
-    if (keep) detailEl.scrollTop = y; else detailEl.scrollTop = 0;
+    detailEl.scrollTop = keep ? y.d : 0;
+    left.scrollTop = keep ? y.ev : 0;
+    right.scrollTop = keep ? y.dec : 0;
+    var ctxNew = document.getElementById("ctxtext");
+    if (ctxNew && keep) ctxNew.scrollTop = ctxY;
   }
   function setStatus(c, s){
     if (status[c.chunk_id] === s) delete status[c.chunk_id]; else status[c.chunk_id] = s;
@@ -1299,7 +1752,7 @@ const DATA = /*__DATA__*/null;
     if (n){
       select(n.chunk_id);
       var el = itemsEl.querySelector('.item[data-id="' + n.chunk_id.replace(/"/g, '\\"') + '"]');
-      if (el && el.scrollIntoView) el.scrollIntoView({block:"nearest"});
+      if (el && el.scrollIntoView) el.scrollIntoView({block:"nearest", inline:"nearest"});
     }
   }
   document.addEventListener("keydown", function(ev){
@@ -1327,24 +1780,30 @@ const DATA = /*__DATA__*/null;
     statEl = h("div");
     filtersEl = h("div", {class:"filters"});
     itemsEl = h("div", {class:"items", role:"list", "aria-label":"불량 chunk 목록"});
-    listEl = h("aside", {class:"list"}, [filtersEl, itemsEl]);
+    reasonEl = h("div", {class:"rsum"});
+    listEl = h("aside", {class:"list"}, [filtersEl, itemsEl, reasonEl]);
     detailEl = h("main", {class:"detail"});
     root.appendChild(h("div", {class:"app"}, [
       h("header", {class:"bar"}, [
         h("h1", {text:"검수"}),
+        AXU ? h("span", {class:"rvbadge", title:"대상 축: " + (AXU.target || []).join(", "),
+          text:"축 변경 검수 · 대상 축 " + (AXU.target || []).length + "개만 수정"}) : null,
         h("div", {class:"meta mono", text:"실행 " + DATA.run_id + "  ·  생성 " + (DATA.generated_at || "-") + "  ·  기준 unknown ≥ " + (flag.unknown_ratio_min !== undefined ? flag.unknown_ratio_min : "-") + ", 확신도 < " + (flag.confidence_min !== undefined ? flag.confidence_min : "-")}),
         h("div", {class:"sp", style:"flex:1"}),
         statEl,
         inboxEl = h("span", {class:"meta", role:"status"}),
-        doneBtn = h("button", {class:"btn primary", type:"button", text:"검수 완료", hidden:true,
-          title:"마지막 교정을 저장하고 반영·적재로 넘깁니다", onclick:reviewDone}),
+        h("button", {class:"btn", type:"button", text:"텍스트로 복사", onclick:copyText}),
         h("button", {class:"btn", type:"button", text:"JSON 저장", onclick:download}),
-        h("button", {class:"btn", type:"button", text:"텍스트로 복사", onclick:copyText})
+        doneBtn = h("button", {class:"btn primary", type:"button", text:"검수 완료", disabled:true,
+          title:"labelbot serve로 연 검수 화면에서만 누를 수 있습니다. 파일로 열었으면 JSON 저장 뒤 채팅으로 '검수 끝났어'라고 알려 주세요",
+          onclick:reviewDone})
       ]),
       h("div", {class:"cols"}, [listEl, detailEl])
     ]));
     var f = flat(visibleChunks());
     selId = f.length ? f[0].chunk_id : null;
+    accOpen = firstAcc;
+    document.querySelector(".bar").appendChild(filtersEl);   // 목록이 좁은 레일이라 필터는 위 바에 둔다
     renderList(); renderDetail();
     inboxCheck();
   }

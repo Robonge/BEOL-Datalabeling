@@ -1,75 +1,103 @@
 {"sheet": "taxonomy", "row": 1, "cells": ["축", "값", "상위값", "다중값", "계층", "중복 알림 제외", "종류", "정의·판정 규칙", "포함 예", "제외 예", "사용 여부"]}
-{"sheet": "taxonomy", "row": 2, "cells": ["구조/레이어", "", "", "Y", "N", "N", "분류", "논의 대상 배선층·비아층", "", "barrier/liner(→Material)"]}
+{"sheet": "taxonomy", "row": 2, "cells": ["구조/레이어", "", "", "Y", "Y", "N", "분류", "논의 대상 배선층·비아층", "", "barrier/liner(→Material)"]}
 {"sheet": "taxonomy", "row": 3, "cells": ["구조/레이어", "M0", "", "", "", "", "", "해당 번호 금속층"]}
-{"sheet": "taxonomy", "row": 4, "cells": ["구조/레이어", "M1", "", "", "", "", "", "해당 번호 금속층", "Metal1(→M1)"]}
-{"sheet": "taxonomy", "row": 5, "cells": ["구조/레이어", "M2", "", "", "", "", "", "해당 번호 금속층"]}
-{"sheet": "taxonomy", "row": 6, "cells": ["구조/레이어", "M3", "", "", "", "", "", "해당 번호 금속층"]}
-{"sheet": "taxonomy", "row": 7, "cells": ["구조/레이어", "Mx"]}
-{"sheet": "taxonomy", "row": 8, "cells": ["구조/레이어", "V0", "", "", "", "", "", "해당 번호 비아층"]}
-{"sheet": "taxonomy", "row": 9, "cells": ["구조/레이어", "V1", "", "", "", "", "", "해당 번호 비아층", "Via1(→V1)"]}
-{"sheet": "taxonomy", "row": 10, "cells": ["구조/레이어", "V2", "", "", "", "", "", "해당 번호 비아층"]}
-{"sheet": "taxonomy", "row": 11, "cells": ["구조/레이어", "V3", "", "", "", "", "", "해당 번호 비아층"]}
-{"sheet": "taxonomy", "row": 12, "cells": ["구조/레이어", "Vx"]}
-{"sheet": "taxonomy", "row": 13, "cells": ["구조/레이어", "JHV", "", "", "", "", "", "", "JGV(오타)"]}
-{"sheet": "taxonomy", "row": 14, "cells": ["공정 모듈", "", "", "Y", "N", "N", "분류", "공정 단계. Patterning·Material과 독립"]}
-{"sheet": "taxonomy", "row": 15, "cells": ["공정 모듈", "Litho", "", "", "", "", "", "노광·현상·overlay·litho CD", "EUV 노광", "식각 후 CD(→Etch)"]}
-{"sheet": "taxonomy", "row": 16, "cells": ["공정 모듈", "Etch", "", "", "", "", "", "trench·via 식각, hardmask open, strip", "punch-through"]}
-{"sheet": "taxonomy", "row": 17, "cells": ["공정 모듈", "Metal", "", "", "", "", "", "PVD·CVD·ALD, seed, 도금(ECP), 금속·barrier ", "ALD Ru liner"]}
-{"sheet": "taxonomy", "row": 18, "cells": ["공정 모듈", "CMP", "", "", "", "", "", "CCP, Cu CMP, API, node분리, node미분리", "over-polish, unCMP"]}
-{"sheet": "taxonomy", "row": 19, "cells": ["공정 모듈", "Clean", "", "", "", "", "", "식각·CMP 후 세정", "post-CMP clean"]}
-{"sheet": "taxonomy", "row": 20, "cells": ["제품·세대", "", "", "Y", "N", "N", "분류", "사내 제품·세대 코드."]}
-{"sheet": "taxonomy", "row": 21, "cells": ["제품·세대", "SF1.4", "", "", "", "", "", "", "SF1.4, 1.4나노,KVFI, KVFG"]}
-{"sheet": "taxonomy", "row": 22, "cells": ["제품·세대", "SF1.0", "", "", "", "", "", "", "KVDM, KVIP, KVKA, KVKA, SF1.0"]}
-{"sheet": "taxonomy", "row": 23, "cells": ["제품·세대", "SF0.7", "", "", "", "", "", "", "KVED"]}
-{"sheet": "taxonomy", "row": 24, "cells": ["제품·세대", "SF2", "", "", "", "", "", "", "SF2, 2나노"]}
-{"sheet": "taxonomy", "row": 25, "cells": ["제품·세대", "SF2X", "", "", "", "", "", "", "SF2X, 2나노4세대"]}
-{"sheet": "taxonomy", "row": 26, "cells": ["REMSPC", "", "", "Y", "N", "N", "분류", "변경 변수와 원인 범주를 모두 붙인다", "slurry B(→Materials)"]}
-{"sheet": "taxonomy", "row": 27, "cells": ["REMSPC", "Reticle", "", "", "", "", "", "마스크·레티클·OPC"]}
-{"sheet": "taxonomy", "row": 28, "cells": ["REMSPC", "Equipment", "", "", "", "", "", "장비·챔버·하드웨어·PM"]}
-{"sheet": "taxonomy", "row": 29, "cells": ["REMSPC", "Materials", "", "", "", "", "", "소재 변경", "slurry B"]}
-{"sheet": "taxonomy", "row": 30, "cells": ["REMSPC", "Scheme", "", "", "", "", "", "integration 구조·공정 순서", "semi-damascene vs DD"]}
-{"sheet": "taxonomy", "row": 31, "cells": ["REMSPC", "Process", "", "", "", "", "", "레시피 조건", "anneal 온도 split"]}
-{"sheet": "taxonomy", "row": 32, "cells": ["REMSPC", "Controllability", "", "", "", "", "", "산포·재현성·공정 제어", "wafer 내 산포"]}
-{"sheet": "taxonomy", "row": 33, "cells": ["Patterning", "", "", "Y", "N", "N", "분류", "패터닝 방식"]}
-{"sheet": "taxonomy", "row": 34, "cells": ["Patterning", "EUV-SAUP"]}
-{"sheet": "taxonomy", "row": 35, "cells": ["Patterning", "EUV-SET"]}
-{"sheet": "taxonomy", "row": 36, "cells": ["Patterning", "ArF-SET"]}
-{"sheet": "taxonomy", "row": 37, "cells": ["Patterning", "ArF-LELE", "", "", "", "", "", "ArF litho-etch 2회 이중 패터닝", "LELE", "SAxP"]}
-{"sheet": "taxonomy", "row": 38, "cells": ["Material", "", "", "Y", "N", "N", "분류", "막 재료 범주"]}
-{"sheet": "taxonomy", "row": 39, "cells": ["Material", "IMD", "", "", "", "", "", "층간 절연막(low-k, ULK, cap)", "ULK"]}
-{"sheet": "taxonomy", "row": 40, "cells": ["Material", "BM/Liner", "", "", "", "", "", "barrier metal과 liner", "TaN/Ta, Ru liner, RSBM"]}
-{"sheet": "taxonomy", "row": 41, "cells": ["Material", "Metallization", "", "", "", "", "", "배선 금속 자체", "Cu, Ru, Co, Mo"]}
-{"sheet": "taxonomy", "row": 42, "cells": ["불량 모드", "", "", "Y", "Y", "N", "분류", "전기적 불량 유형. 하위가 불분명하면 상위만"]}
-{"sheet": "taxonomy", "row": 43, "cells": ["불량 모드", "Open", "", "", "", "", "", "단선", "via open", "not open(→물리 현상)"]}
-{"sheet": "taxonomy", "row": 44, "cells": ["불량 모드", "Short", "", "", "", "", "", "인접 배선 단락, leakage spec 초과", "단락"]}
-{"sheet": "taxonomy", "row": 45, "cells": ["불량 모드", "Reliability", "", "", "", "", "", "신뢰성 열화"]}
-{"sheet": "taxonomy", "row": 46, "cells": ["불량 모드", "EM", "Reliability", "", "", "", "", "전자이동"]}
-{"sheet": "taxonomy", "row": 47, "cells": ["불량 모드", "TDDB", "Reliability", "", "", "", "", "절연막 시간 의존 파괴"]}
-{"sheet": "taxonomy", "row": 48, "cells": ["불량 모드", "Parametric", "", "", "", "", "", "spec 내 동작하나 전기 특성 이탈", "Rc 상승"]}
-{"sheet": "taxonomy", "row": 49, "cells": ["불량 모드", "Rs 산포", "Parametric", "", "", "", "", "배선 저항 산포·상승"]}
-{"sheet": "taxonomy", "row": 50, "cells": ["물리 현상", "", "", "Y", "N", "N", "분류", "물리적 메커니즘. 불량 모드와 별개"]}
-{"sheet": "taxonomy", "row": 51, "cells": ["물리 현상", "Void", "", "", "", "", "", "충진 내부 공극, seam", "보이드"]}
-{"sheet": "taxonomy", "row": 52, "cells": ["물리 현상", "metal bridge", "", "", "", "", "", "금속 잔류로 인접 배선 연결", "브릿지"]}
-{"sheet": "taxonomy", "row": 53, "cells": ["물리 현상", "not open", "", "", "", "", "", "식각 미완으로 하부층 미노출", "", "Open(→불량 모드)"]}
-{"sheet": "taxonomy", "row": 54, "cells": ["물리 현상", "unCMP", "", "", "", "", "", "연마 부족 잔류", "residue"]}
-{"sheet": "taxonomy", "row": 55, "cells": ["물리 현상", "hardmask loss", "", "", "", "", "", "hardmask 침식·소실", "MHM erosion"]}
-{"sheet": "taxonomy", "row": 56, "cells": ["물리 현상", "dishing", "", "", "", "", "", "넓은 배선 상부 과연마", "디싱"]}
-{"sheet": "taxonomy", "row": 57, "cells": ["물리 현상", "CD imbalance", "", "", "", "", "", "인접 패턴 CD 비대칭", "짝짝이, asymmetry"]}
-{"sheet": "taxonomy", "row": 58, "cells": ["결과", "", "", "Y", "N", "Y", "상태", "조건별로 엇갈리면 모두 붙인다", "SP-01 PASS, SP-02 FAIL(→improved+degraded)"]}
-{"sheet": "taxonomy", "row": 59, "cells": ["결과", "improved", "", "", "", "", "", "개선"]}
-{"sheet": "taxonomy", "row": 60, "cells": ["결과", "degraded", "", "", "", "", "", "악화"]}
-{"sheet": "taxonomy", "row": 61, "cells": ["결과", "neutral", "", "", "", "", "", "차이 없음"]}
-{"sheet": "taxonomy", "row": 62, "cells": ["결과", "inconclusive", "", "", "", "", "", "판단 불가"]}
-{"sheet": "taxonomy", "row": 63, "cells": ["의사결정 상태", "", "", "N", "N", "N", "상태", "하나라도 채택이면 adopted, 전부 기각이면 rejected, 평가는 있으나 결론 미기재면 pending, 평가 내용이 없으면 해당 없음"]}
-{"sheet": "taxonomy", "row": 64, "cells": ["의사결정 상태", "adopted", "", "", "", "", "", "채택"]}
-{"sheet": "taxonomy", "row": 65, "cells": ["의사결정 상태", "rejected", "", "", "", "", "", "기각"]}
-{"sheet": "taxonomy", "row": 66, "cells": ["의사결정 상태", "pending", "", "", "", "", "", "미결", "조건부 채택(→pending)"]}
-{"sheet": "taxonomy", "row": 68, "cells": ["물리 현상", "CD small", "", "", "", "", "", "CD 감소로 인한 어떠한 불량 발생 혹은 수율 개선, ET결과의 차이"]}
-{"sheet": "taxonomy", "row": 69, "cells": ["물리 현상", "CD 산포불량", "", "", "", "", "", "WF map의 CD산포 불량, CD의 3sigma 증가 등"]}
-{"sheet": "taxonomy", "row": 70, "cells": ["공정 모듈", "CVD", "", "", "", "", "", "IMD, HDLK, HCLK, low-k dielectric, PID"]}
-{"sheet": "taxonomy", "row": 71, "cells": ["불량 모드", "MHC"]}
-{"sheet": "taxonomy", "row": 72, "cells": ["불량 모드", "Via Rc high", "MHC", "", "", "", "", "Via 저항 상승, Via Rc 상승"]}
-{"sheet": "taxonomy", "row": 73, "cells": ["불량 모드", "Line R high", "MHC", "", "", "", "", "Line 저항 상승, CMBSRP 저항 상승"]}
+{"sheet": "taxonomy", "row": 4, "cells": ["구조/레이어", "M1", "", "", "", "", "", "해당 번호 금속층", "Metal1(→M1), I1"]}
+{"sheet": "taxonomy", "row": 5, "cells": ["구조/레이어", "I1", "M1", "", "", "", "", "I1은 M1 layer에서 SAUP 혹은 r-SAUP공정을 적용할 때 진행되는 photo layer의 이름"]}
+{"sheet": "taxonomy", "row": 6, "cells": ["구조/레이어", "X1", "M1", "", "", "", "", "X1은 M1 layer의 cut 공정 중 하나"]}
+{"sheet": "taxonomy", "row": 7, "cells": ["구조/레이어", "L1", "M1", "", "", "", "", "L1은 M1 layer의 cut 공정 중 하나"]}
+{"sheet": "taxonomy", "row": 8, "cells": ["구조/레이어", "M2", "", "", "", "", "", "해당 번호 금속층"]}
+{"sheet": "taxonomy", "row": 9, "cells": ["구조/레이어", "M3", "", "", "", "", "", "해당 번호 금속층"]}
+{"sheet": "taxonomy", "row": 10, "cells": ["구조/레이어", "X3", "M3", "", "", "", "", "X3는 M3 layer의 cut 공정 중 하나"]}
+{"sheet": "taxonomy", "row": 11, "cells": ["구조/레이어", "M4", "", "", "", "", "", "해당 번호 금속층", "F4,F5,F6,F7,F8"]}
+{"sheet": "taxonomy", "row": 12, "cells": ["구조/레이어", "Fx", "", "", "", "", "", "32~70 nm 피치 수준에서 intermediate interconnect 역할을 하는 레이어를 가리킨다.", "F4처럼 F가 붙은 레이어가 해당 피치와 역할을 충족하는 경우"]}
+{"sheet": "taxonomy", "row": 13, "cells": ["구조/레이어", "Dx", "", "", "", "", "", "해당 번호 금속층", "D5,D6,D7,D8~D15"]}
+{"sheet": "taxonomy", "row": 14, "cells": ["구조/레이어", "Dx", "", "", "", "", "", "해당 번호 금속층"]}
+{"sheet": "taxonomy", "row": 15, "cells": ["구조/레이어", "VA", "", "", "", "", "", "해당 번호 비아층"]}
+{"sheet": "taxonomy", "row": 16, "cells": ["구조/레이어", "V1", "", "", "", "", "", "해당 번호 비아층", "Via1(→V1)"]}
+{"sheet": "taxonomy", "row": 17, "cells": ["구조/레이어", "V2", "", "", "", "", "", "해당 번호 비아층"]}
+{"sheet": "taxonomy", "row": 18, "cells": ["구조/레이어", "V3", "", "", "", "", "", "해당 번호 비아층"]}
+{"sheet": "taxonomy", "row": 19, "cells": ["구조/레이어", "Sx", "", "", "", "", "", "해당 번호 비아층", "S6,S7,S8~S14"]}
+{"sheet": "taxonomy", "row": 20, "cells": ["구조/레이어", "JHV", "", "", "", "", "", "", "JGV(오타)"]}
+{"sheet": "taxonomy", "row": 21, "cells": ["Main step", "", "", "Y", "N", "N", "분류", "각 layer별 Main 공정에 대한 step terminology", "AASI, AMI, ACI, ASI, AEI, ASEI, API"]}
+{"sheet": "taxonomy", "row": 22, "cells": ["Main step", "AASI"]}
+{"sheet": "taxonomy", "row": 23, "cells": ["Main step", "ASEI"]}
+{"sheet": "taxonomy", "row": 24, "cells": ["Main step", "AMI"]}
+{"sheet": "taxonomy", "row": 25, "cells": ["Main step", "ACI"]}
+{"sheet": "taxonomy", "row": 26, "cells": ["Main step", "API"]}
+{"sheet": "taxonomy", "row": 27, "cells": ["Main step", "AHI"]}
+{"sheet": "taxonomy", "row": 28, "cells": ["Main step", "AEI"]}
+{"sheet": "taxonomy", "row": 29, "cells": ["Main step", "ASI"]}
+{"sheet": "taxonomy", "row": 30, "cells": ["공정 모듈", "", "", "Y", "N", "N", "분류", "공정 단계. Patterning·Material과 독립"]}
+{"sheet": "taxonomy", "row": 31, "cells": ["공정 모듈", "Litho", "", "", "", "", "", "노광·현상·overlay·litho CD", "EUV 노광", "식각 후 CD(→Etch)"]}
+{"sheet": "taxonomy", "row": 32, "cells": ["공정 모듈", "Etch", "", "", "", "", "", "trench·via 식각, hardmask open, strip", "punch-through"]}
+{"sheet": "taxonomy", "row": 33, "cells": ["공정 모듈", "Metal", "", "", "", "", "", "PVD·CVD·ALD, seed, 도금(ECP), 금속·barrier ", "ALD Ru liner"]}
+{"sheet": "taxonomy", "row": 34, "cells": ["공정 모듈", "CMP", "", "", "", "", "", "CCP, Cu CMP, API, node분리, node미분리", "over-polish, unCMP"]}
+{"sheet": "taxonomy", "row": 35, "cells": ["공정 모듈", "Clean", "", "", "", "", "", "식각·CMP 후 세정", "post-CMP clean"]}
+{"sheet": "taxonomy", "row": 36, "cells": ["제품·세대", "", "", "Y", "N", "N", "분류", "사내 제품·세대 코드."]}
+{"sheet": "taxonomy", "row": 37, "cells": ["제품·세대", "SF1.4", "", "", "", "", "", "", "SF1.4, 1.4나노,KVFI, KVFG"]}
+{"sheet": "taxonomy", "row": 38, "cells": ["제품·세대", "SF1.0", "", "", "", "", "", "", "KVDM, KVIP, KVKA, KVKA, SF1.0"]}
+{"sheet": "taxonomy", "row": 39, "cells": ["제품·세대", "SF0.7", "", "", "", "", "", "", "KVED"]}
+{"sheet": "taxonomy", "row": 40, "cells": ["제품·세대", "SF2", "", "", "", "", "", "", "SF2, 2나노"]}
+{"sheet": "taxonomy", "row": 41, "cells": ["제품·세대", "SF2X", "", "", "", "", "", "", "SF2X, 2나노4세대"]}
+{"sheet": "taxonomy", "row": 42, "cells": ["REMSPC", "", "", "Y", "N", "N", "분류", "변경 변수와 원인 범주를 모두 붙인다", "slurry B(→Materials)"]}
+{"sheet": "taxonomy", "row": 43, "cells": ["REMSPC", "Reticle", "", "", "", "", "", "마스크·레티클·OPC"]}
+{"sheet": "taxonomy", "row": 44, "cells": ["REMSPC", "Equipment", "", "", "", "", "", "장비·챔버·하드웨어·PM"]}
+{"sheet": "taxonomy", "row": 45, "cells": ["REMSPC", "Materials", "", "", "", "", "", "소재 변경", "slurry B"]}
+{"sheet": "taxonomy", "row": 46, "cells": ["REMSPC", "Scheme", "", "", "", "", "", "integration 구조·공정 순서", "semi-damascene vs DD"]}
+{"sheet": "taxonomy", "row": 47, "cells": ["REMSPC", "Process", "", "", "", "", "", "레시피 조건", "anneal 온도 split"]}
+{"sheet": "taxonomy", "row": 48, "cells": ["REMSPC", "Controllability", "", "", "", "", "", "산포·재현성·공정 제어", "wafer 내 산포"]}
+{"sheet": "taxonomy", "row": 49, "cells": ["Patterning/scheme", "", "", "Y", "N", "N", "분류", "패터닝 방식"]}
+{"sheet": "taxonomy", "row": 50, "cells": ["Patterning/scheme", "EUV-SAUP"]}
+{"sheet": "taxonomy", "row": 51, "cells": ["Patterning/scheme", "EUV-SET"]}
+{"sheet": "taxonomy", "row": 52, "cells": ["Patterning/scheme", "ArF-SET"]}
+{"sheet": "taxonomy", "row": 53, "cells": ["Patterning/scheme", "ArF-LELE", "", "", "", "", "", "ArF litho-etch 2회 이중 패터닝", "LELE", "SAxP"]}
+{"sheet": "taxonomy", "row": 54, "cells": ["Patterning/scheme", "Cu dual damascene"]}
+{"sheet": "taxonomy", "row": 55, "cells": ["Patterning/scheme", "Cu single damascene"]}
+{"sheet": "taxonomy", "row": 56, "cells": ["Patterning/scheme", "Ru subtractive"]}
+{"sheet": "taxonomy", "row": 57, "cells": ["Patterning/scheme", "Ru semi-damascene"]}
+{"sheet": "taxonomy", "row": 58, "cells": ["Material", "", "", "Y", "N", "N", "분류", "막 재료 범주"]}
+{"sheet": "taxonomy", "row": 59, "cells": ["Material", "CMP slurry", "", "", "", "", "", "CMP slurry ceria슬러리", "TNP, NSF, PSM, ceria"]}
+{"sheet": "taxonomy", "row": 60, "cells": ["Material", "Clean chemical", "", "", "", "", "", "Clean 세정 공정의 chemical 관련", "EKC, BTS, SC1, ILM, dHF"]}
+{"sheet": "taxonomy", "row": 61, "cells": ["Material", "IMD", "", "", "", "", "", "층간 절연막(low-k, ULK, cap)", "ULK"]}
+{"sheet": "taxonomy", "row": 62, "cells": ["Material", "BM/Liner", "", "", "", "", "", "barrier metal과 liner", "TaN/Ta, Ru liner, RSBM"]}
+{"sheet": "taxonomy", "row": 63, "cells": ["Material", "Metallization", "", "", "", "", "", "배선 금속 자체", "Cu, Ru, Co, Mo"]}
+{"sheet": "taxonomy", "row": 64, "cells": ["불량 모드", "", "", "Y", "Y", "N", "분류", "전기적 불량 유형. 하위가 불분명하면 상위만"]}
+{"sheet": "taxonomy", "row": 65, "cells": ["불량 모드", "Open", "", "", "", "", "", "단선", "via open", "not open(→물리 현상)"]}
+{"sheet": "taxonomy", "row": 66, "cells": ["불량 모드", "Short", "", "", "", "", "", "인접 배선 단락, leakage spec 초과", "단락"]}
+{"sheet": "taxonomy", "row": 67, "cells": ["불량 모드", "Reliability", "", "", "", "", "", "신뢰성 열화"]}
+{"sheet": "taxonomy", "row": 68, "cells": ["불량 모드", "EM", "Reliability", "", "", "", "", "전자이동"]}
+{"sheet": "taxonomy", "row": 69, "cells": ["불량 모드", "TDDB", "Reliability", "", "", "", "", "절연막 시간 의존 파괴"]}
+{"sheet": "taxonomy", "row": 70, "cells": ["불량 모드", "Parametric", "", "", "", "", "", "spec 내 동작하나 전기 특성 이탈", "Rc 상승"]}
+{"sheet": "taxonomy", "row": 71, "cells": ["불량 모드", "Rs 산포", "Parametric", "", "", "", "", "배선 저항 산포·상승"]}
+{"sheet": "taxonomy", "row": 72, "cells": ["물리 현상", "", "", "Y", "N", "N", "분류", "물리적 메커니즘. 불량 모드와 별개"]}
+{"sheet": "taxonomy", "row": 73, "cells": ["물리 현상", "Void", "", "", "", "", "", "충진 내부 공극, seam", "보이드"]}
+{"sheet": "taxonomy", "row": 74, "cells": ["물리 현상", "metal bridge", "", "", "", "", "", "금속 잔류로 인접 배선 연결", "브릿지"]}
+{"sheet": "taxonomy", "row": 75, "cells": ["물리 현상", "not open", "", "", "", "", "", "식각 미완으로 하부층 미노출", "", "Open(→불량 모드)"]}
+{"sheet": "taxonomy", "row": 76, "cells": ["물리 현상", "unCMP", "", "", "", "", "", "연마 부족 잔류", "residue"]}
+{"sheet": "taxonomy", "row": 77, "cells": ["물리 현상", "overCMP"]}
+{"sheet": "taxonomy", "row": 78, "cells": ["물리 현상", "hardmask loss", "", "", "", "", "", "hardmask 침식·소실", "MHM erosion"]}
+{"sheet": "taxonomy", "row": 79, "cells": ["물리 현상", "dishing", "", "", "", "", "", "넓은 배선 상부 과연마", "디싱, dishing"]}
+{"sheet": "taxonomy", "row": 80, "cells": ["물리 현상", "Particle", "", "", "", "", "", "Particle 불량, DF PC", "PC성, DF PC, DF count"]}
+{"sheet": "taxonomy", "row": 81, "cells": ["물리 현상", "CD imbalance", "", "", "", "", "", "인접 패턴 CD 비대칭", "짝짝이, asymmetry"]}
+{"sheet": "taxonomy", "row": 82, "cells": ["결과", "", "", "Y", "N", "Y", "상태", "조건별로 엇갈리면 모두 붙인다", "SP-01 PASS, SP-02 FAIL(→improved+degraded)"]}
+{"sheet": "taxonomy", "row": 83, "cells": ["결과", "improved", "", "", "", "", "", "개선"]}
+{"sheet": "taxonomy", "row": 84, "cells": ["결과", "degraded", "", "", "", "", "", "악화"]}
+{"sheet": "taxonomy", "row": 85, "cells": ["결과", "neutral", "", "", "", "", "", "차이 없음"]}
+{"sheet": "taxonomy", "row": 86, "cells": ["결과", "inconclusive", "", "", "", "", "", "판단 불가"]}
+{"sheet": "taxonomy", "row": 87, "cells": ["의사결정 상태", "", "", "N", "N", "N", "상태", "하나라도 채택이면 adopted, 전부 기각이면 rejected, 평가는 있으나 결론 미기재면 pending, 평가 내용이 없으면 해당 없음"]}
+{"sheet": "taxonomy", "row": 88, "cells": ["의사결정 상태", "adopted", "", "", "", "", "", "채택"]}
+{"sheet": "taxonomy", "row": 89, "cells": ["의사결정 상태", "rejected", "", "", "", "", "", "기각"]}
+{"sheet": "taxonomy", "row": 90, "cells": ["의사결정 상태", "pending", "", "", "", "", "", "미결", "조건부 채택(→pending)"]}
+{"sheet": "taxonomy", "row": 91, "cells": ["의사결정 상태", "", "", "N", "N", "N", "상태", "하나라도 채택이면 adopted, 전부 기각이면 rejected, 평가는 있으나 결론 미기재면 pending, 평가 내용이 없으면 해당 없음"]}
+{"sheet": "taxonomy", "row": 92, "cells": ["물리 현상", "CD small", "", "", "", "", "", "CD 감소로 인한 어떠한 불량 발생 혹은 수율 개선, ET결과의 차이"]}
+{"sheet": "taxonomy", "row": 93, "cells": ["물리 현상", "CD 산포불량", "", "", "", "", "", "WF map의 CD산포 불량, CD의 3sigma 증가 등"]}
+{"sheet": "taxonomy", "row": 94, "cells": ["공정 모듈", "CVD", "", "", "", "", "", "IMD, HDLK, HCLK, low-k dielectric, PID"]}
+{"sheet": "taxonomy", "row": 95, "cells": ["불량 모드", "MHC"]}
+{"sheet": "taxonomy", "row": 96, "cells": ["불량 모드", "Via Rc high", "MHC", "", "", "", "", "Via 저항 상승, Via Rc 상승"]}
+{"sheet": "taxonomy", "row": 97, "cells": ["불량 모드", "Line R high", "MHC", "", "", "", "", "Line 저항 상승, CMBSRP 저항 상승"]}
+{"sheet": "taxonomy", "row": 99, "cells": ["불량 모드", "MinA void", "Open"]}
+{"sheet": "taxonomy", "row": 100, "cells": ["물리 현상", "low-k plasma damage"]}
+{"sheet": "taxonomy", "row": 101, "cells": ["물리 현상", "계면 산화"]}
 {"sheet": "questions", "row": 1, "cells": ["질문 ID", "문장", "적용 대상", "우선순위"]}
 {"sheet": "questions", "row": 2, "cells": ["Q-COM-001", "이 chunk가 BEOL interconnect 공정에 관련한 내용이 맞는가?", "공통", "1"]}
 {"sheet": "synonyms", "row": 1, "cells": ["동의어", "표준어", "메모"]}
@@ -86,4 +114,34 @@
 {"sheet": "synonyms", "row": 12, "cells": ["Via1", "V1", "더미"]}
 {"sheet": "synonyms", "row": 13, "cells": ["디싱", "dishing", "더미"]}
 {"sheet": "synonyms", "row": 14, "cells": ["브릿지", "metal bridge", "더미"]}
+{"sheet": "synonyms", "row": 15, "cells": ["Barrier", "BM/Liner", "후보"]}
+{"sheet": "synonyms", "row": 16, "cells": ["BM scheme", "Scheme", "후보"]}
+{"sheet": "synonyms", "row": 17, "cells": ["bridge성", "metal bridge", "후보"]}
+{"sheet": "synonyms", "row": 18, "cells": ["CD 축소", "CD small", "후보"]}
+{"sheet": "synonyms", "row": 19, "cells": ["die yield by split", "split별 다이 수율", "후보"]}
+{"sheet": "synonyms", "row": 20, "cells": ["etch bias", "Process", "후보"]}
+{"sheet": "synonyms", "row": 21, "cells": ["F4", "M4", "후보"]}
+{"sheet": "synonyms", "row": 22, "cells": ["Fail die count", "불량 다이 수", "후보"]}
+{"sheet": "synonyms", "row": 23, "cells": ["HCLK", "IMD", "후보"]}
+{"sheet": "synonyms", "row": 24, "cells": ["KVFG", "SF1.4", "후보"]}
+{"sheet": "synonyms", "row": 25, "cells": ["Line Rs", "배선 저항", "후보"]}
+{"sheet": "synonyms", "row": 26, "cells": ["liner/barrier", "BM/Liner", "후보"]}
+{"sheet": "synonyms", "row": 27, "cells": ["median", "중앙값", "후보"]}
+{"sheet": "synonyms", "row": 28, "cells": ["MHM 고갈", "hardmask loss", "후보"]}
+{"sheet": "synonyms", "row": 29, "cells": ["MHM 소실", "hardmask loss", "후보"]}
+{"sheet": "synonyms", "row": 30, "cells": ["Open 열화", "degraded", "후보"]}
+{"sheet": "synonyms", "row": 31, "cells": ["open성 fail", "Open", "후보"]}
+{"sheet": "synonyms", "row": 32, "cells": ["POR 대비 전 항목 동등", "neutral", "후보"]}
+{"sheet": "synonyms", "row": 33, "cells": ["POR 동등", "neutral", "후보"]}
+{"sheet": "synonyms", "row": 34, "cells": ["POR 수준", "neutral", "후보"]}
+{"sheet": "synonyms", "row": 35, "cells": ["profile 차이 미미", "neutral", "후보"]}
+{"sheet": "synonyms", "row": 36, "cells": ["Yield", "수율", "후보"]}
+{"sheet": "synonyms", "row": 37, "cells": ["동등", "neutral", "후보"]}
+{"sheet": "synonyms", "row": 38, "cells": ["미개구", "not open", "후보"]}
+{"sheet": "synonyms", "row": 39, "cells": ["열화", "degraded", "후보"]}
+{"sheet": "synonyms", "row": 40, "cells": ["후보 조건", "pending", "후보"]}
+{"sheet": "synonyms", "row": 41, "cells": ["AHI", "Cut SOH etch후", "후보"]}
+{"sheet": "synonyms", "row": 42, "cells": ["DD", "Dual damascene", "Cu 듀얼 다마신의 약자"]}
+{"sheet": "synonyms", "row": 43, "cells": ["Ruthenium", "Ru"]}
+{"sheet": "synonyms", "row": 44, "cells": ["THK", "thickness", "후보"]}
 {"sheet": "rejected", "row": 1, "cells": ["종류", "내용", "기각일", "사유"]}

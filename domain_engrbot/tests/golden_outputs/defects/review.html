@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>검수봇 검토 화면</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --surface:#F6F8FC; --surface-2:#E4EAF3;
+  --text-strong:#1E2D4A; --text-muted:#6F7F99;
+  --danger:#C25450; --warning:#C99A3B; --success:#3B8A6E;
+  --radius-sm:8px; --radius:12px;
+  --font:'Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);font-size:13.5px;line-height:1.55;letter-spacing:-0.02em;color:var(--text-strong);background:var(--bg-base)}
+h1,h2,h3,h4{margin:0;font-weight:700}
+button,input,textarea,select{font:inherit;letter-spacing:inherit;color:inherit}
+.mono{font-family:var(--mono);letter-spacing:-0.01em}
+.muted{color:var(--text-muted)}
+.app{display:grid;grid-template-rows:auto auto 1fr;height:100vh}
+.bar{display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--bg-grid);flex-wrap:wrap}
+.bar h1{font-size:18px;letter-spacing:-0.055em}
+.bar .meta{font-size:11.5px;color:var(--text-muted)}
+.bar .sp{flex:1}
+.bar input{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--surface);width:150px}
+.tabs{display:flex;gap:6px;padding:8px 20px;border-bottom:1px solid var(--bg-grid);flex-wrap:wrap}
+.tab{border:1px solid var(--bg-grid);background:transparent;border-radius:999px;padding:4px 14px;cursor:pointer;font-weight:700}
+.tab.on{background:var(--primary);border-color:var(--primary);color:#EDF1F7}
+.tab .n{font-family:var(--mono);margin-left:6px;opacity:.8}
+.cols{display:grid;grid-template-columns:340px 1fr;min-height:0}
+.cols.full{grid-template-columns:1fr}
+.list{border-right:1px solid var(--bg-grid);display:flex;flex-direction:column;min-height:0}
+.filters{padding:10px 12px;border-bottom:1px solid var(--bg-grid)}
+.filters .lbl{font-size:11px;color:var(--text-muted);margin-bottom:6px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{border:1px solid var(--bg-grid);background:transparent;border-radius:999px;padding:2px 10px;font-size:11.5px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#EDF1F7}
+.chip .n{font-family:var(--mono);margin-left:5px;opacity:.75}
+.items{overflow:auto;padding:8px 10px 30px;flex:1}
+.grp{border-left:3px solid var(--primary-soft);margin:8px 0;padding-left:6px;background:rgba(107,130,196,.06)}
+.grp .gh{font-size:10.5px;color:var(--primary);padding:3px 4px 1px}
+.item{display:block;width:100%;text-align:left;border:1px solid transparent;background:var(--surface);border-radius:var(--radius-sm);padding:7px 10px;margin:4px 0;cursor:pointer}
+.item.on{border-color:var(--primary);box-shadow:0 5px 16px rgba(53,70,144,.14)}
+.item .l1{display:flex;gap:8px;font-size:11px;color:var(--text-muted)}
+.item .l1 .id{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .l2{font-weight:700;font-size:13px;margin:2px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tags{display:flex;gap:4px;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:9.5px;border:1px solid var(--bg-grid);border-radius:5px;padding:0 5px;color:var(--text-muted)}
+.tag.critical{border-color:var(--danger);color:var(--danger)}
+.tag.major{border-color:var(--warning);color:#A97C1F}
+.done{font-size:10.5px;font-weight:700;border-radius:999px;padding:0 7px;border:1px solid var(--success);color:var(--success)}
+.detail{overflow:auto;min-height:0;padding:18px 24px 60px}
+.dh h2{font-size:19px;letter-spacing:-0.05em;word-break:break-all}
+.dh .path{font-size:11.5px;color:var(--text-muted);word-break:break-all}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start;margin-top:12px}
+.card{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
+.card h3{font-size:14px;margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.text{white-space:pre-wrap;word-break:break-word;line-height:1.7;max-height:460px;overflow:auto}
+mark{background:none;color:inherit;border-radius:3px;padding:0 1px}
+mark.q{background:rgba(194,84,80,.22);box-shadow:inset 0 -2px 0 var(--danger)}
+mark.s{background:rgba(74,95,168,.14);box-shadow:inset 0 -2px 0 var(--primary)}
+.imgs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.imgs img{height:92px;max-width:170px;object-fit:contain;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);cursor:zoom-in}
+.slideimgs{margin-top:10px}
+.slideimgs .sl{font-size:11.5px;font-weight:700;color:var(--text-muted)}
+.slideimgs .imgs{margin-top:4px}
+.others{margin-top:12px;border-top:1px dashed var(--bg-grid);padding-top:8px}
+.others summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--primary)}
+.slideprev{display:block;width:100%;max-height:420px;object-fit:contain;margin-top:4px;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);cursor:zoom-in}
+.ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:8px}
+.ocard{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:6px;background:var(--bg-base)}
+.ocard .ot{font-size:11.5px;font-weight:700;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ocard .slideprev{max-height:150px}
+.ocard .noprev{height:72px;display:flex;align-items:center;justify-content:center;font-size:11.5px;color:var(--text-muted);border:1px dashed var(--bg-grid);border-radius:var(--radius-sm);margin-top:4px}
+.ocard .imgs img{height:48px;max-width:80px}
+.fld{border-top:1px dashed var(--bg-grid);padding:9px 0}
+.fld:first-of-type{border-top:0}
+.fld.prob{background:rgba(201,154,59,.08);margin:0 -8px;padding:9px 8px;border-radius:var(--radius-sm)}
+.fh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.fh b{font-size:13px}
+.badge{font-size:10px;border:1px solid var(--bg-grid);border-radius:5px;padding:0 5px;color:var(--text-muted)}
+.badge.prob{border-color:var(--warning);color:#A97C1F}
+.v{display:inline-block;font-size:12px;border-radius:6px;padding:0 8px;border:1px solid var(--primary);background:rgba(74,95,168,.12);color:var(--primary-deep);margin-right:4px}
+.v.na{border-color:var(--bg-grid);background:transparent;color:var(--text-muted)}
+.ev{font-size:12px;border-left:2px solid var(--warning);padding-left:8px;margin:3px 0;word-break:break-word}
+.defs{font-size:11.5px;margin:3px 0}
+.defs summary{cursor:pointer;color:var(--primary)}
+.defs dl{margin:4px 0 0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
+.defs dt{font-weight:700}
+.defs dd{margin:0;color:var(--text-muted)}
+.opts{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.common{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 8px;padding:8px;border:1px dashed var(--primary);border-radius:var(--radius-sm);font-size:11.5px}
+.common .btn[disabled]{opacity:.55;cursor:default}
+.fromtag{display:inline-block;margin-top:5px;font-size:11px;color:var(--primary);border:1px solid var(--primary);border-radius:5px;padding:0 6px}
+.opt{border:1px solid var(--bg-grid);background:transparent;border-radius:var(--radius-sm);padding:2px 10px;cursor:pointer;font-size:12px}
+.opt[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#EDF1F7;font-weight:700}
+.edit{margin-top:6px;display:flex;flex-direction:column;gap:5px}
+.edit .vals{display:flex;gap:4px 10px;flex-wrap:wrap;font-size:12px}
+.edit textarea,.edit input[type=text],.edit select,.pin input,.pin select,.pin textarea{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--bg-base);width:100%}
+.edit textarea{height:52px}
+.btn{border:1px solid var(--bg-grid);background:var(--surface);border-radius:var(--radius-sm);padding:6px 12px;cursor:pointer;font-weight:700;font-size:12.5px}
+.btn.primary{background:var(--primary-deep);color:#EDF1F7;border-color:var(--primary-deep)}
+.btn.sm{padding:3px 9px;font-size:11.5px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{border:1px solid var(--bg-grid);padding:4px 8px;text-align:left;vertical-align:top;word-break:break-word}
+th{background:var(--surface-2)}
+.wide{padding:16px 24px 60px;overflow:auto;min-height:0}
+.agrp summary{cursor:pointer;font-weight:700;font-size:14px}
+.agrp .meta{font-size:12px;color:var(--text-muted);margin-left:8px;font-weight:400}
+.pin{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:6px}
+.note{font-size:12px;color:var(--text-muted);border:1px dashed var(--bg-grid);border-radius:var(--radius-sm);padding:5px 9px;margin-bottom:8px}
+.emptystate{max-width:520px;margin:14vh auto;text-align:center;color:var(--text-muted)}
+dialog{border:1px solid var(--bg-grid);border-radius:var(--radius);background:var(--surface);width:min(640px,92vw);padding:18px}
+dialog textarea{width:100%;height:240px;font-family:var(--mono);font-size:12px}
+.zoom{position:fixed;inset:0;background:rgba(30,45,74,.7);display:none;align-items:center;justify-content:center;z-index:50;cursor:zoom-out}
+.zoom.on{display:flex}
+.zoom img{max-width:92vw;max-height:92vh;background:var(--bg-base)}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--text-strong);color:#EDF1F7;padding:8px 14px;border-radius:var(--radius-sm);font-size:12.5px;opacity:0;pointer-events:none;z-index:60}
+.toast.on{opacity:1}
+.donesum{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.donesum span{font-size:12px;border:1px solid var(--bg-grid);border-radius:999px;padding:1px 10px;background:var(--bg-base)}
+.donesum span.w{border-color:var(--warning);color:#A97C1F}
+ol.next{margin:8px 0 0 18px;font-size:13px;line-height:1.7}
+ol.next li{margin-bottom:4px}
+.manual{margin-top:8px;font-size:12px}
+.manual summary{cursor:pointer;color:var(--primary)}
+.manual pre{white-space:pre-wrap;word-break:break-all;background:var(--bg-base);border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:8px;margin-top:6px;font-size:11.5px}
+.donetag{font-size:11.5px;font-weight:700;color:var(--success);border:1px solid var(--success);border-radius:999px;padding:1px 9px}
+.hint{font-size:12px;color:var(--text-muted)}
+@media (max-width:1180px){ .two{grid-template-columns:1fr} }
+@media (max-width:860px){ .app{height:auto} .cols{grid-template-columns:1fr} .items{max-height:260px} .pin{grid-template-columns:1fr 1fr} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="zoom" id="zoom" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status"></div>
+<dialog id="dlg">
+  <h3>결정 JSON 텍스트</h3>
+  <p id="dlgP" class="muted"></p>
+  <textarea id="dlgTa" readonly aria-label="결정 JSON"></textarea>
+  <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" id="dlgSel" type="button">전체 선택</button>
+    <button class="btn primary" id="dlgClose" type="button">닫기</button>
+  </div>
+</dialog>
+<dialog id="doneDlg" aria-labelledby="doneH">
+  <h3 id="doneH">검수 완료 · 다음 단계</h3>
+  <p id="doneFile" class="muted"></p>
+  <div id="doneSum" class="donesum"></div>
+  <ol class="next">
+    <li>Claude에게 <b>"QA 검수 끝났어"</b>라고 알려 주세요. <button class="btn sm" id="donePhrase" type="button">문구 복사</button></li>
+    <li id="doneMove"></li>
+    <li>골든셋 추가와 피드백 묶음(교정 · 재작업 · 규칙 제안)을 만들고 건수를 알려 줍니다. 파일을 직접 옮길 필요는 없습니다.</li>
+  </ol>
+  <details class="manual"><summary>Claude 없이 직접 하려면</summary><pre id="doneCmd" class="mono"></pre></details>
+  <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" id="doneAgain" type="button">다시 내려받기</button>
+    <button class="btn primary" id="doneClose" type="button">닫기</button>
+  </div>
+</dialog>
+
+<script>
+const DATA = {"answers_allowed": ["O", "X", "N/A"], "approved_rules": [], "autofix": [{"approved": false, "items": [{"after": "2026-07-12", "before": "2026.7.12", "field": "extract:date#0", "record_id": "112bdd0be47b5ccc:ppt/slides/slide7.xml"}, {"after": "2026-02-04", "before": "2026.2.4", "field": "extract:date#0", "record_id": "1a0628f1557359fa:ppt/slides/slide2.xml"}, {"after": "2026-01-26", "before": "2026.1.26", "field": "extract:date#0", "record_id": "1a0628f1557359fa:ppt/slides/slide6.xml"}], "rule": "date_iso", "rules": ["date_iso"]}, {"approved": false, "items": [{"after": ["BM/Liner"], "before": ["bm/liner"], "field": "axis:Material", "record_id": "112bdd0be47b5ccc:ppt/slides/slide8.xml"}, {"after": ["IMD", "BM/Liner"], "before": ["imd", "BM/Liner"], "field": "axis:Material", "record_id": "112bdd0be47b5ccc:ppt/slides/slide9.xml"}], "rule": "taxonomy_case", "rules": ["taxonomy_case"]}], "axes": [{"definition": "논의 대상 배선층·비아층", "kind": "분류", "multi": true, "name": "구조/레이어", "values": [{"definition": "해당 번호 금속층", "name": "M0", "parent": null}, {"definition": "해당 번호 금속층", "name": "M1", "parent": null}, {"definition": "해당 번호 금속층", "name": "M2", "parent": null}, {"definition": "해당 번호 금속층", "name": "M3", "parent": null}, {"definition": "해당 번호 금속층", "name": "M4", "parent": null}, {"definition": "해당 번호 금속층", "name": "Fx", "parent": null}, {"definition": "해당 번호 금속층", "name": "Dx", "parent": null}, {"definition": "해당 번호 비아층", "name": "VA", "parent": null}, {"definition": "해당 번호 비아층", "name": "V1", "parent": null}, {"definition": "해당 번호 비아층", "name": "V2", "parent": null}, {"definition": "해당 번호 비아층", "name": "V3", "parent": null}, {"definition": "해당 번호 비아층", "name": "Sx", "parent": null}, {"definition": "", "name": "JHV", "parent": null}]}, {"definition": "공정 단계. Patterning·Material과 독립", "kind": "분류", "multi": true, "name": "공정 모듈", "values": [{"definition": "노광·현상·overlay·litho CD", "name": "Litho", "parent": null}, {"definition": "trench·via 식각, hardmask open, strip", "name": "Etch", "parent": null}, {"definition": "PVD·CVD·ALD, seed, 도금(ECP), 금속·barrier ", "name": "Metal", "parent": null}, {"definition": "CCP, Cu CMP, API, node분리, node미분리", "name": "CMP", "parent": null}, {"definition": "식각·CMP 후 세정", "name": "Clean", "parent": null}, {"definition": "IMD, HDLK, HCLK, low-k dielectric, PID", "name": "CVD", "parent": null}]}, {"definition": "사내 제품·세대 코드.", "kind": "분류", "multi": true, "name": "제품·세대", "values": [{"definition": "", "name": "SF1.4", "parent": null}, {"definition": "", "name": "SF1.0", "parent": null}, {"definition": "", "name": "SF0.7", "parent": null}, {"definition": "", "name": "SF2", "parent": null}, {"definition": "", "name": "SF2X", "parent": null}]}, {"definition": "변경 변수와 원인 범주를 모두 붙인다", "kind": "분류", "multi": true, "name": "REMSPC", "values": [{"definition": "마스크·레티클·OPC", "name": "Reticle", "parent": null}, {"definition": "장비·챔버·하드웨어·PM", "name": "Equipment", "parent": null}, {"definition": "소재 변경", "name": "Materials", "parent": null}, {"definition": "integration 구조·공정 순서", "name": "Scheme", "parent": null}, {"definition": "레시피 조건", "name": "Process", "parent": null}, {"definition": "산포·재현성·공정 제어", "name": "Controllability", "parent": null}]}, {"definition": "패터닝 방식", "kind": "분류", "multi": true, "name": "Patterning", "values": [{"definition": "", "name": "EUV-SAUP", "parent": null}, {"definition": "", "name": "EUV-SET", "parent": null}, {"definition": "", "name": "ArF-SET", "parent": null}, {"definition": "ArF litho-etch 2회 이중 패터닝", "name": "ArF-LELE", "parent": null}]}, {"definition": "막 재료 범주", "kind": "분류", "multi": true, "name": "Material", "values": [{"definition": "CMP slurry ceria슬러리", "name": "CMP slurry", "parent": null}, {"definition": "Clean 세정 공정의 chemical 관련", "name": "Clean chemical", "parent": null}, {"definition": "층간 절연막(low-k, ULK, cap)", "name": "IMD", "parent": null}, {"definition": "barrier metal과 liner", "name": "BM/Liner", "parent": null}, {"definition": "배선 금속 자체", "name": "Metallization", "parent": null}]}, {"definition": "전기적 불량 유형. 하위가 불분명하면 상위만", "kind": "분류", "multi": true, "name": "불량 모드", "values": [{"definition": "단선", "name": "Open", "parent": null}, {"definition": "인접 배선 단락, leakage spec 초과", "name": "Short", "parent": null}, {"definition": "신뢰성 열화", "name": "Reliability", "parent": null}, {"definition": "전자이동", "name": "EM", "parent": "Reliability"}, {"definition": "절연막 시간 의존 파괴", "name": "TDDB", "parent": "Reliability"}, {"definition": "spec 내 동작하나 전기 특성 이탈", "name": "Parametric", "parent": null}, {"definition": "배선 저항 산포·상승", "name": "Rs 산포", "parent": "Parametric"}, {"definition": "", "name": "MHC", "parent": null}, {"definition": "Via 저항 상승, Via Rc 상승", "name": "Via Rc high", "parent": "MHC"}, {"definition": "Line 저항 상승, CMBSRP 저항 상승", "name": "Line R high", "parent": "MHC"}, {"definition": "", "name": "MinA void", "parent": "Open"}]}, {"definition": "물리적 메커니즘. 불량 모드와 별개", "kind": "분류", "multi": true, "name": "물리 현상", "values": [{"definition": "충진 내부 공극, seam", "name": "Void", "parent": null}, {"definition": "금속 잔류로 인접 배선 연결", "name": "metal bridge", "parent": null}, {"definition": "식각 미완으로 하부층 미노출", "name": "not open", "parent": null}, {"definition": "연마 부족 잔류", "name": "unCMP", "parent": null}, {"definition": "", "name": "overCMP", "parent": null}, {"definition": "hardmask 침식·소실", "name": "hardmask loss", "parent": null}, {"definition": "넓은 배선 상부 과연마", "name": "dishing", "parent": null}, {"definition": "Particle 불량, DF PC", "name": "Particle", "parent": null}, {"definition": "인접 패턴 CD 비대칭", "name": "CD imbalance", "parent": null}, {"definition": "CD 감소로 인한 어떠한 불량 발생 혹은 수율 개선, ET결과의 차이", "name": "CD small", "parent": null}, {"definition": "WF map의 CD산포 불량, CD의 3sigma 증가 등", "name": "CD 산포불량", "parent": null}, {"definition": "", "name": "low-k plasma damage", "parent": null}, {"definition": "", "name": "계면 산화", "parent": null}]}, {"definition": "조건별로 엇갈리면 모두 붙인다", "kind": "상태", "multi": true, "name": "결과", "values": [{"definition": "개선", "name": "improved", "parent": null}, {"definition": "악화", "name": "degraded", "parent": null}, {"definition": "차이 없음", "name": "neutral", "parent": null}, {"definition": "판단 불가", "name": "inconclusive", "parent": null}]}, {"definition": "하나라도 채택이면 adopted, 전부 기각이면 rejected, 평가는 있으나 결론 미기재면 pending, 평가 내용이 없으면 해당 없음", "kind": "상태", "multi": false, "name": "의사결정 상태", "values": [{"definition": "채택", "name": "adopted", "parent": null}, {"definition": "기각", "name": "rejected", "parent": null}, {"definition": "미결", "name": "pending", "parent": null}]}], "codes": {"L1_DUPLICATE_FIELD": "같은 필드의 라벨 행이 두 개 이상이다", "L1_FORMAT_NORMALIZED": "포맷 정규화를 적용했다", "L3_SPAN_NOT_FOUND": "근거 인용이 본문과 같은 파일 어디에도 없다"}, "files": {"112bdd0be47b5cccfd62375d632cc6a9309cd00185a3fa9e20c7d9050f920298": {"file_issues": [], "name": "112bdd0be47b5ccc", "slides": [{"image_total": 0, "images": [], "preview": null, "record_id": "112bdd0be47b5ccc:ppt/slides/slide1.xml", "slide_no": 1, "title": "과제 보고 8"}, {"image_total": 0, "images": [], "preview": null, "record_id": "112bdd0be47b5ccc:ppt/slides/slide2.xml", "slide_no": 2, "title": "주간 보고 8-2"}, {"image_total": 0, "images": [], "preview": null, "record_id": "112bdd0be47b5ccc:ppt/slides/slide3.xml", "slide_no": 3, "title": "주간 보고 8-3"}, {"image_total": 0, "images": [], "preview": null, "record_id": "112bdd0be47b5ccc:ppt/slides/slide4.xml", "slide_no": 4, "title": "주간 보고 8-4"}, {"image_total": 1, "images": ["data:image/png;base64,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"], "preview": null, "record_id": "112bdd0be47b5ccc:ppt/slides/slide5.xml", "slide_no": 5, "title": "주간 보고 8-5"}, {"image_total": 0, "images": [], "preview": null, "record_id": "112bdd0be47b5ccc:ppt/slides/slide6.xml", "slide_no": 6, "title": "주간 보고 8-6"}, {"image_total": 0, "images": [], "preview": null, "record_id": "112bdd0be47b5ccc:ppt/slides/slide7.xml", "slide_no": 7, "title": "주간 보고 8-7"}, {"image_total": 1, "images": ["data:image/png;base64,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"], "preview": null, "record_id": "112bdd0be47b5ccc:ppt/slides/slide8.xml", "slide_no": 8, "title": "주간 보고 8-8"}, {"image_total": 1, "images": ["data:image/png;base64,iVBORw0KGgo4IZGtEayE0Sux64i4ExcdGnGnO3NWWrkp/qDIczLyIGjAHWX8810Cy59PwTgYrWoLBoz4szg98kxrVIRK+nyWNxnjbKkrcZuIEnuCNDbEcxCaaq1meoW4KSJn2626NjE40qJhMvYdC2mWHaV8ucwWWBkqHDLRhpJwHSFuXIKdxzem4Rs2ZrHmGywi8nxKW29RipxBxgCaHi+lLWb/aTJ1lzHlTelJF5xiWwbPATNc3zrpz+n6+DysbgUAshaXPbpNUexRCe8kQvJYEeb7SGa8eF5Vp8QWeqxhHcqwCreN2emp+fvp+LOAoKh0KsUWo9GKPqzgDijOm6Mb77+ESULDJRUy3A8+zUJVDDBtPWP7T3DCvRB6RhJROLO3WMqwVuGN4hmr5itvO92Y0jKRZAYJcMPpPXHqPZ9wl/1dYMfIY1scYKWe7kz7PUAUDh6Bh+NOO+5RBWnjMzyKzmD6bv4YBrfX21RJ8x47YGsWFyAT50zUT9LsPgvjr5mr+ENNfOwFuhJbDf5pXiz+kkN/rgbZVDSfC84LSWQfvhv4OzohoimiCof+hQFEoWTXyMXwResm2+gv7NRlNDsuy+lWNLVD8ndcobIjqSxxkypjuntY81CAkMsOmMmwA+JAgWwPEx257suA+dBI8RK7DTeBzoZQgTLbvuiOcAP+Q6dzVmroJInXi0JGPEZcb38W7RjAYQKxLLY5c0t98R8HDNYgTQ82z2dfrde8ZOMXctcQIp+PLrH0DlCeCyuguHS2pI+SxEv0sVhRo3I98Xj2mhyZP4dgCbfBFGdIjrWgkjcCYcY4u2rDV0AYJkm8AB4XxdkubAo9754DNEss7qKGPKwtzJOQaAA6uOYUlhKEwBexOscYQayBrjC+FKxaNTTt11ny+NelhSgJbsAXWuubk7lkrfjMOkMdLWeD1fXlMcFRk6JrUiLD7jnAvH9+9tQPo6/E9bWxt/QL97bPs8oQBC/BWF/cRit1mqtRZ9JsxBmhzAiTzTBhZHxgWkuI469w1S02vaPhULyr81EqjH+0VAiIkL8i/1n7T1LPLQFu4DSXJgG2rIB0TIKInBUIm69wJLtIMMOaJBlsApg9uI+VBE2Mp65lcXk486jFO2o43wSqgCRe9KJd6i9EI3shSyvdaFEH6+ZJYjQ0opDmjOwnmZxHI/M8y3GHqYohYuFn415XUWQQ3FDNqIqhn0Y5I3pVvxkwZExz2IsE6FeqIit9JphXhVUBzoonVLYgXgUGmD+I9HV2qkqq/d9+kdw86/I2mNJl9f7JSsz2XiSrQtwuYKEwNLSG6/1hZKgYmmctJ5/huSf6qLTRfXyFj0iEZX9DnGcEe7pLT6JRHHUDVOYlGKnmz3KodYoWeH2Nxf1y6KzmmuIweBUHXav4b2KRHne2IJeSvdvbsWoiCN7gsThBdiU9wdoESheEo6OsduTF8QinOZU1NWVlQ/pX8SvGZDS7q2JEGRuhhofKjcMnX8IA27bPy7RWlmjom77fkJ8NDB7c/N0vmY8XqJ1lHLJwE3Si2sQVVrZHDXMYaRHvymqTQovN5n9tj+Act2ErSLWtc/Vi/ctSBjIss9qsVBqiadWd6+ipCgt61H7BJwJARy0a+EN+Um/r3LZAfnSpaC/AwMrgmD4/G6mJFqhcD3DvOvJuvHzkdmyMjbLBS+wWeSlv2XrC7P3XGx2PDhIb5ghJhUA37NKJm2JCH/nAc9hQZC3LkJt2zLEFZ6IUzJl6JmEFJeKTckVIOWkp8KZ/J7lQBvoouDfhXvTONcH4QkrNSpjxMKM0zVYW0Wtge33TZJNZa3MFLFc0pefNVuVq4nBMkTG8mMblooTVNrRiYRvUf+glw1mJLRUjvt0xzLPxYaHzjFX2wuc9YN+8DxlUuNO3VldDSCy0vhVvsWhcoXIkWhUuMz2d2+Ve68VV/sqfCSmzTKV/loX/gLLPtTJYqDWC4RZnywdmXpXjMQzCJlAvfcqYoo1kRmL8dNVkmGyQ9QwTnZghWs/AoLE1DRsZRfDgVOHf50ZIo0B79xA1269yteeN5puGkP6h/sEKyYOyYW8sayce95TIqx8t7qqVUkyREU6EYHKOHpwlbLcYJ4dZz1bL2uQu+xoILOmHFr2T3+4QCd6ypZakPjKqyKDfzety8eSQdLQ2KNTAcE1Shl5COqNT6qn3JTqDbQHXfpuTiwq7Gty1gaFldryhIW/EF/qjXyE5CKQCNLixUYl0I0qGdrPqnZs4t8WzOgCAx5M7z+hKWVRBmxdblgcQgAQIMN/wqqDK9RTvWCgu6MKifS2iQ2/w5wXxBVPxJMQJHfCLRwUr3za2Atg2V2zMBTyHFBJsHqROc2kGaL4e9AKbHj9vH9FImw4vLhGOqn9QwajlncVMg9k6GJdgahiUDVmwNIxYFbPTx+pmGc4ZF96sRMFP7R4Rc1pTgeCcaAkoCMwpO1NJF+/hVdA2UpXo/BT8gH7lOVlMjwdOnUAilx082a2rXU3ZNbuppUHOGg7Eknw4DJcb9WOALyzmmVpEpCl0UVcaOvvR4WXh0/4MDyMvj6b9AvZt6gut9p6PVGsK1cKEHGpfju6uDeB66nhlBPUwvEHhMNPbkChfp2xYbcwGbRpeMYguD4MdXVdpLjteVQU3ETICmTZS2al9wsq8//KYq78BQHR9e5YOQ7isbFxUdbiJi2Qygj8HGNEPHIf9j7UAOMthSAo3TwskfJKYsVJItOudd0XGcDZu01mb5ddTfQ+dBFF8DHcYKm3gzYDmtNUWJdBpFzbXn9IMzWVWSWwGr12IELKfxGPhoS8gMBqqxtdXYCGiXWfWb3RzCCwm16/vwrjWqs0OnuEeT0JsRr/+YSU/qPzHxfxwI+oQwAsqw7oZCAqByUUmd8B4oZes9XfiDDe/IK9EIKoWfF/RV5Tf4q2kQGf4CP6kf3YvhYMz43VmOl3j/Z4bsSAPiOH3bmKhiaCfp3QOiizerDnUdbakvBkgryND7Y4mVZhwdBT63ZBBEyxXgf9fJeissdDcDMRtdx3emqDf2UuyprCbdQHQOb5MDEzxBRHFHm20Jn0qwLBZirqW5vpw7pd0qJ8/wde8w1VdL9I1WzUDtUUGdHCNe0KGk77JdC4BwBHMnKk08AoOMP8MhCfUuyGlj+R24Fnd8vjll4t/lO/UVSzkDESvebsf1L1BTnVyD2NC2m5K1coXr+dJsJRLaohPdovqytjReWx1wZ1YRGPb2Nl/EcpbJXQnpUybQl4+VhPMEGWbg70JAsl/aqnRThWTUNXxkW09kj2kwyvBPX1USmn6BFckIVUJqXoUJ2GoYuPcfZyBsXULRsLyLNyyNobJgfeZxKVlK8MerSL5Vgdi/A24O6FTyuDjedHla2vcclKA0Nbq6F3evy9mJHxrWDSRqKMAK8lJuyz3pDY4x8Ebjl0aEciuVyHfSHBnUmWnMT+Ib2KturWxtRnOBjxeVOqn+GGGul0ape88BWN6boUcPGFr5quqIXM+EH8vMZ+mP7RL93Jq/u0+8H3kFFK3RnMLaFhgBkA2qFOKd+kBR5xZHuAH4PzQE5VYrJjQiBdVuRZ3GlWMONI9HxCvHNx0H+b+A0JtyP85qLjjlVkuBlQsZdpInXTWLaAFGiFiowVnPmoLWUxS0b8/uwRFw2UzNV5QSzyfd4Hu4QVjokSJv1gWqVXz0J3LGgibp5vjuxKlrz2mjrL79mvYiun0s+OUBkaiMDbV5kAysmDEoDPS1IYyWVrSJ/npZc/LFE3sdrIPg8yMykGuUIiY5TbyEkkp9qRQby6nI2iv+a9cdoB8X6FUcpsFzKGTN0NF/aizQfKJI0KSrVZecmxtcing7RF+MGAemqKYgKQu1gtjW8Jg0KjIMCHsIvJ2ak8pOsg0y7cy6LhUcbjYaTIop2/YU2vRLgiaYLzraoEnp7vjujDQ8HRfdjLc8ZDLcTz9Y5WlyfY5AW2EIfx2E9idrphuK0SL56f00mKwNm5NMaZFV5LjB0Ay"], "preview": null, "record_id": "112bdd0be47b5ccc:ppt/slides/slide9.xml", "slide_no": 9, "title": "주간 보고 8-9"}, {"image_total": 0, "images": [], "preview": null, "record_id": "112bdd0be47b5ccc:ppt/slides/slide10.xml", "slide_no": 10, "title": "주간 보고 8-10"}]}, "1a0628f1557359fa2040b24c73b3555aa88d443d964b1f62a9b0df574ed24177": {"file_issues": [], "name": "1a0628f1557359fa", "slides": [{"image_total": 0, "images": [], "preview": null, "record_id": "1a0628f1557359fa:ppt/slides/slide1.xml", "slide_no": 1, "title": "과제 보고 1"}, {"image_total": 0, "images": [], "preview": null, "record_id": "1a0628f1557359fa:ppt/slides/slide2.xml", "slide_no": 2, "title": "주간 보고 1-2"}, {"image_total": 0, "images": [], "preview": null, "record_id": "1a0628f1557359fa:ppt/slides/slide3.xml", "slide_no": 3, "title": "주간 보고 1-3"}, {"image_total": 1, "images": ["data:image/png;base64,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"], "preview": null, "record_id": "1a0628f1557359fa:ppt/slides/slide4.xml", "slide_no": 4, "title": "주간 보고 1-4"}, {"image_total": 0, "images": [], "preview": null, "record_id": "1a0628f1557359fa:ppt/slides/slide5.xml", "slide_no": 5, "title": "주간 보고 1-5"}, {"image_total": 0, "images": [], "preview": null, "record_id": "1a0628f1557359fa:ppt/slides/slide6.xml", "slide_no": 6, "title": "주간 보고 1-6"}, {"image_total": 0, "images": [], "preview": null, "record_id": "1a0628f1557359fa:ppt/slides/slide7.xml", "slide_no": 7, "title": "주간 보고 1-7"}, {"image_total": 0, "images": [], "preview": null, "record_id": "1a0628f1557359fa:ppt/slides/slide8.xml", "slide_no": 8, "title": "주간 보고 1-8"}]}}, "images_per_chunk": 4, "kind": "qa_review", "labeler_run_id": "20261004T000000-fx01", "na": "해당 없음", "proposals": [], "qa_run_id": "<QA_RUN_ID>", "questions": [{"qid": "Q-COM-001", "text": "이 chunk가 BEOL interconnect 공정에 관련한 내용이 맞는가?"}], "records": [{"fields": ["axis:구조/레이어", "axis:공정 모듈", "axis:제품·세대", "axis:REMSPC", "axis:Patterning", "axis:Material", "axis:불량 모드", "axis:물리 현상", "axis:결과", "axis:의사결정 상태", "answer:Q-COM-001"], "file_id": "112bdd0be47b5cccfd62375d632cc6a9309cd00185a3fa9e20c7d9050f920298", "file_name": "112bdd0be47b5ccc", "group": null, "image_total": 0, "issue_codes": ["L1_DUPLICATE_FIELD"], "issues": [{"code": "L1_DUPLICATE_FIELD", "field": "axis:Patterning", "judge_reason": null, "layer": "L1", "quote": "ArF-SET 방식으로 패턴 형성", "reason": "같은 필드의 라벨 행이 두 개 이상이다.", "scope": "record", "severity": "major", "suggested_fix": "중복 행 중 하나만 남기도록 다시 라벨링한다."}], "judge": {"failed": 0, "items": 5, "partial": 0, "supported": 5, "unsupported": 0}, "labels": {"answers": {"Q-COM-001": {"answer": "X", "confidence": 0.86, "quote": "장기 신뢰성까지 검증 완료"}}, "axes": {"Material": {"confidence": 0.94, "quote": "", "status": "na", "values": ["해당 없음"]}, "Patterning": {"confidence": 0.82, "quote": "ArF-SET 방식으로 패턴 형성", "status": "value", "values": ["ArF-SET"]}, "REMSPC": {"confidence": 0.78, "quote": "", "status": "na", "values": ["해당 없음"]}, "결과": {"confidence": 0.77, "quote": "", "status": "na", "values": ["해당 없음"]}, "공정 모듈": {"confidence": 0.88, "quote": "CVD 공정 조건 재점검 진행", "status": "value", "values": ["CVD"]}, "구조/레이어": {"confidence": 0.57, "quote": "", "status": "unknown", "values": ["unknown"]}, "물리 현상": {"confidence": 0.76, "quote": "", "status": "na", "values": ["해당 없음"]}, "불량 모드": {"confidence": 0.89, "quote": "EM 및 Via Rc high 관련 조건 동시 점검", "status": "value", "values": ["EM", "Via Rc high"]}, "의사결정 상태": {"confidence": 0.73, "quote": "", "status": "na", "values": ["해당 없음"]}, "제품·세대": {"confidence": 0.87, "quote": "", "status": "na", "values": ["해당 없음"]}}, "chunk_type": "내용", "extracted": []}, "priority": 1, "problem_fields": ["axis:Patterning"], "record_id": "112bdd0be47b5ccc:ppt/slides/slide10.xml", "score": 70, "section": "REVIEW", "slide_no": 10, "text": "주간 보고 8-10\n보고서 양식 변경 안내\nCVD 공정 조건 재점검 진행\n실험 노트 작성 규칙 안내\nArF-SET 방식으로 패턴 형성\nEM 및 Via Rc high 관련 조건 동시 점검\n장기 신뢰성까지 검증 완료", "title": "주간 보고 8-10", "verdict": "REVIEW"}, {"fields": ["axis:구조/레이어", "axis:공정 모듈", "axis:제품·세대", "axis:REMSPC", "axis:Patterning", "axis:Material", "axis:불량 모드", "axis:물리 현상", "axis:결과", "axis:의사결정 상태", "answer:Q-COM-001", "extract:person#0"], "file_id": "112bdd0be47b5cccfd62375d632cc6a9309cd00185a3fa9e20c7d9050f920298", "file_name": "112bdd0be47b5ccc", "group": null, "image_total": 0, "issue_codes": ["L1_DUPLICATE_FIELD"], "issues": [{"code": "L1_DUPLICATE_FIELD", "field": "axis:Patterning", "judge_reason": null, "layer": "L1", "quote": "EUV-SAUP 조건에서 패턴 균일도 비교", "reason": "같은 필드의 라벨 행이 두 개 이상이다.", "scope": "record", "severity": "major", "suggested_fix": "중복 행 중 하나만 남기도록 다시 라벨링한다."}], "judge": {"failed": 0, "items": 4, "partial": 0, "supported": 4, "unsupported": 0}, "labels": {"answers": {"Q-COM-001": {"answer": "O", "confidence": 0.72, "quote": "HTOL 500h 이후 재발 여부는 미확인"}}, "axes": {"Material": {"confidence": 0.95, "quote": "", "status": "na", "values": ["해당 없음"]}, "Patterning": {"confidence": 0.94, "quote": "EUV-SAUP 조건에서 패턴 균일도 비교", "status": "value", "values": ["EUV-SAUP"]}, "REMSPC": {"confidence": 0.8, "quote": "", "status": "na", "values": ["해당 없음"]}, "결과": {"confidence": 0.79, "quote": "평가 결과 inconclusive 판정으로 정리됨", "status": "value", "values": ["inconclusive"]}, "공정 모듈": {"confidence": 0.94, "quote": "Metal 공정 조건 재점검 진행", "status": "value", "values": ["Metal"]}, "구조/레이어": {"confidence": 0.74, "quote": "", "status": "na", "values": ["해당 없음"]}, "물리 현상": {"confidence": 0.81, "quote": "", "status": "na", "values": ["해당 없음"]}, "불량 모드": {"confidence": 0.82, "quote": "", "status": "na", "values": ["해당 없음"]}, "의사결정 상태": {"confidence": 0.8, "quote": "", "status": "na", "values": ["해당 없음"]}, "제품·세대": {"confidence": 0.53, "quote": "", "status": "unknown", "values": ["unknown"]}}, "chunk_type": "내용", "extracted": [{"field": "extract:person#0", "item": "person", "quote": "담당 이서연 책임이 후속 일정 관리", "value": "이서연"}]}, "priority": 1, "problem_fields": ["axis:Patterning"], "record_id": "112bdd0be47b5ccc:ppt/slides/slide2.xml", "score": 70, "section": "REVIEW", "slide_no": 2, "text": "주간 보고 8-2\n측정 장비 예약 현황 공유\nMetal 공정 조건 재점검 진행\nHTOL 500h 이후 재발 여부는 미확인\n평가 결과 inconclusive 판정으로 정리됨\n담당 이서연 책임이 후속 일정 관리\nEUV-SAUP 조건에서 패턴 균일도 비교", "title": "주간 보고 8-2", "verdict": "REVIEW"}, {"fields": ["axis:구조/레이어", "axis:공정 모듈", "axis:제품·세대", "axis:REMSPC", "axis:Patterning", "axis:Material", "axis:불량 모드", "axis:물리 현상", "axis:결과", "axis:의사결정 상태", "answer:Q-COM-001", "extract:date#0"], "file_id": "112bdd0be47b5cccfd62375d632cc6a9309cd00185a3fa9e20c7d9050f920298", "file_name": "112bdd0be47b5ccc", "group": null, "image_total": 0, "issue_codes": ["L1_DUPLICATE_FIELD"], "issues": [{"code": "L1_DUPLICATE_FIELD", "field": "axis:Material", "judge_reason": null, "layer": "L1", "quote": "CMP slurry 및 Clean chemical 관련 조건 동시 점검", "reason": "같은 필드의 라벨 행이 두 개 이상이다.", "scope": "record", "severity": "major", "suggested_fix": "중복 행 중 하나만 남기도록 다시 라벨링한다."}], "judge": {"failed": 0, "items": 10, "partial": 0, "supported": 10, "unsupported": 0}, "labels": {"answers": {"Q-COM-001": {"answer": "O", "confidence": 0.83, "quote": "장기 신뢰성은 아직 미검증 상태"}}, "axes": {"Material": {"confidence": 0.79, "quote": "CMP slurry 및 Clean chemical 관련 조건 동시 점검", "status": "value", "values": ["CMP slurry", "Clean chemical"]}, "Patterning": {"confidence": 0.9, "quote": "ArF-LELE 방식으로 패턴 형성", "status": "value", "values": ["ArF-LELE"]}, "REMSPC": {"confidence": 0.73, "quote": "Materials 요인으로 분류해 원인 분석", "status": "value", "values": ["Materials"]}, "결과": {"confidence": 0.9, "quote": "비교 결과는 degraded 수준으로 판단", "status": "value", "values": ["degraded"]}, "공정 모듈": {"confidence": 0.92, "quote": "", "status": "na", "values": ["해당 없음"]}, "구조/레이어": {"confidence": 0.75, "quote": "", "status": "na", "values": ["해당 없음"]}, "물리 현상": {"confidence": 0.74, "quote": "low-k plasma damage 현상 발생 조건 정리", "status": "value", "values": ["low-k plasma damage"]}, "불량 모드": {"confidence": 0.94, "quote": "단락 불량이 Center 영역에서 확인됨", "status": "value", "values": ["Short"]}, "의사결정 상태": {"confidence": 0.9, "quote": "검토 결과 adopted 상태로 정리", "status": "value", "values": ["adopted"]}, "제품·세대": {"confidence": 0.86, "quote": "SF0.7 세대 적용 일정 검토", "status": "value", "values": ["SF0.7"]}}, "chunk_type": "내용", "extracted": [{"field": "extract:date#0", "item": "date", "quote": "2026.6.11 회의에서 일정 확정", "value": "2026-06-11"}]}, "priority": 1, "problem_fields": ["axis:Material"], "record_id": "112bdd0be47b5ccc:ppt/slides/slide3.xml", "score": 70, "section": "REVIEW", "slide_no": 3, "text": "주간 보고 8-3\n장기 신뢰성은 아직 미검증 상태\nArF-LELE 방식으로 패턴 형성\n샘플 반입 일정 조율\n2026.6.11 회의에서 일정 확정\n검토 결과 adopted 상태로 정리\n단락 불량이 Center 영역에서 확인됨\nSF0.7 세대 적용 일정 검토\nMaterials 요인으로 분류해 원인 분석\n비교 결과는 Open 열화 수준으로 판단\nlow-k plasma damage 현상 발생 조건 정리\n회의 참석자 일정 공유\nCMP slurry 및 Clean chemical 관련 조건 동시 점검", "title": "주간 보고 8-3", "verdict": "REVIEW"}, {"fields": ["axis:구조/레이어", "axis:공정 모듈", "axis:제품·세대", "axis:REMSPC", "axis:Patterning", "axis:Material", "axis:불량 모드", "axis:물리 현상", "axis:결과", "axis:의사결정 상태", "answer:Q-COM-001", "extract:date#0"], "file_id": "112bdd0be47b5cccfd62375d632cc6a9309cd00185a3fa9e20c7d9050f920298", "file_name": "112bdd0be47b5ccc", "group": null, "image_total": 1, "issue_codes": ["L3_SPAN_NOT_FOUND"], "issues": [{"code": "L3_SPAN_NOT_FOUND", "field": "axis:Patterning", "judge_reason": null, "layer": "L3A", "quote": "본문 어디에도 없는 인용 문장을 일부러 넣었다", "reason": "근거 인용이 이 chunk 본문에 없다.", "scope": "record", "severity": "critical", "suggested_fix": "이 chunk 본문에서 글자 그대로 인용해 다시 라벨링한다."}], "judge": null, "labels": {"answers": {"Q-COM-001": {"answer": "N/A", "confidence": 0.88, "quote": ""}}, "axes": {"Material": {"confidence": 0.87, "quote": "", "status": "na", "values": ["해당 없음"]}, "Patterning": {"confidence": 0.88, "quote": "본문 어디에도 없는 인용 문장을 일부러 넣었다", "status": "value", "values": ["EUV-SAUP"]}, "REMSPC": {"confidence": 0.93, "quote": "Controllability 항목 변경 영향 확인", "status": "value", "values": ["Controllability"]}, "결과": {"confidence": 0.8, "quote": "", "status": "na", "values": ["해당 없음"]}, "공정 모듈": {"confidence": 0.73, "quote": "", "status": "na", "values": ["해당 없음"]}, "구조/레이어": {"confidence": 0.7, "quote": "Fx 배선층에서 저항 측정 진행", "status": "value", "values": ["Fx"]}, "물리 현상": {"confidence": 0.77, "quote": "계면 산화 현상 발생 조건 정리", "status": "value", "values": ["계면 산화"]}, "불량 모드": {"confidence": 0.95, "quote": "Open 불량이 Center 영역에서 확인됨", "status": "value", "values": ["Open"]}, "의사결정 상태": {"confidence": 0.76, "quote": "", "status": "na", "values": ["해당 없음"]}, "제품·세대": {"confidence": 0.81, "quote": "SF2X 세대 적용 일정 검토", "status": "value", "values": ["SF2X"]}}, "chunk_type": "내용", "extracted": [{"field": "extract:date#0", "item": "date", "quote": "2026.4.11 회의에서 일정 확정", "value": "2026-04-11"}]}, "priority": null, "problem_fields": ["axis:Patterning"], "record_id": "112bdd0be47b5ccc:ppt/slides/slide5.xml", "rework": [{"code": "L3_SPAN_NOT_FOUND", "evidence": {"found_in_unit": null, "match_tier": "none", "quote_len": 25, "quote_sha256": "4a65eb563044f302bd722c574fcac3909991e6dfe2d2ed4b2da3bacd20e77e22", "text": "본문 어디에도 없는 인용 문장을 일부러 넣었다", "unit_id": "112bdd0be47b5ccc:ppt/slides/slide5.xml"}, "field": "axis:Patterning", "reason": "근거 인용이 이 chunk 본문에 없다.", "severity": "critical", "suggested_fix": "이 chunk 본문에서 글자 그대로 인용해 다시 라벨링한다."}], "score": 0, "section": "REJECT", "slide_no": 5, "text": "주간 보고 8-5\nSF2X 세대 적용 일정 검토\n2026.4.11 회의에서 일정 확정\nFx 배선층에서 저항 측정 진행\n단선 불량이 Center 영역에서 확인됨\nControllability 항목 변경 영향 확인\n회의 참석자 일정 공유\nEUV-SAUP 방식으로 패턴 형성\n계면 산화 현상 발생 조건 정리", "title": "주간 보고 8-5", "verdict": "REJECT"}, {"fields": ["axis:구조/레이어", "axis:공정 모듈", "axis:제품·세대", "axis:REMSPC", "axis:Patterning", "axis:Material", "axis:불량 모드", "axis:물리 현상", "axis:결과", "axis:의사결정 상태", "answer:Q-COM-001"], "file_id": "112bdd0be47b5cccfd62375d632cc6a9309cd00185a3fa9e20c7d9050f920298", "file_name": "112bdd0be47b5ccc", "group": null, "image_total": 0, "issue_codes": ["L3_SPAN_NOT_FOUND"], "issues": [{"code": "L3_SPAN_NOT_FOUND", "field": "axis:Patterning", "judge_reason": null, "layer": "L3A", "quote": "본문 어디에도 없는 인용 문장을 일부러 넣었다", "reason": "근거 인용이 이 chunk 본문에 없다.", "scope": "record", "severity": "critical", "suggested_fix": "이 chunk 본문에서 글자 그대로 인용해 다시 라벨링한다."}], "judge": null, "labels": {"answers": {"Q-COM-001": {"answer": "X", "confidence": 0.74, "quote": "잔여 위험 없어 추가 확인 불필요"}}, "axes": {"Material": {"confidence": 0.51, "quote": "", "status": "unknown", "values": ["unknown"]}, "Patterning": {"confidence": 0.76, "quote": "본문 어디에도 없는 인용 문장을 일부러 넣었다", "status": "value", "values": ["ArF-SET"]}, "REMSPC": {"confidence": 0.81, "quote": "", "status": "na", "values": ["해당 없음"]}, "결과": {"confidence": 0.74, "quote": "비교 결과는 neutral 수준으로 판단", "status": "value", "values": ["neutral"]}, "공정 모듈": {"confidence": 0.89, "quote": "", "status": "na", "values": ["해당 없음"]}, "구조/레이어": {"confidence": 0.86, "quote": "Dx 배선층에서 저항 측정 진행", "status": "value", "values": ["Dx"]}, "물리 현상": {"confidence": 0.84, "quote": "", "status": "na", "values": ["해당 없음"]}, "불량 모드": {"confidence": 0.72, "quote": "TDDB 불량이 Center 영역에서 확인됨", "status": "value", "values": ["TDDB"]}, "의사결정 상태": {"confidence": 0.78, "quote": "", "status": "na", "values": ["해당 없음"]}, "제품·세대": {"confidence": 0.95, "quote": "SF2 제품 기준으로 평가 진행", "status": "value", "values": ["SF2"]}}, "chunk_type": "내용", "extracted": []}, "priority": null, "problem_fields": ["axis:Patterning"], "record_id": "112bdd0be47b5ccc:ppt/slides/slide6.xml", "rework": [{"code": "L3_SPAN_NOT_FOUND", "evidence": {"found_in_unit": null, "match_tier": "none", "quote_len": 25, "quote_sha256": "4a65eb563044f302bd722c574fcac3909991e6dfe2d2ed4b2da3bacd20e77e22", "text": "본문 어디에도 없는 인용 문장을 일부러 넣었다", "unit_id": "112bdd0be47b5ccc:ppt/slides/slide6.xml"}, "field": "axis:Patterning", "reason": "근거 인용이 이 chunk 본문에 없다.", "severity": "critical", "suggested_fix": "이 chunk 본문에서 글자 그대로 인용해 다시 라벨링한다."}], "score": 0, "section": "REJECT", "slide_no": 6, "text": "주간 보고 8-6\nArF-SET 조건에서 패턴 균일도 비교\n비교 결과는 neutral 수준으로 판단\n잔여 위험 없어 추가 확인 불필요\n보고서 양식 변경 안내\nSF2 제품 기준으로 평가 진행\n자료 배포 범위 안내\nDx 배선층에서 저항 측정 진행\nTDDB 불량이 Center 영역에서 확인됨\n[노트]\n발표자 메모 6", "title": "주간 보고 8-6", "verdict": "REJECT"}, {"fields": ["axis:구조/레이어", "axis:공정 모듈", "axis:제품·세대", "axis:REMSPC", "axis:Patterning", "axis:Material", "axis:불량 모드", "axis:물리 현상", "axis:결과", "axis:의사결정 상태", "answer:Q-COM-001", "extract:date#0", "extract:person#1"], "file_id": "112bdd0be47b5cccfd62375d632cc6a9309cd00185a3fa9e20c7d9050f920298", "file_name": "112bdd0be47b5ccc", "group": null, "image_total": 0, "issue_codes": ["L1_FORMAT_NORMALIZED"], "issues": [{"code": "L1_FORMAT_NORMALIZED", "field": "extract:date#0", "judge_reason": null, "layer": "L1", "quote": "2026.7.12 회의에서 일정 확정", "reason": "표기만 다른 값을 표준 표기로 바꿨다.", "scope": "record", "severity": "fixable", "suggested_fix": null}], "judge": {"failed": 0, "items": 5, "partial": 0, "supported": 5, "unsupported": 0}, "labels": {"answers": {"Q-COM-001": {"answer": "O", "confidence": 0.75, "quote": "장기 신뢰성은 아직 미검증 상태"}}, "axes": {"Material": {"confidence": 0.91, "quote": "", "status": "na", "values": ["해당 없음"]}, "Patterning": {"confidence": 0.72, "quote": "EUV-SET 방식으로 패턴 형성", "status": "value", "values": ["EUV-SET"]}, "REMSPC": {"confidence": 0.95, "quote": "", "status": "na", "values": ["해당 없음"]}, "결과": {"confidence": 0.76, "quote": "", "status": "na", "values": ["해당 없음"]}, "공정 모듈": {"confidence": 0.86, "quote": "", "status": "na", "values": ["해당 없음"]}, "구조/레이어": {"confidence": 0.93, "quote": "", "status": "na", "values": ["해당 없음"]}, "물리 현상": {"confidence": 0.83, "quote": "not open 현상 발생 조건 정리", "status": "value", "values": ["not open"]}, "불량 모드": {"confidence": 0.94, "quote": "", "status": "na", "values": ["해당 없음"]}, "의사결정 상태": {"confidence": 0.93, "quote": "검토 결과 rejected 상태로 정리", "status": "value", "values": ["rejected"]}, "제품·세대": {"confidence": 0.74, "quote": "SF1.0 제품 기준으로 평가 진행", "status": "value", "values": ["SF1.0"]}}, "chunk_type": "내용", "extracted": [{"field": "extract:date#0", "item": "date", "quote": "2026.7.12 회의에서 일정 확정", "value": "2026.7.12"}, {"field": "extract:person#1", "item": "person", "quote": "담당 최유나 책임이 후속 일정 관리", "value": "최유나"}]}, "priority": null, "problem_fields": [], "record_id": "112bdd0be47b5ccc:ppt/slides/slide7.xml", "score": 99, "section": "AUTO_FIX", "slide_no": 7, "text": "주간 보고 8-7\n장기 신뢰성은 아직 미검증 상태\nSF1.0 제품 기준으로 평가 진행\n담당 최유나 책임이 후속 일정 관리\n회의 참석자 일정 공유\n미개구 현상 발생 조건 정리\n검토 결과 rejected 상태로 정리\n2026.7.12 회의에서 일정 확정\nEUV-SET 방식으로 패턴 형성\n[노트]\n발표자 메모 7", "title": "주간 보고 8-7", "verdict": "AUTO_FIX"}, {"fields": ["axis:구조/레이어", "axis:공정 모듈", "axis:제품·세대", "axis:REMSPC", "axis:Patterning", "axis:Material", "axis:불량 모드", "axis:물리 현상", "axis:결과", "axis:의사결정 상태", "answer:Q-COM-001"], "file_id": "112bdd0be47b5cccfd62375d632cc6a9309cd00185a3fa9e20c7d9050f920298", "file_name": "112bdd0be47b5ccc", "group": null, "image_total": 1, "issue_codes": ["L1_FORMAT_NORMALIZED"], "issues": [{"code": "L1_FORMAT_NORMALIZED", "field": "axis:Material", "judge_reason": null, "layer": "L1", "quote": "BM/Liner 막 적용 조건 비교", "reason": "표기만 다른 값을 표준 표기로 바꿨다.", "scope": "record", "severity": "fixable", "suggested_fix": null}], "judge": {"failed": 0, "items": 9, "partial": 0, "supported": 9, "unsupported": 0}, "labels": {"answers": {"Q-COM-001": {"answer": "O", "confidence": 0.74, "quote": "고온 조건 영향은 후속 평가 필요"}}, "axes": {"Material": {"confidence": 0.74, "quote": "BM/Liner 막 적용 조건 비교", "status": "value", "values": ["bm/liner"]}, "Patterning": {"confidence": 0.89, "quote": "", "status": "na", "values": ["해당 없음"]}, "REMSPC": {"confidence": 0.72, "quote": "Materials 항목 변경 영향 확인", "status": "value", "values": ["Materials"]}, "결과": {"confidence": 0.82, "quote": "", "status": "na", "values": ["해당 없음"]}, "공정 모듈": {"confidence": 0.72, "quote": "CMP 단계 레시피 비교 결과 정리", "status": "value", "values": ["CMP"]}, "구조/레이어": {"confidence": 0.82, "quote": "Dx 배선층에서 저항 측정 진행", "status": "value", "values": ["Dx"]}, "물리 현상": {"confidence": 0.83, "quote": "Void 및 CD 산포불량 관련 조건 동시 점검", "status": "value", "values": ["Void", "CD 산포불량"]}, "불량 모드": {"confidence": 0.95, "quote": "Short 불량이 Center 영역에서 확인됨", "status": "value", "values": ["Short"]}, "의사결정 상태": {"confidence": 0.87, "quote": "검토 결과 pending 상태로 정리", "status": "value", "values": ["pending"]}, "제품·세대": {"confidence": 0.77, "quote": "", "status": "na", "values": ["해당 없음"]}}, "chunk_type": "내용", "extracted": []}, "priority": null, "problem_fields": [], "record_id": "112bdd0be47b5ccc:ppt/slides/slide8.xml", "score": 99, "section": "AUTO_FIX", "slide_no": 8, "text": "주간 보고 8-8\nMaterials 항목 변경 영향 확인\n단락 불량이 Center 영역에서 확인됨\n검토 결과 pending 상태로 정리\nCMP 단계 레시피 비교 결과 정리\n보고서 양식 변경 안내\n자료 배포 범위 안내\nVoid 및 CD 산포불량 관련 조건 동시 점검\n고온 조건 영향은 후속 평가 필요\nDx 배선층에서 저항 측정 진행\nliner/barrier 막 적용 조건 비교\n[노트]\n발표자 메모 8", "title": "주간 보고 8-8", "verdict": "AUTO_FIX"}, {"fields": ["axis:구조/레이어", "axis:공정 모듈", "axis:제품·세대", "axis:REMSPC", "axis:Patterning", "axis:Material", "axis:불량 모드", "axis:물리 현상", "axis:결과", "axis:의사결정 상태", "answer:Q-COM-001"], "file_id": "112bdd0be47b5cccfd62375d632cc6a9309cd00185a3fa9e20c7d9050f920298", "file_name": "112bdd0be47b5ccc", "group": null, "image_total": 1, "issue_codes": ["L1_FORMAT_NORMALIZED"], "issues": [{"code": "L1_FORMAT_NORMALIZED", "field": "axis:Material", "judge_reason": null, "layer": "L1", "quote": "HCLK 및 Barrier 관련 조건 동시 점검", "reason": "표기만 다른 값을 표준 표기로 바꿨다.", "scope": "record", "severity": "fixable", "suggested_fix": null}], "judge": {"failed": 0, "items": 13, "partial": 0, "supported": 13, "unsupported": 0}, "labels": {"answers": {"Q-COM-001": {"answer": "O", "confidence": 0.81, "quote": "HTOL 500h 이후 재발 여부는 미확인"}}, "axes": {"Material": {"confidence": 0.77, "quote": "HCLK 및 Barrier 관련 조건 동시 점검", "status": "value", "values": ["imd", "BM/Liner"]}, "Patterning": {"confidence": 0.76, "quote": "ArF-SET 및 EUV-SAUP 관련 조건 동시 점검", "status": "value", "values": ["ArF-SET", "EUV-SAUP"]}, "REMSPC": {"confidence": 0.79, "quote": "Scheme 항목 변경 영향 확인", "status": "value", "values": ["Scheme"]}, "결과": {"confidence": 0.94, "quote": "inconclusive 및 improved 관련 조건 동시 점검", "status": "value", "values": ["inconclusive", "improved"]}, "공정 모듈": {"confidence": 0.79, "quote": "", "status": "na", "values": ["해당 없음"]}, "구조/레이어": {"confidence": 0.82, "quote": "M1 배선층에서 저항 측정 진행", "status": "value", "values": ["M1"]}, "물리 현상": {"confidence": 0.94, "quote": "low-k plasma damage 현상 발생 조건 정리", "status": "value", "values": ["low-k plasma damage"]}, "불량 모드": {"confidence": 0.92, "quote": "Via Rc high 불량 발생 위치 분석", "status": "value", "values": ["Via Rc high"]}, "의사결정 상태": {"confidence": 0.89, "quote": "검토 결과 adopted 상태로 정리", "status": "value", "values": ["adopted"]}, "제품·세대": {"confidence": 0.75, "quote": "SF1.0 제품 기준으로 평가 진행", "status": "value", "values": ["SF1.0"]}}, "chunk_type": "내용", "extracted": []}, "priority": null, "problem_fields": [], "record_id": "112bdd0be47b5ccc:ppt/slides/slide9.xml", "score": 99, "section": "AUTO_FIX", "slide_no": 9, "text": "주간 보고 8-9\nBM scheme 항목 변경 영향 확인\nHTOL 500h 이후 재발 여부는 미확인\nMetal1 배선층에서 저항 측정 진행\n실험 노트 작성 규칙 안내\nSF1.0 제품 기준으로 평가 진행\nlow-k plasma damage 현상 발생 조건 정리\nHCLK 및 Barrier 관련 조건 동시 점검\nVia Rc high 불량 발생 위치 분석\n검토 결과 adopted 상태로 정리\ninconclusive 및 improved 관련 조건 동시 점검\nArF-SET 및 EUV-SAUP 관련 조건 동시 점검", "title": "주간 보고 8-9", "verdict": "AUTO_FIX"}, {"fields": ["axis:구조/레이어", "axis:공정 모듈", "axis:제품·세대", "axis:REMSPC", "axis:Patterning", "axis:Material", "axis:불량 모드", "axis:물리 현상", "axis:결과", "axis:의사결정 상태", "answer:Q-COM-001", "extract:date#0", "extract:lot_id#1"], "file_id": "1a0628f1557359fa2040b24c73b3555aa88d443d964b1f62a9b0df574ed24177", "file_name": "1a0628f1557359fa", "group": null, "image_total": 0, "issue_codes": ["L1_FORMAT_NORMALIZED"], "issues": [{"code": "L1_FORMAT_NORMALIZED", "field": "extract:date#0", "judge_reason": null, "layer": "L1", "quote": "2026.2.4 회의에서 일정 확정", "reason": "표기만 다른 값을 표준 표기로 바꿨다.", "scope": "record", "severity": "fixable", "suggested_fix": null}], "judge": {"failed": 0, "items": 9, "partial": 0, "supported": 9, "unsupported": 0}, "labels": {"answers": {"Q-COM-001": {"answer": "X", "confidence": 0.88, "quote": "장기 신뢰성까지 검증 완료"}}, "axes": {"Material": {"confidence": 0.74, "quote": "", "status": "unknown", "values": ["unknown"]}, "Patterning": {"confidence": 0.73, "quote": "", "status": "na", "values": ["해당 없음"]}, "REMSPC": {"confidence": 0.77, "quote": "Reticle 항목 변경 영향 확인", "status": "value", "values": ["Reticle"]}, "결과": {"confidence": 0.9, "quote": "비교 결과는 neutral 수준으로 판단", "status": "value", "values": ["neutral"]}, "공정 모듈": {"confidence": 0.71, "quote": "Clean 단계 레시피 비교 결과 정리", "status": "value", "values": ["Clean"]}, "구조/레이어": {"confidence": 0.72, "quote": "V1 및 M1 관련 조건 동시 점검", "status": "value", "values": ["V1", "M1"]}, "물리 현상": {"confidence": 0.85, "quote": "CD imbalance 현상이 단면 분석에서 관찰됨", "status": "value", "values": ["CD imbalance"]}, "불량 모드": {"confidence": 0.85, "quote": "", "status": "na", "values": ["해당 없음"]}, "의사결정 상태": {"confidence": 0.84, "quote": "최종 결론은 adopted 상태로 기록", "status": "value", "values": ["adopted"]}, "제품·세대": {"confidence": 0.84, "quote": "SF2X 제품 기준으로 평가 진행", "status": "value", "values": ["SF2X"]}}, "chunk_type": "내용", "extracted": [{"field": "extract:date#0", "item": "date", "quote": "2026.2.4 회의에서 일정 확정", "value": "2026.2.4"}, {"field": "extract:lot_id#1", "item": "lot_id", "quote": "lot RQBYCU 샘플 분석 진행", "value": "RQBYCU"}]}, "priority": null, "problem_fields": [], "record_id": "1a0628f1557359fa:ppt/slides/slide2.xml", "score": 99, "section": "AUTO_FIX", "slide_no": 2, "text": "주간 보고 1-2\n2026.2.4 회의에서 일정 확정\n실험 노트 작성 규칙 안내\nCD imbalance 현상이 단면 분석에서 관찰됨\nReticle 항목 변경 영향 확인\nSF2X 제품 기준으로 평가 진행\nVia1 및 M1 관련 조건 동시 점검\n최종 결론은 adopted 상태로 기록\nClean 단계 레시피 비교 결과 정리\n보고서 양식 변경 안내\n장기 신뢰성까지 검증 완료\nlot RQBYCU 샘플 분석 진행\n비교 결과는 profile 차이 미미 수준으로 판단\n항목 | 측정값\nRs | 17.0\nRc | 3.6", "title": "주간 보고 1-2", "verdict": "AUTO_FIX"}, {"fields": ["axis:구조/레이어", "axis:공정 모듈", "axis:제품·세대", "axis:REMSPC", "axis:Patterning", "axis:Material", "axis:불량 모드", "axis:물리 현상", "axis:결과", "axis:의사결정 상태", "answer:Q-COM-001", "extract:date#0"], "file_id": "1a0628f1557359fa2040b24c73b3555aa88d443d964b1f62a9b0df574ed24177", "file_name": "1a0628f1557359fa", "group": null, "image_total": 0, "issue_codes": ["L1_FORMAT_NORMALIZED"], "issues": [{"code": "L1_FORMAT_NORMALIZED", "field": "extract:date#0", "judge_reason": null, "layer": "L1", "quote": "2026.1.26 회의에서 일정 확정", "reason": "표기만 다른 값을 표준 표기로 바꿨다.", "scope": "record", "severity": "fixable", "suggested_fix": null}], "judge": {"failed": 0, "items": 12, "partial": 0, "supported": 12, "unsupported": 0}, "labels": {"answers": {"Q-COM-001": {"answer": "X", "confidence": 0.88, "quote": "장기 신뢰성까지 검증 완료"}}, "axes": {"Material": {"confidence": 0.88, "quote": "Clean chemical 막 적용 조건 비교", "status": "value", "values": ["Clean chemical"]}, "Patterning": {"confidence": 0.8, "quote": "EUV-SET 방식으로 패턴 형성", "status": "value", "values": ["EUV-SET"]}, "REMSPC": {"confidence": 0.74, "quote": "Equipment 요인으로 분류해 원인 분석", "status": "value", "values": ["Equipment"]}, "결과": {"confidence": 0.87, "quote": "degraded 및 inconclusive 관련 조건 동시 점검", "status": "value", "values": ["degraded", "inconclusive"]}, "공정 모듈": {"confidence": 0.73, "quote": "Etch 단계 레시피 비교 결과 정리", "status": "value", "values": ["Etch"]}, "구조/레이어": {"confidence": 0.67, "quote": "", "status": "unknown", "values": ["unknown"]}, "물리 현상": {"confidence": 0.77, "quote": "metal bridge 현상이 단면 분석에서 관찰됨", "status": "value", "values": ["metal bridge"]}, "불량 모드": {"confidence": 0.8, "quote": "Rs 산포 불량이 Center 영역에서 확인됨", "status": "value", "values": ["Rs 산포"]}, "의사결정 상태": {"confidence": 0.83, "quote": "최종 결론은 rejected 상태로 기록", "status": "value", "values": ["rejected"]}, "제품·세대": {"confidence": 0.72, "quote": "SF1.0 및 SF2 관련 조건 동시 점검", "status": "value", "values": ["SF1.0", "SF2"]}}, "chunk_type": "내용", "extracted": [{"field": "extract:date#0", "item": "date", "quote": "2026.1.26 회의에서 일정 확정", "value": "2026.1.26"}]}, "priority": null, "problem_fields": [], "record_id": "1a0628f1557359fa:ppt/slides/slide6.xml", "score": 99, "section": "AUTO_FIX", "slide_no": 6, "text": "주간 보고 1-6\nEUV-SET 방식으로 패턴 형성\nRs 산포 불량이 Center 영역에서 확인됨\n브릿지 현상이 단면 분석에서 관찰됨\nEquipment 요인으로 분류해 원인 분석\n측정 장비 예약 현황 공유\ndegraded 및 inconclusive 관련 조건 동시 점검\n최종 결론은 rejected 상태로 기록\n장기 신뢰성까지 검증 완료\nClean chemical 막 적용 조건 비교\nSF1.0 및 SF2 관련 조건 동시 점검\n2026.1.26 회의에서 일정 확정\nEtch 단계 레시피 비교 결과 정리\n항목 | 측정값\nRs | 19.9\nRc | 2.7", "title": "주간 보고 1-6", "verdict": "AUTO_FIX"}], "unknown": "unknown"};
+
+(function(){
+  "use strict";
+  var root = document.getElementById("root");
+
+  function h(tag, attrs, kids){
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs){
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else if (k.slice(0,2) === "on") e.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function(c){ if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("on");
+    clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("on"); }, 2200);
+  }
+
+  if (!DATA || DATA.kind !== "qa_review"){
+    root.appendChild(h("div", {class:"emptystate"}, [
+      h("h2", {text:"표시할 데이터가 없습니다"}),
+      h("p", {text:"이 화면은 검수봇 run 또는 review 명령이 데이터를 채워 넣은 뒤에 사용합니다."})
+    ]));
+    return;
+  }
+
+  var records = DATA.records || [];
+  var byId = {};
+  records.forEach(function(r){ byId[r.record_id] = r; });
+  var axisDef = {};
+  (DATA.axes || []).forEach(function(a){ axisDef[a.name] = a; });
+  var qtext = {};
+  (DATA.questions || []).forEach(function(q){ qtext[q.qid] = q.text; });
+  var codesDesc = DATA.codes || {};
+  var SECTION_NAMES = {REVIEW:"REVIEW 대기열", PASS_SAMPLE:"PASS 표본", REJECT:"REJECT 목록", AUTO_FIX:"AUTO_FIX"};
+
+  // ---------- 상태(브라우저 자동 저장) ----------
+  var KEY = "engrbot_review_" + DATA.qa_run_id;
+  var st = {reviewer:"", fields:{}, rejects:{}, autofix:{}, props:{}};
+  var tab = "REVIEW", selId = null, activeCodes = {};
+  function load(){
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      ["fields","rejects","autofix","props"].forEach(function(k){ if (o[k]) st[k] = o[k]; });
+      if (typeof o.reviewer === "string") st.reviewer = o.reviewer;
+      if (typeof o.completedAt === "string") st.completedAt = o.completedAt;
+    } catch(e){}
+  }
+  var saveT = null;
+  function save(){
+    clearTimeout(saveT);
+    saveT = setTimeout(function(){
+      try { window.localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){}
+    }, 150);
+  }
+  load();
+
+  // ---------- 봇 값 표시 ----------
+  function fieldKind(f){ return f.split(":")[0]; }
+  function fieldKey(f){ return f.slice(f.indexOf(":") + 1); }
+  function botValue(r, f){
+    var k = fieldKind(f), key = fieldKey(f), L = r.labels || {};
+    if (k === "axis"){ var a = (L.axes || {})[key]; return a ? {value:a.values.slice(), quote:a.quote || "", conf:a.confidence, status:a.status} : null; }
+    if (k === "answer"){ var q = (L.answers || {})[key]; return q ? {value:q.answer, quote:q.quote || "", conf:q.confidence} : null; }
+    if (k === "extract"){
+      var ex = (L.extracted || []).filter(function(e){ return e.field === f; })[0];
+      return ex ? {value:ex.value, quote:ex.quote || "", conf:null} : null;
+    }
+    return null;
+  }
+  function fieldLabel(f){
+    var k = fieldKind(f), key = fieldKey(f);
+    if (k === "axis") return "축 · " + key;
+    if (k === "answer") return "질문 · " + key + (qtext[key] ? " — " + qtext[key] : "");
+    if (k === "extract") return "추출 · " + key;
+    return f;
+  }
+  function valueDef(axis, v){
+    var a = axisDef[axis];
+    if (!a) return "";
+    var x = (a.values || []).filter(function(y){ return y.name === v; })[0];
+    return x ? (x.definition || "") : "";
+  }
+
+  // ---------- 본문 강조 ----------
+  function pieces(q){
+    var out = [];
+    (q || "").split(/\n/).forEach(function(line){
+      line.split(/\s*(?:…|\.{3,})\s*/).forEach(function(p){ p = p.trim(); if (p.length >= 2) out.push(p); });
+    });
+    return out;
+  }
+  function highlighted(text, strong, weak){
+    var ranges = [];
+    function add(qs, cls){
+      qs.forEach(function(q){ pieces(q).forEach(function(p){
+        var i = text.indexOf(p);
+        if (i >= 0) ranges.push({s:i, e:i + p.length, c:cls});
+      }); });
+    }
+    add(strong, "q"); add(weak, "s");
+    ranges.sort(function(a, b){ return a.s - b.s || (a.c === "q" ? -1 : 1); });
+    var box = h("div", {class:"text"}), pos = 0;
+    ranges.forEach(function(r){
+      if (r.s < pos) return;
+      if (r.s > pos) box.appendChild(document.createTextNode(text.slice(pos, r.s)));
+      box.appendChild(h("mark", {class:r.c, text:text.slice(r.s, r.e)}));
+      pos = r.e;
+    });
+    if (pos < text.length) box.appendChild(document.createTextNode(text.slice(pos)));
+    return box;
+  }
+
+  // ---------- 결정 출력(4.5절 형식) ----------
+  function fieldState(rid, f){ return (st.fields[rid] || {})[f]; }
+  function setField(rid, f, patch){
+    st.fields[rid] = st.fields[rid] || {};
+    var cur = st.fields[rid][f] || {};
+    for (var k in patch) cur[k] = patch[k];
+    st.fields[rid][f] = cur;
+    save();
+  }
+  function buildOutput(){
+    var decisions = [], rejects = [], autofix = [], props = [];
+    records.forEach(function(r){
+      if (r.section !== "REVIEW" && r.section !== "PASS_SAMPLE") return;
+      r.fields.forEach(function(f){
+        var s = fieldState(r.record_id, f);
+        if (!s || !s.decision) return;
+        var b = botValue(r, f) || {value:null, quote:""};
+        var d = {record_id:r.record_id, field:f, decision:s.decision, value:null, quote:null};
+        if (s.decision === "confirm"){ d.value = b.value; d.quote = b.quote; }
+        else if (s.decision === "correct"){ d.value = s.value !== undefined ? s.value : b.value; d.quote = s.quote !== undefined ? s.quote : b.quote; }
+        decisions.push(d);
+      });
+    });
+    records.forEach(function(r){
+      if (r.section !== "REJECT") return;
+      var s = st.rejects[r.record_id];
+      if (!s || !s.decision) return;
+      var corr = [];
+      if (s.decision === "correct"){
+        r.fields.forEach(function(f){
+          var c = (s.corr || {})[f];
+          if (c && c.on){
+            var b = botValue(r, f) || {value:null, quote:""};
+            corr.push({field:f, value:c.value !== undefined ? c.value : b.value, quote:c.quote !== undefined ? c.quote : b.quote});
+          }
+        });
+      }
+      rejects.push({record_id:r.record_id, decision:s.decision, corrections:corr});
+    });
+    (DATA.autofix || []).forEach(function(g){
+      var s = st.autofix[g.rule] || {};
+      var ex = Object.keys(s.except || {}).filter(function(k){ return s.except[k]; }).sort();
+      var dec = g.approved ? (ex.length ? "approve" : null) : (s.decision || null);
+      if (dec) autofix.push({rule:g.rule, decision:dec, except:ex});
+    });
+    (DATA.proposals || []).forEach(function(p){
+      var s = st.props[p.proposal_id];
+      if (!s || !s.decision) return;
+      var d = {proposal_id:p.proposal_id, decision:s.decision, as:null, note:s.note || ""};
+      if (p.kind === "TERM"){
+        d.as = s.as || null;
+        d.axis = s.axis || ""; d.parent = s.parent || ""; d.canonical = s.canonical || "";
+      }
+      props.push(d);
+    });
+    return {kind:"qa_decisions", qa_run_id:DATA.qa_run_id, reviewer:st.reviewer || "",
+            decisions:decisions, reject_decisions:rejects, autofix_decisions:autofix, proposal_decisions:props};
+  }
+  var DECISIONS_NAME = "qa_decisions_" + DATA.qa_run_id + ".json";
+  // domain_engrbot serve로 열었으면 결정을 서버에 보내 작업 폴더 qa/inbox/에 바로 쓴다. 파일로 열었으면 내려받는다.
+  var SERVED = location.protocol !== "file:";
+  // done(where): "inbox"(작업 폴더에 저장) · "download"(내려받기 시작) · null(둘 다 막혀 텍스트 창을 띄움).
+  function saveDecisions(done){
+    var text = JSON.stringify(buildOutput(), null, 2);
+    if (!SERVED){ done(download(text) ? "download" : null); return; }
+    function fail(code){
+      toast("작업 폴더 저장 실패(" + code + "). 내려받기로 저장합니다");
+      done(download(text) ? "download" : null);
+    }
+    try {
+      fetch("inbox/qa_decisions", {method:"POST", headers:{"Content-Type":"application/json"}, body:text})
+        .then(function(res){ return res.json().then(function(j){ return {ok:res.ok && j && j.ok, j:j || {}}; }); })
+        .then(function(x){
+          if (!x.ok) return fail(x.j.code || "SAVE_FAILED");
+          toast("작업 폴더 qa/inbox/에 " + DECISIONS_NAME + " 를 저장했습니다");
+          done("inbox");
+        }, function(){ fail("SERVER_UNREACHABLE"); });
+    } catch(e){ fail("SERVER_UNREACHABLE"); }
+  }
+  // 반환: 내려받기를 시작했으면 true. 막히면 텍스트 창을 띄우고 false.
+  function download(text){
+    try {
+      var blob = new Blob([text], {type:"application/json"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = DECISIONS_NAME;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+      toast(DECISIONS_NAME + " 내려받기를 시작했습니다");
+      return true;
+    } catch(e){
+      showText(text, "내려받기가 막혔습니다. 아래 텍스트를 복사해 Claude에게 붙여 넣고 \"QA 검수 끝났어\"라고 알려 주세요.");
+      return false;
+    }
+  }
+  function undecidedCount(){
+    return sectionRecords("REVIEW").concat(sectionRecords("REJECT")).filter(function(r){ return !isDone(r); }).length;
+  }
+  // 검수 완료: 결정 JSON을 내려받고 다음 단계(Claude에게 알리기)를 안내한다.
+  function complete(){
+    var left = undecidedCount();
+    if (left && !window.confirm("결정하지 않은 레코드가 " + left + "건 있습니다. 결정한 것만 저장하고 검수를 마칠까요?\n(결정하지 않은 필드는 골든셋 · 피드백에 들어가지 않습니다)")) return;
+    saveDecisions(function(where){
+      if (!where) return;
+      st.completedAt = new Date().toTimeString().slice(0, 5);
+      st.savedTo = where;
+      save(); render(); openDone();
+    });
+  }
+  function openDone(){
+    var out = buildOutput(), n = {confirm:0, correct:0, cannot_judge:0};
+    out.decisions.forEach(function(d){ n[d.decision] = (n[d.decision] || 0) + 1; });
+    var left = undecidedCount();
+    var inbox = st.savedTo === "inbox";
+    document.getElementById("doneFile").textContent = (inbox ? "작업 폴더 qa/inbox/에 " : "내려받기 폴더에 ") + DECISIONS_NAME +
+      " 를 저장했습니다" + (st.completedAt ? " (" + st.completedAt + ")" : "") + "." + (inbox ? " 파일을 옮길 필요가 없습니다." : "");
+    document.getElementById("doneMove").textContent = inbox
+      ? "Claude가 qa/inbox/의 이 결정 파일을 확인받습니다."
+      : "Claude가 내려받기 폴더에서 이 결정 파일을 찾아 확인을 받은 뒤 작업 폴더의 qa/inbox/로 옮깁니다.";
+    document.getElementById("doneAgain").textContent = SERVED ? "다시 저장" : "다시 내려받기";
+    var sum = document.getElementById("doneSum");
+    sum.textContent = "";
+    [["확정", n.confirm], ["교정", n.correct], ["판단 불가", n.cannot_judge], ["REJECT 결정", out.reject_decisions.length],
+     ["AUTO_FIX 결정", out.autofix_decisions.length], ["규칙 제안 결정", out.proposal_decisions.length]].forEach(function(x){
+      sum.appendChild(h("span", {text:x[0] + " " + x[1]}));
+    });
+    if (left) sum.appendChild(h("span", {class:"w", text:"미결정 레코드 " + left}));
+    var cmds = ["python -m domain_engrbot golden add --workspace \"<작업 폴더>\" --qa-run " + DATA.qa_run_id,
+                "python -m domain_engrbot feedback --workspace \"<작업 폴더>\" --qa-run " + DATA.qa_run_id];
+    if (!inbox) cmds.unshift(DECISIONS_NAME + " 를 <작업 폴더>/qa/inbox/ 로 옮긴다");
+    document.getElementById("doneCmd").textContent = cmds.map(function(c, i){ return (i + 1) + ") " + c; }).join("\n");
+    var d = document.getElementById("doneDlg");
+    try { d.showModal(); } catch(e){ d.setAttribute("open", ""); }
+  }
+  function closeDone(){ var d = document.getElementById("doneDlg"); try { d.close(); } catch(e){ d.removeAttribute("open"); } }
+  document.getElementById("doneClose").addEventListener("click", closeDone);
+  document.getElementById("doneAgain").addEventListener("click", function(){
+    saveDecisions(function(where){ if (where){ st.savedTo = where; save(); openDone(); } });
+  });
+  document.getElementById("donePhrase").addEventListener("click", function(){
+    var t = "QA 검수 끝났어";
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){ toast("문구를 복사했습니다"); }, function(){ toast("복사가 막혔습니다. 직접 입력해 주세요"); });
+        return;
+      }
+    } catch(e){}
+    toast("복사가 막혔습니다. 직접 입력해 주세요");
+  });
+  function showText(text, msg){
+    var dlg = document.getElementById("dlg"), ta = document.getElementById("dlgTa");
+    document.getElementById("dlgP").textContent = msg || "";
+    ta.value = text;
+    try { dlg.showModal(); } catch(e){ dlg.setAttribute("open", ""); }
+    ta.focus(); ta.select();
+  }
+  function copyText(){
+    var text = JSON.stringify(buildOutput(), null, 2);
+    function fallback(){ showText(text, "자동 복사가 막혀 있습니다. 텍스트를 선택해 복사(Ctrl+C)하세요."); }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ toast("텍스트로 복사했습니다"); }, fallback);
+        return;
+      }
+    } catch(e){}
+    fallback();
+  }
+  document.getElementById("dlgClose").addEventListener("click", function(){
+    var d = document.getElementById("dlg"); try { d.close(); } catch(e){ d.removeAttribute("open"); }
+  });
+  document.getElementById("dlgSel").addEventListener("click", function(){
+    var ta = document.getElementById("dlgTa"); ta.focus(); ta.select();
+  });
+  var zoom = document.getElementById("zoom");
+  zoom.addEventListener("click", function(){ zoom.classList.remove("on"); zoom.textContent = ""; });
+  function openZoom(url){
+    zoom.textContent = "";
+    zoom.appendChild(h("img", {src:url, alt:"확대 이미지"}));
+    zoom.classList.add("on");
+  }
+
+  // ---------- 진행 표시 ----------
+  function isDone(r){
+    if (r.section === "REJECT") return !!(st.rejects[r.record_id] || {}).decision;
+    if (r.section === "AUTO_FIX") return false;
+    return r.fields.length > 0 && r.fields.every(function(f){ var s = fieldState(r.record_id, f); return s && s.decision; });
+  }
+  function sectionRecords(sec){
+    return records.filter(function(r){ return sec === "REVIEW" ? (r.section === "REVIEW" || r.section === "PASS_SAMPLE") : r.section === sec; });
+  }
+
+  // ---------- 그리기 ----------
+  function render(){
+    root.textContent = "";
+    var app = h("div", {class:"app"});
+    var nReview = sectionRecords("REVIEW"), nReject = sectionRecords("REJECT");
+    var done = nReview.concat(nReject).filter(isDone).length;
+    var reviewer = h("input", {type:"text", value:st.reviewer, placeholder:"검토자 식별자", "aria-label":"검토자",
+      oninput:function(e){ st.reviewer = e.target.value; save(); }});
+    app.appendChild(h("div", {class:"bar"}, [
+      h("h1", {text:"검수봇 검토 화면"}),
+      h("span", {class:"meta mono", text:"검수 실행 " + DATA.qa_run_id + " · 라벨러 실행 " + (DATA.labeler_run_id || "-")}),
+      h("span", {class:"sp"}),
+      h("span", {class:"meta", text:"결정 완료 " + done + " / " + (nReview.length + nReject.length)}),
+      st.completedAt ? h("button", {class:"donetag", type:"button", title:"다음 단계 다시 보기", text:"검수 완료 " + st.completedAt, onclick:openDone}) : null,
+      reviewer,
+      h("button", {class:"btn primary", type:"button", text:st.completedAt ? "다시 완료 · 저장" : "검수 완료",
+        title:SERVED ? "결정 JSON을 작업 폴더 qa/inbox/에 저장하고 다음 단계를 안내합니다" : "결정 JSON을 내려받고 다음 단계를 안내합니다", onclick:complete}),
+      h("button", {class:"btn", type:"button", text:"텍스트로 복사", onclick:copyText}),
+      st.completedAt ? null : h("div", {class:"hint", style:"flex-basis:100%",
+        text:"결정을 마치면 오른쪽 위 '검수 완료'를 누르세요. 결정 파일이 " + (SERVED ? "작업 폴더 qa/inbox/에 저장되고" : "내려받아지고") + ", Claude에게 \"QA 검수 끝났어\"라고 알리면 골든셋 · 피드백 반영이 이어집니다. 진행 상황은 이 브라우저에 자동 저장됩니다."})
+    ]));
+    var tabs = [["REVIEW", "REVIEW 대기열", nReview.length], ["REJECT", "REJECT 목록", nReject.length],
+                ["AUTO_FIX", "AUTO_FIX", (DATA.autofix || []).length], ["PROPOSALS", "규칙 제안", (DATA.proposals || []).length]];
+    app.appendChild(h("div", {class:"tabs"}, tabs.map(function(t){
+      return h("button", {class:"tab" + (tab === t[0] ? " on" : ""), type:"button", onclick:function(){ tab = t[0]; selId = null; render(); }},
+               [t[1], h("span", {class:"n", text:String(t[2])})]);
+    })));
+    if (tab === "AUTO_FIX") app.appendChild(h("div", {class:"wide"}, [renderAutofix()]));
+    else if (tab === "PROPOSALS") app.appendChild(h("div", {class:"wide"}, [renderProposals()]));
+    else app.appendChild(renderRecordsTab(tab));
+    root.appendChild(app);
+  }
+
+  function renderRecordsTab(sec){
+    var recs = sectionRecords(sec);
+    var counts = {};
+    recs.forEach(function(r){ r.issue_codes.forEach(function(c){ counts[c] = (counts[c] || 0) + 1; }); });
+    var on = Object.keys(activeCodes).filter(function(c){ return activeCodes[c]; });
+    var shown = recs.filter(function(r){ return !on.length || r.issue_codes.some(function(c){ return activeCodes[c]; }); });
+    if (!selId || !byId[selId] || shown.indexOf(byId[selId]) < 0) selId = shown.length ? shown[0].record_id : null;
+    var chips = Object.keys(counts).sort().map(function(c){
+      return h("button", {class:"chip" + (activeCodes[c] ? " on" : ""), type:"button", title:codesDesc[c] || "",
+        onclick:function(){ activeCodes[c] = !activeCodes[c]; render(); }}, [c, h("span", {class:"n", text:String(counts[c])})]);
+    });
+    var items = h("div", {class:"items"});
+    var lastKey = null, box = items;
+    shown.forEach(function(r){
+      var key = null, label = "";
+      if (r.section === "PASS_SAMPLE"){ key = "pass"; label = "PASS 표본"; }
+      else if (r.priority === 2){ key = "file:" + r.file_id; label = "파일 범위 이슈 · " + r.file_name; }
+      else if (r.priority === 3){ key = "failsafe"; label = "judge 미실행·실패만 있는 레코드"; }
+      else if (r.group){ key = "dup:" + r.group; label = "중복 묶음 " + r.group; }
+      if (key !== lastKey){
+        box = key ? h("div", {class:"grp"}, [h("div", {class:"gh", text:label})]) : items;
+        if (key) items.appendChild(box);
+        lastKey = key;
+      }
+      box.appendChild(h("button", {class:"item" + (r.record_id === selId ? " on" : ""), type:"button",
+        onclick:function(){ selId = r.record_id; render(); }}, [
+        h("div", {class:"l1"}, [h("span", {class:"id mono", text:r.record_id}), h("span", {text:"점수 " + r.score}),
+          isDone(r) ? h("span", {class:"done", text:"결정함"}) : null]),
+        h("div", {class:"l2", text:r.file_name + " · 슬라이드 " + (r.slide_no || "-") + " · " + (r.title || "")}),
+        h("div", {class:"tags"}, r.issues.filter(function(i){ return i.severity === "critical" || i.severity === "major"; })
+          .map(function(i){ return h("span", {class:"tag " + i.severity, text:i.code}); }))
+      ]));
+    });
+    if (!shown.length) items.appendChild(h("p", {class:"muted", text:"표시할 레코드가 없습니다."}));
+    var list = h("div", {class:"list"}, [
+      h("div", {class:"filters"}, [h("div", {class:"lbl", text:"이슈 코드로 거르기"}), h("div", {class:"chips"}, chips)]),
+      items
+    ]);
+    var detail = h("div", {class:"detail"}, [selId ? renderRecord(byId[selId]) : h("p", {class:"muted", text:"레코드를 고르세요."})]);
+    return h("div", {class:"cols"}, [list, detail]);
+  }
+
+  function renderRecord(r){
+    var wrap = h("div");
+    wrap.appendChild(h("div", {class:"dh"}, [
+      h("h2", {text:r.file_name + " · 슬라이드 " + (r.slide_no || "-")}),
+      h("div", {class:"path mono", text:r.record_id + " · " + SECTION_NAMES[r.section] + " · 판정 " + r.verdict + " · 점수 " + r.score})
+    ]));
+    var fi = ((DATA.files || {})[r.file_id] || {}).file_issues || [];
+    if (fi.length){
+      wrap.appendChild(h("div", {class:"note"}, ["이 파일의 파일 범위 이슈: "].concat(fi.map(function(x){ return x.code + "(" + x.severity + ") "; }))));
+    }
+    var strong = [], weak = [];
+    r.issues.forEach(function(i){ if (i.quote && (i.severity === "critical" || i.severity === "major")) strong.push(i.quote); });
+    r.fields.forEach(function(f){ var b = botValue(r, f); if (b && b.quote) weak.push(b.quote); });
+    var left = h("div", {class:"card"}, [h("h3", {text:"chunk 본문"}), highlighted(r.text, strong, weak)]);
+    var slides = ((DATA.files || {})[r.file_id] || {}).slides || [];
+    var own = slides.filter(function(s){ return s.record_id === r.record_id; })[0];
+    if (own && own.preview) left.appendChild(slidePreview(own, "이 슬라이드 미리보기"));
+    if (own && own.images.length) left.appendChild(slideImages(own, "이 슬라이드 안의 그림"));
+    var others = slides.filter(function(s){ return s.record_id !== r.record_id; });
+    if (others.length){
+      var box = h("details", {class:"others", open:"open"}, [
+        h("summary", {text:"같은 파일의 다른 슬라이드 (" + others.length + "장) · 누르면 크게 봅니다"})]);
+      box.appendChild(h("div", {class:"ogrid"}, others.map(otherSlide)));
+      left.appendChild(box);
+    }
+    var right = h("div");
+    if (r.section === "REJECT") right.appendChild(renderReject(r));
+    else if (r.section === "AUTO_FIX") right.appendChild(h("div", {class:"note", text:"AUTO_FIX 레코드는 AUTO_FIX 탭에서 규칙 단위로 결정합니다."}));
+    else right.appendChild(renderFields(r));
+    wrap.appendChild(h("div", {class:"two"}, [left, right]));
+    return wrap;
+  }
+
+  function slidePreview(s, label){
+    return h("div", {class:"slideimgs"}, [h("div", {class:"sl", text:label}),
+      h("img", {class:"slideprev", src:s.preview, alt:label, onclick:function(){ openZoom(s.preview); }})]);
+  }
+  // 같은 파일의 다른 슬라이드 한 장: 슬라이드 전체 미리보기(없으면 표시만) + 슬라이드 안 그림 썸네일.
+  function otherSlide(s){
+    var label = "슬라이드 " + (s.slide_no || "-") + (s.title ? " · " + s.title : "");
+    var card = h("div", {class:"ocard"}, [h("div", {class:"ot", title:label, text:label})]);
+    card.appendChild(s.preview
+      ? h("img", {class:"slideprev", src:s.preview, alt:label + " 미리보기", onclick:function(){ openZoom(s.preview); }})
+      : h("div", {class:"noprev", text:"미리보기 없음"}));
+    if (s.images.length) card.appendChild(h("div", {class:"imgs"}, s.images.map(function(u){
+      return h("img", {src:u, alt:label + " 그림", onclick:function(){ openZoom(u); }});
+    })));
+    if (s.image_total > s.images.length) card.appendChild(h("p", {class:"muted", text:"그림 " + s.image_total + "개 중 " + s.images.length + "개 표시"}));
+    return card;
+  }
+  function slideImages(s, label){
+    var wrap = h("div", {class:"slideimgs"}, [h("div", {class:"sl", text:label})]);
+    wrap.appendChild(h("div", {class:"imgs"}, s.images.map(function(u){
+      return h("img", {src:u, alt:label + " 이미지", onclick:function(){ openZoom(u); }});
+    })));
+    if (s.image_total > s.images.length) wrap.appendChild(h("p", {class:"muted", text:"이미지 " + s.image_total + "개 중 " + s.images.length + "개만 표시합니다."}));
+    return wrap;
+  }
+
+  function botLine(r, f){
+    var b = botValue(r, f), k = fieldKind(f), key = fieldKey(f);
+    if (!b) return h("div", {class:"muted", text:"봇 값 없음"});
+    var vals = Array.isArray(b.value) ? b.value : [b.value];
+    var line = h("div", {}, vals.map(function(v){
+      var na = v === DATA.na || v === DATA.unknown;
+      return h("span", {class:"v" + (na ? " na" : ""), title:k === "axis" ? valueDef(key, v) : "", text:String(v)});
+    }).concat([b.conf !== null && b.conf !== undefined ? h("span", {class:"muted mono", text:"확신도 " + b.conf}) : null]));
+    var out = h("div", {}, [line]);
+    if (b.quote) out.appendChild(h("div", {class:"ev", text:b.quote}));
+    if (k === "axis" && axisDef[key]){
+      var dl = h("dl");
+      vals.forEach(function(v){ var d = valueDef(key, v); if (d){ dl.appendChild(h("dt", {text:v})); dl.appendChild(h("dd", {text:d})); } });
+      if (dl.childNodes.length) out.appendChild(h("details", {class:"defs"}, [h("summary", {text:"taxonomy 정의"}), dl]));
+    }
+    return out;
+  }
+
+  function valueEditor(r, f, cur, onchange){
+    var k = fieldKind(f), key = fieldKey(f), b = botValue(r, f) || {value:null, quote:""};
+    var value = cur.value !== undefined ? cur.value : b.value;
+    var quote = cur.quote !== undefined ? cur.quote : b.quote;
+    var box = h("div", {class:"edit"});
+    if (k === "axis"){
+      var names = ((axisDef[key] || {}).values || []).map(function(v){ return v.name; }).concat([DATA.na, DATA.unknown]);
+      var sel = Array.isArray(value) ? value.slice() : [];
+      box.appendChild(h("div", {class:"vals"}, names.map(function(n){
+        var cb = h("input", {type:"checkbox", checked:sel.indexOf(n) >= 0 ? "checked" : null, onchange:function(e){
+          var i = sel.indexOf(n);
+          if (e.target.checked && i < 0) sel.push(n);
+          if (!e.target.checked && i >= 0) sel.splice(i, 1);
+          onchange({value:sel.slice()});
+        }});
+        return h("label", {title:valueDef(key, n)}, [cb, " " + n]);
+      })));
+    } else if (k === "answer"){
+      var s = h("select", {"aria-label":"답", onchange:function(e){ onchange({value:e.target.value}); }},
+        (DATA.answers_allowed || []).map(function(a){ return h("option", {value:a, selected:a === value ? "selected" : null, text:a}); }));
+      box.appendChild(s);
+    } else {
+      box.appendChild(h("input", {type:"text", value:value || "", "aria-label":"값", oninput:function(e){ onchange({value:e.target.value}); }}));
+    }
+    box.appendChild(h("textarea", {placeholder:"근거 인용(본문에서 글자 그대로)", "aria-label":"근거 인용",
+      oninput:function(e){ onchange({quote:e.target.value}); }}, [quote || ""]));
+    return box;
+  }
+
+  // ---------- 같은 pptx 슬라이드 라벨 공통 적용 ----------
+  // 슬라이드(레코드) 단위다. 같은 파일에서 검수를 마친 슬라이드의 라벨을 다른 슬라이드에 한 번에 넣는다.
+  function samePptx(r){
+    return records.filter(function(o){
+      return o.record_id !== r.record_id && o.file_id === r.file_id && (o.section === "REVIEW" || o.section === "PASS_SAMPLE");
+    });
+  }
+  function sameValue(a, b){
+    function norm(v){ return Array.isArray(v) ? JSON.stringify(v.slice().sort()) : JSON.stringify(v === undefined ? null : v); }
+    return norm(a) === norm(b);
+  }
+  // 넣을 필드: 두 슬라이드에 모두 있는 축·질문 필드 중 원본은 결정했고 대상은 아직 결정하지 않은 것.
+  // 대상에서 이미 결정한 필드는 건드리지 않는다(추출 필드는 슬라이드마다 항목 순서가 달라 뺀다).
+  function commonFields(src, dst){
+    return dst.fields.filter(function(f){
+      var k = fieldKind(f), a = fieldState(src.record_id, f), d = fieldState(dst.record_id, f);
+      return (k === "axis" || k === "answer") && src.fields.indexOf(f) >= 0 && a && a.decision && !(d && d.decision);
+    });
+  }
+  // 원본 슬라이드의 최종 값이 대상의 봇 값과 같으면 확정, 다르면 그 값으로 교정(근거 인용은 다른 슬라이드 것이라 비운다).
+  function applyFrom(src, dst, n){
+    commonFields(src, dst).forEach(function(f){
+      var s = fieldState(src.record_id, f), b = botValue(src, f) || {value:null};
+      var value = s.decision === "correct" ? (s.value !== undefined ? s.value : b.value) : b.value;
+      var patch = {from:src.record_id, value:undefined, quote:undefined};
+      if (s.decision === "cannot_judge") patch.decision = "cannot_judge";
+      else if (sameValue((botValue(dst, f) || {}).value, value)) patch.decision = "confirm";
+      else { patch.decision = "correct"; patch.value = Array.isArray(value) ? value.slice() : value; patch.quote = ""; }
+      n[patch.decision] += 1;
+      setField(dst.record_id, f, patch);
+    });
+    return n;
+  }
+  function appliedText(n){ return "확정 " + n.confirm + " · 교정 " + n.correct + " · 판단 불가 " + n.cannot_judge; }
+  function slideName(r){ return "슬라이드 " + (r.slide_no || "-"); }
+  function commonPanel(r){
+    var sibs = samePptx(r);
+    if (!sibs.length) return null;
+    var box = h("div", {class:"common"}, [h("b", {text:"같은 pptx 라벨 적용"})]);
+    // 같은 pptx에서 검수를 마친 슬라이드 → 이 슬라이드에 같은 라벨
+    sibs.filter(isDone).forEach(function(src){
+      var k = commonFields(src, r).length;
+      box.appendChild(h("button", {class:"btn sm", type:"button", disabled:k ? null : "disabled",
+        title:"검수를 마친 " + slideName(src) + "의 라벨을 이 슬라이드의 결정 안 한 필드에 넣습니다. 이미 결정한 필드는 그대로 둡니다.",
+        text:slideName(src) + "와 같은 라벨 적용" + (k ? " (" + k + "개 필드)" : " · 남은 필드 없음"),
+        onclick:function(){
+          var n = applyFrom(src, r, {confirm:0, correct:0, cannot_judge:0});
+          toast(slideName(src) + " 라벨 적용: " + appliedText(n)); render();
+        }}));
+    });
+    // 이 슬라이드를 마쳤으면 → 같은 pptx의 다른 슬라이드 전부
+    if (isDone(r)){
+      var targets = sibs.filter(function(o){ return commonFields(r, o).length > 0; });
+      box.appendChild(h("button", {class:"btn sm primary", type:"button", disabled:targets.length ? null : "disabled",
+        title:"이 슬라이드의 라벨을 같은 pptx 다른 슬라이드의 결정 안 한 필드에 넣습니다. 이미 결정한 필드는 그대로 둡니다.",
+        text:targets.length ? "이 슬라이드 라벨을 같은 pptx " + targets.length + "장에 적용" : "같은 pptx의 다른 슬라이드는 모두 결정됨",
+        onclick:function(){
+          var n = {confirm:0, correct:0, cannot_judge:0};
+          targets.forEach(function(o){ applyFrom(r, o, n); });
+          toast("같은 pptx " + targets.length + "장에 적용: " + appliedText(n)); render();
+        }}));
+    }
+    if (box.childNodes.length === 1){
+      box.appendChild(h("span", {class:"muted", text:"같은 pptx 다른 슬라이드 " + sibs.length + "장. 한 장의 필드를 모두 결정하면 같은 라벨 적용 버튼이 생깁니다."}));
+    }
+    return box;
+  }
+
+  function renderFields(r){
+    var card = h("div", {class:"card"}, [h("h3", {}, ["필드별 결정",
+      h("button", {class:"btn sm", type:"button", text:"남은 필드 모두 라벨 확정", onclick:function(){
+        r.fields.forEach(function(f){ var s = fieldState(r.record_id, f); if (!s || !s.decision) setField(r.record_id, f, {decision:"confirm"}); });
+        render();
+      }})])]);
+    var common = commonPanel(r);
+    if (common) card.appendChild(common);
+    if (!r.fields.length) card.appendChild(h("p", {class:"muted", text:"결정할 필드가 없습니다."}));
+    var order = r.fields.slice().sort(function(a, b){
+      return (r.problem_fields.indexOf(a) < 0) - (r.problem_fields.indexOf(b) < 0);
+    });
+    order.forEach(function(f){
+      var prob = r.problem_fields.indexOf(f) >= 0;
+      var s = fieldState(r.record_id, f) || {};
+      var row = h("div", {class:"fld" + (prob ? " prob" : "")}, [
+        h("div", {class:"fh"}, [h("b", {text:fieldLabel(f)}), prob ? h("span", {class:"badge prob", text:"이슈"}) : null]),
+        botLine(r, f)
+      ]);
+      var opts = [["confirm", "라벨 확정"], ["correct", "교정"], ["cannot_judge", "판단 불가"]];
+      row.appendChild(h("div", {class:"opts"}, opts.map(function(o){
+        return h("button", {class:"opt", type:"button", "aria-pressed":s.decision === o[0] ? "true" : "false", text:o[1],
+          onclick:function(){ setField(r.record_id, f, {decision:s.decision === o[0] ? null : o[0], from:null}); render(); }});
+      })));
+      if (s.from){
+        var src = byId[s.from] || {};
+        row.appendChild(h("span", {class:"fromtag", title:s.from, text:slideName(src) + "에서 공통 적용"}));
+      }
+      if (s.decision === "correct") row.appendChild(valueEditor(r, f, s, function(p){ p.from = null; setField(r.record_id, f, p); }));
+      card.appendChild(row);
+    });
+    return card;
+  }
+
+  function renderReject(r){
+    var s = st.rejects[r.record_id] || {};
+    var card = h("div", {class:"card"}, [h("h3", {text:"재작업 지시와 결정"})]);
+    var tb = h("table", {}, [h("tr", {}, [h("th", {text:"필드"}), h("th", {text:"코드"}), h("th", {text:"사유"}), h("th", {text:"고칠 방법"})])]);
+    (r.rework || []).forEach(function(i){
+      tb.appendChild(h("tr", {}, [h("td", {text:i.field || "-"}), h("td", {class:"mono", text:i.code}), h("td", {text:i.reason || ""}), h("td", {text:i.suggested_fix || ""})]));
+    });
+    card.appendChild(tb);
+    var opts = [["rework", "재작업(지시가 맞다)"], ["correct", "직접 교정"], ["false_positive", "검수 오탐(규칙이 틀렸다)"]];
+    card.appendChild(h("div", {class:"opts"}, opts.map(function(o){
+      return h("button", {class:"opt", type:"button", "aria-pressed":s.decision === o[0] ? "true" : "false", text:o[1], onclick:function(){
+        st.rejects[r.record_id] = st.rejects[r.record_id] || {};
+        st.rejects[r.record_id].decision = s.decision === o[0] ? null : o[0];
+        save(); render();
+      }});
+    })));
+    if (s.decision === "correct"){
+      var order = r.fields.slice().sort(function(a, b){ return (r.problem_fields.indexOf(a) < 0) - (r.problem_fields.indexOf(b) < 0); });
+      order.forEach(function(f){
+        var c = (s.corr || {})[f] || {};
+        var row = h("div", {class:"fld" + (r.problem_fields.indexOf(f) >= 0 ? " prob" : "")}, [
+          h("div", {class:"fh"}, [h("label", {}, [h("input", {type:"checkbox", checked:c.on ? "checked" : null, onchange:function(e){
+            s.corr = s.corr || {}; s.corr[f] = s.corr[f] || {}; s.corr[f].on = e.target.checked;
+            st.rejects[r.record_id] = s; save(); render();
+          }}), " ", h("b", {text:fieldLabel(f)})])]),
+          botLine(r, f)
+        ]);
+        if (c.on) row.appendChild(valueEditor(r, f, c, function(p){
+          s.corr[f] = s.corr[f] || {}; for (var k in p) s.corr[f][k] = p[k];
+          st.rejects[r.record_id] = s; save();
+        }));
+        card.appendChild(row);
+      });
+    }
+    return card;
+  }
+
+  function renderAutofix(){
+    var wrap = h("div");
+    var groups = DATA.autofix || [];
+    if (!groups.length) wrap.appendChild(h("p", {class:"muted", text:"AUTO_FIX 레코드가 없습니다."}));
+    groups.forEach(function(g){
+      var s = st.autofix[g.rule] || {};
+      st.autofix[g.rule] = s;
+      var summary = h("summary", {}, [g.rule, h("span", {class:"meta", text:g.items.length + "건" + (g.approved ? " · 이미 승인된 규칙(policy)" : "")})]);
+      var det = h("details", {class:"card agrp"}, [summary]);
+      if (!g.approved) det.setAttribute("open", "");
+      if (!g.approved){
+        det.appendChild(h("div", {class:"opts"}, [["approve", "규칙 승인"], ["reject", "규칙 기각"]].map(function(o){
+          return h("button", {class:"opt", type:"button", "aria-pressed":s.decision === o[0] ? "true" : "false", text:o[1],
+            onclick:function(){ s.decision = s.decision === o[0] ? null : o[0]; save(); render(); }});
+        })));
+      }
+      var tb = h("table", {style:"margin-top:8px"}, [h("tr", {}, [h("th", {text:"제외"}), h("th", {text:"레코드"}), h("th", {text:"필드"}), h("th", {text:"전"}), h("th", {text:"후"})])]);
+      g.items.forEach(function(it){
+        var r = byId[it.record_id] || {};
+        s.except = s.except || {};
+        tb.appendChild(h("tr", {}, [
+          h("td", {}, [h("input", {type:"checkbox", "aria-label":"이 레코드 제외", checked:s.except[it.record_id] ? "checked" : null,
+            onchange:function(e){ s.except[it.record_id] = e.target.checked; save(); }})]),
+          h("td", {}, [h("div", {class:"mono", text:it.record_id}), h("div", {class:"muted", text:(r.file_name || "") + " · 슬라이드 " + (r.slide_no || "-")})]),
+          h("td", {class:"mono", text:it.field}),
+          h("td", {text:JSON.stringify(it.before)}),
+          h("td", {text:JSON.stringify(it.after)})
+        ]));
+      });
+      det.appendChild(tb);
+      wrap.appendChild(det);
+    });
+    return wrap;
+  }
+
+  function renderProposals(){
+    var wrap = h("div");
+    var props = DATA.proposals || [];
+    if (!props.length) wrap.appendChild(h("p", {class:"muted", text:"규칙 제안이 없습니다."}));
+    wrap.appendChild(h("div", {class:"note", text:"제안은 검수봇이 배치에서 집계한 신호와 수치입니다. 승인한 것만 피드백 묶음에 들어갑니다. 기각한 제안은 다음 실행부터 올라오지 않습니다."}));
+    props.forEach(function(p){
+      var s = st.props[p.proposal_id] || {};
+      st.props[p.proposal_id] = s;
+      var m = p.metric || {};
+      var card = h("div", {class:"card"}, [
+        h("h3", {}, [h("span", {class:"tag", text:p.kind}), p.target]),
+        h("div", {class:"muted", text:(m.name || "") + " " + (m.value === null || m.value === undefined ? "-" : m.value) +
+          (m.n !== null && m.n !== undefined ? " · n=" + m.n : "") + (m.threshold !== null && m.threshold !== undefined ? " · 기준 " + m.threshold : "")}),
+        (p.examples || []).length ? h("div", {class:"muted mono", text:"예시: " + p.examples.join(", ")}) : null
+      ]);
+      card.appendChild(h("div", {class:"opts"}, [["approve", "승인"], ["reject", "기각"], ["hold", "보류"]].map(function(o){
+        return h("button", {class:"opt", type:"button", "aria-pressed":s.decision === o[0] ? "true" : "false", text:o[1],
+          onclick:function(){ s.decision = s.decision === o[0] ? null : o[0]; save(); render(); }});
+      })));
+      if (p.kind === "TERM" && s.decision === "approve"){
+        card.appendChild(h("div", {class:"opts"}, [["value", "새 값으로"], ["synonym", "동의어로"]].map(function(o){
+          return h("button", {class:"opt", type:"button", "aria-pressed":s.as === o[0] ? "true" : "false", text:o[1],
+            onclick:function(){ s.as = s.as === o[0] ? null : o[0]; save(); render(); }});
+        })));
+        var pin = h("div", {class:"pin"});
+        if (s.as === "value"){
+          pin.appendChild(h("select", {"aria-label":"축", onchange:function(e){ s.axis = e.target.value; save(); }},
+            [h("option", {value:"", text:"축 선택"})].concat((DATA.axes || []).map(function(a){
+              return h("option", {value:a.name, selected:s.axis === a.name ? "selected" : null, text:a.name});
+            }))));
+          pin.appendChild(h("input", {type:"text", placeholder:"상위값(선택)", value:s.parent || "", oninput:function(e){ s.parent = e.target.value; save(); }}));
+        } else if (s.as === "synonym"){
+          pin.appendChild(h("input", {type:"text", placeholder:"표준어(taxonomy 값)", value:s.canonical || "", oninput:function(e){ s.canonical = e.target.value; save(); }}));
+        }
+        if (s.as) card.appendChild(pin);
+      }
+      card.appendChild(h("div", {class:"pin"}, [h("input", {type:"text", placeholder:"메모(선택)", value:s.note || "", oninput:function(e){ s.note = e.target.value; save(); }})]));
+      wrap.appendChild(card);
+    });
+    return wrap;
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

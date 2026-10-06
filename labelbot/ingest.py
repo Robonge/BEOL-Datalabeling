@@ -5,7 +5,7 @@
 import base64
 import os
 
-from labelbot import util
+from labelbot import docmeta, util
 
 OOXML_SIG = b"PK\x03\x04"
 OLE_SIG = b"\xd0\xcf\x11\xe0"
@@ -207,18 +207,14 @@ def _store_document(ws, con, fid, doc, method):
                 util.dumps(u.get("view") or {}),
             ),
         )
+    # 작성자·날짜는 슬라이드에 적힌 값만 쓴다. docprops는 변환 도구 이름·변환일일 수 있어 쓰지 않는다.
+    f = con.execute("SELECT file_name FROM files WHERE file_id=?", (fid,)).fetchone()
+    dm = docmeta.extract_file_meta(doc["units"], f["file_name"] if f else "")
     con.execute(
-        "UPDATE files SET title=?, author=?, authored_at=?, author_source=?, date_source=?, chunk_method=?"
-        " WHERE file_id=?",
-        (
-            meta.get("title"),
-            meta.get("author"),
-            meta.get("created"),
-            "docprops" if meta.get("author") else None,
-            "docprops" if meta.get("created") else None,
-            method,
-            fid,
-        ),
+        "UPDATE files SET title=?, author=?, authored_at=?, author_source=?, date_source=?, chunk_method=?,"
+        " doc_meta=? WHERE file_id=?",
+        (meta.get("title"), dm["author"], dm["date"], dm["author_source"], dm["date_source"], method,
+         util.dumps(dm), fid),
     )
 
 

@@ -1,10 +1,14 @@
 {
+  ".claude/skills/BEOL-labeling-Domain-Engr-bot/scripts/collect_qa_decisions.py": {
+    "help": "usage: collect_qa_decisions.py [-h] --workspace WORKSPACE [--qa-run QA_RUN] [--downloads DOWNLOADS] [--pick PICK] [--where {downloads,inbox}]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --qa-run QA_RUN\n  --downloads DOWNLOADS\n  --pick PICK           고를 파일 이름(목록에 나온 name)\n  --where {downloads,inbox}\n                        --pick 파일의 위치(목록에 나온 where). inbox면 옮기지 않는다\n",
+    "status": "ok"
+  },
   ".claude/skills/BEOL-labeling-feedback/scripts/collect_inbox.py": {
     "help": "usage: collect_inbox.py [-h] --workspace WORKSPACE --run RUN [--downloads DOWNLOADS]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n  --downloads DOWNLOADS\n",
     "status": "ok"
   },
   ".claude/skills/BEOL-labeling-feedback/scripts/wait_review_done.py": {
-    "help": "usage: wait_review_done.py [-h] --workspace WORKSPACE --run RUN [--check] [--timeout TIMEOUT] [--interval INTERVAL]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n  --check\n  --timeout TIMEOUT\n  --interval INTERVAL\n",
+    "help": "usage: wait_review_done.py [-h] --workspace WORKSPACE --run RUN [--signal {done,start}] [--after-start] [--check] [--timeout TIMEOUT] [--interval INTERVAL]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n  --signal {done,start}\n  --after-start\n  --check\n  --timeout TIMEOUT\n  --interval INTERVAL\n",
     "status": "ok"
   },
   ".claude/skills/BEOL-labeling-workflow/scripts/build_workflow.py": {

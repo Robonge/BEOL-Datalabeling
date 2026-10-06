@@ -1,0 +1,14 @@
+{
+  "run_id": "20261006T044309-42a4",
+  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261006-134010",
+  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "recorded_at": "2026-10-06T13:45:11",
+  "files": [
+    "260402_RQE8IA.6C F4 trench etch bias 350V, 600V, pulsed 조건 평가 (PID 영향).pptx",
+    "260428_QWVBA036.65 I1 MHM LK depo split 평가.pptx",
+    "260501_RQDK5.6D V2 Ru liner 2-step H2 O2, Wet+O2 계면 산화 억제 평가.pptx",
+    "260508_RXR7Q.6D I1 Ru liner Wet+O2 계면 산화 억제 평가.pptx",
+    "260527_QJMIN040.66 VA Ru via 접촉 저항 개선 평가.pptx",
+    "260626_RDT6C.67 M2 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx"
+  ]
+}

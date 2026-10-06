@@ -11,7 +11,7 @@ import unittest
 from tests.contracts import _support
 
 SKILL_GLOB = os.path.join(_support.REPO_ROOT, ".claude", "skills", "*", "SKILL.md")
-CMD = re.compile(r"python -m (labelbot|engrbot|codebot) ([a-z][a-z-]*)(?: ([a-z][a-z-]*))?")
+CMD = re.compile(r"python -m (labelbot|domain_engrbot|code_engrbot) ([a-z][a-z-]*)(?: ([a-z][a-z-]*))?")
 
 
 def _snapshot(bot):
@@ -35,7 +35,7 @@ class SkillCommandContract(unittest.TestCase):
         self.assertTrue(skill_commands(), "SKILL.md에서 명령을 하나도 찾지 못했다")
 
     def test_skill_commands_exist_in_cli(self):
-        snaps = {b: _snapshot(b) for b in ("labelbot", "engrbot", "codebot")}
+        snaps = {b: _snapshot(b) for b in ("labelbot", "domain_engrbot", "code_engrbot")}
         for skill, bot, sub, action in skill_commands():
             with self.subTest(skill=skill, cmd="%s %s %s" % (bot, sub, action or "")):
                 key = "%s %s" % (bot, sub)

@@ -1,7 +1,6 @@
 """산출 SQLite(out/labeling.sqlite), SCHEMA.md, 이미지 폴더. base64 원문, LLM 캐시, 절대 경로는 넣지 않는다."""
 import json
 import os
-import re
 import shutil
 import sqlite3
 
@@ -70,19 +69,16 @@ SCHEMA = [
         ("confidence", "REAL", "확신도 0~1"),
         ("review_status", "TEXT", "검수하지 않음 / 사람이 확인 / 사람이 교정"),
     ]),
-    ("extracted_values", "날짜·담당자 값", [
+    ("extracted_values", "날짜·작성자·Lot ID·WF 값. 파일 단위 값은 그 파일의 chunk마다 복사된다", [
         ("target_type", "TEXT", "file 또는 chunk"),
         ("target_id", "TEXT", "file_id 또는 chunk_id"),
-        ("item", "TEXT", "date 또는 person"),
-        ("value", "TEXT", "값(날짜는 YYYY-MM-DD)"),
-        ("evidence", "TEXT", "근거 인용"),
-        ("source", "TEXT", "docprops / filename / body"),
+        ("item", "TEXT", "date / person / lot / wf"),
+        ("value", "TEXT", "값(날짜는 YYYY-MM-DD, wf는 <Lot ID>#<번호>)"),
+        ("evidence", "TEXT", "근거 인용. lot·wf는 매칭 등급(strict/similar)"),
+        ("source", "TEXT", "slide(슬라이드 제목·본문) / filename(Lot ID만) / body(chunk별 LLM 추출)"),
     ]),
     ("meta", "산출 정보", [("key", "TEXT PRIMARY KEY", "키"), ("value", "TEXT", "값")]),
 ]
-
-_FNAME_DATE = re.compile(r"^(\d{2})(\d{2})(\d{2})_")
-
 
 def _create(con):
     for name, _, cols in SCHEMA:
@@ -110,8 +106,9 @@ def export(ws, con, run_id, tax):
         _create(out)
         _write_files(out, con, files, chunks, {f.file_id: f.memo for f in tax.files})
         bucket = ws.config["supabase"].get("storage_bucket")
+        bad = finals.incomplete(con, run_id, labels)  # 대상 축을 못 채운 axis-update chunk는 분류 실패 chunk처럼 쓴다
         for c in chunks:
-            _write_chunk(out, ws, con, c, labels.get(c["chunk_id"]) or {}, out_dir, bucket)
+            _write_chunk(out, ws, con, c, {} if c["chunk_id"] in bad else labels.get(c["chunk_id"]) or {}, out_dir, bucket)
         _write_taxonomy(out, con, tax)
         meta = {
             "run_id": run_id, "created_at": util.now_iso(),
@@ -138,8 +135,13 @@ def _write_files(out, con, files, chunks, memos):
         for loc in con.execute("SELECT * FROM file_locations WHERE file_id=?", (f["file_id"],)):
             out.execute("INSERT INTO file_locations VALUES(?,?,?,?,?)", (
                 loc["file_id"], loc["rel_path"], loc["file_name"], loc["first_seen_run"], loc["last_seen_run"]))
-        for item, value, src in _file_values(f):
-            out.execute("INSERT INTO extracted_values VALUES(?,?,?,?,?,?)", ("file", f["file_id"], item, value, None, src))
+        values = _file_values(f)
+        for item, value, ev, src in values:
+            out.execute("INSERT INTO extracted_values VALUES(?,?,?,?,?,?)", ("file", f["file_id"], item, value, ev, src))
+        for c in chunks:  # 파일 단위 값을 그 파일의 chunk마다 복사한다
+            if c["file_id"] == f["file_id"]:
+                out.executemany("INSERT INTO extracted_values VALUES(?,?,?,?,?,?)",
+                                [("chunk", c["chunk_id"], item, value, ev, src) for item, value, ev, src in values])
 
 
 def _copy_chunk_images(ws, con, c, out_dir, bucket):
@@ -191,15 +193,17 @@ def _write_taxonomy(out, con, tax):
 
 
 def _file_values(f):
+    """반환: [(item, value, evidence, source)]. ingest가 슬라이드에서 뽑은 doc_meta만 쓴다."""
+    dm = json.loads(f["doc_meta"] or "{}")
     out = []
-    if f["authored_at"]:
-        out.append(("date", f["authored_at"][:10], "docprops"))
-    else:
-        m = _FNAME_DATE.match(f["file_name"] or "")
-        if m:
-            out.append(("date", "20%s-%s-%s" % m.groups(), "filename"))
-    if f["author"]:
-        out.append(("person", f["author"], "docprops"))
+    if dm.get("date"):
+        out.append(("date", dm["date"], None, dm["date_source"]))
+    if dm.get("author"):
+        out.append(("person", dm["author"], None, dm["author_source"]))
+    for e in dm.get("lots") or []:
+        if e["lot"]:
+            out.append(("lot", e["lot"], e["match"], e["source"]))
+        out += [("wf", "%s#%d" % (e["lot"] or "", n), e["match"], e["source"]) for n in e["wf"]]
     return out
 
 

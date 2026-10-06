@@ -27,7 +27,6 @@ DEFAULT_CONFIG = {
         "response_format_json": False,
         "max_retries": 2,
         "workers": 4,
-        "internal_host_suffixes": [],
     },
     "embedding": {
         "enabled": True,
@@ -61,12 +60,16 @@ DEFAULT_CONFIG = {
     "alerts": {"na_ratio_max": 0.30, "dup_ratio_min": 0.40},
     "limits": {
         "questions_per_chunk": 8,
+        # 2차에서 승인 질문을 채우고 남은 상한 중 대조 질문(Q-CTL-)에 쓸 비율. 0이면 대조 질문을 만들지 않는다.
+        "control_ratio": 0.6,
+        # 검증 질문 최대 수. 대상은 1차 unknown 축과 확신도 flag.confidence_min 미만 라벨뿐이다.
+        "verify_max": 3,
         "images_per_chunk": 4,
         "chunk_char_limit": 6000,
         "query_k": 20,
     },
     "chunking": {"method": "slide"},
-    # 검수 피드백 소비(labelbot/feedback.py). 생산·승인은 Engr-bot(`python -m engrbot labeling-rules`)이 한다.
+    # 검수 피드백 소비(labelbot/feedback.py). 생산·확정은 Domain-Engr-bot 질문 답변(`domain_engrbot/answers.py`, `python -m domain_engrbot questions apply`)이 한다.
     # rules_path 기본: 코드 폴더 taxonomy/labeling_rules.json(승인 규칙·사례 참조, 본문 없음, git 추적).
     # examples_root 기본: 코드 폴더 workspaces/(사례 본문을 읽기 전용으로 가져올 원래 작업 폴더들).
     "feedback": {

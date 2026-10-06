@@ -9,7 +9,7 @@ import sys
 
 CODE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 sys.path.insert(0, CODE_ROOT)
-from labelbot.store import connect_ro  # noqa: E402
+from labelbot.store import LABEL_COMMANDS, connect_ro, latest_run  # noqa: E402
 
 
 def main():
@@ -23,9 +23,14 @@ def main():
         return 2
     con = connect_ro(db)
     q = lambda sql, *p: con.execute(sql, p).fetchall()
-    run = a.run or (q("SELECT run_id FROM runs WHERE command='run' ORDER BY run_id DESC LIMIT 1") or [[None]])[0][0]
+    run = a.run or latest_run(con, LABEL_COMMANDS)
     out = {"run_id": run}
     if run:
+        # 끝난 실행을 고른다. 더 최신의 미완료(중단) 실행이 있으면 그 ID를 함께 낸다.
+        out["finished"] = bool((q("SELECT finished_at FROM runs WHERE run_id=?", run) or [[None]])[0][0])
+        newest = latest_run(con, LABEL_COMMANDS, finished=False)
+        if newest and newest > run:
+            out["newer_unfinished"] = newest
         files = q("SELECT f.status, f.reason_code, COUNT(DISTINCT f.file_id) FROM files f JOIN file_locations l "
                   "ON l.file_id=f.file_id WHERE l.last_seen_run=? GROUP BY 1,2", run)
         out["files"] = {"ok": sum(n for s, _, n in files if s == "ok"),
@@ -43,6 +48,9 @@ def main():
                          for c, v, t in q("SELECT condition, value, threshold FROM alerts WHERE run_id=?", run)]
         out["answers"] = {v: n for v, n in q(
             "SELECT value, COUNT(*) FROM labels WHERE run_id=? AND kind='answer' GROUP BY 1", run)}
+        # 대조 질문(Q-CTL-) 답: 확정 라벨이 아니라 품질 신호다. O는 1차 분류 누락이나 3차 과잉 판정 신호.
+        out["controls"] = {v: n for v, n in q(
+            "SELECT value, COUNT(*) FROM labels WHERE run_id=? AND kind='control' GROUP BY 1", run)}
         out["candidates"] = {k: n for k, n in q(
             "SELECT kind, COUNT(DISTINCT content) FROM candidates WHERE run_id=? GROUP BY 1", run)}
         corr = q("SELECT target_kind, human_value, recheck FROM corrections WHERE review_run_id=?", run)

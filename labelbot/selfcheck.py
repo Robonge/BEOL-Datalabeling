@@ -7,7 +7,7 @@ import sys
 import urllib.parse
 
 from labelbot import util
-from labelbot.llm import CallFailed, SendBlocked, get_json, host_class, read_key
+from labelbot.llm import CallFailed, get_json, read_key
 
 EXTS = (".b64", ".sqlite", ".json", ".jsonl", ".html", ".md", ".log")
 PROBE_SENTENCE = "Reply with JSON {\"ok\": true}"
@@ -68,10 +68,8 @@ def run(ws, probe_llm=False, out=print):
         item("workspace_writable", False)
     _check_taxonomy(ws, item)
     llm = ws.config["llm"]
-    suffixes = llm.get("internal_host_suffixes")
     item("llm_config", bool(llm.get("base_url") and llm.get("model")), "model=%s" % (llm.get("model") or "(없음)"))
     item("llm_key_env", llm.get("transport") == "mock" or bool(read_key(llm.get("api_key_env"))), llm.get("api_key_env") or "")
-    _check_hosts(ws, llm, suffixes, item, out)
     rt = write_roundtrip(ws.root)
     for ext in EXTS:
         item("write_roundtrip %s" % ext, rt[ext])
@@ -79,37 +77,55 @@ def run(ws, probe_llm=False, out=print):
     if probe_llm and llm.get("transport") != "mock":
         _probe_llm(ws, llm, item)
     if ws.config["supabase"].get("enabled"):
-        _check_supabase(ws, suffixes, item, out)
+        _check_supabase(ws, item, out)
     failed = [n for n, ok in items if not ok]
     out("결과: %s" % ("전 항목 PASS" if not failed else "FAIL %d개" % len(failed)))
     return not failed, items
 
 
 def _check_taxonomy(ws, item):
-    tax_ok, detail = os.path.isfile(ws.taxonomy_path), ""
+    tax_ok, detail, tax, d = os.path.isfile(ws.taxonomy_path), "", None, {}
     if tax_ok:
         try:
+            from labelbot import taxdiff
             from labelbot.pipeline import load_taxonomy
 
             tax, _ = load_taxonomy(ws)
             detail = "축 %d (활성 %d)" % (len(tax.axes), len(tax.active_axes()))
         except Exception as e:  # 시트 오류 내용은 load_taxonomy가 시트·행으로만 낸다
             tax_ok, detail = False, type(e).__name__
+        if tax_ok:
+            try:
+                d, _ = taxdiff.compare_workspace(ws, tax)
+                detail += " " + taxdiff.summary_line(d)
+            except Exception:  # work.sqlite 오류는 taxonomy 자체의 실패가 아니다
+                d = {}
+                detail += " diff 알 수 없음"
     else:
         detail = "taxonomy/taxonomy.xlsx를 작업 폴더로 복사하세요"
     item("taxonomy.xlsx", tax_ok, detail)
+    if tax_ok and tax is not None:
+        warns = axis_quality(tax, d)
+        # WARN은 실패로 치지 않는다(ok=True). 축 이름과 건수만 낸다.
+        item("taxonomy_axes", True, "; ".join(warns) if warns else "점검 통과")
 
 
-def _check_hosts(ws, llm, suffixes, item, out):
-    llm_url = (llm.get("base_url") or "").rstrip("/") + llm.get("chat_path", "")
-    for name, url in (("host_llm", llm_url),
-                      ("host_embedding", (ws.config["embedding"].get("base_url") or "") + ws.config["embedding"].get("path", "")),
-                      ("host_supabase", ws.supabase_url())):
-        if name == "host_supabase" and not ws.config["supabase"].get("enabled"):
-            out("%-28s -    supabase.enabled=false" % name)
-            continue
-        cls = host_class(url, suffixes)
-        item(name, cls != "uncertain", {"internal": "사내", "external": "사외", "uncertain": "불확실"}[cls])
+def axis_quality(tax, d=None):
+    """축 품질 WARN 문구 목록. 축 이름과 건수만 쓴다."""
+    new_axes = set((d or {}).get("added") or [])
+    targeted = {q.target[0] for q in tax.questions if isinstance(q.target, tuple)}
+    no_def = [a.name for a in tax.active_axes() if not a.definition.strip()]
+    # 질문 시트는 대개 "공통" 대상이라 기존 축에 축별 질문이 없는 것은 정상이다. 새 축만 알린다.
+    no_question = [a.name for a in tax.active_axes() if a.name in new_axes and a.name not in targeted]
+    no_values = [a.name for a in tax.axes if a.enabled and not a.values]
+    warns = []
+    if no_def:
+        warns.append("WARN 정의·판정 규칙 없는 활성 축 %d(%s)" % (len(no_def), ", ".join(no_def)))
+    if no_question:
+        warns.append("WARN 질문 적용 대상에 없는 새 축 %d(%s)" % (len(no_question), ", ".join(no_question)))
+    if no_values:
+        warns.append("WARN 값 행이 없어 비활성인 축 %d(%s)" % (len(no_values), ", ".join(no_values)))
+    return warns
 
 
 def _probe_llm(ws, llm, item):
@@ -121,18 +137,18 @@ def _probe_llm(ws, llm, item):
         client = ChatClient(llm, con)
         obj = client.chat_json([{"role": "user", "content": PROBE_SENTENCE}], [], lambda o: (o.get("ok") is True, "PROBE"), probe=True)
         item("llm_probe", bool(obj))
-    except (CallFailed, SendBlocked) as e:
+    except CallFailed as e:
         item("llm_probe", False, e.reason_code)
     finally:
         con.close()
 
 
-def _check_supabase(ws, suffixes, item, out):
+def _check_supabase(ws, item, out):
     """supabase.enabled일 때만 부른다. 키, 표, slide_image_* 열, Storage 버킷을 확인한다."""
     sb = ws.config["supabase"]
     key = read_key(sb.get("key_env"))
     item("supabase_key_env", bool(key), sb.get("key_env") or "")
-    if key and ws.supabase_url() and host_class(ws.supabase_url(), suffixes) != "uncertain":
+    if key and ws.supabase_url():
         base = ws.supabase_url().rstrip("/")
         hdrs = {"apikey": key, "Authorization": "Bearer " + key}
         timeout = sb.get("timeout") or 60

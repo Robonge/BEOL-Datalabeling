@@ -1,15 +1,15 @@
 {
-  "engrbot.adapters.labelbot_ws.LABEL_STAGE": {
+  "domain_engrbot.adapters.labelbot_ws.LABEL_STAGE": {
     "answer": "label",
     "axis": "classify",
     "chunk_type": "classify",
     "extract": "label"
   },
-  "engrbot.adapters.labelbot_ws.RECORD_STAGES": [
+  "domain_engrbot.adapters.labelbot_ws.RECORD_STAGES": [
     "classify",
     "label"
   ],
-  "engrbot.adapters.labelbot_ws.REQUIRED": {
+  "domain_engrbot.adapters.labelbot_ws.REQUIRED": {
     "chunks": [
       "chunk_id",
       "file_id",
@@ -67,7 +67,7 @@
       "sheet_hashes"
     ]
   },
-  "engrbot.adapters.labelbot_ws.SOURCE_FAIL_STAGES": [
+  "domain_engrbot.adapters.labelbot_ws.SOURCE_FAIL_STAGES": [
     "ingest",
     "parse"
   ],
@@ -137,15 +137,19 @@
     "QUOTE_NOT_FOUND",
     "PARSE_WARNING",
     "CLASSIFY_FAILED",
-    "LABEL_FAILED"
+    "LABEL_FAILED",
+    "CONTROL_O",
+    "UNKNOWN_O"
   ],
   "labelbot.review.REASON_LABELS": {
     "CLASSIFY_FAILED": "분류 실패",
+    "CONTROL_O": "대조 질문 O",
     "LABEL_FAILED": "라벨 실패",
     "LOW_CONFIDENCE": "확신도 낮음",
     "PARSE_WARNING": "파싱 경고",
     "QUOTE_NOT_FOUND": "근거 인용 불일치",
-    "UNKNOWN_HIGH": "unknown 비율 높음"
+    "UNKNOWN_HIGH": "unknown 비율 높음",
+    "UNKNOWN_O": "unknown 축 후보 값 O"
   },
   "labelbot.revisit.DROP_CODES": [
     "REVISIT_CHUNK_NOT_FLAGGED",
@@ -219,6 +223,7 @@
     "candidates",
     "alerts",
     "gen_questions",
+    "ctl_questions",
     "flagged_chunks",
     "corrections",
     "revisit_requests",
@@ -280,9 +285,11 @@
     "input_root": null,
     "limits": {
       "chunk_char_limit": 6000,
+      "control_ratio": 0.6,
       "images_per_chunk": 4,
       "query_k": 20,
-      "questions_per_chunk": 8
+      "questions_per_chunk": 8,
+      "verify_max": 3
     },
     "llm": {
       "api_key_env": "OPENAI_API_KEY",
@@ -291,7 +298,6 @@
       "ca_file": null,
       "chat_path": "/chat/completions",
       "extra_headers": {},
-      "internal_host_suffixes": [],
       "max_retries": 2,
       "max_tokens": null,
       "max_tokens_param": "max_tokens",

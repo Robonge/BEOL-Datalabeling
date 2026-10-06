@@ -134,6 +134,46 @@ class ServeTests(unittest.TestCase):
             self.assertEqual(code, want, kw)
         self.assertFalse(os.path.isfile(os.path.join(self.root, "signals", "review_done_%s.json" % RUN)))
 
+    def test_status_announces_start(self):
+        _, body = self.req("GET", "/inbox/status")
+        self.assertTrue(json.loads(body)["start"])
+
+    def test_start_writes_signal(self):
+        rid = "st-" + uuid.uuid4().hex[:12]
+        sig = os.path.join(self.root, "signals", "review_start_%s.json" % rid)
+        self.addCleanup(lambda: os.path.isfile(sig) and os.remove(sig))
+        for compare in (True, False):
+            code, body = self.req("POST", "/signals/review_start",
+                                  {"kind": "review_start", "run_id": rid, "compare": compare})
+            self.assertEqual(code, 200, body)
+            self.assertEqual(json.loads(body)["signal"], "signals/review_start_%s.json" % rid)
+            with open(sig, encoding="utf-8") as f:
+                s = json.load(f)
+            self.assertEqual((s["run_id"], s["compare"], sorted(s)), (rid, compare, ["compare", "run_id", "started_at"]))
+        # compare가 없으면 검수만이다. inbox에는 아무것도 쓰지 않는다.
+        self.assertEqual(self.req("POST", "/signals/review_start", {"kind": "review_start", "run_id": rid})[0], 200)
+        with open(sig, encoding="utf-8") as f:
+            self.assertFalse(json.load(f)["compare"])
+        self.assertFalse([n for n in os.listdir(os.path.join(self.root, "inbox")) if rid in n])
+
+    def test_start_rejects(self):
+        good = {"kind": "review_start", "run_id": RUN}
+        cases = [
+            (dict(body=good, origin="https://evil.example"), 403),
+            (dict(body=good, origin=None), 403),
+            (dict(body=good, host="evil.example:80"), 403),
+            (dict(body=good, ctype="text/plain"), 415),
+            (dict(body=b"{not json"), 400),
+            (dict(body={"kind": "review", "run_id": RUN}), 400),
+            (dict(body={"kind": "review_start", "run_id": "../x"}), 400),
+            (dict(body={"kind": "review_start", "run_id": RUN, "compare": "yes"}), 400),
+            (dict(body=json.dumps(dict(good, pad="x" * 5000)).encode("utf-8")), 413),
+        ]
+        for kw, want in cases:
+            code, _ = self.req("POST", "/signals/review_start", **kw)
+            self.assertEqual(code, want, kw)
+        self.assertFalse(os.path.isfile(os.path.join(self.root, "signals", "review_start_%s.json" % RUN)))
+
     def test_get_rejects_foreign_host(self):
         for host in ("evil.example", "evil.example:%d" % self.port, "127.0.0.1.evil.example:80"):
             for path in ("/review.html", "/inbox/status"):

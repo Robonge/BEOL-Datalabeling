@@ -1,0 +1,299 @@
+{
+  "answer_distribution": {
+    "Q-COM-001": {
+      "N/A": 32,
+      "O": 36,
+      "X": 27
+    }
+  },
+  "batch_issues": [],
+  "content_records": 95,
+  "counts": {
+    "AUTO_FIX": 5,
+    "PASS": 96,
+    "REJECT": 2,
+    "REVIEW": 4,
+    "files": 12,
+    "records": 107
+  },
+  "coverage": {
+    "Material": 1.0,
+    "Patterning": 1.0,
+    "REMSPC": 1.0,
+    "결과": 1.0,
+    "공정 모듈": 1.0,
+    "구조/레이어": 1.0,
+    "물리 현상": 1.0,
+    "불량 모드": 1.0,
+    "의사결정 상태": 1.0,
+    "제품·세대": 1.0
+  },
+  "drift": {
+    "answers": {},
+    "axes": {},
+    "baseline_qa_run_id": null,
+    "note": "기준선 없음. 이 실행을 기준선으로 올리려면 `baseline set`",
+    "taxonomy_changed": false
+  },
+  "file_issues": [],
+  "history": [
+    {
+      "counts": {
+        "AUTO_FIX": 5,
+        "PASS": 96,
+        "REJECT": 2,
+        "REVIEW": 4,
+        "files": 12,
+        "records": 107
+      },
+      "coverage": {
+        "Material": 1.0,
+        "Patterning": 1.0,
+        "REMSPC": 1.0,
+        "결과": 1.0,
+        "공정 모듈": 1.0,
+        "구조/레이어": 1.0,
+        "물리 현상": 1.0,
+        "불량 모드": 1.0,
+        "의사결정 상태": 1.0,
+        "제품·세대": 1.0
+      },
+      "labeler_run_id": "20261004T000000-fx01",
+      "pass_rate": 0.943925,
+      "qa_run_id": "<QA_RUN_ID>",
+      "taxonomy_version": "0d5c4ae586f5a7e7e970ecb6518c7ae77d0224f197bc575e180b3ca6feaf2500",
+      "top_codes": [
+        {
+          "code": "L1_FORMAT_NORMALIZED",
+          "records": 5
+        },
+        {
+          "code": "L1_DUPLICATE_FIELD",
+          "records": 4
+        },
+        {
+          "code": "L4_RULE_DRAFT_HIT",
+          "records": 4
+        },
+        {
+          "code": "L3_SPAN_NOT_FOUND",
+          "records": 2
+        }
+      ],
+      "unknown_rate": {
+        "Material": 0.029412,
+        "Patterning": 0.014286,
+        "REMSPC": 0.169231,
+        "결과": 0.013889,
+        "공정 모듈": 0.070423,
+        "구조/레이어": 0.157143,
+        "물리 현상": 0.078125,
+        "불량 모드": 0.130435,
+        "의사결정 상태": 0.035714,
+        "제품·세대": 0.121212
+      },
+      "unused_labels": {
+        "Material": [],
+        "Patterning": [],
+        "REMSPC": [],
+        "결과": [],
+        "공정 모듈": [],
+        "구조/레이어": [],
+        "물리 현상": [],
+        "불량 모드": [],
+        "의사결정 상태": [],
+        "제품·세대": []
+      }
+    }
+  ],
+  "input_fingerprint": "fd894949c0a72f360acbb6db0f72fb3b86934d845b5578c3780cfe8a3d288112",
+  "judge": {
+    "cache_hits": 0,
+    "calls": 94,
+    "failed": 0,
+    "item_rates": {
+      "failed": 0.0,
+      "partial": 0.0,
+      "supported": 1.0,
+      "unsupported": 0.0
+    },
+    "items": {
+      "failed": 0,
+      "items": 762,
+      "partial": 0,
+      "supported": 762,
+      "unsupported": 0
+    },
+    "ran": true,
+    "skip_reason": null
+  },
+  "l3b_routed": false,
+  "l3b_skip_human": true,
+  "labeler_gap": {
+    "fields": {},
+    "flagged_known": false,
+    "human_reviewed": 1,
+    "judged": 104,
+    "labeler_flagged": 0,
+    "miss_rate": null,
+    "unflagged_judged": null,
+    "unflagged_unsupported": null
+  },
+  "labeler_run_id": "20261004T000000-fx01",
+  "layer_issue_rate": {
+    "L0": 0.0,
+    "L1": 0.084112,
+    "L2": 0.0,
+    "L3A": 0.018692,
+    "L3B": 0.0,
+    "L4": 0.0,
+    "L5": 0.0
+  },
+  "layers": [
+    "L0",
+    "L1",
+    "L2",
+    "L3A",
+    "L3B",
+    "L4",
+    "L5",
+    "L6"
+  ],
+  "ledger": {
+    "candidates": 0,
+    "examples_excluded": 0,
+    "examples_used": 0,
+    "golden_total": 0,
+    "intake_cases": null,
+    "intake_confirmed": null,
+    "intake_corrected": null,
+    "intake_error": null
+  },
+  "pareto": [
+    {
+      "code": "L1_FORMAT_NORMALIZED",
+      "cum_share": 0.333333,
+      "records": 5,
+      "share": 0.333333
+    },
+    {
+      "code": "L1_DUPLICATE_FIELD",
+      "cum_share": 0.6,
+      "records": 4,
+      "share": 0.266667
+    },
+    {
+      "code": "L4_RULE_DRAFT_HIT",
+      "cum_share": 0.866667,
+      "records": 4,
+      "share": 0.266667
+    },
+    {
+      "code": "L3_SPAN_NOT_FOUND",
+      "cum_share": 1.0,
+      "records": 2,
+      "share": 0.133333
+    }
+  ],
+  "pass_rate": 0.943925,
+  "proposals": {
+    "by_kind": {},
+    "count": 0
+  },
+  "qa_run_id": "<QA_RUN_ID>",
+  "review_queue": {
+    "codes": {
+      "L1_DUPLICATE_FIELD": 3
+    },
+    "count": 3
+  },
+  "transitions": {
+    "matched": 0,
+    "matrix": {
+      "AUTO_FIX": {
+        "AUTO_FIX": 0,
+        "PASS": 0,
+        "REJECT": 0,
+        "REVIEW": 0
+      },
+      "PASS": {
+        "AUTO_FIX": 0,
+        "PASS": 0,
+        "REJECT": 0,
+        "REVIEW": 0
+      },
+      "REJECT": {
+        "AUTO_FIX": 0,
+        "PASS": 0,
+        "REJECT": 0,
+        "REVIEW": 0
+      },
+      "REVIEW": {
+        "AUTO_FIX": 0,
+        "PASS": 0,
+        "REJECT": 0,
+        "REVIEW": 0
+      }
+    },
+    "only_current": 0,
+    "only_previous": 0,
+    "previous_qa_run_id": null,
+    "proposal_effects": [],
+    "proposals_skipped": 0,
+    "text_changed": 0
+  },
+  "unknown_rate": {
+    "Material": 0.029412,
+    "Patterning": 0.014286,
+    "REMSPC": 0.169231,
+    "결과": 0.013889,
+    "공정 모듈": 0.070423,
+    "구조/레이어": 0.157143,
+    "물리 현상": 0.078125,
+    "불량 모드": 0.130435,
+    "의사결정 상태": 0.035714,
+    "제품·세대": 0.121212
+  },
+  "unmapped_terms": {
+    "count": 0,
+    "file": "taxonomy_candidates.jsonl"
+  },
+  "unused_labels": {
+    "Material": [],
+    "Patterning": [],
+    "REMSPC": [],
+    "결과": [],
+    "공정 모듈": [],
+    "구조/레이어": [],
+    "물리 현상": [],
+    "불량 모드": [],
+    "의사결정 상태": [],
+    "제품·세대": []
+  },
+  "unused_streak": {
+    "Material": [],
+    "Patterning": [],
+    "REMSPC": [],
+    "결과": [],
+    "공정 모듈": [],
+    "구조/레이어": [],
+    "물리 현상": [],
+    "불량 모드": [],
+    "의사결정 상태": [],
+    "제품·세대": []
+  },
+  "versions": {
+    "labeler_prompt": {
+      "classify": [
+        "fx-classify"
+      ],
+      "label": [
+        "fx-label"
+      ]
+    },
+    "policy": "2026-10-04.1+5e5932b422e6",
+    "reviewer": "0.1.0+a5d97062+9af26808+mock",
+    "schema": "2026-10-04.1+a531b2764082",
+    "taxonomy": "0d5c4ae586f5a7e7e970ecb6518c7ae77d0224f197bc575e180b3ca6feaf2500"
+  }
+}

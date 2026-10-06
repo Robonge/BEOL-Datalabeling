@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>축 변경 현황판</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --dot:#A8BDD4; --line:#7A9CC0;
+  --surface:rgba(246,248,252,.92); --surface-solid:#F6F8FC; --surface-2:#E4EAF3;
+  --text-strong:#1E2D4A; --text-muted:#5F6F89; --text-faint:#9DAABF;
+  --danger:#C25450; --warning:#C99A3B; --warning-ink:#7E5C12; --success:#3B8A6E;
+  --on-indigo:#EDF1F7;
+  --radius-sm:8px; --radius:12px;
+  --shadow:0 2px 8px rgba(53,70,144,.06); --shadow-up:0 8px 20px rgba(53,70,144,.16);
+  --ease:cubic-bezier(0.34,1.56,0.64,1);
+  --font:'Pretendard','Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--bg-base);
+  background-image:linear-gradient(rgba(200,212,228,.5) .5px,transparent .5px),linear-gradient(90deg,rgba(200,212,228,.5) .5px,transparent .5px);
+  background-size:48px 48px;
+  font-family:var(--font);font-size:13px;line-height:1.5;letter-spacing:-0.02em;color:var(--text-strong);
+}
+b,strong,h1,h2,h3{font-weight:700}
+h1,h2,h3,p,ul,dl,dd{margin:0}
+ul{padding:0;list-style:none}
+button{font:inherit;letter-spacing:inherit;color:inherit}
+.mono{font-family:var(--mono);letter-spacing:-0.01em}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.wrap{max-width:1400px;margin:0 auto;padding:18px 28px 32px;display:flex;flex-direction:column;gap:16px}
+
+/* 머리 */
+.top{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap}
+.top h1{font-size:22px;letter-spacing:-0.055em}
+.pill{font-size:11px;font-weight:700;border-radius:999px;padding:2px 10px;border:1px solid var(--line);color:var(--primary-deep);white-space:nowrap}
+.pill.pre{border-color:var(--warning);color:var(--warning-ink)}
+.pill.ok{border-color:var(--success);color:var(--success)}
+.run{font-size:11.5px;color:var(--text-muted);overflow-wrap:anywhere}
+.run b{color:var(--text-strong);font-weight:700}
+.sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--primary-deep);border-radius:var(--radius-sm);padding:8px 16px;font-weight:700;font-size:13px;text-decoration:none;color:var(--on-indigo);background:linear-gradient(148deg,#4A5FA8 0%,#354690 100%);cursor:pointer;transition:transform .28s var(--ease),box-shadow .28s var(--ease)}
+.btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-up)}
+.btn .c{font-family:var(--mono);font-size:11px;background:rgba(237,241,247,.2);border-radius:999px;padding:0 7px}
+.btn.ghost{color:var(--primary-deep);background:var(--surface-solid);border-color:var(--bg-grid)}
+.btn.ghost .c{background:rgba(74,95,168,.1)}
+.lede{font-size:12.5px;color:var(--text-muted);max-width:80ch}
+
+/* 섹션 머리 */
+.sh{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin-bottom:10px}
+.sh h2{font-size:15px;letter-spacing:-0.048em}
+.sh p{font-size:12px;color:var(--text-muted)}
+
+/* 대상 축 카드 */
+.axgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
+.ax{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-width:0}
+.axh{display:flex;align-items:center;gap:8px;min-width:0}
+.axh h3{font-size:14.5px;letter-spacing:-0.045em;min-width:0;overflow-wrap:anywhere}
+.kind{flex:none;margin-left:auto;font-size:10.5px;font-weight:700;border-radius:5px;padding:1px 7px;border:1px solid var(--line);color:var(--primary-deep);background:rgba(74,95,168,.08)}
+.kind.added{border-color:var(--success);color:var(--success);background:rgba(59,138,110,.08)}
+.kind.values_removed{border-color:var(--danger);color:#9E3B37;background:rgba(194,84,80,.07)}
+.kind.values_added{border-color:var(--primary-soft);color:var(--primary)}
+.big{display:flex;align-items:baseline;gap:6px}
+.big b{font-family:var(--mono);font-size:26px;letter-spacing:-0.04em;line-height:1}
+.big span{font-size:12px;color:var(--text-muted)}
+.rs{display:flex;flex-direction:column;gap:4px}
+.rs li{display:grid;grid-template-columns:minmax(0,1fr) 64px 26px;align-items:center;gap:8px;font-size:12px}
+.rs .rl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs .bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.rs .bar i{display:block;height:100%;background:var(--primary-soft);border-radius:3px}
+.rs .rn{font-family:var(--mono);text-align:right}
+.none{font-size:12px;color:var(--text-muted)}
+.oc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--bg-grid);padding-top:10px;gap:6px}
+.oc div{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.oc b{font-family:var(--mono);font-size:16px;line-height:1.2}
+.oc span{font-size:11px;color:var(--text-muted)}
+.oc .rem b{color:var(--danger)}
+.oc .zero b{color:var(--text-faint)}
+.oc.wait{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--warning-ink)}
+.oc.wait::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--warning)}
+.oc .ud{grid-column:1 / -1;flex-direction:row;gap:6px;font-size:11px;color:var(--text-muted)}
+
+/* 한 줄 요약 */
+.facts{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:10px 16px;box-shadow:var(--shadow);font-size:12.5px}
+.facts li{display:flex;gap:4px 10px;flex-wrap:wrap;align-items:baseline;min-width:0}
+.facts .k{flex:none;width:96px;color:var(--text-muted)}
+.facts .v{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}
+.facts .v b{font-family:var(--mono)}
+
+/* 슬라이드 카드 */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.chipf{border:1px solid var(--bg-grid);background:var(--surface-solid);border-radius:999px;padding:2px 11px;font-size:12px;cursor:pointer}
+.chipf[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--on-indigo)}
+.chipf .n{font-family:var(--mono);margin-left:5px;opacity:.8}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:12px}
+.sc{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:8px 8px 10px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;min-width:0}
+.sc.fl{border-color:rgba(194,84,80,.55)}
+.thumb{position:relative;display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:16 / 9;padding:0;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:#FBFCFE;overflow:hidden;cursor:zoom-in}
+.thumb img.full{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.thumb .slide{border:0;border-radius:0;flex:none}
+.thumb .noimg{font-size:11.5px;color:var(--text-muted)}
+.thumb .approx{position:absolute;left:4px;bottom:4px;font-size:9.5px;color:var(--text-muted);background:rgba(246,248,252,.9);border-radius:4px;padding:0 5px}
+.sm{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;min-width:0}
+.pos{color:var(--text-muted)}
+.ttl{flex:1 1 100%;min-width:0;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{font-size:10.5px;font-weight:700;border-radius:999px;padding:0 7px;border:1px solid;white-space:nowrap}
+.badge.flag{color:#9E3B37;border-color:var(--danger);background:rgba(194,84,80,.08)}
+.badge.o-pending{color:var(--warning-ink);border-color:var(--warning)}
+.badge.o-remaining{color:#9E3B37;border-color:var(--danger)}
+.badge.o-corrected{color:var(--primary-deep);border-color:var(--primary-soft);background:rgba(107,130,196,.12)}
+.badge.o-confirmed{color:var(--success);border-color:var(--success)}
+.badge.o-undecidable{color:var(--text-muted);border-color:var(--dot)}
+.vals{display:flex;flex-direction:column;gap:5px}
+.vals div{min-width:0}
+.vals dt{font-size:10.5px;color:var(--text-muted);margin-bottom:2px;overflow-wrap:anywhere}
+.vals dd{display:flex;gap:4px;flex-wrap:wrap}
+.vc{font-size:11.5px;border-radius:5px;padding:0 6px;background:rgba(74,95,168,.1);color:var(--primary-deep);overflow-wrap:anywhere;max-width:100%}
+.vc.unk{background:rgba(201,154,59,.16);color:var(--warning-ink)}
+.vc.na,.vc.empty{background:var(--surface-2);color:var(--text-muted)}
+.empty-list{grid-column:1 / -1;font-size:12.5px;color:var(--text-muted);padding:20px;text-align:center}
+.foot{font-size:11px;color:var(--text-faint)}
+
+/* 확대 모달 */
+.modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(30,45,74,.72)}
+.modal.on{display:flex}
+.mbox{display:flex;flex-direction:column;gap:8px;max-width:100%;max-height:100%}
+.mhead{display:flex;align-items:center;gap:10px;color:#fff;font-size:12.5px;min-width:0}
+.mhead span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mclose{flex:none;border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.25);color:#fff;border-radius:var(--radius-sm);padding:4px 12px;cursor:pointer;font-weight:700}
+.mclose:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.mbody{display:flex;justify-content:center;min-height:0}
+.mbody img{max-width:calc(100vw - 32px);max-height:calc(100vh - 90px);object-fit:contain;border-radius:var(--radius-sm);background:#FBFCFE;display:block}
+.mbody .slide{max-width:calc(100vw - 32px)}
+.emptystate{max-width:560px;margin:80px auto;text-align:center;color:var(--text-muted)}
+.emptystate h2{color:var(--text-strong);margin-bottom:8px}
+
+/*__SLIDE_PREVIEW_CSS__*/
+
+@media (max-width:680px){
+  .wrap{padding:14px 16px 24px;gap:14px}
+  .top h1{font-size:19px}
+  .top .sp{display:none}
+  .top .btn{width:100%;justify-content:center}
+  .facts .k{width:auto}
+  .filters{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mcap">
+  <div class="mbox">
+    <div class="mhead"><span id="mcap"></span><button class="mclose" id="mclose" type="button">닫기 (Esc)</button></div>
+    <div class="mbody" id="mbody"></div>
+  </div>
+</div>
+<script>
+/*__SLIDE_PREVIEW_JS__*/
+const DATA = /*__DATA__*/null;
+(function(){
+  "use strict";
+  var app = document.getElementById("app");
+  function h(tag, attrs, kids){
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs){
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else if (k.slice(0,2) === "on") e.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function(c){ if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+  if (!DATA || DATA.kind !== "axis_update"){
+    app.appendChild(h("div", {class:"emptystate"}, [
+      h("h2", {text:"표시할 데이터가 없습니다"}),
+      h("p", {text:"이 화면은 labelbot axis-board 명령이 axis-update 실행 결과를 채워 넣은 뒤에 사용합니다."})
+    ]));
+    return;
+  }
+  var AFTER = DATA.phase === "after";
+  var KL = DATA.kind_labels || {}, OL = DATA.outcome_labels || {}, RL = DATA.reason_labels || {};
+  var slides = DATA.slides || [];
+  var target = (DATA.axes_target || []).map(function(a){ return a.name; });
+  var only = false, grid = null, opener = null;  // 슬라이드 거르기(불량만), 슬라이드 격자, 모달을 연 썸네일
+
+  // ---------- 머리 ----------
+  function actionBtn(){
+    if (!DATA.flagged) return h("span", {class:"pill ok", text:"불량 없음 · 검수할 chunk 없음"});
+    if (AFTER) return h("a", {class:"btn ghost", href:"review.html"}, ["검수 화면 보기"]);
+    var b = h("a", {class:"btn", href:"review.html", id:"go-review"}, [DATA.review_started ? "검수 이어 하기" : "검수 시작",
+      h("span", {class:"c", text:String(DATA.flagged)})]);
+    // 검수 시작: results.html과 같은 신호(POST signals/review_start)를 남기고 검수 화면을 연다.
+    // 서버가 없거나(파일로 연 화면) 신호가 실패해도 검수 화면은 그대로 연다.
+    b.addEventListener("click", function(ev){
+      ev.preventDefault();
+      var go = function(){ location.href = "review.html"; };
+      if (location.protocol === "file:") return go();
+      var post = fetch("signals/review_start", {method:"POST", headers:{"Content-Type":"application/json"}, keepalive:true,
+        body:JSON.stringify({kind:"review_start", run_id:DATA.run_id, compare:false})}).catch(function(){ return null; });
+      Promise.race([post, new Promise(function(r){ setTimeout(r, 1500); })]).then(go);
+    });
+    return b;
+  }
+  // ---------- 대상 축 카드 ----------
+  function axesSection(){
+    var grid = h("div", {class:"axgrid"});
+    (DATA.axes_target || []).forEach(function(a){ grid.appendChild(axisCard(a)); });
+    if (!(DATA.axes_target || []).length) grid.appendChild(h("p", {class:"none", text:"대상 축이 없습니다."}));
+    return h("section", {"aria-labelledby":"h-axes"}, [
+      h("div", {class:"sh"}, [h("h2", {id:"h-axes", text:"대상 축 " + (DATA.axes_target || []).length + "개"}),
+        h("p", {text:"불량 사유별 chunk 수와 검수 처리 결과"})]), grid]);
+  }
+  function axisCard(a){
+    var codes = Object.keys(a.reasons || {});
+    var max = Math.max.apply(null, [1].concat(codes.map(function(c){ return a.reasons[c]; })));
+    var rs = codes.length ? h("ul", {class:"rs"}, codes.map(function(c){
+      var n = a.reasons[c];
+      return h("li", {title:c}, [h("span", {class:"rl", text:RL[c] || c}),
+        h("span", {class:"bar", "aria-hidden":"true"}, [h("i", {style:"width:" + Math.round(100 * n / max) + "%"})]),
+        h("span", {class:"rn", text:String(n)})]);
+    })) : h("p", {class:"none", text:"이 축에서 나온 불량이 없습니다."});
+    var oc;
+    if (!a.flagged) oc = null;
+    else if (!AFTER) oc = h("div", {class:"oc wait", text:"검수 대기 · 불량 " + a.flagged + "건"});
+    else {
+      var cell = function(cls, n, label){ return h("div", {class:cls + (n ? "" : " zero")}, [h("b", {text:String(n)}), h("span", {text:label})]); };
+      oc = h("div", {class:"oc"}, [cell("", a.corrected, "교정"), cell("", a.confirmed, "확인"), cell("rem", a.remaining, "남은 불량"),
+        a.undecidable ? h("div", {class:"ud", text:"판단 불가(이미지에만 정보) " + a.undecidable + "건"}) : null]);
+    }
+    return h("article", {class:"ax"}, [
+      h("div", {class:"axh"}, [h("h3", {text:a.name}), h("span", {class:"kind " + a.kind, text:KL[a.kind] || a.kind})]),
+      h("div", {class:"big"}, [h("b", {text:String(a.flagged)}), h("span", {text:"불량 chunk"})]),
+      rs, oc
+    ]);
+  }
+
+  // ---------- 한 줄 요약: 삭제 축·버린 답·적재 ----------
+  function facts(){
+    var rm = DATA.axes_removed || [];
+    var rmv = rm.length ? h("span", {class:"v"}, rm.map(function(r, i){
+      return h("span", {}, [(i ? ", " : ""), h("strong", {text:r.name}), " (뺀 라벨 ", h("b", {text:String(r.dropped_rows)}), "행)"]);
+    })) : h("span", {class:"v", text:"없음"});
+    var push = DATA.push || {};
+    return h("ul", {class:"facts", "aria-label":"요약"}, [
+      h("li", {}, [h("span", {class:"k", text:"삭제 축 " + rm.length + "개"}), rmv]),
+      h("li", {}, [h("span", {class:"k", text:"이어받지 않음"}), h("span", {class:"v"}, [
+        "대상 축 질문 답 ", h("b", {text:String(DATA.dropped_answers || 0)}), "건 · 삭제·변경 축 이전 교정 ",
+        h("b", {text:String(DATA.dropped_corrections || 0)}), "건"])]),
+      h("li", {}, [h("span", {class:"k", text:"Supabase 적재"}), h("span", {class:"v"}, [
+        h("b", {text:String(push.pushed_ok || 0)}), " / " + (push.total || 0) + " chunk (지금 확정 라벨 그대로 올라간 수)"])])
+    ]);
+  }
+
+  // ---------- 슬라이드 카드 ----------
+  function slidesSection(){
+    var nFlag = slides.filter(function(s){ return s.flagged; }).length;
+    var all = h("button", {class:"chipf", type:"button", "aria-pressed":"true"}, ["전체", h("span", {class:"n", text:String(slides.length)})]);
+    var fl = h("button", {class:"chipf", type:"button", "aria-pressed":"false"}, ["불량만", h("span", {class:"n", text:String(nFlag)})]);
+    function set(v){ only = v; all.setAttribute("aria-pressed", String(!v)); fl.setAttribute("aria-pressed", String(v)); paint(); }
+    all.addEventListener("click", function(){ set(false); });
+    fl.addEventListener("click", function(){ set(true); });
+    grid = h("div", {class:"sgrid"});
+    paint();
+    return h("section", {"aria-labelledby":"h-slides"}, [
+      h("div", {class:"sh"}, [h("h2", {id:"h-slides", text:"슬라이드별 새 축 값"}),
+        h("p", {text:"이미지를 누르면 크게 보입니다"}),
+        h("div", {class:"filters", role:"group", "aria-label":"슬라이드 거르기"}, [all, fl])]), grid]);
+  }
+  function paint(){
+    grid.textContent = "";
+    var list = slides.filter(function(s){ return !only || s.flagged; });
+    list.forEach(function(s){ grid.appendChild(slideCard(s)); });
+    if (!list.length) grid.appendChild(h("p", {class:"empty-list", text:only ? "불량 슬라이드가 없습니다." : "슬라이드가 없습니다."}));
+  }
+  function preview(s, big){
+    if (s.image){
+      return h("img", {class:big ? "" : "full", src:s.image, alt:"슬라이드 " + s.slide_no + " 미리보기", loading:big ? null : "lazy"});
+    }
+    var node = SlidePreview.build(s.layout, null);  // 삽입 그림은 자리 표시로 그린다
+    if (!node) return null;
+    var r = s.layout.w / s.layout.h;
+    if (big) node.style.width = "min(calc(100vw - 32px), calc((100vh - 90px) * " + r.toFixed(4) + "))";
+    else node.style.width = r < 16 / 9 ? (r / (16 / 9) * 100).toFixed(2) + "%" : "100%";
+    return node;
+  }
+  function label(s){ return "파일 " + s.file_no + " · 슬라이드 " + s.slide_no; }
+  function slideCard(s){
+    var pv = preview(s, false);
+    var thumb = h("button", {class:"thumb", type:"button", "aria-label":label(s) + " 크게 보기", disabled:pv ? null : "disabled"},
+      [pv || h("span", {class:"noimg", text:"미리보기 없음"}), pv && !s.image ? h("span", {class:"approx", text:"근사 배치"}) : null]);
+    if (pv) thumb.addEventListener("click", function(){ openModal(s, thumb); });
+    var reasons = (s.reasons || []).map(function(c){ return RL[c] || c; }).join(", ");
+    var vals = h("dl", {class:"vals"}, target.map(function(a){
+      var v = (s.values || {})[a] || [];
+      return h("div", {}, [h("dt", {text:a}), h("dd", {}, v.length ? v.map(function(x){
+        return h("span", {class:"vc" + (x === "unknown" || x === "판단 불가" ? " unk" : x === "해당 없음" ? " na" : ""), text:x});
+      }) : [h("span", {class:"vc empty", text:"값 없음"})])]);
+    }));
+    return h("article", {class:"sc" + (s.flagged ? " fl" : "")}, [
+      thumb,
+      h("div", {class:"sm"}, [
+        h("span", {class:"pos mono", text:"F" + s.file_no + " · p." + s.slide_no, title:s.file_name || ""}),
+        s.flagged ? h("span", {class:"badge flag", title:reasons, text:"불량 " + (s.reasons || []).length}) : null,
+        s.outcome ? h("span", {class:"badge o-" + s.outcome, text:OL[s.outcome] || s.outcome}) : null,
+        s.title ? h("span", {class:"ttl", text:s.title, title:s.title}) : null
+      ]),
+      vals
+    ]);
+  }
+
+  // ---------- 확대 모달: Esc·바깥 클릭으로 닫고, 열려 있는 동안 포커스는 닫기 버튼에 둔다 ----------
+  var modal = document.getElementById("modal"), mbody = document.getElementById("mbody");
+  var mcap = document.getElementById("mcap"), mclose = document.getElementById("mclose");
+  function openModal(s, from){
+    var pv = preview(s, true);
+    if (!pv) return;
+    opener = from;
+    mbody.textContent = "";
+    mbody.appendChild(pv);
+    mcap.textContent = label(s) + (s.title ? " · " + s.title : "") + (s.image ? "" : " (근사 배치)");
+    modal.classList.add("on");
+    document.body.style.overflow = "hidden";
+    mclose.focus();
+  }
+  function closeModal(){
+    if (!modal.classList.contains("on")) return;
+    modal.classList.remove("on");
+    mbody.textContent = "";
+    document.body.style.overflow = "";
+    if (opener) opener.focus();
+    opener = null;
+  }
+  mclose.addEventListener("click", closeModal);
+  modal.addEventListener("click", function(ev){ if (ev.target === modal || ev.target === mbody) closeModal(); });
+  document.addEventListener("keydown", function(ev){
+    if (!modal.classList.contains("on")) return;
+    if (ev.key === "Escape"){ ev.preventDefault(); closeModal(); }
+    else if (ev.key === "Tab"){ ev.preventDefault(); mclose.focus(); }
+  });
+
+  function render(){
+    var phase = AFTER ? h("span", {class:"pill ok", text:DATA.review_done ? "검수 완료" : "검수 반영됨"})
+      : h("span", {class:"pill pre", text:DATA.review_started ? "검수 중" : "검수 전"});
+    app.appendChild(h("div", {class:"wrap"}, [
+      h("header", {class:"top"}, [
+        h("h1", {text:"축 변경 현황판"}), phase,
+        h("span", {class:"run mono"}, ["실행 ", h("b", {text:DATA.run_id}), " ← 기준 ", h("b", {text:DATA.parent_run || "-"})]),
+        h("span", {class:"sp"}), actionBtn()
+      ]),
+      h("p", {class:"lede", text:"taxonomy에서 바뀐 축만 1차 분류로 다시 라벨링한 결과입니다. 다른 축 값과 질문 답은 기준 실행에서 이어받았고, " +
+        "사람 검수는 아래 대상 축에 불량이 있는 chunk만 받습니다."}),
+      axesSection(), facts(), slidesSection(),
+      h("p", {class:"foot mono", text:"생성 " + (DATA.generated_at || "-")})
+    ]));
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

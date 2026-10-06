@@ -1,6 +1,6 @@
 ---
 name: BEOL-labeling-feedback
-description: BEOL-labeling이 검수 대기에서 멈춘 뒤 사람 검수부터 적재까지 이어서 한다. 시작할 때 파싱 대조(H2)도 할지 묻고, 검수 화면(review.html, 원하면 compare.html)을 띄워 사람의 불량 chunk 검수(H6)를 기다리며, 화면의 "검수 완료" 버튼이 눌리면 교정을 labelbot에 반영하고 화면·리포트를 다시 만들고 임베딩 후 Supabase에 적재한다. 사용자가 "검수 시작", "검수하자", "검수 화면 열어줘", "검수 끝났어", "체크 다 했어", "검수 반영해줘", "피드백 반영", "inbox에 넣었어", "교정 없음, 적재해줘", "대조 결과 반영", "Supabase 올려줘"라고 하거나 /BEOL-labeling-feedback을 부르면 이 스킬을 쓴다. 파싱·라벨링을 새로 돌리는 일은 BEOL-labeling이 맡는다.
+description: BEOL-labeling이 검수 대기에서 멈춘 뒤 사람 검수부터 적재까지 이어서 한다. 결과 대시보드의 "검수 시작" 버튼을 누르면 BEOL-labeling 대화가 깨어나 이 스킬을 부른다(채팅으로 불러도 된다). 채팅으로 시작했으면 파싱 대조(H2)도 할지 묻고, 검수 화면(review.html, 원하면 compare.html)을 띄워 사람의 불량 chunk 검수(H6)를 기다리며, 화면의 "검수 완료" 버튼이 눌리면 교정을 labelbot에 반영하고 화면·리포트를 다시 만들고 임베딩 후 Supabase에 적재한다. 사용자가 "검수 시작", "검수하자", "검수 화면 열어줘", "검수 끝났어", "체크 다 했어", "검수 반영해줘", "피드백 반영", "inbox에 넣었어", "교정 없음, 적재해줘", "대조 결과 반영", "Supabase 올려줘"라고 하거나 /BEOL-labeling-feedback을 부르면 이 스킬을 쓴다. 파싱·라벨링을 새로 돌리는 일은 BEOL-labeling이 맡는다.
 ---
 
 # BEOL-labeling-feedback: 사람 검수 → 반영 → 적재
@@ -8,14 +8,14 @@ description: BEOL-labeling이 검수 대기에서 멈춘 뒤 사람 검수부터
 `/BEOL-labeling`이 검수 대기에서 멈춘 뒤 이어서 쓴다. 이 스킬이 검수 화면을 띄우고, 사람이 검수를 마치고 **검수 완료**를 누를 때까지 기다린 뒤, 교정과 대조 기록을 반영하고 확정된 라벨로 Supabase에 올린다. LLM 분류·라벨링은 다시 부르지 않는다(임베딩만 호출).
 
 ```
-상태 확인 → (H2 대조 여부 질문) → 검수 화면 띄우기 → [사람: H6 검수(+H2 대조) → 검수 완료] → 교정 모으기 → 반영 → Engr-bot 장부·라벨링 규칙 후보 → 화면·리포트 → 임베딩 → 적재 → 보고
+[대시보드 검수 시작 버튼 또는 채팅] → 상태 확인 → (채팅 시작이면 H2 대조 여부 질문·검수 화면 띄우기) → [사람: H6 검수(+H2 대조) → 검수 완료] → 교정 모으기 → 반영 → Domain-Engr-bot 장부·라벨링 규칙 후보 → 화면·리포트 → 임베딩 → 적재 → 보고
 ```
 
 ## 사람 개입 지점을 이렇게 다룬다 (사용자 결정, 2026-10-04)
 
 | 지점 | 처리 |
 |---|---|
-| H2 파싱 대조 | 시작할 때 `AskUserQuestion`으로 이번에 할지 묻는다. 하겠다고 하면 검수 탭과 함께 대조 탭을 열고, 대기는 한 번만 한다. 대조는 선택이며 라벨에 영향을 주지 않는다 |
+| H2 파싱 대조 | 대시보드에서 시작했으면 누른 버튼(**검수 시작** / **검수 + 파싱 대조**)으로 정해져 묻지 않는다(2026-10-06). 채팅으로 시작했으면 `AskUserQuestion`으로 이번에 할지 묻는다. 하겠다고 하면 검수 탭과 함께 대조 탭을 열고, 대기는 한 번만 한다. 대조는 선택이며 라벨에 영향을 주지 않는다 |
 | H6 불량 chunk 검수 | 검수 탭을 열고 **검수 완료 버튼 신호**를 기다린다. 기다리는 동안 `AskUserQuestion`으로 끝났는지 묻지 않는다. 버튼이 눌리면 바로 반영·적재로 넘어간다 |
 
 ## 고정 값
@@ -24,6 +24,7 @@ description: BEOL-labeling이 검수 대기에서 멈춘 뒤 사람 검수부터
 - 작업 폴더 `<WS>`: 인자로 받는다. 없으면 이 대화에서 `/BEOL-labeling`이 쓴 작업 폴더를 쓴다. 그것도 모르면 `C:\Users\dltkd\Desktop\261004 BEOL AX day2\workspaces\261004_BEOL_*` 중 `work.sqlite`가 있고 가장 최근에 바뀐 폴더를 고르고, 어느 폴더를 골랐는지 보고에 적는다.
 - 화면 서버: `.claude/launch.json`에서 `runtimeArgs`의 `--workspace`가 `<WS>`인 항목. 이름은 `screens-<입력 폴더 slug>`, 포트는 그 항목의 `port`다(`init_workspace.py`가 등록한다).
 - 교정 파일 위치: `<WS>\inbox\review_<실행ID>.json`, `<WS>\inbox\compare_<실행ID>.json`.
+- 시작 신호: `<WS>\signals\review_start_<실행ID>.json`. 결과 대시보드의 **검수 시작**·**검수 + 파싱 대조** 버튼을 누르면 화면 서버가 쓴다(실행 ID, 시각, 파싱 대조 여부만). `/BEOL-labeling`이 끝날 때 이 신호를 기다리도록 걸어 두고, 신호가 오면 이 스킬을 부른다.
 - 완료 신호: `<WS>\signals\review_done_<실행ID>.json`. 검수 화면의 **검수 완료** 버튼을 누르면 화면 서버가 마지막 교정을 inbox에 저장하고 이 파일을 쓴다. 내용은 실행 ID, 시각, 건수(`edits`·`status`·`syns`·`revisits`)뿐이다.
 - 스크립트: 요약 `.claude/skills/BEOL-labeling/scripts/summary.py`, 교정 파일 모으기 `.claude/skills/BEOL-labeling-feedback/scripts/collect_inbox.py`, 완료 대기 `.claude/skills/BEOL-labeling-feedback/scripts/wait_review_done.py`.
 
@@ -36,8 +37,8 @@ description: BEOL-labeling이 검수 대기에서 멈춘 뒤 사람 검수부터
 - 봇은 `taxonomy.xlsx`를 고치지 않는다. 검수 중 등록한 동의어는 `reports/candidates.md`의 "검수 등록" 행으로만 나오며, 시트에 붙여넣는 것은 사람 몫이고 다음 실행에 반영된다. 검수 중 남긴 taxonomy 재검토 요청은 `reports/taxonomy_revisit.md`(누적)와, `apply`가 반영한 검수 실행마다 쓰는 `taxonomy/taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`(그 실행분만, taxonomy.xlsx가 있는 폴더 기준, git 추적 대상)으로만 나오며 처리됨 판정은 없다. 라벨과 `label_hash`를 바꾸지 않으므로 Supabase 재적재도 없다.
 - 재검토 메모에는 사내 본문이 들어 있을 수 있다. `reports/taxonomy_revisit.md`·`.jsonl`과 `taxonomy/taxonomy_revisit_requests/`의 파일을 Read·Grep·`cat`으로 열어 보고하지 않는다(파일 수와 위치는 `apply` 출력 줄로만 안다). `revisit_requests`는 `COUNT`와 `reason`별 `GROUP BY`만 조회한다(`SELECT *`, `.dump`, 다른 열 조회 금지). inbox JSON과 `inputs/<sha256>.b64`는 `apply` 밖에서 열거나 디코딩하지 않는다. 검수 탭과 JSON 저장 대체 텍스트 창에는 `get_page_text`·`read_page`·`find`·스크린샷을 쓰지 않는다(3-2의 건수 스니펫과 저장 버튼을 찾는 `find`만 허용하며 `javascript_tool`은 `revisits.length`만 읽는다). 위치와 건수(요약의 `revisits`)만 보고한다.
 - 보고에는 건수, 실행 ID, 사유 코드만 쓴다.
-- Engr-bot 교정 장부(4-1, `workspaces/_engrbot/ledger/`)의 `golden.jsonl`·`judge_examples.jsonl`에는 본문 인용이 있다. 열거나 조회하지 않고 `engrbot intake` 출력의 건수만 쓴다.
-- 라벨링 규칙·사례 후보(4-2)는 교정을 다음 라벨링의 규칙·사례 후보로 셀 뿐이고 승인하지 않는다. 승인은 다음 `/BEOL-labeling` 1-2에서 사람이 한다. 후보 리포트 `labeling_candidates.md`와 승인 파일 `taxonomy/labeling_rules.json`에는 본문이 없어 위치를 링크해도 된다.
+- Domain-Engr-bot 교정 장부(4-1, `workspaces/_domain_engrbot/ledger/`)의 `golden.jsonl`·`judge_examples.jsonl`에는 본문 인용이 있다. 열거나 조회하지 않고 `domain_engrbot intake` 출력의 건수만 쓴다.
+- 라벨링 규칙·사례 후보(4-2)는 교정을 다음 라벨링의 규칙·사례 후보로 셀 뿐이고 승인하지 않는다. 확정은 `/BEOL-labeling-Domain-Engr-bot`(검수 결과로 엔지니어에게 질문해 도메인 지식을 규칙·taxonomy 제안으로 돌려주는 봇)의 질문 화면에서 사람이 한다. 후보 리포트 `labeling_candidates.md`와 승인 파일 `taxonomy/labeling_rules.json`에는 본문이 없어 위치를 링크해도 된다.
 
 ## 진행 현황 표시
 
@@ -86,14 +87,25 @@ milestone이 끝날 때마다 위 "진행 현황 표시"의 블록을 갱신해 
 ```bash
 python ".claude/skills/BEOL-labeling/scripts/summary.py" --workspace "<WS>"
 python ".claude/skills/BEOL-labeling-feedback/scripts/wait_review_done.py" --workspace "<WS>" --run <RUN> --check
+python ".claude/skills/BEOL-labeling-feedback/scripts/wait_review_done.py" --workspace "<WS>" --run <RUN> --signal start --check
 ```
-요약의 `run_id`를 `<RUN>`으로, `flagged.total`을 불량 chunk 수로 쓴다(두 번째 명령은 `<RUN>`을 얻은 뒤 돌린다).
+요약의 `run_id`를 `<RUN>`으로, `flagged.total`을 불량 chunk 수로 쓴다(두·세 번째 명령은 `<RUN>`을 얻은 뒤 돌린다).
 
 어디서 시작할지 이렇게 정한다.
+- `/BEOL-labeling`이 대시보드의 **검수 시작** 신호로 이 스킬을 불렀으면(인자 `대시보드 검수 시작 … compare=<true|false>`), 또는 사용자가 채팅으로 불렀는데 `wait_review_done.py --signal start --check`가 `pending: true`이면(대시보드에서 이미 검수 화면을 열었음) → 2단계를 "대시보드에서 시작" 경로로 진행한다(2-1 질문과 2-3 탭 열기를 건너뛴다). 단, `--check`가 `done: true`이면 아래 줄을 따른다.
 - 사용자가 부르면서 "검수 끝났어", "교정 없음, 적재해줘", "반영해줘"처럼 검수가 끝났다고 했거나, `--check`가 `done: true`이면 → 절차 2단계를 건너뛰고(진행 현황의 "2. 사람 검수 대기"는 `⏭️`) 절차 3단계로 간다. 단, 사용자가 "다시 검수"라고 했으면 2단계로 간다.
 - 그 밖에는 2단계로 간다. 불량 chunk가 0개여도 2단계로 간다. 검수 화면에 검수 완료 버튼이 있으므로 사람이 바로 눌러 넘어가면 된다.
 
 ### 2. 검수 화면 띄우고 기다리기 (H6, 선택 H2)
+
+**대시보드에서 시작한 경우** (1단계 첫 줄): 사람이 대시보드의 **검수 시작**(또는 **검수 + 파싱 대조**) 버튼으로 이미 검수 화면(과 대조 화면)을 열었다.
+- 2-1은 묻지 않는다. 파싱 대조 여부는 인자의 `compare`(채팅으로 불렸으면 `--signal start --check` 출력의 `compare`)를 쓴다.
+- 2-2는 `--after-start`를 붙여 시작한다. 시작 신호 뒤에 눌린 완료는 이 대기보다 먼저 눌렸어도 받는다.
+  ```bash
+  python ".claude/skills/BEOL-labeling-feedback/scripts/wait_review_done.py" --workspace "<WS>" --run <RUN> --after-start
+  ```
+- 2-3은 건너뛴다(탭을 새로 열지 않는다). 화면 서버는 대시보드를 띄운 서버가 그대로 쓴다.
+- 2-4 안내에서 "검수 화면은 대시보드에서 이미 열렸다"고 적고 1~4번을 그대로 안내한다. 2-5는 같다.
 
 **2-1. 파싱 대조 여부 묻기.** `AskUserQuestion`으로 한 번 묻는다. 질문은 "이번에 파싱 대조(H2)도 할까요?"이고, 선택지는 "검수만"과 "검수 + 파싱 대조" 두 개다. 설명에 "대조는 선택이며, 이상 슬라이드는 파서 보강 대상이 될 뿐 라벨은 바뀌지 않는다"를 적는다.
 
@@ -108,11 +120,14 @@ Bash `run_in_background: true`, `timeout: 7200000`으로 돌린다. 끝나면 �
 - `http://localhost:<port>/compare.html` — 2-1에서 "검수 + 파싱 대조"를 골랐을 때만
 
 같은 주소의 탭이 이미 있으면 새로 열지 않고 그 탭을 navigate해서 새로 고친다. 사용자의 다른 탭은 닫지 않는다.
-- `preview_start`가 "Port in use by another chat"으로 실패하면 그 포트의 서버가 다른 대화에서 떠 있는 것이다. `labelbot serve`라면 화면과 완료 버튼은 그대로 동작하므로 URL만 안내한다. 예전 `http.server`라면 inbox 자동 저장과 완료 버튼이 동작하지 않으므로, 그 대화에서 서버를 끄거나 이 대화에서 다시 띄워 달라고 안내한다.
+- `preview_start`가 "Port in use by another chat"으로 실패하면 그 포트의 서버가 다른 대화에서 떠 있는 것이다. `labelbot serve`라면 화면과 완료 버튼은 그대로 동작하므로 URL만 안내한다. 예전 `http.server`라면 inbox 자동 저장이 안 되고 완료 버튼이 흐리게 보이며 눌리지 않으므로(검수 완료 버튼은 오른쪽 위 JSON 저장 옆에 늘 보이고, 완료 신호를 받는 `labelbot serve`로 열었을 때만 켜진다), 그 대화에서 서버를 끄거나 이 대화에서 다시 띄워 달라고 안내한다.
 - 브라우저 패널을 쓸 수 없으면 위 URL을 사용자의 브라우저로 열어 달라고 안내한다. 같은 PC의 화면 서버이므로 완료 버튼은 어느 브라우저에서나 동작한다.
 
 **2-4. 안내하고 기다리기.** 아래 내용을 안내하고 턴을 끝낸다. 끝났는지 `AskUserQuestion`으로 묻지 않는다.
+0. 검수 중인 실행이 지금 taxonomy와 다르면(`python -m labelbot taxonomy-diff --workspace "<WS>"`의 `added`가 있으면) "새 축 n개는 이 실행에 없어 고칠 수 없다. 다시 라벨링한 뒤 검수한다"를 안내한다. 화면에서는 "다음 실행부터 라벨링되는 새 축"으로 보이고, 교정 JSON에 그 축이 들어와도 반영 때 `AXIS_NOT_IN_RUN`으로 건너뛴다. 4단계 보고에 그 건수를 함께 적는다.
 1. 검수 화면에서 불량 chunk n개를 확인·교정한다. taxonomy가 맞지 않는 축·질문은 재검토 요청으로 남긴다(메모 500자까지, 라벨은 바뀌지 않으며 맞는 값이 없으면 unknown으로 교정한다). 체크할 때마다 inbox에 자동 저장된다.
+   - 값을 고쳤으면 가능하면 **근거**를 남긴다(선택, 사용자 결정 2026-10-05). 고친 축의 근거 버튼을 누르고, 판단의 근거가 된 문장을 이 슬라이드 본문이나 "같은 파일 슬라이드 텍스트"(다른 슬라이드·파일명·문서 제목)에서 드래그한다. 한 교정에 3개까지 남길 수 있고, 이유는 적어도 되고 안 적어도 된다. 같은 근거를 다른 고친 축에도 붙일 수 있다.
+   - 근거가 있는 교정만 다음 라벨링의 사례(few-shot)로 쓰이고, 규칙 후보도 근거 있는 교정이 1건 이상인 패턴만 올라온다. 확정은 `/BEOL-labeling-Domain-Engr-bot`의 질문 화면에서 엔지니어가 근거를 보며 한다.
 2. (대조를 골랐다면) 파싱 대조 화면에서 슬라이드마다 이상 여부를 표시한다. 대조 표시도 자동 저장되며 대조 화면에는 완료 버튼이 따로 없다.
 3. 다 끝나면 검수 화면 상단의 **검수 완료**를 누른다. 교정할 것이 없어도 누르면 된다. 누르면 반영·적재까지 자동으로 이어진다.
 4. 검수가 끝나기 전에는 Supabase에 올리지 않는다.
@@ -173,21 +188,21 @@ python -m labelbot apply --workspace "<WS>" --kind review
 
 재검토 요청이 1건 이상인 검수 실행을 반영하면 `[apply] taxonomy 재검토 요청 파일 N개 → taxonomy/taxonomy_revisit_requests/` 줄이 나온다(실행마다 `taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json` 3개, 같은 초면 `_2` 접미). 파일 내용은 열지 않고 이 줄의 개수와 위치만 보고한다. 엑셀 반영은 사람 몫이다: md의 탭 구분 코드 블록이나 html 표(머리글 아래 A~K 칸)를 복사해 taxonomy 시트 A열에 붙인다("확인 필요" 블록은 고친 뒤 붙인다).
 
-### 4-1. Engr-bot 교정 장부로 넘기기 (LLM 호출 0회)
+### 4-1. Domain-Engr-bot 교정 장부로 넘기기 (LLM 호출 0회)
 
-반영(`apply`)이 `OK`인 review가 하나라도 있으면 항상 돌린다. 사람 검수 결과를 Engr-bot의 입력(누적 골든셋, L3b judge 판정 예시, L4 규칙 후보, 라벨링 규칙·사례 후보)으로 넘기는 단계다(사용자 결정, 2026-10-05). 진행 현황에서는 milestone 3 "교정 반영"에 딸린 과정으로 보고 블록을 따로 갱신하지 않는다.
+반영(`apply`)이 `OK`인 review가 하나라도 있으면 항상 돌린다. 사람 검수 결과를 Domain-Engr-bot의 입력(도메인 질문의 재료, 라벨링 규칙·사례 후보, 누적 골든셋 등)으로 넘기는 단계다(사용자 결정, 2026-10-05). 진행 현황에서는 milestone 3 "교정 반영"에 딸린 과정으로 보고 블록을 따로 갱신하지 않는다.
 ```bash
-python -m engrbot intake --workspace "<WS>"
+python -m domain_engrbot intake --workspace "<WS>"
 ```
-작업 폴더 DB를 읽기 전용으로 읽어 `workspaces/_engrbot/ledger/`의 이 작업 폴더 몫을 바꾼다(다시 돌려도 결과가 같다). `[intake] …`·`[ledger] …` 줄의 건수와 건너뜀 사유 코드만 보고에 쓴다. 장부의 `golden.jsonl`·`judge_examples.jsonl`에는 본문 인용이 있으므로 열지 않는다. 실패(`[오류] <코드>`)해도 반영·적재는 계속하고 사유 코드만 보고한다.
+작업 폴더 DB를 읽기 전용으로 읽어 `workspaces/_domain_engrbot/ledger/`의 이 작업 폴더 몫을 바꾼다(다시 돌려도 결과가 같다). `[intake] …`·`[ledger] …` 줄의 건수와 건너뜀 사유 코드만 보고에 쓴다. 장부의 `golden.jsonl`·`judge_examples.jsonl`에는 본문 인용이 있으므로 열지 않는다. 실패(`[오류] <코드>`)해도 반영·적재는 계속하고 사유 코드만 보고한다.
 
 ### 4-2. 라벨링 규칙·사례 후보 만들기 (LLM 호출 0회)
 
 4-1이 성공했을 때만 돌린다. 진행 현황에서는 milestone 3에 딸린 과정으로 본다.
 ```bash
-python -m engrbot labeling-rules candidates --workspace "<WS>"
+python -m domain_engrbot labeling-rules candidates --workspace "<WS>"
 ```
-Engr-bot이 장부의 교정 패턴으로 다음 라벨링(1차 분류·3차 라벨링)에 넣을 규칙 후보와 few-shot 사례 후보를 세어 `workspaces/_engrbot/ledger/labeling_candidates.md`(본문 없음)를 다시 쓴다. `[labeling-rules] …` 줄의 건수만 보고에 쓴다. 승인은 하지 않는다(다음 `/BEOL-labeling` 1-2에서 묻는다). 실패해도 반영·적재는 계속하고 사유 코드만 보고한다.
+Domain-Engr-bot이 장부의 교정 패턴으로 다음 라벨링(1차 분류·3차 라벨링)에 넣을 규칙 후보와 few-shot 사례 후보를 세어 `workspaces/_domain_engrbot/ledger/labeling_candidates.md`(본문 없음)를 다시 쓴다. `[labeling-rules] …` 줄의 건수만 보고에 쓴다. 승인은 하지 않는다(확정은 `/BEOL-labeling-Domain-Engr-bot` 질문 화면에서 한다). 실패해도 반영·적재는 계속하고 사유 코드만 보고한다.
 
 ### 5. 화면·리포트 다시 만들기 (LLM 호출 0회)
 
@@ -210,14 +225,17 @@ python -m labelbot push-slides --workspace "<WS>" --run <RUN>
 - `push-vectors`는 확정 라벨(사람 교정 우선)로 올린다. 이미 같은 라벨로 올라간 chunk는 다시 보내지 않으므로, 두 번째 실행부터는 라벨이 바뀐 chunk만 전송된다.
 - 전송 실패는 사유 코드로 남고 반영 결과에는 영향이 없다. 실패하면 사유 코드를 보고한다.
 - `supabase.enabled=false`(요약의 `supabase_enabled: false`)면 `push-vectors`가 "호출하지 않습니다"만 출력하고 끝난다. 이 경우에도 `embed`는 돌린다. 로컬 `chunk_embeddings`가 원본이고 Supabase는 사본이므로, 로컬 벡터를 먼저 만들어 두면 나중에 적재를 켰을 때 바로 올릴 수 있다. 보고에는 "Supabase 적재 꺼짐(supabase.enabled=false)"이라고 쓴다.
-- `slide-images`는 검수 화면과 같은 슬라이드 근사 미리보기를 headless Edge/Chrome으로 JPG 캡처해 `slide_images/<sha256>.b64`에 두고 `out/labeling.sqlite`의 `chunks.slide_image`를 채운다. LLM 호출 0회이고, 이미 만든 슬라이드는 건너뛴다(BEOL-labeling 4단계에서 검수 썸네일용으로 이미 그렸으면 교정으로 본문이 바뀐 chunk만 다시 그린다). 실패는 사유 코드(`NO_LAYOUT`, `RENDERER_MISSING`, `RENDER_TIMEOUT`, `JPEG_SIGNATURE` 등)로만 보고한다. JPG는 `.b64`로만 둔다. 디코딩해서 `.jpg`로 저장하거나 Read로 열지 않는다.
-- `push-slides`는 `push-vectors` 다음에 돌린다. `supabase.storage_enabled=true`일 때만 Storage `BEOL-labeling` 버킷에 올리고 벡터 행의 `slide_image_*` 열을 채운다. `init_workspace.py`가 새 작업 폴더의 `pipeline.json`에 `storage_enabled: true`를 쓰므로 보통은 켜져 있다. 그래도 "storage_enabled=false: 호출하지 않습니다"가 나오면(예전에 만든 작업 폴더) 적재가 빠진 것이므로 `STORAGE_DISABLED`로 보고하고, `AskUserQuestion`으로 "이 작업 폴더의 `pipeline.json`에 `storage_enabled: true`를 넣고 `push-slides`를 다시 돌릴까요?"를 묻는다. 승인하면 그 키 하나만 바꾸고 `push-slides`만 다시 돌린다(멱등이라 벡터는 다시 보내지 않는다). 버킷이나 `slide_image_*` 열이 없으면 `selfcheck`의 `supabase_storage_bucket`·`supabase_slide_columns`가 FAIL을 내므로 `docs/supabase_schema.md`의 SQL을 실행해 달라고 안내한다. 사외 호스트에는 더미 파일 슬라이드만 나가고 나머지는 `EXTERNAL_NON_DUMMY`로 차단된다. `ROW_MISSING`은 벡터 행이 없다는 뜻이고 다음 실행에서 다시 한다.
+- `slide-images`는 검수 화면과 같은 슬라이드 근사 미리보기를 headless Edge/Chrome으로 JPG 캡처해 `slide_images/<sha256>.b64`에 두고 `out/labeling.sqlite`의 `chunks.slide_image`를 채운다. LLM 호출 0회이고, 이미 만든 슬라이드는 건너뛴다(BEOL-labeling 4단계에서 검수 썸네일용으로 이미 그렸으면 교정으로 본문이 바뀐 chunk만 다시 그린다). 실패는 사유 코드(`NO_LAYOUT`, `RENDERER_MISSING`, `RENDERER_EXITED`, `RENDERER_PORT_TIMEOUT`, `RENDER_TIMEOUT`, `JPEG_SIGNATURE` 등)로만 보고한다. JPG는 `.b64`로만 둔다. 디코딩해서 `.jpg`로 저장하거나 Read로 열지 않는다.
+- `push-slides`는 `push-vectors` 다음에 돌린다. `supabase.storage_enabled=true`일 때만 Storage `BEOL-labeling` 버킷에 올리고 벡터 행의 `slide_image_*` 열을 채운다. `init_workspace.py`가 새 작업 폴더의 `pipeline.json`에 `storage_enabled: true`를 쓰므로 보통은 켜져 있다. 그래도 "storage_enabled=false: 호출하지 않습니다"가 나오면(예전에 만든 작업 폴더) 적재가 빠진 것이므로 `STORAGE_DISABLED`로 보고하고, `AskUserQuestion`으로 "이 작업 폴더의 `pipeline.json`에 `storage_enabled: true`를 넣고 `push-slides`를 다시 돌릴까요?"를 묻는다. 승인하면 그 키 하나만 바꾸고 `push-slides`만 다시 돌린다(멱등이라 벡터는 다시 보내지 않는다). 버킷이나 `slide_image_*` 열이 없으면 `selfcheck`의 `supabase_storage_bucket`·`supabase_slide_columns`가 FAIL을 내므로 `docs/supabase_schema.md`의 SQL을 실행해 달라고 안내한다. `ROW_MISSING`은 벡터 행이 없다는 뜻이고 다음 실행에서 다시 한다.
 
 ### 7. 보고
 
 ```bash
+python -m labelbot dashboard --workspace "<WS>" --run <RUN>
 python ".claude/skills/BEOL-labeling/scripts/summary.py" --workspace "<WS>" --run <RUN>
 ```
+대시보드를 적재 뒤에 한 번 더 만든다. 검수 반영 뒤 대시보드는 "검수 반영 결과" 화면(검수 전 불량 → 남은 불량, 사유별 전·후, 처리 결과, 많이 바로잡은 축·질문, 임베딩·Supabase 적재 건수)이고, 적재 건수는 만든 시점 기준이라 5단계의 대시보드에는 아직 0으로 나온다.
+
 먼저 브라우저 패널에 화면 서버가 떠 있으면 `results.html` 탭을 새로고침한다(없으면 연다). 그다음 진행 현황 블록 아래에 아래 형식으로 **짧게** 보고한다. 제목 1줄과 항목 4줄 안팎으로 쓰고, 길어도 6줄을 넘기지 않는다.
 
 ```
@@ -231,9 +249,9 @@ python ".claude/skills/BEOL-labeling/scripts/summary.py" --workspace "<WS>" --ru
 압축 규칙:
 - **링크는 빼지 않는다.** 대시보드 URL, 작업 폴더, 재검토 요청이 1건 이상이면 누적 리포트(`reports/taxonomy_revisit.md`)와 실행별 폴더, 검수 등록 동의어가 1건 이상이면 `reports/candidates.md`를 마크다운 링크로 남긴다. 경로는 코드 폴더 기준 상대 경로로 쓴다.
 - **0건이거나 기본값인 항목은 쓰지 않는다.** 확인·판단 불가·재검수 필요가 0이면 교정에서 빼고, 차단·건너뜀·실패가 0이면 빼고, 동의어 0건이면 candidates 줄을 빼고, 대조를 안 했으면 대조 줄을 뺀다. Downloads에서 옮긴 파일이 0이면 "모은 파일"도 쓰지 않는다.
-- **피드백 줄은 4-2를 돌렸으면 한 줄 쓴다.** `라벨링 피드백: 규칙 후보 k개(상충 c)·사례 후보 p개(다음 /BEOL-labeling에서 승인) → [labeling_candidates.md](workspaces/_engrbot/ledger/labeling_candidates.md)`. 출처는 4-2의 `[labeling-rules]` 줄이고, 실패했으면 `라벨링 피드백: <사유 코드>`로 쓴다.
-- **Engr-bot 장부 줄은 4-1을 돌렸으면 한 줄 쓴다.** `Engr-bot 장부: 사례 n(교정 n, 확인 n) → 누적 골든 n · judge 예시 n · L4 후보 n(draft)`. 출처는 4-1의 `[intake]`·`[ledger]` 줄이고, 실패했으면 `Engr-bot 장부: <사유 코드>`로 쓴다.
-- **조건부 줄은 해당될 때만 한 줄씩 붙인다.** 파싱 대조(`대조: 이상 없음 n, 이상 있음 n`), 동의어(`동의어 n → [candidates.md](…) "검수 등록" 행을 synonyms 시트에`), `REVISIT_*`·`EXTERNAL_NON_DUMMY`·전송 실패 같은 사유 코드, Supabase 적재 꺼짐(`supabase.enabled=false`), 3-2에서 대신 내려받은 경우.
+- **피드백 줄은 4-2를 돌렸으면 한 줄 쓴다.** `라벨링 피드백: 규칙 후보 k개(상충 c)·사례 후보 p개 → [labeling_candidates.md](workspaces/_domain_engrbot/ledger/labeling_candidates.md) · /BEOL-labeling-Domain-Engr-bot으로 도메인 질문에 답하면 다음 라벨링에 반영된다`. 출처는 4-2의 `[labeling-rules]` 줄이고, 실패했으면 `라벨링 피드백: <사유 코드>`로 쓴다.
+- **Domain-Engr-bot 장부 줄은 4-1을 돌렸으면 한 줄 쓴다.** `Domain-Engr-bot 장부: 사례 n(교정 n, 확인 n) → 누적 골든 n · judge 예시 n · L4 후보 n(draft)`. 출처는 4-1의 `[intake]`·`[ledger]` 줄이고, 실패했으면 `Domain-Engr-bot 장부: <사유 코드>`로 쓴다.
+- **조건부 줄은 해당될 때만 한 줄씩 붙인다.** 파싱 대조(`대조: 이상 없음 n, 이상 있음 n`), 동의어(`동의어 n → [candidates.md](…) "검수 등록" 행을 synonyms 시트에`), `REVISIT_*`·`HOST_UNCERTAIN`·전송 실패 같은 사유 코드, Supabase 적재 꺼짐(`supabase.enabled=false`), 3-2에서 대신 내려받은 경우.
 - 엑셀 붙여넣기 방법(md 탭 블록 또는 html 표 → taxonomy 시트 A열)은 재검토 요청이 있을 때 재검토 줄 끝에 괄호로 짧게만 적는다.
 - 보고 뒤에 설명 문단을 덧붙이지 않는다. 이번 대화에서 설정을 바꾼 것(포트 변경 등)처럼 사용자가 꼭 알아야 할 일만 `※` 한 줄로 쓴다.
 

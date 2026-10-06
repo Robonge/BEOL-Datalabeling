@@ -1,0 +1,5 @@
+{
+  "code_engrbot": "usage: code_engrbot [-h] {review,rules} ...\n\npositional arguments:\n  {review,rules}\n\noptions:\n  -h, --help      show this help message and exit\n",
+  "code_engrbot review": "usage: code_engrbot review [-h] [--root ROOT] [--paths PATHS [PATHS ...]] [--layers LAYERS] [--out OUT] [--policy POLICY]\n\noptions:\n  -h, --help            show this help message and exit\n  --root ROOT\n  --paths PATHS [PATHS ...]\n  --layers LAYERS\n  --out OUT\n  --policy POLICY\n",
+  "code_engrbot rules": "usage: code_engrbot rules [-h] [--out OUT]\n\noptions:\n  -h, --help  show this help message and exit\n  --out OUT\n"
+}

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>승인된 규칙 관리</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --surface:#F6F8FC; --surface-2:#E4EAF3;
+  --text-strong:#1E2D4A; --text-muted:#6F7F99;
+  --danger:#C25450; --warning:#C99A3B; --success:#3B8A6E;
+  --radius-sm:8px; --radius:12px;
+  --font:'Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--font);font-size:13.5px;line-height:1.55;letter-spacing:-0.02em;color:var(--text-strong);background:var(--bg-base)}
+h1,h2,h3{margin:0;font-weight:700}
+button,input,textarea{font:inherit;letter-spacing:inherit;color:inherit}
+.mono{font-family:var(--mono);letter-spacing:-0.01em}
+.muted{color:var(--text-muted)}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg-base);display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--bg-grid);flex-wrap:wrap}
+.bar h1{font-size:18px;letter-spacing:-0.055em}
+.bar .meta{font-size:11.5px;color:var(--text-muted)}
+.bar .sp{flex:1}
+.tabs{display:flex;gap:6px;padding:8px 20px;border-bottom:1px solid var(--bg-grid);flex-wrap:wrap}
+.tab{border:1px solid var(--bg-grid);background:transparent;border-radius:999px;padding:4px 14px;cursor:pointer;font-weight:700}
+.tab.on{background:var(--primary);border-color:var(--primary);color:#EDF1F7}
+.tab .n{font-family:var(--mono);margin-left:6px;opacity:.8}
+.wrap{max-width:1080px;margin:0 auto;padding:14px 20px 90px}
+.note{font-size:12.5px;color:var(--text-muted);border:1px dashed var(--bg-grid);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px}
+.note b{color:var(--text-strong)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.chip{border:1px solid var(--bg-grid);background:transparent;border-radius:999px;padding:2px 10px;font-size:11.5px;cursor:pointer}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#EDF1F7}
+.card{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px}
+.card.d-approve{border-left:4px solid var(--success)}
+.card.d-reject{border-left:4px solid var(--danger);opacity:.85}
+.card.d-change{border-left:4px solid var(--primary)}
+.ch{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ch .id{font-family:var(--mono);font-size:12px;font-weight:700}
+.badge{font-size:10.5px;border:1px solid var(--bg-grid);border-radius:5px;padding:0 6px;color:var(--text-muted)}
+.badge.k{border-color:var(--primary-soft);color:var(--primary-deep)}
+.badge.warn{border-color:var(--warning);color:#A97C1F;font-weight:700}
+.badge.off{border-color:var(--danger);color:var(--danger)}
+.flow{margin:8px 0 6px;font-size:13px}
+.v{display:inline-block;font-size:12px;border-radius:6px;padding:0 8px;border:1px solid var(--primary);background:rgba(74,95,168,.12);color:var(--primary-deep);margin:0 2px}
+.v.bot{border-color:var(--bg-grid);background:var(--surface-2);color:var(--text-strong)}
+.v.none{border-style:dashed;color:var(--text-muted);background:transparent}
+.arrow{color:var(--text-muted);margin:0 4px}
+.sub{font-size:11.5px;color:var(--text-muted)}
+textarea.rt{width:100%;min-height:58px;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:6px 9px;background:var(--bg-base);line-height:1.5;margin-top:6px}
+textarea.rt.bad{border-color:var(--danger)}
+.cnt{font-size:11px;color:var(--text-muted);text-align:right}
+.cnt.bad{color:var(--danger);font-weight:700}
+.opts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.opt{border:1px solid var(--bg-grid);background:transparent;border-radius:var(--radius-sm);padding:3px 12px;cursor:pointer;font-size:12.5px;font-weight:700}
+.opt.a[aria-pressed="true"]{background:var(--success);border-color:var(--success);color:#fff}
+.opt.r[aria-pressed="true"]{background:var(--danger);border-color:var(--danger);color:#fff}
+.opt.h[aria-pressed="true"]{background:var(--surface-2);border-color:var(--text-muted)}
+.opt.t[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
+table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}
+th,td{border:1px solid var(--bg-grid);padding:4px 8px;text-align:left;vertical-align:top;word-break:break-word}
+th{background:var(--surface-2)}
+.btn{border:1px solid var(--bg-grid);background:var(--surface);border-radius:var(--radius-sm);padding:6px 12px;cursor:pointer;font-weight:700;font-size:12.5px}
+.btn.primary{background:var(--primary-deep);color:#EDF1F7;border-color:var(--primary-deep)}
+.btn.sm{padding:3px 9px;font-size:11.5px}
+.foot{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--bg-grid);padding:9px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:6}
+.foot .sum{font-size:12.5px}
+.foot .sp{flex:1}
+.empty{color:var(--text-muted);text-align:center;padding:40px 0}
+dialog{border:1px solid var(--bg-grid);border-radius:var(--radius);background:var(--surface);width:min(640px,92vw);padding:18px}
+dialog textarea{width:100%;height:240px;font-family:var(--mono);font-size:12px}
+.toast{position:fixed;right:20px;bottom:64px;background:var(--text-strong);color:#EDF1F7;padding:8px 14px;border-radius:var(--radius-sm);font-size:12.5px;opacity:0;pointer-events:none;z-index:60;transition:opacity .2s}
+.toast.on{opacity:1}
+ol.help{padding-left:20px;margin:6px 0}
+.warnline{font-size:11.5px;color:#A97C1F;margin-top:6px}
+.evs{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.evs .evt{font-size:11.5px;font-weight:700;color:var(--text-muted)}
+.ev{border:1px solid var(--bg-grid);border-left:3px solid var(--primary-soft);border-radius:var(--radius-sm);background:var(--bg-base);padding:6px 10px}
+.ev .evh{font-size:11.5px;color:var(--text-muted);margin-bottom:4px}
+.ev .evi{display:flex;gap:8px;align-items:flex-start;margin:3px 0}
+.ev .evk{flex:none;font-size:10.5px;border:1px solid var(--primary-soft);color:var(--primary-deep);border-radius:5px;padding:0 6px;white-space:nowrap}
+.ev .q{margin:0;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;unicode-bidi:isolate}
+.ev .rs{font-size:12px;margin-top:4px}
+.ev .rs b{color:var(--text-muted);font-weight:700}
+.evnone{font-size:11.5px;color:var(--text-muted)}
+@media (max-width:700px){ .wrap{padding:12px 16px 120px} .bar,.tabs,.foot{padding-left:16px;padding-right:16px} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toast" id="toast"></div>
+<dialog id="dlg">
+  <p id="dlgP" class="muted"></p>
+  <textarea id="dlgTa" readonly></textarea>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+    <button class="btn" id="dlgSel" type="button">전체 선택</button>
+    <button class="btn primary" id="dlgClose" type="button">닫기</button>
+  </div>
+</dialog>
+<script>
+(function(){
+  "use strict";
+  var DATA = /*__DATA__*/null;
+  var root = document.getElementById("root");
+  if (!DATA){ root.textContent = "데이터가 없습니다. python -m domain_engrbot labeling-rules review 로 다시 만드세요."; return; }
+
+  var KIND = {REPLACE:"혼동(바꿈)", REMOVE:"과잉(뺌)", ADD:"누락(더함)", ANSWER:"질문 답 뒤집힘",
+              GEN_ANSWER:"검증 질문 답 뒤집힘", MANUAL:"사람이 쓴 규칙"};
+  var KIND_HELP = {REPLACE:"봇이 앞의 값으로 붙인 것을 사람이 뒤의 값으로 고쳤다",
+                   REMOVE:"봇이 붙인 값을 사람이 뺐다", ADD:"봇이 놓친 값을 사람이 더했다",
+                   ANSWER:"봇의 질문 답(O·X·N/A)을 사람이 뒤집었다", GEN_ANSWER:"봇의 검증 질문 답을 사람이 뒤집었다",
+                   MANUAL:"엔지니어 답변이나 사람이 승인 파일에 직접 쓴 규칙"};
+  var EV_KIND = {chunk_same:"같은 슬라이드", chunk_other:"다른 슬라이드", file_name:"파일명", doc_title:"문서 제목"};
+  var MIX_ORDER = ["doc_title", "chunk_other", "chunk_same", "file_name"];
+  var TEXT_MAX = DATA.text_max || 300;
+  var KEY = "labeling_review:" + DATA.digest;
+  // apply와 같은 금지 글자(제어·폭 없는·방향 제어 문자)와 프롬프트 치환 표식
+  var BAD_CHARS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f​-‏‪-‮⁦-⁩]/;
+
+  // 화면에 있는 ID와 그 자리에서 고를 수 있는 동작(apply의 DECISIONS_ID_NOT_ON_SCREEN과 같은 기준).
+  // 새 규칙·사례 후보는 질문 화면에서 다루고, 여기에는 승인된 것과 갱신 대기 사례(승인 뒤 확정 라벨이 바뀜)만 있다.
+  var ALLOWED = Object.create(null);
+  DATA.pending_examples.forEach(function(e){ ALLOWED[e.example_id] = {a:["approve", "reject"], t:false}; });
+  DATA.approved_rules.forEach(function(r){ ALLOWED[r.rule_id] = {a:["reject", "enable", "disable"], t:true}; });
+  DATA.approved_examples.forEach(function(e){ ALLOWED[e.example_id] = {a:["reject", "enable", "disable"], t:false}; });
+
+  // st[id] = {action:"approve"|"reject"|"enable"|"disable"|null, text:string|undefined}
+  // 저장된 상태는 지금 화면의 ID·동작만 남긴다(프로토타입 없는 객체).
+  function loadState(){
+    var out = Object.create(null), raw = null;
+    try { raw = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e){ raw = null; }
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    Object.keys(raw).forEach(function(id){
+      var al = ALLOWED[id], v = raw[id];
+      if (!al || !v || typeof v !== "object") return;
+      var s = {};
+      if (typeof v.action === "string" && al.a.indexOf(v.action) >= 0) s.action = v.action;
+      if (al.t && typeof v.text === "string") s.text = v.text;
+      out[id] = s;
+    });
+    return out;
+  }
+  var st = loadState();
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){} }
+  function S(id){ if (!st[id]) st[id] = {}; return st[id]; }
+
+  var tab = "arules";
+
+  function h(tag, attrs, kids){
+    var el = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function(k){
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === "text") el.textContent = v;
+      else if (k === "onclick") el.addEventListener("click", v);
+      else if (k === "oninput") el.addEventListener("input", v);
+      else el.setAttribute(k, v === true ? "" : v);
+    });
+    (kids || []).forEach(function(c){ if (c) el.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return el;
+  }
+  function val(v, cls){ return h("span", {class:"v " + (cls || ""), text:v || "(없음)"}); }
+  function toast(msg){
+    var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("on");
+    setTimeout(function(){ t.classList.remove("on"); }, 2600);
+  }
+  function clean(t){ return String(t || "").split(/\s+/).filter(Boolean).join(" "); }
+  // 글자 수는 코드 포인트로 센다(apply의 len과 같다)
+  function tlen(t){ return Array.from(t).length; }
+  function textProblem(t){
+    var c = clean(t), n = tlen(c);
+    if (n === 0) return "비었음";
+    if (n > TEXT_MAX) return TEXT_MAX + "자 초과";
+    if (BAD_CHARS.test(c)) return "쓸 수 없는 글자(제어·방향 제어 문자)";
+    if (c.indexOf("{{") >= 0 || c.indexOf("}}") >= 0) return "{{ 또는 }}는 쓸 수 없음";
+    return "";
+  }
+
+  // ---- 근거(사람이 검수 화면에서 드래그한 위치·인용·이유) --------------------------------
+  function evKind(it){
+    var k = EV_KIND[it.kind] || String(it.kind || "");
+    return (it.kind === "chunk_same" || it.kind === "chunk_other") && it.slide_no != null ? k + " " + it.slide_no : k;
+  }
+  function evBlock(v, head){
+    var kids = [h("div", {class:"evh", text:head})];
+    (v.items || []).forEach(function(it){
+      kids.push(h("div", {class:"evi"}, [h("span", {class:"evk", text:evKind(it)}), h("p", {class:"q", dir:"auto", text:it.quote})]));
+    });
+    if (v.reason) kids.push(h("div", {class:"rs"}, [h("b", {text:"이유 "}), h("span", {dir:"auto", text:v.reason})]));
+    return h("div", {class:"ev"}, kids);
+  }
+  function mixText(mix){
+    var parts = MIX_ORDER.filter(function(k){ return mix && mix[k]; }).map(function(k){ return EV_KIND[k] + " " + mix[k]; });
+    return parts.join(" · ");
+  }
+  function ruleEvidence(r){
+    var list = r.evidence || [];
+    var title = "근거 있는 지지 레코드 " + (r.evidence_count || 0) + "건" + (r.evidence_count > list.length ? "(앞 " + list.length + "건 표시)" : "");
+    var box = h("div", {class:"evs"}, [h("div", {class:"evt", text:title})]);
+    if (!list.length) box.appendChild(h("div", {class:"evnone", text:"근거가 남은 교정이 없다"}));
+    list.forEach(function(v){ box.appendChild(evBlock(v, "레코드 " + v.record_id + " · " + v.field)); });
+    return box;
+  }
+  function exampleEvidence(e){
+    var ev = e.evidence || {}, axes = Object.keys(e.corrected || {}).sort();
+    if (!axes.length) return null;
+    var box = h("div", {class:"evs"}, [h("div", {class:"evt", text:"고친 축의 근거"})]);
+    axes.forEach(function(a){
+      if (ev[a]) box.appendChild(evBlock(ev[a], a + " 축"));
+      else box.appendChild(h("div", {class:"evnone", text:a + " 축: 근거 없음"}));
+    });
+    return box;
+  }
+  function textWarn(){
+    return h("div", {class:"warnline", text:"규칙 문장에 본문을 붙여 넣지 마세요. 문장은 승인 파일(git 추적)과 다음 라벨링 프롬프트에 그대로 들어갑니다. 근거 인용은 이 화면에서만 봅니다."});
+  }
+
+  function flow(r){
+    if (r.kind === "REMOVE") return h("div", {class:"flow"}, [h("b", {text:r.target}), " 축: ", val(r.from, "bot"), h("span", {class:"arrow", text:"→ 뺌"})]);
+    if (r.kind === "ADD") return h("div", {class:"flow"}, [h("b", {text:r.target}), " 축: ", h("span", {class:"arrow", text:"더함 →"}), val(r.to)]);
+    if (r.kind === "MANUAL") return h("div", {class:"flow"}, [h("b", {text:r.target || "(대상 없음)"})]);
+    var head = r.kind === "REPLACE" ? [h("b", {text:r.target}), " 축: "] :
+               r.kind === "ANSWER" ? ["질문 ", h("b", {class:"mono", text:r.target}), ": "] :
+               ["검증 질문 ", h("b", {text:r.target}), ": "];
+    return h("div", {class:"flow"}, head.concat([h("span", {class:"sub", text:"봇 "}), val(r.from, "bot"),
+                                                  h("span", {class:"arrow", text:"→"}), h("span", {class:"sub", text:"사람 "}), val(r.to)]));
+  }
+
+  function textBox(id, original, enabled){
+    var s = S(id);
+    var cur = s.text !== undefined ? s.text : original;
+    var cnt = h("div", {class:"cnt"});
+    var ta = h("textarea", {class:"rt", "aria-label":"규칙 문장"});
+    ta.value = cur;
+    function upd(){
+      var n = tlen(clean(ta.value)), prob = textProblem(ta.value);
+      cnt.textContent = n + " / " + TEXT_MAX + "자" + (clean(ta.value) !== clean(original) ? " · 고침" : "") + (prob ? " · " + prob : "");
+      var bad = !!prob;
+      cnt.className = "cnt" + (bad ? " bad" : ""); ta.className = "rt" + (bad ? " bad" : "");
+    }
+    ta.addEventListener("input", function(){
+      s.text = ta.value; if (clean(ta.value) === clean(original)) delete s.text;
+      save(); upd(); renderFoot(); markCard(ta);
+    });
+    if (!enabled) ta.setAttribute("disabled", "");
+    upd();
+    return [ta, cnt, textWarn()];
+  }
+  function markCard(el){
+    var c = el.closest(".card"); if (!c) return;
+    var id = c.getAttribute("data-id"); var s = st[id] || {};
+    c.className = "card" + (s.action === "approve" ? " d-approve" : s.action === "reject" ? " d-reject" :
+                            (s.action || s.text !== undefined) ? " d-change" : "");
+  }
+  function optBtn(id, action, label, cls){
+    var s = S(id);
+    return h("button", {class:"opt " + cls, type:"button", "aria-pressed":String(s.action === action), text:label,
+      onclick:function(){ s.action = s.action === action ? null : action; save(); render(); }});
+  }
+
+  // ---- 카드 -------------------------------------------------------------------
+  function axesTable(e){
+    var rows = [];
+    Object.keys(e.corrected || {}).sort().forEach(function(a){
+      var c = e.corrected[a];
+      rows.push(h("tr", null, [h("td", {text:a}), h("td", {text:(c.bot || []).join(", ") || "(없음)"}),
+                               h("td", {text:(c.human || []).join(", ") || "(없음)"}), h("td", {text:"고침"})]));
+    });
+    (e.confirmed || []).forEach(function(a){
+      var v = (e.final_axes || {})[a];
+      rows.push(h("tr", null, [h("td", {text:a}), h("td", {text:(v || []).join(", ") || "-"}),
+                               h("td", {text:(v || []).join(", ") || "-"}), h("td", {text:"그대로 확인"})]));
+    });
+    return h("table", null, [h("tr", null, [h("th", {text:"축"}), h("th", {text:"봇"}), h("th", {text:"사람"}), h("th", {text:""})])].concat(rows));
+  }
+  function updatingExampleCard(e){
+    var s = S(e.example_id);
+    var tags = [h("span", {class:"id", text:e.example_id}),
+                h("span", {class:"badge k", text:e.kind === "corrected" ? "사람이 고친 사례" : "사람이 확인한 사례"}),
+                h("span", {class:"badge warn", text:"승인 뒤 확정 라벨이 바뀜(다시 승인 필요)"})];
+    var card = h("div", {class:"card", "data-id":e.example_id}, [
+      h("div", {class:"ch"}, tags),
+      h("div", {class:"sub", text:"작업 폴더 " + e.source_ws + " · 레코드 " + e.record_id}),
+      axesTable(e),
+      exampleEvidence(e),
+      h("div", {class:"opts"}, [optBtn(e.example_id, "approve", "승인(갱신)", "a"), optBtn(e.example_id, "reject", "기각", "r"),
+        h("span", {class:"sub", text:s.action ? "" : "고르지 않으면 지금 승인된 라벨 그대로 둔다"})])
+    ]);
+    markCard(card.firstChild);
+    return card;
+  }
+  function approvedRuleCard(r){
+    var s = S(r.rule_id);
+    var tb = textBox(r.rule_id, r.text, s.action !== "reject");
+    var tags = [h("span", {class:"id", text:r.rule_id}), h("span", {class:"badge k", text:KIND[r.kind] || r.kind}),
+                h("span", {class:"badge", text:"승인 때 " + (r.count == null ? "-" : r.count) + "건" +
+                  (r.count_now != null && r.count_now !== r.count ? " · 지금 " + r.count_now + "건" : "")})];
+    if (!r.enabled) tags.push(h("span", {class:"badge off", text:"꺼짐"}));
+    if (!r.valid) tags.push(h("span", {class:"badge off", text:"형식 오류(프롬프트에 안 들어감)"}));
+    if (r.edited_at) tags.push(h("span", {class:"badge", text:"문장 고침 " + r.edited_at.slice(0, 16)}));
+    var onOff = r.enabled ? optBtn(r.rule_id, "disable", "끄기", "t") : optBtn(r.rule_id, "enable", "켜기", "t");
+    var card = h("div", {class:"card", "data-id":r.rule_id}, [
+      h("div", {class:"ch"}, tags), flow(r),
+      h("div", {class:"sub", text:(KIND_HELP[r.kind] || "") + (mixText(r.evidence_mix) ? " · 근거 위치: " + mixText(r.evidence_mix) : "")}),
+      ruleEvidence(r), tb[0], tb[1], tb[2],
+      h("div", {class:"opts"}, [onOff, optBtn(r.rule_id, "reject", "승인 취소(기각)", "r"),
+        h("span", {class:"sub", text:"문장을 고치면 저장할 때 함께 반영된다"})])
+    ]);
+    markCard(card.firstChild);
+    return card;
+  }
+  function approvedExampleCard(e){
+    var tags = [h("span", {class:"id", text:e.example_id}),
+                h("span", {class:"badge k", text:e.kind === "corrected" ? "사람이 고친 사례" : "사람이 확인한 사례"})];
+    if (!e.enabled) tags.push(h("span", {class:"badge off", text:"꺼짐"}));
+    if (!e.valid) tags.push(h("span", {class:"badge off", text:"형식 오류"}));
+    var onOff = e.enabled ? optBtn(e.example_id, "disable", "끄기", "t") : optBtn(e.example_id, "enable", "켜기", "t");
+    var card = h("div", {class:"card", "data-id":e.example_id}, [
+      h("div", {class:"ch"}, tags),
+      h("div", {class:"sub", text:"작업 폴더 " + e.source_ws + " · 레코드 " + e.record_id}),
+      axesTable(e),
+      exampleEvidence(e),
+      h("div", {class:"opts"}, [onOff, optBtn(e.example_id, "reject", "승인 취소(기각)", "r")])
+    ]);
+    markCard(card.firstChild);
+    return card;
+  }
+
+  // ---- 결정 파일 ---------------------------------------------------------------
+  function decisions(){
+    var out = [], seen = new Set();
+    // ID마다 결정 하나(apply는 같은 ID가 두 번 있으면 파일 전체를 거부한다)
+    function push(d){ if (!seen.has(d.id)){ seen.add(d.id); out.push(d); } }
+    collect(push);
+    return out;
+  }
+  function collect(push){
+    DATA.pending_examples.forEach(function(e){
+      var s = st[e.example_id] || {};
+      if (s.action === "approve" || s.action === "reject") push({id:e.example_id, action:s.action});
+    });
+    // 승인된 규칙은 ID마다 결정 하나: 승인 취소, 또는 켜기·끄기(문장 수정이 있으면 함께), 또는 문장 수정만.
+    DATA.approved_rules.forEach(function(r){
+      var s = st[r.rule_id] || {};
+      if (s.action === "reject"){ push({id:r.rule_id, action:"reject"}); return; }
+      var action = (s.action === "enable" || s.action === "disable") ? s.action : (s.text !== undefined ? "edit" : null);
+      if (!action) return;
+      var d = {id:r.rule_id, action:action};
+      if (s.text !== undefined) d.text = clean(s.text);
+      push(d);
+    });
+    DATA.approved_examples.forEach(function(e){
+      var s = st[e.example_id] || {};
+      if (s.action === "reject" || s.action === "enable" || s.action === "disable") push({id:e.example_id, action:s.action});
+    });
+  }
+  function output(){
+    return {kind:"labeling_rules_decisions", version:1, digest:DATA.digest, made_at:new Date().toISOString(),
+            decisions:decisions()};
+  }
+  function badTexts(){
+    return decisions().filter(function(d){ return d.text !== undefined && !!textProblem(d.text); });
+  }
+  function fileName(){
+    var t = new Date(); function p(n){ return (n < 10 ? "0" : "") + n; }
+    return "labeling_decisions_" + t.getFullYear() + p(t.getMonth() + 1) + p(t.getDate()) + "-" + p(t.getHours()) + p(t.getMinutes()) + p(t.getSeconds()) + ".json";
+  }
+  function download(){
+    if (badTexts().length){ toast("문장이 비었거나 " + TEXT_MAX + "자를 넘거나 쓸 수 없는 글자가 있는 규칙이 있습니다: " + badTexts().map(function(d){ return d.id; }).join(", ")); return; }
+    var text = JSON.stringify(output(), null, 2), name = fileName();
+    try {
+      var blob = new Blob([text], {type:"application/json"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a"); a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+      toast(name + " 저장을 시작했습니다. Claude에게 \"규칙 관리 끝났어\"라고 알려 주세요");
+    } catch(e){
+      showText(text, "저장이 막혔습니다. 아래 텍스트를 " + name + " 파일로 저장하세요.");
+    }
+  }
+  function showText(text, msg){
+    var dlg = document.getElementById("dlg"), ta = document.getElementById("dlgTa");
+    document.getElementById("dlgP").textContent = msg || ""; ta.value = text;
+    try { dlg.showModal(); } catch(e){ dlg.setAttribute("open", ""); }
+    ta.focus(); ta.select();
+  }
+  function copyText(){
+    var text = JSON.stringify(output(), null, 2);
+    function fallback(){ showText(text, "자동 복사가 막혀 있습니다. 텍스트를 선택해 복사(Ctrl+C)하세요."); }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ toast("텍스트로 복사했습니다"); }, fallback); return;
+      }
+    } catch(e){}
+    fallback();
+  }
+  document.getElementById("dlgClose").addEventListener("click", function(){
+    var d = document.getElementById("dlg"); try { d.close(); } catch(e){ d.removeAttribute("open"); }
+  });
+  document.getElementById("dlgSel").addEventListener("click", function(){ var ta = document.getElementById("dlgTa"); ta.focus(); ta.select(); });
+
+  // ---- 화면 -------------------------------------------------------------------
+  var foot;
+  function renderFoot(){
+    if (!foot) return;
+    var ds = decisions(), c = {approve:0, reject:0, enable:0, disable:0, edit:0};
+    ds.forEach(function(d){ c[d.action] = (c[d.action] || 0) + 1; if (d.action !== "edit" && d.text !== undefined) c.edit++; });
+    foot.querySelector(".sum").textContent = "결정 " + ds.length + "건 · 승인 " + c.approve + " · 기각 " + c.reject +
+      " · 켜기 " + c.enable + " · 끄기 " + c.disable + " · 문장 수정 " + c.edit;
+  }
+  function tabBtn(key, label, n){
+    return h("button", {class:"tab" + (tab === key ? " on" : ""), type:"button", onclick:function(){ tab = key; render(); }},
+             [label, h("span", {class:"n", text:String(n)})]);
+  }
+  function render(){
+    root.textContent = "";
+    var pe = DATA.pending_examples, ar = DATA.approved_rules, ae = DATA.approved_examples;
+    root.appendChild(h("div", {class:"bar"}, [
+      h("h1", {text:"승인된 규칙 관리"}),
+      h("span", {class:"meta", text:"Domain-Engr-bot · 장부 " + DATA.ledger + " · 화면 " + String(DATA.made_at).slice(0, 16)}),
+      h("span", {class:"sp"})
+    ]));
+    root.appendChild(h("div", {class:"tabs"}, [
+      tabBtn("arules", "승인된 규칙", ar.length), tabBtn("aexamples", "승인된 사례", ae.length + pe.length),
+      tabBtn("help", "도움말", "?")
+    ]));
+    var w = h("div", {class:"wrap"});
+    if (tab === "arules"){
+      w.appendChild(h("div", {class:"note", text:"지금 다음 라벨링에 들어가는 규칙이다. 끄면 프롬프트에서 빠지고(기록은 남음), 승인 취소하면 기각 목록으로 가 다시 후보로 올라오지 않는다. 새 규칙·사례 후보는 Domain-Engr-bot 질문 화면에서 다룬다."}));
+      if (!ar.length) w.appendChild(h("div", {class:"empty", text:"승인된 규칙이 없습니다"}));
+      ar.forEach(function(r){ w.appendChild(approvedRuleCard(r)); });
+    } else if (tab === "aexamples"){
+      if (pe.length){
+        w.appendChild(h("h3", {text:"갱신 대기 " + pe.length + "건"}));
+        w.appendChild(h("div", {class:"note"}, ["승인한 뒤 사람 검수로 확정 라벨이 바뀐 사례다. ", h("b", {text:"승인(갱신)"}),
+          "하면 새 확정 라벨로 바꾸고, 기각하면 사례에서 빼고 다시 올리지 않는다. 고르지 않으면 지금 승인된 라벨 그대로 쓰인다."]));
+        pe.forEach(function(e){ w.appendChild(updatingExampleCard(e)); });
+        w.appendChild(h("h3", {text:"승인된 사례 " + ae.length + "건"}));
+      }
+      w.appendChild(h("div", {class:"note"}, ["다음 1차 분류에 비슷한 chunk의 예시(few-shot)로 붙는 사례다. 본문은 이 화면에 없고(실행할 때 원래 작업 폴더에서 읽는다), 근거 인용만 보여 준다. ",
+        h("b", {text:"LLM 호스트가 허용하지 않는 파일의 사례는 승인해도 쓰이지 않는다."})]));
+      if (!ae.length) w.appendChild(h("div", {class:"empty", text:"승인된 사례가 없습니다"}));
+      ae.forEach(function(e){ w.appendChild(approvedExampleCard(e)); });
+    } else {
+      w.appendChild(h("div", {class:"card"}, [
+        h("h3", {text:"이 화면에서 하는 일"}),
+        h("ol", {class:"help"}, [
+          h("li", {text:"새 규칙·사례 후보는 Domain-Engr-bot 질문 화면에서 다룬다(엔지니어가 질문에 답하고 확정한 초안만 승인 파일에 들어간다). 이 화면에는 이미 승인된 규칙·사례만 있다."}),
+          h("li", {text:"승인된 규칙·사례는 끄기·켜기, 문장 수정, 승인 취소(기각)를 할 수 있다. 규칙 문장은 " + TEXT_MAX + "자 이내이고, 본문·인용을 붙여 넣지 않으며, {{ }}와 제어 문자는 쓸 수 없다."}),
+          h("li", {text:"'승인된 사례' 탭의 갱신 대기 사례(승인 뒤 확정 라벨이 바뀜)는 승인(갱신) 또는 기각을 고른다."}),
+          h("li", {text:"아래 '결정 JSON 저장'을 누르고 Claude에게 \"규칙 관리 끝났어\"라고 알린다. Claude가 python -m domain_engrbot labeling-rules apply 로 taxonomy/labeling_rules.json에 반영한다."}),
+          h("li", {text:"반영된 규칙·사례는 다음 /BEOL-labeling 실행부터 프롬프트에 들어간다."})
+        ]),
+        h("p", {class:"sub", text:"고른 결정은 이 브라우저에만 임시 저장된다. 결정 JSON은 이 화면에서만 반영된다: 그사이 승인 상태가 바뀌면(질문 답 반영, 새 검수 반영) Claude가 DECISIONS_STALE로 거부하니 화면을 다시 만들어 다시 고른다. 기각한 규칙 " + DATA.rejected_rules + "개, 사례 " + DATA.rejected_examples + "개."})
+      ]));
+    }
+    root.appendChild(w);
+    foot = h("div", {class:"foot"}, [
+      h("span", {class:"sum"}), h("span", {class:"sp"}),
+      h("button", {class:"btn", type:"button", text:"고른 것 모두 지우기", onclick:function(){ st = Object.create(null); save(); render(); }}),
+      h("button", {class:"btn", type:"button", text:"텍스트로 복사", onclick:copyText}),
+      h("button", {class:"btn primary", type:"button", text:"결정 JSON 저장", onclick:download})
+    ]);
+    root.appendChild(foot);
+    renderFoot();
+  }
+  render();
+})();
+</script>
+</body>
+</html>

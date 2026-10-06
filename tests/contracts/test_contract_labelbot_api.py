@@ -1,6 +1,6 @@
-"""engrbot(테스트 제외)이 쓰는 labelbot 심볼 동결.
+"""domain_engrbot(테스트 제외)이 쓰는 labelbot 심볼 동결.
 
-engrbot 소스를 ast로 훑어 `from labelbot... import X`와 `from labelbot import mod as alias` 뒤의 `alias.attr`를 모은다.
+domain_engrbot 소스를 ast로 훑어 `from labelbot... import X`와 `from labelbot import mod as alias` 뒤의 `alias.attr`를 모은다.
 각 심볼을 실제로 import해 종류(class/exception/function/module/constant)와 함수 시그니처를 스냅샷과 비교한다.
 """
 import ast
@@ -12,11 +12,11 @@ import unittest
 
 from tests.contracts import _support
 
-ENGRBOT_DIR = os.path.join(_support.REPO_ROOT, "engrbot")
+DOMAIN_ENGRBOT_DIR = os.path.join(_support.REPO_ROOT, "domain_engrbot")
 
 
 def _sources():
-    for base, dirs, files in os.walk(ENGRBOT_DIR):
+    for base, dirs, files in os.walk(DOMAIN_ENGRBOT_DIR):
         dirs[:] = sorted(d for d in dirs if d not in ("tests", "__pycache__"))
         for name in sorted(files):
             if name.endswith(".py"):
@@ -80,7 +80,7 @@ def describe(obj):
 class LabelbotSymbolsUsedByEngrbot(unittest.TestCase):
     def test_symbols(self):
         used = used_symbols()
-        self.assertTrue(used, "engrbot에서 labelbot 사용처를 하나도 찾지 못했다")
+        self.assertTrue(used, "domain_engrbot에서 labelbot 사용처를 하나도 찾지 못했다")
         data = {}
         for sym, files in used.items():
             with self.subTest(symbol=sym):
@@ -89,7 +89,7 @@ class LabelbotSymbolsUsedByEngrbot(unittest.TestCase):
                 except (ImportError, AttributeError) as e:
                     self.fail("SYMBOL_MISSING %s (%s)" % (sym, type(e).__name__))
                 data[sym] = dict(describe(obj), used_in=files)
-        _support.check(self, "labelbot_symbols_used_by_engrbot", data)
+        _support.check(self, "labelbot_symbols_used_by_domain_engrbot", data)
 
 
 if __name__ == "__main__":

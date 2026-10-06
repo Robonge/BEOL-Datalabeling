@@ -1,10 +1,9 @@
 """OpenAI 호환 호출과 외부 전송 안전장치.
 
-호스트 판정, 더미 해시 확인, 리다이렉트 거부 opener, 키 읽기는 이 모듈의 공용 함수 하나씩이며
+호스트 판정, 리다이렉트 거부 opener, 키 읽기는 이 모듈의 공용 함수 하나씩이며
 LLM, 임베딩, Supabase 적재가 모두 이것을 쓴다. 키 값은 로그·캐시 키·DB에 넣지 않는다.
 """
 import http.client
-import ipaddress
 import json
 import os
 import socket
@@ -16,17 +15,8 @@ import urllib.request
 from labelbot import util
 from labelbot.workspace import CODE_ROOT
 
+# 테스트 fixture(더미 파일 해시 목록). PoC에서는 전송 판정에 쓰지 않는다.
 DUMMY_HASHES_PATH = os.path.join(CODE_ROOT, "tests", "gold", "dummy_hashes.jsonl")
-# 사외 검증용으로 지정한 저장소 안 폴더. 이 폴더의 현재 파일 해시도 사외 전송을 허용한다
-# (2026-10-04 사용자 승인. 이 폴더에는 사내 파일을 넣지 않는다).
-DUMMY_DIRS = ("parshing test files",)
-_dummy_cache = {}
-
-
-class SendBlocked(Exception):
-    def __init__(self, reason_code):
-        Exception.__init__(self, reason_code)
-        self.reason_code = reason_code
 
 
 class CallFailed(Exception):
@@ -37,57 +27,6 @@ class CallFailed(Exception):
 
 # ---- 공용 안전장치 -------------------------------------------------------
 
-def _folder_hashes(root):
-    """사외 검증 폴더의 파일 sha256. 원본은 ingest.read_input으로만 읽고 아무것도 쓰지 않는다."""
-    from labelbot import ingest
-
-    ids = set()
-    if os.path.isdir(root):
-        for full, _, _ in ingest.iter_inputs(root):
-            ids.add(util.sha256_bytes(ingest.read_input(full, None)))
-    return ids
-
-
-def dummy_hashes(path=None):
-    """사외 전송 허용 파일 해시. 기본은 스냅샷 목록 + DUMMY_DIRS 폴더의 현재 파일이다.
-
-    path를 주면(테스트) 그 목록 파일만 쓴다.
-    """
-    key = path or DUMMY_HASHES_PATH
-    if key not in _dummy_cache:
-        ids = set()
-        if os.path.isfile(key):
-            with open(key, encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        ids.add(json.loads(line)["file_id"])
-        if path is None:
-            for d in DUMMY_DIRS:
-                ids |= _folder_hashes(os.path.join(CODE_ROOT, d))
-        _dummy_cache[key] = ids
-    return _dummy_cache[key]
-
-
-def host_class(url, suffixes):
-    """'internal' | 'external' | 'uncertain'. 파싱 실패·빈 호스트·IP 리터럴은 uncertain."""
-    try:
-        parts = urllib.parse.urlsplit(url or "")
-        host = (parts.hostname or "").lower().rstrip(".")
-    except ValueError:
-        return "uncertain"
-    if parts.scheme not in ("http", "https") or not host:
-        return "uncertain"
-    try:
-        ipaddress.ip_address(host)
-        return "uncertain"
-    except ValueError:
-        pass
-    for suf in suffixes or []:
-        suf = (suf or "").lower().strip().lstrip(".")
-        if suf and (host == suf or host.endswith("." + suf)):
-            return "internal"
-    return "external"
 
 
 def host_hash(url):
@@ -95,25 +34,6 @@ def host_hash(url):
     return util.sha256_text(host)[:16]
 
 
-def check_send(url, file_ids, suffixes, probe=False, dummy_path=None):
-    """전송 허용 판정. 막히면 SendBlocked(사유 코드).
-
-    사외 호스트에는 그 호출에 들어가는 chunk의 파일 해시가 모두 더미 해시 목록에 있을 때만 보낸다.
-    파일이 0개인 호출은 거부한다(self-check 고정 probe 문장만 예외).
-    """
-    cls = host_class(url, suffixes)
-    if cls == "uncertain":
-        raise SendBlocked("HOST_UNCERTAIN")
-    if cls == "internal":
-        return cls
-    if probe:
-        return cls
-    ids = set(file_ids or [])
-    if not ids:
-        raise SendBlocked("EXTERNAL_NO_FILES")
-    if not ids <= dummy_hashes(dummy_path):
-        raise SendBlocked("EXTERNAL_NON_DUMMY")
-    return cls
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -327,7 +247,6 @@ class ChatClient:
             if obj is not None and validate(obj)[0]:
                 self.cache_hits += 1
                 return obj
-        check_send(self.url, file_ids, self.cfg.get("internal_host_suffixes"), probe=probe)
         last = "FORMAT_INVALID"
         for _ in range(1 + int(self.cfg.get("max_retries") or 0)):
             self.calls += 1

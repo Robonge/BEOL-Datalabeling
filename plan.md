@@ -48,7 +48,7 @@ labelbot/
   label.py           3차 라벨링, 날짜·담당자 추출
   alerts.py          라벨 분포 점검과 사람 알림 (HITL H5)
   review.py          4차 불량 목록 추출, 검수 화면 생성, 교정 반영
-  feedback.py        검수 피드백 소비: 승인 파일(taxonomy/labeling_rules.json(승인 시 생성))의 규칙·사례 참조 → 다음 실행 프롬프트 블록(생산·승인은 engrbot/labeling_rules.py)
+  feedback.py        검수 피드백 소비: 승인 파일(taxonomy/labeling_rules.json(승인 시 생성))의 규칙·사례 참조 → 다음 실행 프롬프트 블록(생산은 Domain-Engr-bot 질문 답변 domain_engrbot/answers.py, 후보 계산은 domain_engrbot/labeling_rules.py)
   metrics.py(미구현)         사외 더미 정답표 대조 지표(축별 완전 일치율, Jaccard, 혼동 행렬). tools/evalgold.py만 쓴다
   export.py          산출 SQLite, SCHEMA.md
   querycheck.py(미구현)      조회 질문 후보, LLM SQL 조회 검증
@@ -64,8 +64,9 @@ labelbot/
 prompts/             단계별 프롬프트 (.md)
 docs/supabase_schema.md  Supabase(pgvector) 표 정의 SQL 코드 블록 (.sql 파일은 두지 않는다)
 taxonomy/taxonomy.xlsx   기본 taxonomy (더미 동의어 포함)
-taxonomy/labeling_rules.json(승인 시 생성)         검수 피드백 승인 규칙·사례 참조와 기각 ID(축·값·질문 ID·건수·문장, 사례는 작업 폴더 이름·chunk ID·본문 해시·확정 라벨만, 본문 없음, git 추적, 사람이 문장·enabled 편집). Engr-bot이 쓰고 labelbot이 읽는다
-workspaces/_engrbot/ledger/          Engr-bot 교정 장부(커밋 제외). labeling_candidates.md(라벨링 규칙·사례 승인 대기 후보, 본문 없음)
+taxonomy/labeling_rules.json(승인 시 생성)         검수 피드백 승인 규칙·사례 참조와 기각 ID(축·값·질문 ID·건수·문장, 사례는 작업 폴더 이름·chunk ID·본문 해시·확정 라벨만, 본문 없음, git 추적, 사람이 문장·enabled 편집). Domain-Engr-bot이 쓰고 labelbot이 읽는다
+workspaces/_domain_engrbot/ledger/          Domain-Engr-bot 교정 장부(커밋 제외). labeling_candidates.md(라벨링 규칙·사례 후보, 도메인 질문의 재료, 본문 없음)
+workspaces/_domain_engrbot/questions/       Domain-Engr-bot 질문 폴더(커밋 제외). questions.json·engr_questions.html·answers.jsonl·taxonomy_proposals.jsonl(본문 있음), asked.json·generate_log.jsonl
 taxonomy/taxonomy_revisit_requests/  apply가 검수 실행마다 쓰는 재검토 파일 taxonomy_revisit_<연월일_시분초>.md·.html·.json (taxonomy 시트 붙여넣기 행, 메모 포함, git 추적)
 dummy pptx files/    사외 검증 샘플 원천 (저장소 상대 경로). 어느 파일이든 쓸 수 있고 ingest 바이트 경로로만 읽는다
 parshing test files/ 사외 검증 입력 폴더(BEOL-labeling 기본 입력). 현재 파일 해시가 사외 전송 허용 목록에 더해진다. 사내 파일 반입 금지
@@ -117,7 +118,7 @@ logs/           .log (파일 ID와 사유 코드만)
 | `report --run <ID>` | 기준선 리포트(분포) 재계산, `reports/taxonomy_revisit.*` 재작성(LLM 호출 0회) | 안 함 | M6 |
 | `embed` | chunk 임베딩, `chunk_embeddings` | 안 함 | M6b |
 | `push-vectors` | Supabase 벡터 적재, `vector_push_log` | 안 함 | M6b |
-| `engrbot labeling-rules candidates\|approve\|reject\|status` (Engr-bot) | 검수 피드백 생산: `engrbot intake`가 모은 장부에서 라벨링 규칙·few-shot 사례 후보를 세고(`labeling_candidates.md`), 사람이 고른 것만 승인 파일에 적는다(`--ids FR-…,EX-…`, `--all`은 상충 제외, `--examples all`) | 안 함 | M5 |
+| `domain_engrbot questions generate\|serve\|apply` (Domain-Engr-bot) | 검수 피드백 생산: `domain_engrbot intake`가 모은 장부와 검수 결과로 엔지니어에게 물을 질문을 만들고(LLM), 질문 화면에서 사람이 확정한 초안만 승인 파일과 taxonomy 수정 보드(S7)에 적는다. `labeling-rules candidates\|status`는 후보 계산·건수용으로, `review\|apply`는 승인분 관리용으로 남는다(`approve\|reject`도 명령은 남음) | 안 함(질문 묶음은 set_id) | M5 |
 | `slide-images` | 슬라이드 근사 미리보기 JPG 렌더(`slide_images/<sha256>.b64`, `slide_images` 표), 산출 `chunks.slide_image` 갱신 | 안 함 | M6c |
 | `push-slides` | 슬라이드 JPG를 Storage 버킷에 올리고 벡터 행 `slide_image_*` 열 기록, `slide_image_push_log` | 안 함 | M6c |
 
@@ -179,6 +180,8 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] `.sqlite` 파일을 쓴 뒤 바이트를 훼손하면 그 항목이 FAIL이다.
 - [ ] 출력에 "필요조건일 뿐이며 M7 게이트의 수동 확인이 필요하다"는 문구가 있다.
 
+> PoC(2026-10-05 사용자 결정)에서는 사외·사내를 구분하지 않으며 이 단계의 호스트 판정·더미 해시 조건과 그 완료 조건은 적용하지 않는다. 코드에서 `check_send`·`SendBlocked`·`host_class`·`internal_host_suffixes`·더미 해시 대조를 제거했다. 사내 반입 전에 되돌린다.
+
 [P0] G19 LLM 설정과 외부 전송 안전장치: `llm.py`는 OpenAI Chat Completions 호환(`urllib.request`, `POST {base_url}{chat_path}`)이다. `pipeline.json` `llm` 블록의 키와 기본값은 `base_url`, `chat_path`("/chat/completions"), `model`, `api_key_env`("OPENAI_API_KEY"), `auth_header`("Authorization", 값 "Bearer {key}"), `extra_headers`({}), `ca_file`(null), `timeout`(60), `temperature`(0, null이면 보내지 않음), `max_tokens`, `response_format_json`(false), `internal_host_suffixes`([])다. 키 값은 환경변수에서만 읽고 설정 파일, 로그, 캐시 키, DB에 넣지 않는다. 호스트(소문자)가 `internal_host_suffixes`의 접미사와 같거나 "." + 접미사로 끝나면 사내이고, 파싱 실패·빈 호스트·IP 리터럴은 거부한다. 사외 호출은 호출 직전마다 그 호출에 들어가는 chunk의 파일 해시가 모두 `tests/gold/dummy_hashes.jsonl` 또는 사외 검증 폴더 `parshing test files/`(저장소 상대 경로, `llm.DUMMY_DIRS`)의 현재 파일 해시에 있을 때만 허용하며(폴더 해시는 프로세스당 한 번 `read_input`으로 계산하고 아무것도 쓰지 않는다. 이 폴더에는 사내 파일을 넣지 않는다)(taxonomy 조건은 없다), 파일이 0개면 거부한다(self-check의 고정 probe 문장만 예외). 호스트 판정, 더미 해시 확인, 리다이렉트 거부 opener, 키 읽기는 공용 함수 하나로 두고 임베딩(G20)과 벡터 적재(G21)도 같은 함수를 쓴다. 프록시는 `HTTP(S)_PROXY`를 따르되 판정은 `base_url` 기준이다.
 - [ ] mock 서버가 받은 요청에서 `temperature: null`이면 temperature 키가 없고 0이면 0이 있다. `response_format_json`이 true일 때만 `response_format`이 있다.
 - [ ] `auth_header`, `extra_headers`, `chat_path`, `timeout`을 바꾸면 mock 서버가 받은 헤더·경로가 그에 맞게 바뀐다.
@@ -238,7 +241,7 @@ logs/           .log (파일 ID와 사유 코드만)
 
 완료 기준:
 - [ ] 엑셀에서 값을 추가한 `taxonomy.xlsx`를 읽으면, 코드 수정 없이 다음 분류 프롬프트에 그 값이 들어간다.
-- [ ] 오류 5종(같은 축 안의 중복 값, 존재하지 않는 상위값, 축 정의 행이 없는 값, 축 속성이 값 행에 적힘, 표준어가 빈 동의어)은 각각 픽스처 1개로 실행을 거부하고, 메시지에 시트 이름과 행 번호가 나온다.
+- [ ] 오류 5종(상위값이 다른 같은 축 중복 값(같은 상위값이면 정의를 합쳐 정상 처리), 존재하지 않는 상위값, 축 정의 행이 없는 값, 축 속성이 값 행에 적힘, 표준어가 빈 동의어)은 각각 픽스처 1개로 실행을 거부하고, 메시지에 시트 이름과 행 번호가 나온다.
 - [ ] 예약어 오류: `해당 없음`, `unknown`과 그 변형(`해당없음`, `Unknown`, `N/A`, `NA`)을 값으로 적은 시트는 거부된다.
 - [ ] 시트 누락·머리글 불일치: 필수 시트가 없거나 머리글이 다르면 시트 이름과 기대 머리글을 알려 주고 거부한다. 선택 시트(`files`, `queries`)가 없으면 빈 시트로 처리된다.
 - [ ] 중복 동의어 경고: 같은 동의어가 두 행에 있으면 첫 행을 쓰고 경고하며 실행은 계속된다. 경고에는 시트 이름과 행 번호만 있고 표현은 없다.
@@ -279,6 +282,8 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 파일을 옮겨 다시 수집해도 렌더링된 분류 프롬프트가 바이트 단위로 같고 mock 호출이 0회다.
 - [ ] 프롬프트에 입력 루트 절대 경로가 없다.
 
+> PoC(2026-10-05 사용자 결정)에서는 사외·사내를 구분하지 않으며 이 단계는 적용하지 않는다. 코드에서 `check_send`·`SendBlocked`·`host_class`·`internal_host_suffixes`·더미 해시 대조를 제거했다. 사내 반입 전에 되돌린다.
+
 [P0] G19 1차 분류의 외부 전송 차단:
 - [ ] 사외 호스트 설정에서 더미 해시 밖 파일의 chunk가 들어가는 1차 분류 호출은 그 호출만 0회로 막히고 사유 코드가 `failures`에 남는다.
 
@@ -289,13 +294,23 @@ logs/           .log (파일 ID와 사유 코드만)
 2차는 두 갈래다. (1) 승인된 질문을 규칙으로 매핑한다(아래 기존 기준). (2) 1차 분류가 붙인 라벨의 진위를 검증하는 O/X 질문을 LLM이 chunk마다 만든다(2026-10-04 사용자 결정).
 
 검증 질문 생성 규칙(`prompts/question_gen.md`):
-- 대상은 1차 라벨 중 `해당 없음`·`unknown`을 뺀 (축, 값)이며, 활성 축 순서대로 상한(`limits.questions_per_chunk`에서 승인 질문 수를 뺀 수)까지 라벨마다 정확히 하나 만든다.
+- 대상(2026-10-05 변경, 사용자 결정): 1차가 `unknown`이라 한 활성 축과, 축 확신도가 `flag.confidence_min`(0.7) 미만인 붙은 라벨뿐이다. 확신도 낮은 순(unknown은 0으로 봄)으로 최대 `limits.verify_max`(3)개, 대상마다 정확히 하나 만든다. 확신도가 모두 기준 이상이면 검증 질문은 없고 대조 질문만 낸다. unknown 축은 질문 생성 LLM이 그 축의 후보 값 중 본문에 가장 가까운 값을 골라 출제하며(검증기가 후보 밖 값을 거부), 그 질문이 O이고 인용이 본문에 있으면 불량 사유 `UNKNOWN_O`(unknown을 그 값으로 채울 후보)로 검수에 오른다. (이전 규칙: `해당 없음`·`unknown`을 뺀 1차 라벨마다 하나.)
 - 질문은 예/아니오로 답하는 한 문장의 판정 의문문이다. 본문이 라벨을 뒷받침하면 O, 반박하거나 다른 값을 말하면 X가 되게 쓴다. 라벨 값과 정의를 질문에 구체적으로 쓴다.
 - 개방형("왜·어떻게·무엇·얼마나"), 복합("A이고 B인가?"), 부정 의문문, 제목만으로 답이 정해지는 질문은 금지한다. 물음표로 끝나야 한다. 검증기가 대상 누락·중복·목록 밖 대상·물음표 없음·개방형 단어를 거부한다(`NOT_YES_NO`, `UNKNOWN_TARGET`, `QUESTION_MISSING`).
 - 질문 ID는 `Q-GEN-` + sha256(chunk_id|축|값) 앞 10자리이고, 우선순위는 50(승인 질문 뒤)이다. 문구는 작업 DB `gen_questions` 표에 남고 검수 화면·산출 `questions` 표·대시보드가 이 표에서 문구를 찾는다.
 - 생성 실패는 `failures`에 stage `question_gen`과 사유 코드로 남고, 그 chunk는 승인 질문만으로 3차를 진행한다.
 - 3차 라벨러는 `Q-GEN-` 질문에 대해 본문이 라벨을 뒷받침하면 O, 반박하면 X, 근거가 전혀 없을 때만 N/A로 답한다(`prompts/label.md`). X는 1차 라벨이 본문과 어긋났다는 뜻이며 대시보드에 `Q-GEN-*` 합산 행으로 나온다.
-- LLM 호출은 chunk당 3회(1차 분류, 2차 검증 질문 생성, 3차 라벨링)이며 같은 입력은 캐시로 0회다.
+- LLM 호출은 chunk당 3회(1차 분류, 2차 검증·대조 질문 생성, 3차 라벨링)이며 같은 입력은 캐시로 0회다.
+
+대조 질문 규칙(2026-10-05 사용자 결정): 검증 질문은 1차 라벨에서만 나와 답이 O로 몰리고(실행 20261005T075633-685f에서 Q-GEN 120개 중 O 99), 3차 라벨러의 예 편향을 잴 수 없었다. 그래서 정답이 O가 아니어야 하는 대조군을 둔다.
+- 남은 상한(승인 질문 수를 뺀 수)을 나눈다(`questions.split_budget`). 대조 질문은 상한의 `limits.control_ratio`(기본 0.6, 0·숫자 아님·NaN이면 끔, 최대 0.9)를 반올림한 수를 넘지 않으면서 검증 대상 수와의 비율이 control_ratio에 가깝게(몫이 있으면 최소 1개) 정하고, 검증 질문이 남은 칸을 채운다. 검증 대상이 없는 chunk는 대상 1개일 때만큼 대조 질문만 낸다. 상한 때문에 검증하지 못한 대상 수는 `[question]` 줄에 나온다. 상한 8, 승인 질문 1개, 비율 0.6이면 검증 대상 3·2·1·0개에 대조 질문 4·3·2·2개다.
+- 다양화: `gpt-6-sol`은 temperature를 받지 않으므로 프롬프트로 문형·관점을 정한다(`questions.variation`). 문형 5개(`FRAMES`)는 범위가 같은 판정 의문문이고, chunk마다 sha256("var"|chunk_id)로 시작점을 정해 차례로 돌린다(한 chunk 안에서 5개까지 겹치지 않음). 검증 질문은 문형만 바꾼다(관점으로 범위를 좁히면 맞는 라벨에 X가 나와 검증 신호가 망가진다). 대조 질문은 관점(`ANGLES`: 공정 조건, 측정 항목, 불량 현상, 평가 판정, 구조·층)도 받아 본문의 그 요소를 짧은 명사로 빌려 붙지 않은 라벨과 엮은 근접 오답이 된다. 재실행하면 같은 문형·관점이라 캐시와 `label_hash`가 유지된다. 계획: `docs/plan-question-variation.md`.
+- 대상은 이 chunk에 붙지 않은 활성 축의 (축, 값)이다. 참일 수 있는 값은 뺀다: 붙은 값과 그 상위·하위 값, `해당 없음`·`unknown`, 1차가 unknown이라 한 축의 값 전부. 순위는 붙은 값이 있는 단일값 축(같은 축의 다른 값이 가장 헷갈리는 음성 대조군), 붙은 값이 있는 다중값 축, 나머지 축 순이고, 같은 순위는 sha256(chunk_id|축|값) 순이라 재실행해도 같다. 다른 chunk 본문은 프롬프트에 넣지 않는다(토큰이 chunk 수의 제곱으로 늘고, 함께 돌린 묶음에 따라 질문이 바뀌어 캐시·`label_hash`가 흔들린다).
+- 검증 질문과 같은 question_gen 호출에서 같은 형식·말투로 만든다(`controls`). 검증기는 검증 질문만 엄격히 보고(틀리면 재시도), 대조 질문은 형식에 맞는 것만 남긴다. 빠지거나 틀린 대조 질문은 failures에 stage `question_ctl`(`CONTROL_DROPPED`, `CONTROL_FORMAT_INVALID`)로 남고 검증 질문은 그대로 쓴다. 질문 ID는 `Q-CTL-` + sha256("ctl"|chunk_id|축|값) 앞 10자리, 문구는 `ctl_questions` 표에 남는다.
+- 3차 프롬프트에서 대조 질문 ID는 `Q-GEN-` 모양의 별칭(sha256("alias"|원래 ID))으로 바꾸고 생성 질문을 ID 순으로 섞어, 라벨러가 ID나 순서로 대조 질문을 가려내지 못하게 한다. 답은 원래 ID로 되돌린다. 라벨러는 `Q-GEN-` 질문을 1차 분류 결과와 상관없이 본문만 보고 뒷받침 O, 반박 X, 근거 없음 N/A로 답한다. 같은 (축, 값)의 `GEN_ANSWER` 피드백 규칙도 대조 질문에 함께 붙는다.
+- 대조 질문 답은 `labels`에 kind `control`로 남아 확정 라벨·`label_hash`·산출·Supabase 적재·H5 N/A 비율·Domain-Engr-bot 입력(kind `answer`만 읽음)에 들어가지 않는다. 검수 파일의 `Q-CTL-` 답 교정은 반영하지 않는다.
+- 대조 질문 O의 인용이 본문에 있으면(짧은 인용 포함) 불량 사유 `CONTROL_O`, 없으면 `QUOTE_NOT_FOUND`로 검수 목록에 오른다(1차 분류 누락이나 3차 과잉 판정 신호). 검수 화면은 대조 질문 답을 읽기 전용 표로 보여 주고, 맞으면 사람이 축 교정으로 값을 더한다. 대시보드에 `Q-CTL-*` 합산 행, 요약(`summary.py`)에 `controls` 건수가 나온다.
+- 한계: 라벨러 프롬프트에 1차 분류 결과가 참고로 들어가므로 완전한 맹검은 아니다. 대조 질문 O 비율은 라벨러 예 편향의 하한 추정으로 본다. 대조 몫만큼 검증 질문 칸이 줄어 라벨이 많은 chunk는 검증하지 못하는 라벨이 늘어난다(mock 더미 769 chunk: 86 → 272).
 
 완료 기준:
 - [ ] 후보 생성 전후로 승인된 질문의 내용이 같고, 새로 생긴 질문은 모두 후보 상태다.
@@ -560,7 +575,7 @@ logs/           .log (파일 ID와 사유 코드만)
 | H6 | 불량 목록의 chunk 검수. 건수는 실행마다 다르고 사유 코드 필터로 우선순위를 정한다. 동의어 "검수 등록". taxonomy 재검토 요청(`reports/taxonomy_revisit.md`). 끝나면 "검수 완료" 버튼 → 반영·적재로 이어짐 | 대기(검수 완료 버튼까지) | `screens/review.html`, `review.py`, `candidates.py`, `revisit.py`, `serve.py`, `BEOL-labeling-feedback` 스킬(`wait_review_done.py`) | M5 |
 | H7 | 조회 질문 채택(`queries` 시트) | 대기 | `taxonomy.py`(`queries` 시트 읽기), `candidates.py`(`reports/query_candidates.md`), `querycheck.py` | M6 |
 | H8 | 동의어 후보 승인(`synonyms` 시트에 붙여넣기) | 계속(처리 전 후보는 시트에 넣지 않는다) | `candidates.py` | M2, M4 |
-| H9 | 검수 피드백 규칙·사례 승인(교정 패턴에서 나온 규칙 후보와 사람이 손댄 chunk 사례) | 계속(승인 전에는 프롬프트에 넣지 않는다. 라벨링 시작 때 승인 대기가 있으면 묻는다) | `engrbot/labeling_rules.py`(후보·승인), `labelbot/feedback.py`(소비), `BEOL-labeling` 1-2, `BEOL-labeling-feedback` 4-1·4-2 | M5 |
+| H9 | 검수 피드백 규칙·사례 확정(Domain-Engr-bot 도메인 질문에 답하고 초안을 고쳐 확정) | 계속(확정 전에는 프롬프트에 넣지 않는다. 확정은 `/BEOL-labeling-Domain-Engr-bot` 질문 화면에서만 하고 라벨링 시작 때는 묻지 않는다) | `domain_engrbot/questions.py`(질문 생성), `domain_engrbot/answers.py`(확정 반영), `domain_engrbot/labeling_rules.py`(후보), `domain_engrbot/labeling_review.py`(승인분 관리), `labelbot/feedback.py`(소비), `BEOL-labeling-Domain-Engr-bot`, `BEOL-labeling` 1-2(건수만), `BEOL-labeling-feedback` 4-1·4-2 | M5 |
 | 게이트 | 사내 설정 변경(`llm`, `embedding`, `supabase` 블록), 벡터 DB 사용 가능 여부 확인, G-1~G-10 확인과 `gate record` 입력 | 대기(FAIL이면 100개 실행을 시작하지 않는다) | `selfcheck.py`, `gate.py` | M0, M7 |
 | 벡터 적재 | `supabase.enabled`를 켤지 정하고 `push-vectors` 실행 | 계속(실패해도 라벨링·산출은 진행한다) | `embed.py`, `vectorpush.py` | M6b, M7 |
 
@@ -648,7 +663,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
   15. 임베딩은 OpenAI embedding model로 설정하고 결과는 로컬 `work.sqlite`의 `chunk_embeddings`에 보관한다. 외부로 나가는 것은 G21 `push-vectors`의 Supabase 사본뿐이며, 같은 호스트 판정과 더미 해시 조건을 거친다.
 - 확정된 결정(2026-10-04, 4차 단계 단순화, 다시 논의하지 않는다):
   1. 4차 단계는 검수 봇이 아니라 "4차 불량 목록 추출"이다(`PRD.md` FR-5). LLM을 부르지 않고 이미 저장된 값만으로 판정한다.
-  2. 사유 코드는 `UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED` 6개다. 기준값은 `flag.unknown_ratio_min` 0.5, `flag.confidence_min` 0.7이다.
+  2. 사유 코드는 `UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED`, `CONTROL_O`·`UNKNOWN_O`(2026-10-05 대조·unknown 검증 질문, M3) 8개다. 기준값은 `flag.unknown_ratio_min` 0.5, `flag.confidence_min` 0.7이다.
   3. 걸린 chunk는 상한 없이 전부 `flagged_chunks`, `reports/flagged_<실행ID>.jsonl`·`.md`, 검수 화면에 낸다.
   4. 사람이 교정한 값이 최종 라벨이며 재실행해도 덮어쓰지 않는다. 봇 원답은 `corrections`에 남는다.
   5. LLM 독립 재판정, 표본 추출, `review_snapshot`·`review_actions`, `review_gold/`, 사내 정확도 지표는 두지 않는다. 사내 정확도는 측정하지 않고, 프롬프트 변경 효과는 사외 더미 정답표 대조(`tools/evalgold.py`(미구현))로만 본다.
@@ -828,5 +843,11 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 - 2026-10-04 검수 화면 슬라이드 근사 미리보기(B안): 사용자 결정에 따라 렌더링 없이 파서 좌표로 슬라이드 배치를 재구성해 검수 화면에 보여 준다. `pptx_parser.slide_layouts`, `review.py`의 보관본 메모리 재파싱(`layout`·`image_map`), `screens/review.html` 미리보기 카드를 더했다. 바뀐 곳은 M5(P2 항목과 완료 기준 2개)다.
 - 2026-10-04 검수 진행을 검수 반영 스킬로 이동: 사용자 결정에 따라 H6 검수는 `BEOL-labeling-feedback` 스킬이 검수 화면을 띄우고 "검수 완료" 버튼 신호를 기다리는 단계가 됐다(끝났는지 묻지 않는다). H2 대조는 그 스킬이 시작할 때 실행 여부를 묻는다. `BEOL-labeling`은 결과 대시보드만 띄운다. `serve.py`에 `POST /inbox/review/done`(교정 저장 뒤 `signals/review_done_<실행ID>.json`, 건수만)과 `/inbox/status`의 `done` 표시를, `screens/review.html`에 검수 완료 버튼(서버가 `done`을 알릴 때만 보임)을 더했다. 바뀐 곳은 2절 디렉터리 구조(`signals/`)와 명령 표(`serve`), 4절 H2·H6이다.
 - 2026-10-05 검수 교정 피드백 루프: 점검 결과 교정이 그 작업 폴더의 `corrections`에만 남고 다음 실행 프롬프트로 가는 길이 없었다. 사용자 결정(규칙 요약 + 유사 사례 few-shot, 사람 승인 후 적용)에 따라 `labelbot/feedback.py`를 더했다. `feedback harvest`가 교정(사람 값 ≠ 봇 값, 재검수·본문 변경·질문 문장 변경 제외)과 사례(사람이 교정했거나 유효하게 확인한 chunk, 활성 축 확정 라벨)를 `workspaces/_feedback/feedback.sqlite`로 모은다. 규칙 후보는 LLM 없이 패턴을 센다: REPLACE(실제 값 혼동, 특수값끼리), REMOVE(과잉), ADD(누락), ANSWER, GEN_ANSWER(`축=값`). 특수값 출발·도착은 REMOVE·ADD로 바꾸고, 지지 건수는 서로 다른 chunk 수, 기본 기준 2건, 반대 방향도 2건 이상이면 상충(`--all`이 승인하지 않음). 승인은 `taxonomy/labeling_rules.json`(승인 시 생성)(본문 없음, git 추적)에, 사례 승인은 저장소에 남는다. `run`은 승인 규칙을 "검수 피드백 지침"으로, 유사도 상위 2개 승인 사례(같은 파일·같은 본문 해시·같은 dup_hash 제외, 사외 가드 통과 파일만)를 "검수 피드백 사례"로 넣고, `feedback_applied:<실행ID>` meta와 labels·runs의 `sheet_hashes.labeling_rules`에 적용 이력을 남긴다. 유사도는 임베딩(기본 하한 0.5), 안 되면 문자 3-gram Jaccard. 바뀐 곳은 2절 디렉터리 구조와 명령 표(`run`, `feedback`), 4절 H9, 스킬 `BEOL-labeling` 1-2·요약과 `BEOL-labeling-feedback` 4-1·보고다.
-- 2026-10-05 검수 피드백 소유를 Engr-bot으로 이동(사용자 결정): 교정 수집은 Engr-bot 장부(`engrbot intake`)가, 라벨링 규칙·few-shot 사례 후보와 승인은 `engrbot labeling-rules`가 맡는다. labelbot은 `taxonomy/labeling_rules.json`(승인 시 생성)(v2: rules, rejected, examples, rejected_examples)만 읽는다. 사례는 (작업 폴더 이름, chunk ID, 본문 해시, 확정 라벨) 참조만 두고, 본문·임베딩은 실행할 때 원래 작업 폴더 `work.sqlite`에서 읽기 전용으로 가져온다(없거나 본문이 바뀌면 `EXAMPLE_SOURCE_GONE`·`EXAMPLE_TEXT_CHANGED`로 빠짐). `labelbot feedback` 명령과 `workspaces/_feedback/` 저장소는 없앴다. 바뀐 곳은 2절 디렉터리 구조와 명령 표, 4절 H9, 스킬 `BEOL-labeling` 1-2와 `BEOL-labeling-feedback` 4-1·4-2다.
+- 2026-10-05 검수 피드백 소유를 Domain-Engr-bot으로 이동(사용자 결정): 교정 수집은 Domain-Engr-bot 장부(`domain_engrbot intake`)가, 라벨링 규칙·few-shot 사례 후보와 승인은 `domain_engrbot labeling-rules`가 맡는다. labelbot은 `taxonomy/labeling_rules.json`(승인 시 생성)(v2: rules, rejected, examples, rejected_examples)만 읽는다. 사례는 (작업 폴더 이름, chunk ID, 본문 해시, 확정 라벨) 참조만 두고, 본문·임베딩은 실행할 때 원래 작업 폴더 `work.sqlite`에서 읽기 전용으로 가져온다(없거나 본문이 바뀌면 `EXAMPLE_SOURCE_GONE`·`EXAMPLE_TEXT_CHANGED`로 빠짐). `labelbot feedback` 명령과 `workspaces/_feedback/` 저장소는 없앴다. 바뀐 곳은 2절 디렉터리 구조와 명령 표, 4절 H9, 스킬 `BEOL-labeling` 1-2와 `BEOL-labeling-feedback` 4-1·4-2다.
 - 2026-10-05 실행별 taxonomy 재검토 파일: 사용자 결정에 따라 `apply`가 반영한 검수 실행마다(요청 1건 이상, `revisits` 키 있음) 그 실행의 요청만 담은 `taxonomy/taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`을 쓴다(`revisit.write_run_files`, 같은 이름이면 `_2` 접미). taxonomy 시트 A~K 그대로의 "바로 붙여넣기"(`NO_FIT_VALUE`)·"확인 필요"(이미 있는 값, 없는 상위값·축, `NEW_AXIS` 정의 행) 블록과 엑셀 행 없는 요청 목록으로 나뉜다. 메모가 담기지만 git 추적 대상이며 원격에 올라가도 된다(`PRD.md` 9.2). `report`·`run`은 쓰지 않는다. 바뀐 곳은 2절 디렉터리 구조와 명령 표(`apply`)다.
+- 2026-10-05 라벨링 규칙 최종 검수 자리를 Domain-Engr-bot으로 일원화(사용자 결정): `domain_engrbot labeling-rules review`가 장부 폴더에 `labeling_review.html`(본문 없음, 서버 없이 파일로 엶)을 쓰고, 사람이 후보마다 승인·기각·보류와 문장 수정, 승인분의 켜기·끄기·승인 취소를 골라 결정 JSON(`labeling_rules_decisions`)을 저장하면 `domain_engrbot labeling-rules apply --decisions`가 `taxonomy/labeling_rules.json`에 반영하고 `labeling_decisions.jsonl`에 ID·동작·결과만 남긴다. `BEOL-labeling` 1-2는 승인을 묻지 않고 승인분·대기분 건수만 알린다. 바뀐 곳은 스킬 `BEOL-labeling-Domain-Engr-bot`·`BEOL-labeling` 1-2·`BEOL-labeling-feedback` 4-2·보고 줄, 4절 H9.
+- 2026-10-05 검수 교정 근거(사용자 결정 E1~E4, `domain_engrbot/docs/plan-correction-evidence.md`): 검수 화면에서 고친 축마다 근거를 남길 수 있다(선택). 근거는 같은 슬라이드나 같은 파일 다른 슬라이드·파일명·문서 제목에서 드래그한 인용(최대 3개)과 선택 이유다. `apply`가 인용이 실제 그 위치에 있는지 확인해 `corrections.evidence`·`reason`·`evidence_dropped`에 저장하고, Domain-Engr-bot 장부는 `cases.jsonl`에 근거 종류만, `evidence.jsonl`(본문 인용 있음, git 제외)에 인용을 둔다. 라벨링 규칙 후보는 근거 있는 교정이 `min_evidence`(기본 1)건 이상인 패턴만, 사례는 근거 있는 교정만 올리고, 규칙 문장에 근거 위치 분포를 붙인다(승인 파일 v3, 본문 없음). 최종 검수 화면은 근거를 보여 주고, 결정 파일은 화면 digest와 같고 화면에 있던 ID일 때만 반영한다. 기존 승인 규칙 29·사례 23은 끈다(E4).
+- 2026-10-05 2차 대조 질문(사용자 결정): 검증 질문이 1차 라벨에서만 나와 O로 몰려 3차의 예 편향을 잴 수 없었다. 남은 질문 상한의 `limits.control_ratio`(기본 0.3)만큼 이 chunk에 붙지 않은 taxonomy 라벨로 대조 질문(`Q-CTL-`, `ctl_questions` 표)을 같은 question_gen 호출에서 만든다. 다른 chunk 본문은 넣지 않는다. 답은 `labels` kind `control`로만 남아 확정 라벨·`label_hash`·적재·N/A 알림·Domain-Engr-bot 입력에 들어가지 않고, O가 나오면 불량 사유 `CONTROL_O`로 검수에 오른다. 바뀐 곳은 M3(대조 질문 규칙), 4차 사유 코드(7개), 작업 DB 표(`ctl_questions`), 스킬 `BEOL-labeling` 요약 줄이다.
+- 2026-10-05 대조 질문 60%와 질문 다양화(사용자 결정): `limits.control_ratio` 기본 0.6, 질문 상한 8 유지, 검증 대상은 1차 확신도 낮은 순. `gpt-6-sol`은 temperature를 받지 않아 프롬프트에 문형(검증·대조)과 관점(대조만, 본문 요소를 빌린 근접 오답)을 chunk별 해시로 정해 준다. 한 실행 안 chunk 간 다양성이며 재실행은 같다. 바뀐 곳은 M3 대조 질문 규칙, `prompts/question_gen.md`. 계획 `docs/plan-question-variation.md`.
+- 2026-10-05 검증 질문 대상 축소(사용자 결정): 1차 라벨마다 하나 묻던 검증 질문을 unknown 축과 확신도 `flag.confidence_min` 미만 라벨에만, 확신도 낮은 순으로 최대 `limits.verify_max`(3)개 묻는다. unknown 축은 질문 생성 LLM이 후보 값 하나를 골라 출제하고, O면 `UNKNOWN_O`로 검수에 올린다. 대상이 없으면 대조 질문만 낸다. 바뀐 곳은 M3 검증 질문 생성 규칙·대조 질문 규칙, 4차 사유 코드(8개).
+- 2026-10-06 Domain-Engr-bot 질문 루프(사용자 결정, `domain_engrbot/docs/plan-question-loop.md`): 사람이 이미 검수한 chunk를 Domain-Engr-bot이 다시 도메인 검수하지 않는다. Domain-Engr-bot은 검수 결과와 누적 장부로 엔지니어에게 질문하고(`domain_engrbot questions generate`), 질문 화면(`questions serve`)에서 사람이 확정한 초안만 승인 파일과 taxonomy 수정 보드 S7에 반영한다(`questions apply`). 후보 승인은 질문 화면으로 합쳤고 승인 화면에는 승인분 관리만 남는다. 2절 모듈 표·명령 표와 H9 행을 고쳤다.

@@ -18,16 +18,18 @@ EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
 
 # S5 단계 (docs/project_intro.html 의 S5 ST 배열과 같은 이름)
 STAGES = ["수집 · 파싱", "1차 분류", "2차 검증 질문", "3차 라벨링", "불량 목록",
-          "1차 검수", "교정 반영", "임베딩 · 적재", "Engr-bot", "code-bot"]
+          "1차 검수", "교정 반영", "임베딩 · 적재", "Domain-Engr-bot", "Code-Engr-bot"]
 # S4 역할 (docs/project_intro.html 의 S4 AG 객체와 같은 이름)
 ROLES = ["Orchestrator", "BEOL-labeling", "검수 엔지니어", "BEOL-labeling-feedback",
-         "workspace", "Engr-bot", "code-bot"]
+         "workspace", "Domain-Engr-bot", "Code-Engr-bot"]
+# 2026-10-06 이전 역할 · 단계 이름. 지난 회차 facts · summary는 render.py가 읽을 때 새 이름으로 바꾼다.
+OLD_NAMES = {"Engr-bot": "Domain-Engr-bot", "code-bot": "Code-Engr-bot"}
 
 STAGE_ROLE = {
     "수집 · 파싱": "BEOL-labeling", "1차 분류": "BEOL-labeling", "2차 검증 질문": "BEOL-labeling",
     "3차 라벨링": "BEOL-labeling", "불량 목록": "BEOL-labeling", "1차 검수": "검수 엔지니어",
     "교정 반영": "BEOL-labeling-feedback", "임베딩 · 적재": "BEOL-labeling-feedback",
-    "Engr-bot": "Engr-bot", "code-bot": "code-bot",
+    "Domain-Engr-bot": "Domain-Engr-bot", "Code-Engr-bot": "Code-Engr-bot",
 }
 
 LABELBOT_STAGE = {
@@ -44,7 +46,9 @@ LABELBOT_STAGE = {
 }
 SKILL_ROLE = {
     "BEOL-labeling": "BEOL-labeling", "BEOL-labeling-feedback": "BEOL-labeling-feedback",
-    "labeling-Engr-bot": "Engr-bot", "labeling-codebot": "code-bot",
+    "BEOL-labeling-Domain-Engr-bot": "Domain-Engr-bot", "BEOL-labeling-Code-Engr-bot": "Code-Engr-bot",
+    "BEOL-labeling-Engr-bot": "Domain-Engr-bot", "BEOL-labeling-code-bot": "Code-Engr-bot",  # 2026-10-06 이전 이름
+    "labeling-Engr-bot": "Domain-Engr-bot", "labeling-codebot": "Code-Engr-bot",  # 2026-10-05 이전 이름(지난 세션 기록용)
     "BEOL-labeling-workflow": "Orchestrator",
 }
 
@@ -57,14 +61,19 @@ def classify_path(rel):
     if parts[0] == "labelbot":
         st = LABELBOT_STAGE.get(name)
         return st, STAGE_ROLE[st] if st else "workspace", "labelbot 코드"
-    if parts[0] == "engrbot":
-        return "Engr-bot", "Engr-bot", "engrbot 코드"
-    if parts[0] == "codebot":
-        return "code-bot", "code-bot", "codebot 코드"
+    if parts[0] in ("domain_engrbot", "engrbot"):  # engrbot: 2026-10-06 이전 경로
+        return "Domain-Engr-bot", "Domain-Engr-bot", "Domain-Engr-bot 코드"
+    # 승인 파일과 그 계약 테스트는 Domain-Engr-bot 질문 답변(questions apply)이 만든다(2026-10-06)
+    if p == "taxonomy/labeling_rules.json":
+        return "Domain-Engr-bot", "Domain-Engr-bot", "승인 규칙"
+    if p == "tests/test_question_rules_contract.py":
+        return "Domain-Engr-bot", "Domain-Engr-bot", "테스트"
+    if parts[0] in ("code_engrbot", "codebot"):  # codebot: 2026-10-06 이전 경로
+        return "Code-Engr-bot", "Code-Engr-bot", "Code-Engr-bot 코드"
     if parts[:2] == [".claude", "skills"] and len(parts) > 2:
         role = SKILL_ROLE.get(parts[2], "Orchestrator")
-        st = {"BEOL-labeling-feedback": "교정 반영", "labeling-Engr-bot": "Engr-bot",
-              "labeling-codebot": "code-bot"}.get(parts[2])
+        st = {"BEOL-labeling-feedback": "교정 반영"}.get(parts[2]) or \
+            (role if role in ("Domain-Engr-bot", "Code-Engr-bot") else None)
         return st, role, "skill 절차"
     if parts[0] == "prompts":
         st = "1차 분류" if "classify" in name else "2차 검증 질문" if "question" in name else "3차 라벨링"

@@ -1,12 +1,12 @@
 """검수 피드백 소비: 승인 파일(taxonomy/labeling_rules.json)의 규칙·사례 → 1차 분류·3차 라벨링 프롬프트.
 
-생산(교정 수집, 규칙·사례 후보, 사람 승인)은 Engr-bot이 맡는다(`python -m engrbot labeling-rules`, engrbot/labeling_rules.py).
+생산(교정 수집, 규칙·사례 후보, 사람 확정)은 Domain-Engr-bot이 맡는다(Domain-Engr-bot 질문 답변: `domain_engrbot/answers.py`, `python -m domain_engrbot questions apply`).
 이 모듈은 승인 파일을 읽기만 하고 아무것도 쓰지 않는다.
 
 - 규칙: 축·값·질문 ID·건수·문장만 있다(본문 없음). 사람이 문장(text)을 고치거나 enabled를 끄거나 MANUAL 규칙을 더할 수 있다.
 - 사례: (source_ws, record_id=chunk_id, text_hash) 참조와 확정 라벨만 있다. 본문·임베딩은 실행할 때 원래 작업 폴더의
   work.sqlite에서 읽기 전용으로 읽는다. 그 작업 폴더가 없거나 본문이 바뀌었으면 그 사례는 쓰지 않는다(사유 코드로 센다).
-- 사례는 이번 LLM 호스트로 보낼 수 있는 파일(check_send 통과)에서만 고르고, 같은 파일·같은 본문(text_hash, dup_hash)의
+- 같은 파일·같은 본문(text_hash, dup_hash)의
   사례는 그 chunk에 쓰지 않는다(자기 정답 누설 방지).
 """
 import json
@@ -17,7 +17,6 @@ import sqlite3
 import threading
 
 from labelbot import ingest, store, util
-from labelbot.llm import SendBlocked, check_send
 from labelbot.workspace import CODE_ROOT, is_inside
 
 RULES_FILENAME = "labeling_rules.json"
@@ -88,6 +87,28 @@ def _valid_example(e):
             and isinstance(e.get("source_ws"), str) and bool(SAFE_NAME.match(e["source_ws"]))
             and e["source_ws"] not in (".", "..") and isinstance(e.get("record_id"), str)
             and isinstance(e.get("text_hash"), str) and isinstance(e.get("final_axes"), dict))
+
+
+QUOTE_MAX = 200
+_BRACE_OPEN, _BRACE_CLOSE = re.compile(r"\{(?=\{)"), re.compile(r"\}(?=\})")
+
+
+def _defang(text):
+    """프롬프트 치환(prompts.py의 {{키}})이 피드백 블록 안을 펼치지 못하게 '{{'·'}}'를 '{ {'·'} }'로 바꾼다."""
+    return _BRACE_CLOSE.sub("} ", _BRACE_OPEN.sub("{ ", text))
+
+
+def _evidence_text(x, record_id):
+    """근거 한 항목 → "[위치] '인용'". 인용은 QUOTE_MAX자에서 자른다."""
+    if x["source"] == "chunk":
+        where = "같은 슬라이드" if x["chunk_id"] == record_id else (
+            "다른 슬라이드 %s" % x["slide_no"] if x["slide_no"] is not None else "다른 슬라이드")
+    else:
+        where = "파일명" if x["source"] == "file_name" else "문서 제목"
+    q = x["quote"]
+    if len(q) > QUOTE_MAX:
+        q = q[:QUOTE_MAX].rstrip() + " …"
+    return "[%s] '%s'" % (where, q)
 
 
 def _as_list(v):
@@ -231,6 +252,13 @@ class Feedback(object):
         if fixed:
             lines.append("사람이 고친 축: %s" % "; ".join(
                 "%s 봇[%s]→사람[%s]" % (k, ",".join(v["bot"]), ",".join(v["human"])) for k, v in sorted(fixed.items())))
+            for k in sorted(fixed):
+                ev = (e.get("evidence") or {}).get(k)
+                if ev and ev["items"]:
+                    line = "근거(%s): %s" % (k, " · ".join(_evidence_text(x, e.get("record_id")) for x in ev["items"]))
+                    if ev["reason"]:
+                        line += " / 이유: %s" % ev["reason"]
+                    lines.append(line)
         ok = [(k, v) for k, v in e["final_axes"].items() if k in seen and k not in fixed]
         if ok:
             lines.append("사람이 확인한 축: %s" % "; ".join("%s=%s" % (k, ",".join(v)) for k, v in ok))
@@ -259,7 +287,7 @@ class Feedback(object):
             if len(body) > self.chars:
                 body = body[: self.chars].rstrip() + " …"
             blocks.append(self._block(i, e, body))
-        return "\n\n".join(blocks), sorted({e["file_id"] for _, e in top})
+        return _defang("\n\n".join(blocks)), sorted({e["file_id"] for _, e in top})
 
     def rules_text(self, stage, questions=None):
         if stage == "classify":
@@ -271,7 +299,7 @@ class Feedback(object):
             rules = [r for r in self.label_rules
                      if r["kind"] == "MANUAL" or (r["kind"] == "ANSWER" and r.get("target") in qids)
                      or (r["kind"] == "GEN_ANSWER" and r.get("target") in gens)]
-        return "\n".join("- [%s] %s" % (r["rule_id"], " ".join(r["text"].split())) for r in rules) or NONE_TEXT
+        return _defang("\n".join("- [%s] %s" % (r["rule_id"], " ".join(r["text"].split())) for r in rules)) or NONE_TEXT
 
     def digest(self):
         rules = [(r["rule_id"], " ".join(r["text"].split())) for r in self.classify_rules + self.label_rules]
@@ -292,8 +320,9 @@ class Feedback(object):
 
 # ---- 읽기 ------------------------------------------------------------------------
 
-def _rules_for_run(doc, tax, cap):
-    """켜진 유효 규칙 → 단계(_stage) 붙인 목록과 형식 오류 수. 축 규칙은 활성 축과 taxonomy 값만 받는다."""
+def _rules_for_run(doc, tax, cap, only_axes=None):
+    """켜진 유효 규칙 → 단계(_stage) 붙인 목록과 형식 오류 수. 축 규칙은 활성 축과 taxonomy 값만 받는다.
+    only_axes(axis-update 대상 축)를 주면 다른 축을 겨냥한 축 규칙·MANUAL 규칙은 뺀다."""
     axes = {a.name: a for a in tax.active_axes()}
     rules, invalid = [], 0
     for r in doc["rules"]:
@@ -301,6 +330,8 @@ def _rules_for_run(doc, tax, cap):
             invalid += 1
             continue
         if not r.get("enabled", True):
+            continue
+        if only_axes is not None and tax.axis(r.get("target")) is not None and r["target"] not in only_axes:
             continue
         r = dict(r)
         if r["kind"] in AXIS_KINDS:
@@ -322,13 +353,41 @@ def _rules_for_run(doc, tax, cap):
             + [r for r in rules if r["_stage"] == "label"][:cap]), invalid
 
 
+def _read_evidence(con, record_id, keys):
+    """사례 chunk의 축 교정 근거 {축: {"items": [...], "reason": str 또는 None}}. 원래 작업 DB(읽기 전용)에서 읽는다.
+
+    finals.corrections와 같이 applied_at·review_run_id 순으로 읽어 축마다 가장 나중 교정의 근거만 남긴다.
+    근거 열이 없는 예전 DB이거나 형식이 틀린 항목은 건너뛴다.
+    """
+    out = {}
+    if not keys:
+        return out
+    for r in con.execute("SELECT target_key, evidence, reason FROM corrections WHERE chunk_id=? AND target_kind='axis'"
+                         " ORDER BY applied_at, review_run_id", (record_id,)):
+        if r["target_key"] not in keys:
+            continue
+        try:
+            raw = json.loads(r["evidence"]) if r["evidence"] else []
+        except ValueError:
+            raw = []
+        items = []
+        for x in raw if isinstance(raw, list) else []:
+            if (isinstance(x, dict) and x.get("source") in ("chunk", "file_name", "doc_title")
+                    and isinstance(x.get("quote"), str) and x["quote"].strip()):
+                items.append({"source": x["source"], "chunk_id": x.get("chunk_id"),
+                              "slide_no": x.get("slide_no") if isinstance(x.get("slide_no"), int) else None,
+                              "quote": " ".join(x["quote"].split())})
+        reason = " ".join(r["reason"].split())[:TEXT_MAX] if isinstance(r["reason"], str) else ""
+        out[r["target_key"]] = {"items": items, "reason": reason or None}
+    return out
+
+
 def _resolve_examples(ws, entries, chat, active):
     """승인 사례 참조 → 본문·벡터를 붙인 사례 목록과 제외 사유 건수. 원래 작업 폴더 DB는 읽기 전용으로 연다."""
     from labelbot import embed
 
     root = examples_root(ws)
     model = (ws.config.get("embedding") or {}).get("model")
-    suffixes = chat.cfg.get("internal_host_suffixes")
     skipped, out = {}, []
 
     def skip(code, n=1):
@@ -352,16 +411,12 @@ def _resolve_examples(ws, entries, chat, active):
             con.row_factory = sqlite3.Row
             has_emb = bool(con.execute(
                 "SELECT 1 FROM sqlite_master WHERE type='table' AND name='chunk_embeddings'").fetchone())
+            has_ev = {"evidence", "reason"} <= {r[1] for r in con.execute("PRAGMA table_info(corrections)")}
             for e in sorted(group, key=lambda x: x["example_id"]):
                 c = con.execute("SELECT file_id, text, text_hash, dup_hash FROM chunks WHERE chunk_id=?",
                                 (e["record_id"],)).fetchone()
                 if c is None or c["text_hash"] != e["text_hash"]:
                     skip("EXAMPLE_TEXT_CHANGED")
-                    continue
-                try:
-                    check_send(chat.url, [c["file_id"]], suffixes)
-                except SendBlocked:
-                    skip("EXAMPLE_EXTERNAL_BLOCKED")
                     continue
                 vec = None
                 if has_emb and model:
@@ -371,10 +426,12 @@ def _resolve_examples(ws, entries, chat, active):
                 corrected = {k: {"bot": _as_list(v.get("bot")), "human": _as_list(v.get("human"))}
                              for k, v in (e.get("corrected") or {}).items() if k in active and isinstance(v, dict)}
                 out.append({
-                    "example_id": e["example_id"], "file_id": c["file_id"], "text_hash": c["text_hash"],
-                    "dup_hash": c["dup_hash"], "text": c["text"] or "", "vec": vec,
+                    "example_id": e["example_id"], "record_id": e["record_id"], "file_id": c["file_id"],
+                    "text_hash": c["text_hash"], "dup_hash": c["dup_hash"], "text": c["text"] or "", "vec": vec,
                     "final_axes": {k: _as_list(v) for k, v in sorted(e["final_axes"].items()) if k in active},
                     "corrected": corrected,
+                    # 근거 인용은 같은 파일(같은 file_id)의 본문·파일명·문서 제목이라 송신 검사(file_id 기준)는 그대로다.
+                    "evidence": _read_evidence(con, e["record_id"], set(corrected)) if has_ev else {},
                     "confirmed": [k for k in e.get("confirmed") or [] if k in active],
                 })
         except sqlite3.Error:
@@ -384,16 +441,19 @@ def _resolve_examples(ws, entries, chat, active):
     return out, skipped
 
 
-def load(ws, tax, chat, enabled=True):
-    """승인 파일을 읽어 실행용 객체를 만든다. 꺼져 있거나 쓸 것이 없으면 NullFeedback. 아무것도 쓰지 않는다."""
+def load(ws, tax, chat, enabled=True, only_axes=None):
+    """승인 파일을 읽어 실행용 객체를 만든다. 꺼져 있거나 쓸 것이 없으면 NullFeedback. 아무것도 쓰지 않는다.
+
+    only_axes(axis-update 대상 축)를 주면 규칙은 그 축 것만, 사례는 그 축 값만 남기고 그 축 값이 없는 사례는 뺀다.
+    """
     cfg = _cfg(ws)
     if not enabled:
         return NullFeedback("이번 실행 끔(--no-feedback)")
     if not cfg.get("enabled", True):
         return NullFeedback("feedback.enabled=false")
     doc = load_rules(ws)
-    rules, invalid = _rules_for_run(doc, tax, max(0, int(cfg.get("max_rules") or 30)))
-    active = {a.name for a in tax.active_axes()}
+    rules, invalid = _rules_for_run(doc, tax, max(0, int(cfg.get("max_rules") or 30)), only_axes)
+    active = {a.name for a in tax.active_axes() if only_axes is None or a.name in only_axes}
     entries, bad = [], 0
     for e in doc["examples"]:
         if not _valid_example(e):
@@ -401,6 +461,11 @@ def load(ws, tax, chat, enabled=True):
         elif e.get("enabled", True):
             entries.append(e)
     examples, skipped = _resolve_examples(ws, entries, chat, active)
+    if only_axes is not None:
+        n = len(examples)
+        examples = [e for e in examples if e["final_axes"]]
+        if n > len(examples):
+            skipped["EXAMPLE_NO_TARGET_AXIS"] = n - len(examples)
     if bad:
         skipped["EXAMPLE_REF_INVALID"] = bad
     if not rules and not examples:

@@ -1,7 +1,7 @@
 """확정 라벨: 그 실행의 봇 값에 사람 교정을 덮어쓴다. 사람 값은 재실행해도 덮어쓰지 않는다."""
 import json
 
-from labelbot import util
+from labelbot import axisupdate, util
 
 UNREVIEWED = "검수하지 않음"
 CONFIRMED = "사람이 확인"
@@ -33,32 +33,69 @@ def bot_labels(con, run_id, chunk_ids=None):
     return out
 
 
-def corrections(con, chunk_ids=None):
-    """chunk별 최신 교정. {chunk_id: {(kind, key): row}}"""
+def applies(r, chain):
+    """axis-update 실행(chain[0])과 그 조상 axis-update 실행들이 이 축 교정을 버렸는지(D5). 각 실행 자신의 검수 교정은 남긴다."""
+    if r["target_kind"] != "axis":
+        return True
+    if r["target_key"] not in chain[0]["axes"]:
+        return False  # 그 실행이 라벨링하지 않은 축(삭제 축)은 교정으로 되살리지 않는다
+    for info in chain:
+        if r["review_run_id"] == info["run_id"]:
+            return True
+        if r["target_key"] in axisupdate.dropped_axes(info):
+            return False
+    return True
+
+
+def corrections(con, chunk_ids=None, run_id=None):
+    """chunk별 최신 교정. {chunk_id: {(kind, key): row}}
+
+    run_id가 axis-update 실행이면 그 실행(과 조상 axis-update 실행)이 버린 삭제·변경 축의 이전 교정과
+    그 실행에 없는 축의 교정은 뺀다. 행은 DB에 그대로 남는다.
+    """
+    chain = axisupdate.chain(con, run_id)
     rows = con.execute("SELECT * FROM corrections ORDER BY applied_at, review_run_id").fetchall()
     out = {}
     for r in rows:
         if chunk_ids is not None and r["chunk_id"] not in chunk_ids:
+            continue
+        if chain and not applies(r, chain):
             continue
         out.setdefault(r["chunk_id"], {})[(r["target_kind"], r["target_key"])] = r
     return out
 
 
 def final_labels(con, run_id, chunk_ids=None, question_texts=None):
-    """question_texts({질문 ID: 현재 문장})를 주면 질문 문장이 바뀐 교정도 재검수로 표시한다."""
+    """question_texts({질문 ID: 현재 문장})를 주면 질문 문장이 바뀐 교정도 재검수로 표시한다.
+
+    axis-update 실행이면 이전 실행의 확인은 대상 축을 뺀 축·남긴 답에만 이어받고(D6), 이전 답 교정은 이어받은
+    답에만 적용한다(D4로 버린 답을 되살리지 않는다). 대상 축은 그 실행 자신의 검수로만 확인된다.
+    """
+    info = axisupdate.run_info(con, run_id)
     bots = bot_labels(con, run_id, chunk_ids)
-    corr = corrections(con, None if chunk_ids is None else set(chunk_ids))
-    for cid, items in corr.items():
+    corr = corrections(con, None if chunk_ids is None else set(chunk_ids), run_id)
+    inherited = {}
+    if info:
+        inherited = {cid: h for cid, h in info["confirmed"].items() if cid in bots}
+    for cid in sorted(set(corr) | set(inherited)):
+        items = corr.get(cid, {})
         d = bots.setdefault(cid, {"chunk_type": "내용", "axes": {}, "answers": {}, "extracted": []})
         cur = con.execute("SELECT text_hash FROM chunks WHERE chunk_id=?", (cid,)).fetchone()
         st = items.get(("chunk", "status"))
-        # 확인은 그때의 봇 값이 지금과 같을 때만 유효하다.
+        # 확인은 그때의 봇 값이 지금과 같을 때만 유효하다. axis-update 실행 자신의 확인은 대상 축에만 적용한다.
         confirmed = bool(st) and st["human_value"] == '"confirmed"' and bool(d["axes"]) \
-            and st["bot_value"] == util.dumps(label_hash(d))
+            and st["bot_value"] == util.dumps(label_hash(d)) and (info is None or st["review_run_id"] == run_id)
         if confirmed:
-            for a in list(d["axes"].values()) + list(d["answers"].values()):
-                a["review"] = CONFIRMED
+            for k, a in list(d["axes"].items()) + list(d["answers"].items()):
+                if info is None or k in info["target"]:
+                    a["review"] = CONFIRMED
+        if info and cid in inherited and inherited[cid] == confirm_hash(d, info["target"]):
+            for k, a in list(d["axes"].items()) + list(d["answers"].items()):
+                if k not in info["target"]:
+                    a["review"] = CONFIRMED
         for (kind, key), r in items.items():
+            if info and kind == "answer" and key not in d["answers"] and r["review_run_id"] != run_id:
+                continue
             val = json.loads(r["human_value"])
             recheck = bool(r["recheck"]) or bool(cur is not None and r["text_hash"] and cur[0] != r["text_hash"])
             if kind == "answer" and question_texts is not None and r["question_hash"]:
@@ -80,8 +117,28 @@ def final_labels(con, run_id, chunk_ids=None, question_texts=None):
     return bots
 
 
+def incomplete(con, run_id, labels):
+    """axis-update 실행에서 부분 분류가 실패했고 확정 값(사람 교정 포함)에 대상 축이 다 있지 않은 chunk ID 집합.
+
+    적재(vectorpush)·내보내기(export)는 이 chunk를 분류 실패 chunk처럼 뺀다(대상 축 없는 라벨로 덮어쓰지 않는다).
+    """
+    info = axisupdate.run_info(con, run_id)
+    if not info or not info["target"]:
+        return set()
+    need = set(info["target"])
+    failed = {r[0] for r in con.execute(
+        "SELECT DISTINCT target_id FROM failures WHERE run_id=? AND stage='classify'", (run_id,))}
+    return {cid for cid in failed if cid in labels and not need <= set(labels[cid]["axes"])}
+
+
 def label_hash(d):
     """{축: 정렬한 값 목록, 질문 ID: 답}만 넣은 JSON의 sha256. 확신도·근거·검수 상태·시각은 넣지 않는다."""
     obj = {k: sorted(v["values"]) for k, v in d["axes"].items()}
     obj.update({k: v["answer"] for k, v in d["answers"].items()})
     return util.hash_obj(obj)
+
+
+def confirm_hash(d, skip_axes):
+    """axis-update의 확인 해시: skip_axes(대상 축)를 뺀 축과 답으로 label_hash와 같게 계산한다(앞 16자)."""
+    return label_hash({"axes": {k: v for k, v in d["axes"].items() if k not in skip_axes},
+                       "answers": d["answers"]})[:16]

@@ -1,7 +1,6 @@
 """슬라이드 JPG를 Supabase Storage에 올리고 벡터 행에 slide_image_* 열을 채운다(python -m labelbot push-slides).
 
 Storage는 사본이다. 원본은 slide_images/<sha256>.b64와 work.sqlite slide_images 표다.
-업로드도 사외 전송이므로 check_send를 거친다(사외 호스트에는 더미 파일 슬라이드만 나간다).
 slide_image_push_log로 멱등을 보장한다. 같은 대상 호스트·버킷에 같은 chunk·jpg_sha256이 OK로 있으면 보내지 않는다.
 벡터 행이 있어야 열을 채울 수 있으므로 push-vectors 다음에 부른다. 행이 없으면 ROW_MISSING으로 남기고 다음에 다시 한다.
 라벨과 label_hash는 바꾸지 않는다(push-vectors의 멱등을 건드리지 않는다).
@@ -11,8 +10,7 @@ import urllib.parse
 
 from labelbot import store, util
 from labelbot.embed import run_chunks
-from labelbot.llm import (CallFailed, SendBlocked, SupabaseSinkBase, check_send, host_hash, patch_json, post_bytes,
-                          read_key)
+from labelbot.llm import CallFailed, SupabaseSinkBase, host_hash, patch_json, post_bytes, read_key
 from labelbot.slideimg import object_path
 
 STAGE = "push_slides"
@@ -49,7 +47,6 @@ def push(ws, con, run_id, sink=None, log=None):
         return zero
     url = ws.supabase_url()
     bucket = sb.get("storage_bucket") or "BEOL-labeling"
-    suffixes = ws.config["llm"].get("internal_host_suffixes")
     if sink is None:
         key = read_key(sb.get("key_env"))
         if not url or not key:
@@ -71,13 +68,7 @@ def push(ws, con, run_id, sink=None, log=None):
         if done:
             st["skipped"] += 1
             continue
-        try:
-            check_send(url, [r["file_id"]], suffixes)
-        except SendBlocked as ex:
-            code = ex.reason_code
-            st["blocked"] += 1
-        else:
-            code = _send(ws, sink, bucket, path, r, st)
+        code = _send(ws, sink, bucket, path, r, st)
         _log(con, r, bucket, path, target, code)
         if code != "OK":
             store.add_failure(con, run_id, STAGE, r["chunk_id"], code)

@@ -43,6 +43,11 @@
     ],
     [
       "index",
+      "sqlite_autoindex_ctl_questions_1",
+      null
+    ],
+    [
+      "index",
       "sqlite_autoindex_file_locations_1",
       null
     ],
@@ -119,7 +124,12 @@
     [
       "table",
       "corrections",
-      "CREATE TABLE corrections (review_run_id TEXT, chunk_id TEXT, target_kind TEXT, target_key TEXT, human_value TEXT, bot_value TEXT, review_status TEXT, recheck INTEGER, text_hash TEXT, question_hash TEXT, file_sha256 TEXT, applied_at TEXT, PRIMARY KEY(review_run_id, chunk_id, target_kind, target_key))"
+      "CREATE TABLE corrections (review_run_id TEXT, chunk_id TEXT, target_kind TEXT, target_key TEXT, human_value TEXT, bot_value TEXT, review_status TEXT, recheck INTEGER, text_hash TEXT, question_hash TEXT, file_sha256 TEXT, applied_at TEXT, evidence TEXT, reason TEXT, evidence_dropped INTEGER, PRIMARY KEY(review_run_id, chunk_id, target_kind, target_key))"
+    ],
+    [
+      "table",
+      "ctl_questions",
+      "CREATE TABLE ctl_questions (qid TEXT PRIMARY KEY, chunk_id TEXT, axis TEXT, value TEXT, text TEXT NOT NULL, prompt_version TEXT, created_at TEXT)"
     ],
     [
       "table",
@@ -134,12 +144,12 @@
     [
       "table",
       "files",
-      "CREATE TABLE files (file_id TEXT PRIMARY KEY, file_name TEXT NOT NULL CHECK(file_name <> ''), rel_path TEXT NOT NULL CHECK(rel_path <> ''), ext TEXT, size INTEGER, status TEXT, reason_code TEXT, title TEXT, author TEXT, authored_at TEXT, author_source TEXT, date_source TEXT, near_dup_group TEXT, first_seen_run TEXT, chunk_method TEXT)"
+      "CREATE TABLE files (file_id TEXT PRIMARY KEY, file_name TEXT NOT NULL CHECK(file_name <> ''), rel_path TEXT NOT NULL CHECK(rel_path <> ''), ext TEXT, size INTEGER, status TEXT, reason_code TEXT, title TEXT, author TEXT, authored_at TEXT, author_source TEXT, date_source TEXT, near_dup_group TEXT, first_seen_run TEXT, chunk_method TEXT, doc_meta TEXT)"
     ],
     [
       "table",
       "flagged_chunks",
-      "CREATE TABLE flagged_chunks (run_id TEXT, chunk_id TEXT, reason_codes TEXT, unknown_ratio REAL, min_confidence REAL, text_hash TEXT, weak_quotes INTEGER, PRIMARY KEY(run_id, chunk_id))"
+      "CREATE TABLE flagged_chunks (run_id TEXT, chunk_id TEXT, reason_codes TEXT, unknown_ratio REAL, min_confidence REAL, text_hash TEXT, weak_quotes INTEGER, reason_axes TEXT DEFAULT '{}', PRIMARY KEY(run_id, chunk_id))"
     ],
     [
       "table",

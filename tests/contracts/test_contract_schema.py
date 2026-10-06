@@ -10,7 +10,7 @@ import tempfile
 import types
 import unittest
 
-from engrbot.adapters import labelbot_ws
+from domain_engrbot.adapters import labelbot_ws
 from labelbot import export, store
 from labelbot.workspace import Workspace
 
@@ -45,8 +45,8 @@ class SchemaContract(unittest.TestCase):
         }
         _support.check(self, "schema_work_sqlite", data)
 
-    def test_work_sqlite_has_engrbot_required_columns(self):
-        """engrbot 어댑터가 읽기 전용으로 기대하는 표·열(labelbot_ws.REQUIRED)이 실제 work.sqlite에 있다."""
+    def test_work_sqlite_has_domain_engrbot_required_columns(self):
+        """domain_engrbot 어댑터가 읽기 전용으로 기대하는 표·열(labelbot_ws.REQUIRED)이 실제 work.sqlite에 있다."""
         con = self._work_con()
         missing = []
         for table, cols in labelbot_ws.REQUIRED.items():

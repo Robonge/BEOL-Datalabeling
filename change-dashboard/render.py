@@ -22,7 +22,9 @@ INTRO = os.path.join(REPO, "docs", "project_intro.html")
 
 # S4 SVG의 data-n 키 ↔ collect.py의 역할 이름
 ROLE_KEY = {"Orchestrator": "orch", "BEOL-labeling": "lab", "검수 엔지니어": "hum",
-            "BEOL-labeling-feedback": "fb", "workspace": "ws", "Engr-bot": "engr", "code-bot": "code"}
+            "BEOL-labeling-feedback": "fb", "workspace": "ws", "Domain-Engr-bot": "engr", "Code-Engr-bot": "code"}
+# 2026-10-06 이전 역할 · 단계 이름 → 새 이름(지난 회차 facts · summary를 읽을 때 바꾼다)
+OLD_NAMES = {"Engr-bot": "Domain-Engr-bot", "code-bot": "Code-Engr-bot"}
 NODE_INFO = {
     "orch": ("Orchestrator", "지휘자 · 메인 세션", "skill을 순서대로 부르고 관리한다"),
     "req": ("엔지니어", "요청자", "이 기간에 세션들에 보낸 요청"),
@@ -30,15 +32,18 @@ NODE_INFO = {
     "hum": ("검수 엔지니어", "1차 검수", "사람이 의심 chunk를 확인하고 고친다"),
     "fb": ("BEOL-labeling-feedback", "skill", "교정을 반영하고 DB에 적재한다"),
     "ws": ("workspace", "공유 작업대", "코드 뼈대 · 데이터 · 문서"),
-    "engr": ("Engr-bot", "감시 agent", "label을 도메인 지식으로 감시한다"),
-    "code": ("code-bot", "감시 agent", "코드 · workflow 규칙을 감시한다"),
+    "engr": ("Domain-Engr-bot", "질문 agent", "교정 장부로 엔지니어에게 질문 → 확정한 답을 규칙·taxonomy 제안으로"),
+    "code": ("Code-Engr-bot", "감시 agent", "코드 규칙 검수 · taxonomy 축이 바뀐 실행을 다시 라벨링"),
+    "tax": ("TAXONOMY", "분류 기준", "taxonomy.xlsx · labeling_rules.json (사람만 고친다)"),
+    "ans": ("답변 엔지니어", "도메인 지식", "Domain-Engr-bot 질문에 답하고 초안을 확정한다"),
 }
 STAGE_DESC = {
     "수집 · 파싱": "자료를 모아 읽기", "1차 분류": "기준별로 나누기",
     "2차 검증 질문": "맞는지 물어볼 질문 만들기", "3차 라벨링": "질문마다 O/X로 답하기",
     "불량 목록": "의심 chunk 골라내기", "1차 검수": "엔지니어가 확인하고 고치기",
     "교정 반영": "사람 값으로 확정", "임베딩 · 적재": "DB에 올리기",
-    "Engr-bot": "도메인 감시 · feedback", "code-bot": "코드 규칙 감시",
+    "Domain-Engr-bot": "교정 장부로 엔지니어에게 질문 → 확정한 답을 규칙·taxonomy 제안으로",
+    "Code-Engr-bot": "코드 규칙 감시 · taxonomy 축 점검",
 }
 # 세션 구분색: design.md.md 인디고 계열 + 시맨틱 색(소면적 점에만 쓴다)
 PALETTE = ["#4A5FA8", "#C99A3B", "#3B8A6E", "#C25450", "#6B82C4", "#7A9CC0"]
@@ -64,7 +69,18 @@ def load(stamp):
     if os.path.exists(sp):
         with open(sp, encoding="utf-8") as f:
             summary = json.load(f)
-    return facts, summary
+    return renamed(facts), renamed(summary)
+
+
+def renamed(obj):
+    """지난 회차 기록의 옛 역할 · 단계 이름(OLD_NAMES)을 새 이름으로 바꾼다. 설명 문장은 그대로 둔다."""
+    if isinstance(obj, dict):
+        return {k: (OLD_NAMES.get(v, v) if k in ("role", "stage") and isinstance(v, str) else renamed(v))
+                for k, v in obj.items()} | ({"stages": [OLD_NAMES.get(x, x) for x in obj["stages"]]}
+                                             if isinstance(obj.get("stages"), list) else {})
+    if isinstance(obj, list):
+        return [renamed(x) for x in obj]
+    return obj
 
 
 def _between(text, start, end, start_at=0):
@@ -170,7 +186,7 @@ def build(facts, summary, history):
     for i, st in enumerate(facts["stages"]):
         d = data["stages"][st]
         n = len(d["files"]) + len(d["changes"])
-        watch = st in ("Engr-bot", "code-bot")
+        watch = st in ("Domain-Engr-bot", "Code-Engr-bot")
         chips.append('<button class="sc%s%s" data-st="%s" type="button"><small>%s</small><b>%s</b><span>%s</span><em>%s</em><i>%s</i></button>'
                      % (" hot" if n else "", " w" if watch else "", e(st), "감시" if watch else "%02d" % (i + 1),
                         e(st), e(STAGE_DESC.get(st, "")), ("변경 %d" % n) if n else "–", dots(d["sessions"])))

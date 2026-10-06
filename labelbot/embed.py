@@ -5,7 +5,7 @@ text_hash와 model이 같으면 다시 호출하지 않는다. 실패는 사유 
 import struct
 
 from labelbot import store, util
-from labelbot.llm import CallFailed, HttpEmbedTransport, SendBlocked, check_send
+from labelbot.llm import CallFailed, HttpEmbedTransport
 
 
 def pack(vec):
@@ -38,21 +38,11 @@ def embed(ws, con, run_id, transport=None, log=None, quiet=False):
         else:
             transport = HttpEmbedTransport(cfg)
     model, url = cfg["model"], cfg["base_url"].rstrip("/") + cfg["path"]
-    suffixes = ws.config["llm"].get("internal_host_suffixes")
     todo, blocked, skipped = [], 0, 0
     for c in run_chunks(con, run_id):
         r = con.execute("SELECT text_hash FROM chunk_embeddings WHERE chunk_id=? AND model=?", (c["chunk_id"], model)).fetchone()
         if r and r[0] == c["text_hash"]:
             skipped += 1
-            continue
-        try:
-            check_send(url, [c["file_id"]], suffixes)
-        except SendBlocked as e:
-            if not quiet:
-                store.add_failure(con, run_id, "embed", c["chunk_id"], e.reason_code)
-            if log:
-                log("embed", c["chunk_id"], e.reason_code)
-            blocked += 1
             continue
         todo.append(c)
     called = stored = 0
@@ -60,10 +50,9 @@ def embed(ws, con, run_id, transport=None, log=None, quiet=False):
     for i in range(0, len(todo), size):
         batch = todo[i : i + size]
         try:
-            check_send(url, [c["file_id"] for c in batch], suffixes)
             called += 1
             vecs = transport.embed([c["text"] for c in batch])
-        except (CallFailed, SendBlocked) as e:
+        except CallFailed as e:
             for c in batch:
                 if not quiet:
                     store.add_failure(con, run_id, "embed", c["chunk_id"], e.reason_code)

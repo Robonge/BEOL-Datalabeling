@@ -7,6 +7,7 @@ import shutil
 import struct
 import tempfile
 import unittest
+from unittest import mock
 import urllib.parse
 import urllib.request
 
@@ -104,6 +105,29 @@ class WebSocketFrameTests(unittest.TestCase):
     def test_accept_key_rfc6455(self):
         self.assertEqual(cdp.accept_key("dGhlIHNhbXBsZSBub25jZQ=="), "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
 
+    def test_launch_browser_falls_back_when_first_exits(self):
+        # Edge가 포트 파일 없이 즉시 종료해도 다음 후보(Chrome)로 넘어간다.
+        tmp = tempfile.gettempdir()
+        a, b = os.path.join(tmp, "a_browser.exe"), os.path.join(tmp, "b_browser.exe")
+        tried = []
+
+        def fake(exe, timeout):
+            tried.append(exe)
+            if exe == a:
+                raise cdp.CdpError("RENDERER_EXITED")
+            return "browser"
+        with mock.patch.object(cdp, "browser_candidates", return_value=[a, b]),                 mock.patch.object(os.path, "isfile", return_value=True),                 mock.patch.object(cdp, "Browser", fake):
+            self.assertEqual(cdp.launch_browser(None, 5), "browser")
+            self.assertEqual(tried, [a, b])
+            with self.assertRaises(cdp.CdpError) as cm:  # 경로를 지정하면 그 브라우저만 쓴다
+                cdp.launch_browser(a, 5)
+            self.assertEqual(cm.exception.reason_code, "RENDERER_EXITED")
+
+    def test_launch_browser_missing_explicit_path(self):
+        with self.assertRaises(cdp.CdpError) as cm:
+            cdp.launch_browser(os.path.join(tempfile.gettempdir(), "no_such_browser.exe"), 5)
+        self.assertEqual(cm.exception.reason_code, "RENDERER_MISSING")
+
     def test_missing_browser(self):
         with self.assertRaises(cdp.CdpError) as cm:
             cdp.find_browser(os.path.join(tempfile.gettempdir(), "no_such_browser.exe"))
@@ -114,8 +138,7 @@ class _SlideWs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dir = tempfile.mkdtemp(prefix="labelbot_ws_")
-        # 입력은 커밋된 더미 해시 스냅샷의 파일로 고정한다. 폴더에 새 파일이 들어오거나
-        # 'parshing test files'(llm.DUMMY_DIRS)가 바뀌어도 사외 전송 허용 여부가 흔들리지 않게 한다.
+        # 입력은 커밋된 더미 해시 스냅샷의 파일로 고정한다(폴더에 새 파일이 들어와도 결과가 흔들리지 않게).
         with open(llm.DUMMY_HASHES_PATH, encoding="utf-8") as f:
             include = [json.loads(line)["file_id"] for line in f if line.strip()]
         cfg = {"taxonomy_path": TAXONOMY, "input_root": DUMMY_DIR, "include_file_ids": include,
@@ -319,7 +342,8 @@ class SlidePushTests(_SlideWs):
         self.assertEqual((r["uploaded"], r["skipped"]), (0, n))
         self.assertFalse(s3.uploads)
 
-    def test_non_dummy_blocked(self):
+    def test_non_dummy_is_sent(self):
+        # PoC: 사외·사내 구분 없음(2026-10-05). 더미 해시 밖 파일도 올라간다.
         row = self.con.execute("SELECT * FROM slide_images LIMIT 1").fetchone()
         fake_fid = "f" * 64
         self.con.execute("UPDATE slide_images SET file_id=? WHERE chunk_id=?", (fake_fid, row["chunk_id"]))
@@ -327,11 +351,8 @@ class SlidePushTests(_SlideWs):
         try:
             s = FakeSink()
             r = slidepush.push(self.ws, self.con, self.run_id, sink=s)
-            self.assertEqual(r["blocked"], 1)
-            self.assertNotIn(fake_fid[:16], {p for _, p, _ in s.uploads})
-            code = self.con.execute("SELECT result_code FROM slide_image_push_log WHERE chunk_id=? ORDER BY id DESC",
-                                    (row["chunk_id"],)).fetchone()[0]
-            self.assertEqual(code, "EXTERNAL_NON_DUMMY")
+            self.assertEqual(r["blocked"], 0)
+            self.assertIn(fake_fid[:16], {p.split("/")[0] for _, p, _ in s.uploads})
         finally:
             self.con.execute("UPDATE slide_images SET file_id=? WHERE chunk_id=?", (row["file_id"], row["chunk_id"]))
 

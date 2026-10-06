@@ -146,7 +146,7 @@ def render(ws, con, run_id, browser_factory=None, log=None):
     if by_file:
         if browser_factory is None:
             def browser_factory():
-                return cdp.Browser(cdp.find_browser(cfg.get("browser_path")), timeout)
+                return cdp.launch_browser(cfg.get("browser_path"), timeout)
         fatal = None
         try:
             browser = browser_factory()

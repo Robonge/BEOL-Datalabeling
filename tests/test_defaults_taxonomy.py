@@ -17,6 +17,13 @@ def load_rows():
         return [json.loads(line) for line in f if line.strip()]
 
 
+def axis_count_from_rows(rows):
+    """taxonomy 시트에서 축 열은 있고 값 열이 빈 행이 축 정의 행이다(머리글 행 제외)."""
+    cells = [(r["cells"] + ["", ""])[:2] for r in rows if r["sheet"] == "taxonomy" and r["row"] > 1]
+    # 같은 축의 정의 행이 내용까지 같으면 파서가 하나로 합치므로 축 이름 수를 센다.
+    return len({axis.strip() for axis, value in cells if axis.strip() and not value.strip()})
+
+
 class DefaultTaxonomyTest(unittest.TestCase):
     def setUp(self):
         self.data = read_input(XLSX_PATH, None, expect=".xlsx")
@@ -32,7 +39,7 @@ class DefaultTaxonomyTest(unittest.TestCase):
 
     def test_parses_without_errors(self):
         t = taxonomy.parse_bytes(self.data)
-        self.assertEqual(len(t.axes), 10)
+        self.assertEqual(len(t.axes), axis_count_from_rows(load_rows()))
         self.assertEqual(t.warnings, [])
         self.assertEqual(sorted(t.sheet_hashes), sorted(taxonomy.HEADERS))
         self.assertEqual(t.sheet_hashes["files"], taxonomy.EMPTY_SHEET_HASH)

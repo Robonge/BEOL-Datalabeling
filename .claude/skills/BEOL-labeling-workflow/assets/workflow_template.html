@@ -130,6 +130,49 @@ pre.term .ok{color:#7fd1b0} pre.term .w{color:#e3bf72} pre.term .d{color:#8fa4c8
 .branch{border:1px dashed var(--line);border-radius:var(--radius-sm);padding:10px 12px;background:var(--bg-base)}
 .branch b{display:block;font-size:12px;margin-bottom:2px}
 .foot{position:relative;z-index:1;text-align:center;font-size:11px;color:var(--text-footer);padding:0 0 24px}
+.zone.C .dotc{background:var(--success)}
+.hero.C{background:linear-gradient(148deg,#4A6BAF 0%,#2F3E7E 100%)}
+.item.engr .no{background:rgba(59,138,110,.16);color:#1f5a46}
+.item.engr.on .no{background:var(--success);color:#fff}
+.bars{display:flex;flex-direction:column;gap:5px}
+.bars .br{display:grid;grid-template-columns:44px 1fr 52px;gap:8px;align-items:center;font-size:11.5px}
+.bars .tr{height:8px;border-radius:4px;background:var(--bg-base);border:1px solid var(--bg-grid);position:relative;overflow:hidden}
+.bars .tr i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(148deg,#6B82C4,#4A5FA8)}
+.bars .tr i.w{background:var(--warning)}
+
+/* S4 팀 지도 (docs/project_intro.html에서 가져옴) */
+.team{position:relative;z-index:1;max-width:1280px;margin:8px auto 0;padding:0 24px}
+.team details{background:rgba(255,255,255,.72);border:1px solid var(--bg-grid);border-radius:var(--radius);box-shadow:0 2px 8px rgba(53,70,144,.06)}
+.team summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;font-weight:700;letter-spacing:-0.048em}
+.team summary::-webkit-details-marker{display:none}
+.team summary .sm{font-weight:400}
+.team summary::after{content:"▾";margin-left:auto;color:var(--primary);transition:transform .2s}
+.team details:not([open]) summary::after{transform:rotate(-90deg)}
+.teambody{padding:0 16px 14px}
+.agline{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;min-height:36px;font-size:12px;line-height:1.45;color:var(--text-sub);background:#fff;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:6px 12px}
+.agline .an{font-weight:700;color:var(--text-strong)}
+.agline .an small{font-family:var(--mono);font-weight:400;font-size:11px;color:var(--primary);margin-left:5px}
+.agline .kk{font-family:var(--mono);font-size:10.5px;color:var(--primary);margin-right:4px}
+.agline .sp{color:var(--text-muted)}
+.agline .go{margin-left:auto}
+.orch{display:block;width:100%;height:auto;max-height:430px;margin-top:8px}
+.orch text{font-family:inherit;letter-spacing:-0.02em;fill:var(--text-strong)}
+.orch .nm{font-size:15px;font-weight:700}
+.orch .rl{font-size:12px;fill:rgba(30,45,74,.74)}
+.orch .cap{font-size:11px;fill:var(--text-muted)}
+.orch .pl{font-size:10.5px;fill:var(--text-strong)}
+.orch .wire{fill:none;stroke:var(--primary);stroke-width:1.5;stroke-linecap:round}
+.orch .wire.loop{stroke:var(--warning);stroke-width:2}
+.orch .ic{fill:none;stroke:var(--primary);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.orch .nd{cursor:pointer}
+.orch .nd .hit{fill:transparent}
+.orch .nd:hover .hit{fill:rgba(107,130,196,.08)}
+.orch [data-k]{transition:opacity .3s ease}
+.orch.focus [data-k]{opacity:.13}
+.orch.focus [data-k].hi{opacity:1}
+.orch.focus .hi .wire,.orch.focus .wire.hi{stroke-width:2.2;stroke-dasharray:7 4;animation:dash .9s linear infinite}
+.orch.focus .nd.hi .hit{fill:rgba(107,130,196,.12)}
+@keyframes dash{to{stroke-dashoffset:-22}}
 .rise{animation:rise .36s var(--ease) both}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @media (max-width:980px){
@@ -138,7 +181,7 @@ pre.term .ok{color:#7fd1b0} pre.term .w{color:#e3bf72} pre.term .d{color:#8fa4c8
   .zone{min-width:300px;flex:none}
   .cols,.split{grid-template-columns:minmax(0,1fr)}
 }
-@media (prefers-reduced-motion:reduce){.rise{animation:none}.btn,.item,.tile,.chunk,.mini{transition:none}}
+@media (prefers-reduced-motion:reduce){.rise{animation:none}.btn,.item,.tile,.chunk,.mini{transition:none}.orch.focus .wire.hi,.orch.focus .hi .wire{animation:none}}
 </style>
 </head>
 <body>
@@ -147,12 +190,22 @@ pre.term .ok{color:#7fd1b0} pre.term .w{color:#e3bf72} pre.term .d{color:#8fa4c8
 <header class="top">
   <div>
     <h1>BEOL 라벨링 워크플로</h1>
-    <p>pptx 입력부터 파싱 · 라벨링 · 사람 검수 · 피드백 · 적재까지. LLM은 chunk당 3회(1차 분류 · 2차 검증 질문 생성 · 3차 라벨링). 단계를 눌러 산출물과 예시 화면을 확인합니다.</p>
+    <p>pptx 입력부터 파싱 · 라벨링 · 사람 검수 · 피드백 · 적재, 그리고 Domain-Engr-bot이 검수 결과로 엔지니어에게 묻고 확정한 답을 규칙 · taxonomy 제안으로 돌려준 뒤 taxonomy 수정을 거쳐 다음 실행으로 돌아오기까지. 라벨링 LLM은 chunk당 3회(1차 분류 · 2차 검증·대조 질문 생성 · 3차 라벨링). 단계를 눌러 산출물과 예시 화면을 확인합니다.</p>
   </div>
   <div class="grow"></div>
   <span class="tag" id="runtag"></span>
   <button class="btn primary" id="play" type="button">▶ 전체 흐름 재생</button>
 </header>
+
+<section class="team" aria-label="S4 팀 지도">
+  <details open>
+    <summary>S4 팀 지도 · 누가 이 단계를 맡나 <span class="sm">단계를 고르면 맡은 agent와 선이 켜지고, 캐릭터를 누르면 그 agent의 첫 단계로 갑니다</span></summary>
+    <div class="teambody">
+      <p class="agline" id="agc"></p>
+      <!--__S4_SVG__-->
+    </div>
+  </details>
+</section>
 
 <main class="layout">
   <nav class="rail" id="rail" aria-label="워크플로 단계"></nav>
@@ -183,8 +236,12 @@ function nowStr(){return new Date().toTimeString().slice(0,8);}
 /* ---------- zones ---------- */
 var ZONES = {
   A:{name:"BEOL-labeling", cmd:"/BEOL-labeling", start:"준비 · 중복 확인 · 수집 · 파싱", end:"대시보드를 띄우고 검수 대기에서 멈춤"},
-  B:{name:"BEOL-labeling-feedback", cmd:"/BEOL-labeling-feedback", start:"대조 여부 질문 · 검수 화면 띄우기 · 사람 검수", end:"검수 완료 버튼 → 반영 · Supabase 적재"}
+  B:{name:"BEOL-labeling-feedback", cmd:"대시보드 검수 시작 버튼 (또는 /BEOL-labeling-feedback)", start:"검수 시작 신호 → feedback 시작 · 검수(+대조) 화면 · 사람 검수", end:"검수 완료 버튼 → 반영 · Domain-Engr-bot 장부 · Supabase 적재"},
+  C:{name:"BEOL-labeling-Domain-Engr-bot", cmd:"/BEOL-labeling-Domain-Engr-bot", start:"작업 폴더 고르기 · 도메인 질문 생성 · 질문 화면 띄우기", end:"엔지니어가 확정한 초안 → taxonomy/labeling_rules.json · taxonomy 보드 S7"},
+  H:{name:"도메인 담당자 (사람)", cmd:"taxonomy.xlsx · domain_rules.json", start:"후보 · 재검토 요청 · 보드 S7 · draft 규칙 확인", end:"시트 · 규칙 수정 → 다음 /BEOL-labeling"}
 };
+var ENGR = LIVE.engr || {}, ER = ENGR.rules || {}, EL = ENGR.ledger || {}, EQS = ENGR.questions || {}, ED = ENGR.domain_rules || {};
+function num(x){ return (typeof x === "number") ? x : 0; }
 
 /* ---------- mocks ---------- */
 function mA1(){
@@ -417,31 +474,137 @@ function mB4(){
   term('<span class="d">beol_chunk_embeddings (행 예시)</span>\n{ "chunk_id": "c_3f9a21",\n  "run_id": "'+RUN+'",\n  "labels": { "구조/레이어": ["M1"], "Q-COM-001": "X" },\n  "embedding": [0.012, -0.044, … 1536개] }')+
   '<table class="t"><tr><th>출력</th><th>뜻</th></tr>'+
   '<tr><td>'+badge("전송","ok")+'</td><td>라벨이 새로 바뀐 chunk만 올림(이미 올린 chunk는 건너뜀)</td></tr>'+
-  '<tr><td>'+badge("EXTERNAL_NON_DUMMY","warn")+'</td><td>더미 해시 목록 밖 파일은 사외 호출을 차단(정상 동작)</td></tr></table>'+
+  '<tr><td>'+badge("metadata","info")+'</td><td>파일의 Lot ID · WF 번호 · 날짜 · 작성자를 함께 적재</td></tr></table>'+
   '<div class="row"><span class="sm">현재 누적 적재</span>'+badge(V(LIVE.pushed_ok)+' chunk · 임베딩 '+V(LIVE.embeddings),'info')+'</div>';
+}
+
+/* ---------- Domain-Engr-bot ---------- */
+function mB2(){
+  var ev=EL.evidence;
+  return flow(["labelbot apply OK","domain_engrbot intake","교정 장부 _domain_engrbot/ledger","labeling-rules candidates","labeling_candidates.md"])+
+  term('<span class="d">$ python -m domain_engrbot intake --workspace "&lt;WS&gt;"</span>\n'+
+  '[ledger] 누적 작업 폴더 '+V(EL.workspaces)+', 사례 '+V(EL.cases)+'(근거 있음 '+V(ev)+'), 골든 '+V(EL.golden)+', judge 예시 '+V(EL.judge_examples)+', L4 후보 '+V(EL.l4_candidates)+'\n'+
+  '<span class="d">$ python -m domain_engrbot labeling-rules candidates --workspace "&lt;WS&gt;"</span>\n'+
+  '[labeling-rules] 규칙 후보 '+V(ER.candidates)+'개(상충 '+V(ER.candidates_conflict)+'), 사례 후보 '+V(ER.examples_pending)+'개 → _domain_engrbot/ledger/labeling_candidates.md')+
+  '<div class="tiles">'+tile(V(EL.cases),"장부 사례(누적)")+tile(V(ev),"근거 있는 교정")+tile(V(EL.golden),"누적 골든")+tile(V(EL.judge_examples),"judge 예시")+tile(V(EL.l4_candidates),"L4 후보(draft)")+'</div>'+
+  '<table class="t"><tr><th>장부 산출</th><th>쓰는 곳</th></tr>'+
+  '<tr><td class="mono">golden.jsonl</td><td>domain_engrbot eval --golden ledger (층별 탐지율 · 오탐률)</td></tr>'+
+  '<tr><td class="mono">judge_examples.jsonl</td><td>L3B judge 호출에 비슷한 라벨의 사람 판정 사례를 예시로 붙임</td></tr>'+
+  '<tr><td class="mono">rule_candidates.json</td><td>L4 draft 규칙 → <span class="mono">L4_RULE_DRAFT_HIT</span>(판정 영향 없음)</td></tr>'+
+  '<tr><td class="mono">labeling_candidates.json</td><td>라벨링 규칙(FR-) · 사례(EX-) 후보 → Domain-Engr-bot 도메인 질문의 재료(확정은 질문 화면)</td></tr></table>'+
+  (ev===0&&num(EL.cases)>0?'<div class="row">'+badge("근거 있는 교정 0건","warn")+'<span class="sm">후보는 근거(드래그 인용 · 이유)가 있는 교정이 1건 이상인 패턴만 올라옵니다. 검수 때 근거를 남겨야 새 후보가 생깁니다.</span></div>':'')+
+  '<div class="sm">LLM 0회 · 다시 돌려도 결과가 같습니다. 장부의 golden · judge 예시에는 본문 인용이 있어 건수만 보고합니다. 실패해도 반영 · 적재는 계속합니다.</div>';
+}
+function mC1(){
+  var q=EQS, none=!q.set_id;
+  return flow(["domain_engrbot workspaces","작업 폴더 고르기","intake(멱등)","검수 결과 + 누적 장부","LLM","questions.json · engr_questions.html"])+
+  (none?'<div class="row">'+badge("질문 기록 없음","warn")+'<span class="sm">/BEOL-labeling-Domain-Engr-bot "도메인 질문"을 돌리면 채워집니다</span></div>'
+       :'<div class="row"><span class="mono">'+esc(q.set_id)+'</span>'+badge("지금 열린 묶음","info")+'</div>')+
+  term('<span class="d">$ python -m domain_engrbot workspaces</span>\n'+
+  '{"workspaces": [{"question_state": "new", "review_runs": 1, …}], "questions": {"set_id": …, "open": …, "answered_total": …}}\n'+
+  '<span class="w">? 어느 작업 폴더로 질문을 만들까요 → 새 검수 결과(new) 폴더</span>\n'+
+  '<span class="d">$ python -m domain_engrbot questions generate --workspace "&lt;WS&gt;"</span>\n'+
+  '[questions] set_id=QS-… 질문 n건(라벨링 a · taxonomy b, 이월 c), LLM 호출 k회 → _domain_engrbot/questions/engr_questions.html')+
+  '<div class="tiles">'+tile(V(q.open),"열린 질문")+tile(V(q.labeling),"라벨링")+tile(V(q.taxonomy),"taxonomy")+tile(V(q.carried),"이월")+tile(V(q.answered),"답함(누적)")+tile(V(q.dismissed),"묻지 않음(누적)")+'</div>'+
+  '<table class="t"><tr><th>question_state</th><th>뜻</th></tr>'+
+  '<tr><td class="mono">no_review</td><td>검수 결과 없음 → /BEOL-labeling-feedback으로 검수부터</td></tr>'+
+  '<tr><td class="mono">new</td><td>새 검수 결과(권장)</td></tr>'+
+  '<tr><td class="mono">asked</td><td>이미 질문에 반영됨 → 건너뛰기 · 다시 만들기(--force) · 남은 질문 이어서 답하기</td></tr></table>'+
+  '<div class="sm">LLM에는 검수자 인용과 교정 레코드 본문 앞부분이 갑니다(작업 폴더 pipeline.json의 llm 주소). 입력이 그대로면 재사용(LLM 0회), 재료가 없으면 <span class="mono">NO_REVIEW_INPUT</span>. 콘솔에는 건수 · set_id · 사유 코드만 나옵니다.</div>';
+}
+var eq2={o:null,inc:{},st:null,saved:false};
+var EQ2={id:"EQ-0a1b2c3d4e",goal:"라벨링",text:"[예시] 본문이 CMP 뒤 측정 결과만 다루면 공정 모듈은 CMP로 고르나요?",why:"[예시] 검수에서 같은 방향 교정이 3건 반복됐습니다",impact:3,
+  opts:[{id:"A",label:"[예시] 그렇다. 측정한 공정 기준으로 고른다",drafts:[{type:"rule",stage:"1차 분류",target:"공정 모듈",text:"[예시] 본문이 CMP 뒤 측정 결과면 공정 모듈은 CMP로 고른다"},{type:"taxonomy",kind:"value_def",target:"공정 모듈 · CMP",text:"[예시] 연마 공정과 그 직후 측정"}]},
+        {id:"B",label:"[예시] 아니다. 본문 주제 공정으로 고른다",drafts:[{type:"rule",stage:"1차 분류",target:"공정 모듈",text:"[예시] 측정 결과만 있으면 본문 주제 공정으로 고른다"}]}]};
+function eq2drafts(){ var o=EQ2.opts.filter(function(x){return x.id===eq2.o;})[0]; return o?o.drafts:[]; }
+function eq2JSON(){
+  var a={question_id:EQ2.id,action:eq2.st||"skip"};
+  if(eq2.st==="answer"){ a.option_id=eq2.o; a.confirmed=eq2drafts().filter(function(d,i){return eq2.inc[i]!==false;}).map(function(d){return d.type==="rule"?{type:"rule",stage:"classify",target:d.target,text:d.text}:{type:"taxonomy",kind:d.kind,text:d.text};}); }
+  return JSON.stringify({kind:"engr_answers",set_id:"QS-…",answers:eq2.st?[a]:[]},null,2);
+}
+function mC2(){
+  var ds=eq2drafts(), n=ds.filter(function(d,i){return eq2.inc[i]!==false;}).length;
+  var st={answer:badge("답함","ok"),skip:badge("나중에","warn"),dismiss:badge("묻지 않음","")}[eq2.st]||badge("미답","info");
+  var opts=EQ2.opts.map(function(o){return '<button type="button" class="mini '+(eq2.o===o.id?'on':'')+'" data-o="'+o.id+'">'+o.id+'. '+o.label+'</button>';}).join('');
+  var drafts=ds.map(function(d,i){var on=eq2.inc[i]!==false;
+    return '<div class="branch"><div class="row"><b>'+(d.type==="rule"?'규칙 문장 · '+d.stage+' · '+d.target:'taxonomy 행 · '+d.kind+' · '+d.target)+'</b><button type="button" class="mini '+(on?'on':'')+'" data-d="'+i+'">'+(on?'포함':'빼기')+'</button></div><div class="sm">'+d.text+'</div></div>';}).join('');
+  return '<div class="browser"><div class="bar"><i></i><i></i><i></i><span style="margin-left:6px">127.0.0.1 · _domain_engrbot/questions/engr_questions.html</span><span class="grow"></span><button type="button" class="mini '+(eq2.saved?'on':'')+'" id="c2save">'+(eq2.saved?'저장됨 '+nowStr()+' → qa/inbox':'답변 완료 · 저장')+'</button></div>'+
+  '<div class="body" style="display:flex;flex-direction:column;gap:8px">'+
+  '<div class="row"><span class="mono">1 · '+EQ2.goal+' · 영향 '+EQ2.impact+'건</span>'+st+'</div>'+
+  '<div class="chunk"><div class="q">'+EQ2.text+'</div><div class="sm">왜 묻나: '+EQ2.why+'</div>'+
+  '<div class="sm" style="margin-top:4px">근거 카드: 슬라이드 미리보기 · 봇 값 → 사람 값 · 검수자 인용과 이유 (합성 예시라 생략)</div></div>'+
+  '<div style="display:flex;flex-direction:column;gap:6px">'+opts+'<span class="sm">또는 직접 답하기 → 초안 만들기(LLM)</span></div>'+
+  (ds.length?'<div style="display:flex;flex-direction:column;gap:6px">'+drafts+'</div>':'')+
+  '<div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="mini '+(eq2.st==="answer"?'on':'')+'" data-a="answer"'+(n?'':' disabled')+'>초안 '+n+'개 확정</button>'+
+  '<button type="button" class="mini w '+(eq2.st==="skip"?'on':'')+'" data-a="skip">나중에</button>'+
+  '<button type="button" class="mini d '+(eq2.st==="dismiss"?'on':'')+'" data-a="dismiss">묻지 않기</button></div></div></div>'+
+  '<div class="sm">직접 눌러 보세요(질문 · 선택지 · 초안은 합성 예시). 실제 화면은 초안 문장과 taxonomy 칸을 고칠 수 있고, 확정 버튼 바로 위에 확정될 초안 전문이 보입니다. 봇은 답을 정하지 않습니다.</div>'+
+  '<pre class="term" id="c2json">'+esc(eq2JSON())+'</pre>';
+}
+function bC2(root){
+  root.addEventListener("click",function(e){
+    var t=e.target;
+    if(t.id==="c2save"){ eq2.saved=true; }
+    else if(t.getAttribute("data-o")){ eq2.o=t.getAttribute("data-o"); eq2.inc={}; if(eq2.st==="answer") eq2.st=null; }
+    else if(t.getAttribute("data-d")!==null){ var i=+t.getAttribute("data-d"); eq2.inc[i]=(eq2.inc[i]===false); if(eq2.st==="answer") eq2.st=null; }
+    else if(t.getAttribute("data-a")){ var a=t.getAttribute("data-a"); eq2.st=(eq2.st===a?null:a); }
+    else return;
+    root.querySelector(".mock").innerHTML=mC2();
+  });
+}
+function mC3(){
+  var r=ER.rules||{}, e=ER.examples||{};
+  var warn=(num(r.approved)+num(e.approved)>0&&num(r.enabled)+num(e.enabled)===0)?'<div class="row">'+badge("승인분이 모두 꺼짐","warn")+'<span class="sm">승인된 규칙 · 사례가 enabled 0이라 다음 라벨링 프롬프트에 들어가지 않습니다. 승인 규칙 관리 화면(labeling-rules review)에서 켭니다.</span></div>':'';
+  return flow(["qa/inbox/engr_answers_&lt;set_id&gt;.json","사용자 확인(AskUserQuestion)","questions apply","labeling_rules.json · taxonomy_proposals.jsonl","다음 /BEOL-labeling · taxonomy 보드 S7"])+
+  term('<span class="d">$ python -m domain_engrbot questions status --workspace "&lt;WS&gt;"</span>\n'+
+  '<span class="w">? 이번 답 파일로 engr_answers_QS-….json(답 n · 묻지 않음 n · 나중에 n)을 쓸까요 → 예</span>\n'+
+  '<span class="d">$ python -m domain_engrbot questions apply --workspace "&lt;WS&gt;" --answers "&lt;답 파일&gt;"</span>\n'+
+  '[questions] 반영: 답 n(규칙 a · taxonomy 제안 b · 사례 c), 후보 승인 x · 종결 y, 묻지 않음 d, 건너뜀 e, 남은 질문 r\n'+
+  '<span class="d">$ python -m domain_engrbot taxonomy-board</span>\n'+
+  '[taxonomy-board] 항목 n (미반영 a · …), 출처 … · S7 n')+
+  '<div class="tiles">'+tile(V(r.enabled)+" / "+V(r.approved),"켜진 / 승인 규칙")+tile(V(e.enabled)+" / "+V(e.approved),"켜진 / 승인 사례")+tile(V(EQS.proposals),"taxonomy 제안(S7 누적)")+tile(V(EQS.open),"남은 질문")+'</div>'+warn+
+  '<div class="split"><div class="branch"><b>확정한 규칙 · 사례 → taxonomy/labeling_rules.json</b>다음 /BEOL-labeling의 1차 분류 · 3차 라벨링 프롬프트에 "검수 피드백 지침"과 few-shot으로 들어갑니다(enabled인 것만).</div>'+
+  '<div class="branch"><b>확정한 taxonomy 행 → taxonomy 수정 보드 S7</b>"엔지니어 답변" 출처로 붙여넣기 행이 나오고, 사람이 taxonomy.xlsx에 붙여넣습니다.</div></div>'+
+  '<table class="t"><tr><th>코드</th><th>뜻</th></tr>'+
+  '<tr><td>'+badge("NO_CONFIRMED_DRAFT","warn")+'</td><td>확정한 초안이 없는 답 → 그 질문은 열린 채 남음</td></tr>'+
+  '<tr><td>'+badge("not_open","info")+'</td><td>이미 반영했거나 닫힌 질문의 답 → 건너뜀(다시 반영해도 결과 같음)</td></tr>'+
+  '<tr><td>'+badge("RULES_OVER_CAP","warn")+'</td><td>켜진 규칙이 labelbot 상한을 넘음 → 승인 규칙 관리에서 끄기</td></tr>'+
+  '<tr><td>'+badge("ANSWERS_FORMAT_INVALID","bad")+'</td><td>답 파일 깨짐 → 질문 화면에서 다시 저장</td></tr></table>'+
+  '<div class="sm">LLM 0회. 봇은 확정 초안만 반영하고 taxonomy.xlsx를 쓰지 않습니다. 승인된 규칙 · 사례의 끄기 · 켜기 · 문장 수정 · 승인 취소는 승인 규칙 관리 화면(<span class="mono">labeling-rules review · apply</span>)에서 합니다.</div>';
+}
+function mH9(){
+  return '<div class="split"><div class="branch"><b>taxonomy.xlsx (사람만 수정)</b>'+
+  '<div class="tiles" style="margin-top:6px">'+tile(V(LIVE.cand_new),"새 값 후보")+tile(V(LIVE.cand_syn),"동의어 후보")+tile(V(LIVE.revisits_total),"재검토 요청(누적)")+tile(V(ENGR.revisit_files),"실행별 요청 파일")+tile(V(EQS.proposals),"엔지니어 답변 S7")+'</div>'+
+  '<div class="sm" style="margin-top:6px"><span class="mono">reports/candidates.md</span> · <span class="mono">taxonomy/taxonomy_revisit_requests/*.md·html</span>의 탭 구분 블록이나 표(A~K 칸)를 복사해 taxonomy 시트 A열에 붙입니다. "확인 필요" 블록은 고친 뒤 붙입니다. 엔지니어 답변(S7)은 <span class="mono">domain_engrbot taxonomy-board</span> 보드에서 행 복사합니다.</div></div>'+
+  '<div class="branch"><b>domain_engrbot/defaults/domain_rules.json (도메인 담당자)</b>'+
+  '<div class="tiles" style="margin-top:6px">'+tile(V(ED.draft),"draft 규칙")+tile(V(ED.approved),"approved 규칙")+tile(V(EL.l4_candidates),"장부 L4 후보")+'</div>'+
+  '<div class="sm" style="margin-top:6px">draft는 기록만(<span class="mono">L4_RULE_DRAFT_HIT</span>), approved는 major · minor 이슈로 판정에 반영됩니다. 장부 후보(<span class="mono">cand-*</span>)를 옮겨 approved로 바꾸는 것은 사람 몫입니다.</div></div></div>'+
+  '<div><div class="sm" style="margin-bottom:4px">다음 실행으로 돌아가는 고리</div>'+flow(["taxonomy.xlsx","labeling_rules.json (enabled)","/BEOL-labeling 1차 분류 · 3차 라벨링"])+
+  '<div style="margin-top:6px">'+flow(["domain_rules.json (approved)","domain_engrbot run L4 판정(명령만 남음, 스킬은 부르지 않음)"])+'</div></div>'+
+  '<div class="sm">봇(BEOL-labeling · feedback · Domain-Engr-bot)은 taxonomy.xlsx와 domain_rules.json을 고치지 않습니다. 재검토 요청 메모에는 본문이 있을 수 있어 파일 수와 위치만 보고합니다.</div>';
 }
 
 /* ---------- steps ---------- */
 var STEPS = [
  {z:"A",t:"준비 · 중복 확인 · 수집 · 파싱",cmd:"init_workspace · selfcheck · run (ingest)",llm:0,who:"bot",
-  lead:"실행마다 연월일시분초가 붙은 새 작업 폴더를 만들고, 이전에 처리를 마친 파일과 겹치는지 확인한 뒤 환경을 점검하고, 원본을 base64로 보관해 메모리에서 슬라이드를 파싱하고 chunk로 나눕니다.",
+  lead:"실행마다 연월일시분초가 붙은 새 작업 폴더를 만들고, 이전에 처리를 마친 파일과 겹치는지 확인한 뒤 환경을 점검하고, 원본을 base64로 보관해 메모리에서 슬라이드를 파싱하고 chunk로 나눕니다. 파일마다 Lot ID · WF 번호 · 날짜 · 작성자를 정규식으로 뽑습니다(LLM 0회).",
   pts:["작업 폴더 <code>261004_BEOL_&lt;입력&gt;_YYYYMMDD-HHMMSS</code> 생성 · pipeline.json 기록 · 화면 서버 등록","중복 확인: 입력 파일명을 <code>injested-file-list/*.json</code>과 비교(파일은 열지 않음). 겹치면 시작 전에 사용자에게 질문 → 중복 빼고 진행(<code>skip_file_names</code>) · 전체 진행 · 중단","사전 점검(키 · 모델 · taxonomy · 쓰기 확장자 · Supabase 표). FAIL이면 멈춤","<code>read_input</code> → <code>.b64</code> → <code>BytesIO</code> → OOXML 파싱(DRM 규칙)","같은 파일은 해시로 건너뜀, 실패는 파일 ID와 사유 코드만 기록"],
   out:["workspaces/261004_BEOL_&lt;입력&gt;_&lt;타임스탬프&gt;/","pipeline.json (skip_file_names)","b64/&lt;sha256&gt;.b64","work.sqlite (files · chunks)","logs/labelbot.log"],mock:mA1},
  {z:"A",t:"1차 분류",cmd:"labelbot run (classify)",llm:1,who:"bot",
-  lead:"chunk마다 LLM을 1회 불러 유형(내용/비내용)과 10개 축의 값을 고릅니다.",
+  lead:"chunk마다 LLM을 1회 불러 유형(내용/비내용)과 "+(LIVE.axis_count ? LIVE.axis_count + "개 " : "")+"축의 값을 고릅니다.",
   pts:["6개씩 병렬 호출. 실행마다 새 작업 폴더라 캐시 없이 전체 호출","taxonomy에 없는 값은 unknown + 새 값 후보","chunk당 호출 1회"],
   out:["work.sqlite (labels)","reports/candidates.jsonl"],mock:mA4},
  {z:"A",t:"2차 질문 매핑 · 검증 질문 생성",cmd:"labelbot run (map · question_gen)",llm:1,who:"bot",
   lead:"승인된 질문을 규칙으로 매핑하고, 1차 라벨이 맞는지 확인하는 O/X 검증 질문을 LLM이 라벨마다 하나씩 만듭니다.",
-  pts:["승인 질문: 공통 질문 전부 + 축 값에 맞는 카테고리 질문(규칙)","검증 질문: 1차 라벨(해당 없음·unknown 제외)마다 1개, 남은 상한만큼(LLM 1회)","예/아니오 판정 의문문만 허용. 개방형·복합·부정 의문문은 검증기가 거부","6개씩 병렬, 실행마다 전체 호출"],
-  out:["prompts/question_gen.md","work.sqlite (gen_questions)","failures (stage question_gen)"],mock:mA5,bind:bA5},
+  pts:["승인 질문: 공통 질문 전부 + 축 값에 맞는 카테고리 질문(규칙)","검증 질문: 1차 라벨(해당 없음·unknown 제외)마다 1개, 남은 상한만큼(LLM 1회)","대조 질문: 이번 실행의 전체 chunk에서 그 chunk와 관계없는 주제로 만든 질문(남은 상한 중 control_ratio만큼, 같은 호출에서 생성). 정답은 보통 X라 O 남발을 잡음","예/아니오 판정 의문문만 허용. 개방형·복합·부정 의문문은 검증기가 거부","6개씩 병렬, 실행마다 전체 호출"],
+  out:["prompts/question_gen.md","work.sqlite (gen_questions · ctl_questions)","failures (stage question_gen)"],mock:mA5,bind:bA5},
  {z:"A",t:"3차 라벨링",cmd:"labelbot run (label)",llm:1,who:"bot",
   lead:"승인 질문과 검증 질문마다 O/X/N/A와 근거 인용문을 LLM이 답합니다. 검증 질문의 X는 1차 라벨이 본문과 어긋났다는 신호입니다.",
-  pts:["chunk당 호출 1회(질문 전부를 한 번에)","Q-GEN: 뒷받침 = O · 반박 = X · 근거 없음일 때만 N/A","인용문이 본문에 없으면 불량 후보","실패는 chunk 단위로만 기록하고 실행은 계속"],
+  pts:["chunk당 호출 1회(질문 전부를 한 번에)","Q-GEN: 뒷받침 = O · 반박 = X · 근거 없음일 때만 N/A","대조 질문 답은 kind=control로 따로 저장해 라벨 집계에 섞지 않음(O면 CONTROL_O 불량 후보)","인용문이 본문에 없으면 불량 후보","실패는 chunk 단위로만 기록하고 실행은 계속"],
   out:["work.sqlite (labels · answers)"],mock:mA6},
  {z:"A",t:"분포 알림 · 불량 목록 · 후보 · 처리 목록",cmd:"alerts · review.compute_flags · record_ingested",llm:0,who:"bot",
   lead:"분포 이상(H5)을 알리고, 사유 코드로 불량 chunk를 뽑고, 후보 리포트를 쓰고, 처리를 마친 파일명을 다음 실행의 중복 확인용 목록으로 남깁니다.",
-  pts:["H5·H3·H8은 보고만 하고 계속 진행(taxonomy 재검토 요청 리포트도 다음 실행으로)","불량 사유 6종(UNKNOWN_HIGH · LOW_CONFIDENCE · QUOTE_NOT_FOUND · PARSE_WARNING · CLASSIFY_FAILED · LABEL_FAILED)","봇은 taxonomy.xlsx를 고치지 않음","<code>[run] 완료</code> 뒤 <code>record_ingested.py</code>가 정상 처리 파일명만 코드 폴더 <code>injested-file-list/</code>에 기록(실패 파일은 다음 실행에서 다시 처리)"],
+  pts:["H5·H3·H8은 보고만 하고 계속 진행(taxonomy 재검토 요청 리포트도 다음 실행으로)","불량 사유 8종(UNKNOWN_HIGH · LOW_CONFIDENCE · QUOTE_NOT_FOUND · PARSE_WARNING · CLASSIFY_FAILED · LABEL_FAILED · CONTROL_O · UNKNOWN_O)","봇은 taxonomy.xlsx를 고치지 않음","<code>[run] 완료</code> 뒤 <code>record_ingested.py</code>가 정상 처리 파일명만 코드 폴더 <code>injested-file-list/</code>에 기록(실패 파일은 다음 실행에서 다시 처리)"],
   out:["injested-file-list/&lt;작업 폴더 이름&gt;.json","reports/alerts.json","reports/flagged_&lt;RUN&gt;.jsonl·.md","reports/candidates.md","reports/taxonomy_revisit.md","out/labeling.sqlite","reports/baseline_&lt;RUN&gt;.md"],mock:mA7},
  {z:"A",t:"화면 3개 생성 · 대시보드 띄우기",cmd:"compare · review · dashboard · serve",llm:0,who:"bot",
   lead:"결과 대시보드·검수·파싱 대조 화면을 만들고, 결과 대시보드만 띄운 뒤 검수 대기에서 멈춥니다. 검수·대조 화면은 feedback 스킬이 엽니다.",
@@ -462,7 +625,11 @@ var STEPS = [
  {z:"B",t:"교정 모으기 · 반영",cmd:"collect_inbox.py · labelbot apply",llm:0,who:"bot",
   lead:"검수 완료 신호가 오면 inbox의 검수·대조 JSON을 모아(없으면 Downloads나 브라우저 탭에서 가져와) 사람 교정과 대조 기록을 작업 DB에 반영합니다.",
   pts:["서버 자동 저장분 우선, Downloads는 이번 실행 파일만 이름 바꾸기로 이동","브라우저 탭 저장은 매번 사용자 확인","재검토 요청 항목 오류는 REVISIT_* 코드로 그 항목만 버리고 파일은 OK","JSON을 여는 곳은 <code>read_input</code> 한 곳, 두 번 반영해도 결과 동일","사람 값이 최종 라벨"],
-  out:["inbox/review_&lt;RUN&gt;.json · compare_&lt;RUN&gt;.json","work.sqlite (corrections · compare_marks · revisit_requests)","reports/candidates.md (검수 등록 행)","reports/taxonomy_revisit.md (재검토 요청)"],mock:mB1},
+  out:["inbox/review_&lt;RUN&gt;.json · compare_&lt;RUN&gt;.json","work.sqlite (corrections · compare_marks · revisit_requests)","reports/candidates.md (검수 등록 행)","reports/taxonomy_revisit.md (재검토 요청)","taxonomy/taxonomy_revisit_requests/taxonomy_revisit_&lt;시각&gt;.md·html·json"],mock:mB1},
+ {z:"B",k:"engr",t:"Domain-Engr-bot 장부 · 라벨링 규칙 후보",cmd:"domain_engrbot intake · labeling-rules candidates",llm:0,who:"bot",
+  lead:"반영이 OK이면 feedback 스킬이 Domain-Engr-bot을 불러 사람 교정을 교정 장부에 넣고, 반복된 교정 패턴으로 다음 라벨링에 쓸 규칙 · 사례 후보를 셉니다. 승인은 하지 않습니다.",
+  pts:["<code>domain_engrbot intake</code>: 작업 DB를 읽기 전용으로 읽어 <code>workspaces/_domain_engrbot/ledger/</code>의 이 작업 폴더 몫을 바꿈(멱등)","장부 → 누적 골든셋 · L3B judge 예시 · L4 draft 규칙 후보","<code>labeling-rules candidates</code>: 규칙 후보(FR-, 축 값 혼동 · 과잉 · 누락 · 답 뒤집힘)와 사례 후보(EX-)","근거 있는 교정이 1건 이상인 패턴만 후보, 반대 방향 교정이 있으면 상충 표시","후보는 /BEOL-labeling-Domain-Engr-bot 도메인 질문의 재료, 확정은 질문 화면에서 사람이 함"],
+  out:["workspaces/_domain_engrbot/ledger/ (golden · judge_examples · rule_candidates)","_domain_engrbot/ledger/labeling_candidates.json · .md (본문 없음)"],mock:mB2},
  {z:"B",t:"화면 · 리포트 재생성",cmd:"review · dashboard · report",llm:0,who:"bot",
   lead:"사람 교정이 반영된 확정 라벨로 화면과 기준선 리포트를 다시 만듭니다.",
   pts:["LLM 호출 0회","results 탭을 새로고침해 바뀐 대시보드 확인"],
@@ -474,11 +641,29 @@ var STEPS = [
  {z:"B",t:"임베딩 · Supabase 적재",cmd:"labelbot embed · push-vectors",llm:0,who:"bot",
   lead:"확정 라벨 chunk를 임베딩해 Supabase 사본에 올립니다. 이 단계만 임베딩 API를 부릅니다.",
   pts:["이미 만든 벡터면 호출 0회","사람 교정이 우선인 확정 라벨로 적재","실패는 사유 코드로 남고 반영 결과에는 영향 없음"],
-  out:["work.sqlite (chunk_embeddings · vector_push_log)","Supabase beol_chunk_embeddings"],mock:mB4}
+  out:["work.sqlite (chunk_embeddings · vector_push_log)","Supabase beol_chunk_embeddings"],mock:mB4},
+ {z:"C",t:"도메인 질문 생성",cmd:"domain_engrbot workspaces · questions generate",llm:1,who:"bot",
+  lead:"검수 결과(교정 · 재검토 요청 · 검수 등록 동의어)와 누적 교정 장부를 Domain-Engr-bot이 읽고, LLM이 엔지니어에게 물을 질문 10개 안팎과 답마다의 초안(규칙 문장 · taxonomy 행)을 만듭니다. 사람이 이미 검수한 chunk를 다시 검수하지 않습니다(2026-10-06 사용자 결정).",
+  pts:["/BEOL-labeling-Domain-Engr-bot을 부를 때만 만듦(feedback 뒤 자동 실행 없음)","작업 폴더 고르기: question_state no_review · new · asked, asked면 건너뛰기 · 다시 만들기 · 남은 질문 이어서 답하기","시작할 때 그 작업 폴더를 다시 intake(멱등). 장부의 규칙 후보(FR-) · 사례 후보(EX-)도 질문 재료","입력이 그대로면 재사용(LLM 0회), 답하지 않은 질문은 이월해 앞에 둠","답했거나 묻지 않기로 한 질문은 지문으로 막아 다시 묻지 않음(새 근거가 붙으면 다시 엶)"],
+  out:["workspaces/_domain_engrbot/questions/questions.json (본문 있음)","workspaces/_domain_engrbot/questions/engr_questions.html (본문 있음)","generate_log.jsonl (건수만)"],mock:mC1},
+ {z:"C",k:"ans",t:"엔지니어 답변 · 초안 확정",cmd:"questions serve · engr_questions.html",llm:0,who:"human",
+  lead:"Domain-Engr-bot이 질문 화면 서버를 띄우고 기다립니다. 엔지니어가 근거를 보며 선택지를 고르거나 직접 답하고, 초안을 고쳐 확정합니다. 확정한 초안만 다음 단계에서 반영됩니다.",
+  pts:["근거 카드: 슬라이드 미리보기 · 봇 값 → 사람 값 · 검수자 인용과 이유","선택지 하나 또는 직접 답하기 → 초안 만들기(LLM, <code>--no-draft</code>면 끔)","초안 패널: 규칙 문장(1차 분류 · 3차 라벨링, 300자) · taxonomy 행을 고치고 '초안 n개 확정'","나중에(다음 묶음에 다시) · 묻지 않기","답변 완료 · 저장 → 작업 폴더 qa/inbox → \"질문 답변 끝났어\""],
+  out:["_domain_engrbot/questions/engr_questions.html (본문 있음, 사람만 봄)","&lt;WS&gt;/qa/inbox/engr_answers_&lt;set_id&gt;.json"],mock:mC2,bind:bC2},
+ {z:"C",k:"tax",t:"규칙 · taxonomy 제안 반영",cmd:"questions apply · taxonomy-board",llm:0,who:"bot",
+  lead:"사람이 고른 답 파일을 확인받은 뒤, 확정한 초안만 승인 파일 taxonomy/labeling_rules.json과 taxonomy 수정 보드(출처 S7 엔지니어 답변)로 보냅니다. 다음 /BEOL-labeling 실행부터 1차 분류 · 3차 라벨링 프롬프트에 들어갑니다.",
+  pts:["반영 전 항상 사용자에게 답 파일(이름 · 시각 · 건수)을 확인","규칙 초안 → 규칙 후보(FR-) 승인 또는 수동 규칙, 사례 초안 → few-shot 사례(EX-) 승인, 답한 질문의 남은 후보는 종결","taxonomy 초안 → taxonomy_proposals.jsonl → 보드 S7 붙여넣기 행","확정 초안이 없는 답은 열린 채 둠, 다시 반영해도 결과 같음","승인된 규칙 · 사례 관리(끄기 · 켜기 · 문장 수정 · 승인 취소)는 labeling-rules review · apply"],
+  out:["taxonomy/labeling_rules.json (본문 없음)","_domain_engrbot/questions/answers.jsonl · taxonomy_proposals.jsonl · asked.json","_domain_engrbot/questions/rules_history.jsonl"],mock:mC3},
+ {z:"H",k:"tax",t:"taxonomy.xlsx · 도메인 규칙 수정",cmd:"사람 (엑셀 · 규칙 파일)",llm:0,who:"human",
+  lead:"봇이 고치지 않는 두 파일을 사람이 손봅니다. 새 값 · 동의어 후보와 taxonomy 재검토 요청을 taxonomy 시트에 붙이고, 도메인 담당자가 draft 규칙을 approved로 올립니다. 다음 실행이 이 변경을 읽습니다.",
+  pts:["taxonomy.xlsx: candidates.md의 새 값 · 동의어, 재검토 요청 파일의 표, taxonomy 수정 보드의 엔지니어 답변(S7) 행 → 시트에 붙여넣기","domain_rules.json: draft → approved는 도메인 담당자 몫(장부 L4 후보 cand-* 참고)","labeling_rules.json의 문장 · enabled도 사람이 고칠 수 있음","다음 /BEOL-labeling이 바뀐 taxonomy와 켜진 승인 규칙으로 다시 분류 · 라벨링"],
+  out:["taxonomy/taxonomy.xlsx","domain_engrbot/defaults/domain_rules.json","→ 다음 /BEOL-labeling (단계 1)"],mock:mH9}
 ];
 
 /* ---------- render ---------- */
 var rail=document.getElementById("rail"), stage=document.getElementById("stage"), cur=0, timer=null;
+/* S4 팀 지도의 agent 키: 단계에 k가 없으면 구역과 사람 여부로 정한다 */
+function agentKey(s){ return s.k || (s.who==="human" ? (s.z==="H"?"req":"hum") : ({A:"lab",B:"fb",C:"engr",H:"req"})[s.z]); }
 function buildRail(){
   var html="", last="";
   STEPS.forEach(function(s,i){
@@ -488,7 +673,8 @@ function buildRail(){
       html+='<div class="zone '+s.z+'"><h3><span class="dotc"></span>'+z.name+'</h3><div class="rng"><em>시작</em> '+z.start+' → <em>끝</em> '+z.end+'</div>';
       last=s.z;
     }
-    html+='<button type="button" class="item '+(s.who==="human"?'human':'')+'" data-i="'+i+'"><span class="no">'+(i+1)+'</span><span class="tt">'+s.t+'<span class="sb">'+(s.who==="human"?'사람':'봇')+' · LLM '+s.llm+'회</span></span></button>';
+    var en=s.who!=="human"&&agentKey(s)==="engr";
+    html+='<button type="button" class="item '+(s.who==="human"?'human':(en?'engr':''))+'" data-i="'+i+'"><span class="no">'+(i+1)+'</span><span class="tt">'+s.t+'<span class="sb">'+(s.who==="human"?'사람':(en?'Domain-Engr-bot':'봇'))+' · LLM '+s.llm+'회</span></span></button>';
   });
   rail.innerHTML=html+'</div>';
 }
@@ -509,6 +695,27 @@ function show(i,scroll){
   bindStep(document.getElementById("mockroot").parentNode);
   document.getElementById("prev").onclick=function(){stop();show(cur-1);};
   document.getElementById("next").onclick=function(){stop();show(cur+1);};
+  s4focus(agentKey(s));
+}
+
+/* ---------- S4 팀 지도 ---------- */
+var AG = /*__S4_AG__*/null;
+var orch=document.getElementById("orch"), agc=document.getElementById("agc");
+function s4focus(k){
+  if(!orch||!AG||!AG[k]) return;
+  orch.classList.add("focus");
+  [].forEach.call(orch.querySelectorAll("[data-k]"),function(el){ el.classList.toggle("hi",el.getAttribute("data-k").split(" ").indexOf(k)>=0); });
+  var a=AG[k], n=STEPS.filter(function(s){return agentKey(s)===k;}).length;
+  agc.innerHTML='<span class="an">'+esc(a.n)+'<small>'+esc(a.s)+'</small></span><span><span class="kk">받는 것</span>'+esc(a.i)+'</span><span class="sp">→</span><span><span class="kk">하는 일</span>'+esc(a.d)+'</span><span class="sp">→</span><span><span class="kk">내놓는 것</span>'+esc(a.o)+'</span>'+
+    '<span class="go">'+badge(n?'이 agent의 단계 '+n+'개':'워크플로 단계 없음 (상시 · 지휘)',n?'info':'')+'</span>';
+}
+if(orch&&AG){
+  orch.addEventListener("click",function(e){
+    var g=e.target.closest&&e.target.closest(".nd"); if(!g) return;
+    var k=g.getAttribute("data-n"), i=-1;
+    for(var j=0;j<STEPS.length;j++){ if(agentKey(STEPS[j])===k){ i=j; break; } }
+    stop(); if(i>=0) show(i); else s4focus(k);
+  });
 }
 rail.addEventListener("click",function(e){var b=e.target.closest(".item"); if(!b) return; stop(); show(+b.getAttribute("data-i"));});
 document.addEventListener("keydown",function(e){

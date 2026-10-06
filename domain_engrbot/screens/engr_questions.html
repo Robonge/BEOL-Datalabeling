@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Domain-Engr-bot 질문 화면</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --surface:#F6F8FC; --surface-2:#E4EAF3;
+  --text-strong:#1E2D4A; --text-muted:#6F7F99;
+  --danger:#C25450; --warning:#C99A3B; --success:#3B8A6E;
+  --radius-sm:8px; --radius:12px;
+  --font:'Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);font-size:13.5px;line-height:1.55;letter-spacing:-0.02em;color:var(--text-strong);background:var(--bg-base)}
+h1,h2,h3,h4{margin:0;font-weight:700}
+button,input,textarea,select{font:inherit;letter-spacing:inherit;color:inherit}
+.mono{font-family:var(--mono);letter-spacing:-0.01em}
+.muted{color:var(--text-muted)}
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh}
+.bar{display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--bg-grid);flex-wrap:wrap}
+.bar h1{font-size:18px;letter-spacing:-0.055em}
+.bar .meta{font-size:11.5px;color:var(--text-muted)}
+.bar .sp{flex:1}
+.bar input{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--surface);width:150px}
+.progress{font-size:12px;font-weight:700;border:1px solid var(--primary);color:var(--primary-deep);border-radius:999px;padding:1px 10px}
+.cols{display:grid;grid-template-columns:340px 1fr;min-height:0}
+.list{border-right:1px solid var(--bg-grid);display:flex;flex-direction:column;min-height:0}
+.listhead{padding:10px 12px;border-bottom:1px solid var(--bg-grid);font-size:11.5px;color:var(--text-muted)}
+.items{overflow:auto;padding:8px 10px 30px;flex:1}
+.item{display:block;width:100%;text-align:left;border:1px solid transparent;background:var(--surface);border-radius:var(--radius-sm);padding:8px 10px;margin:4px 0;cursor:pointer}
+.item.on{border-color:var(--primary);box-shadow:0 5px 16px rgba(53,70,144,.14)}
+.item .l1{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--text-muted)}
+.item .l1 .sp{flex:1}
+.item .l2{font-weight:700;font-size:13px;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rank{font-family:var(--mono);font-weight:700;color:var(--primary-deep)}
+.goal{font-size:10.5px;font-weight:700;border-radius:5px;padding:0 6px;border:1px solid var(--primary);color:var(--primary)}
+.goal.taxonomy{border-color:var(--success);color:var(--success)}
+.carry{font-size:10.5px;border:1px dashed var(--warning);color:#A97C1F;border-radius:5px;padding:0 6px}
+.reopen{font-size:10.5px;border:1px solid var(--danger);color:var(--danger);border-radius:5px;padding:0 6px}
+.st{font-size:10.5px;font-weight:700;border-radius:999px;padding:0 7px;border:1px solid var(--bg-grid);color:var(--text-muted)}
+.st.answered{border-color:var(--success);color:var(--success)}
+.st.skip{border-color:var(--warning);color:#A97C1F}
+.st.dismiss{border-color:var(--text-muted);color:var(--text-muted);text-decoration:line-through}
+.detail{overflow:auto;min-height:0;padding:18px 24px 60px}
+.dh .tagline{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:var(--text-muted)}
+.qtext{font-size:20px;letter-spacing:-0.05em;line-height:1.45;margin:6px 0 4px;word-break:break-word}
+.topic{font-size:12px;color:var(--text-muted)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;align-items:start;margin-top:12px}
+.card{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
+.card h3{font-size:14px;margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.card h3 .small{font-size:11.5px;font-weight:400}
+.why{white-space:pre-wrap;word-break:break-word}
+.impact{font-size:12.5px;margin-top:6px}
+.impact b{font-family:var(--mono)}
+.pat{border-top:1px dashed var(--bg-grid);padding:6px 0;font-size:12.5px;display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
+.pat:first-of-type{border-top:0}
+.tag{font-family:var(--mono);font-size:10px;border:1px solid var(--bg-grid);border-radius:5px;padding:0 5px;color:var(--text-muted)}
+.tag.warn{border-color:var(--danger);color:var(--danger)}
+.evcard{display:grid;grid-template-columns:200px minmax(0,1fr);gap:12px;border-top:1px dashed var(--bg-grid);padding:10px 0}
+.evcard:first-of-type{border-top:0;padding-top:2px}
+.evh{font-size:11.5px;color:var(--text-muted);word-break:break-all;margin-bottom:4px}
+.slideprev{display:block;width:100%;max-height:150px;object-fit:contain;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);cursor:zoom-in}
+.noprev{height:96px;display:flex;align-items:center;justify-content:center;font-size:11.5px;color:var(--text-muted);border:1px dashed var(--bg-grid);border-radius:var(--radius-sm)}
+.fh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.fh b{font-size:13px}
+.badge{font-size:10px;border:1px solid var(--bg-grid);border-radius:5px;padding:0 5px;color:var(--text-muted)}
+.badge.corrected{border-color:var(--warning);color:#A97C1F}
+.vals{margin:4px 0;display:flex;gap:4px;flex-wrap:wrap;align-items:center;font-size:12px}
+.v{display:inline-block;font-size:12px;border-radius:6px;padding:0 8px;border:1px solid var(--bg-grid);background:transparent;color:var(--text-muted)}
+.v.bot{text-decoration:line-through}
+.v.human{border-color:var(--primary);background:rgba(74,95,168,.12);color:var(--primary-deep)}
+.arrow{color:var(--text-muted)}
+.ev{font-size:12px;border-left:2px solid var(--warning);padding-left:8px;margin:4px 0;word-break:break-word}
+.ev .tag{margin-right:6px}
+.reason{font-size:12px;margin-top:4px;word-break:break-word}
+.exb{display:inline-block;margin-top:5px;font-size:11px;color:var(--success);border:1px solid var(--success);border-radius:5px;padding:0 6px}
+.rv{font-size:12px;border-top:1px dashed var(--bg-grid);padding:5px 0;word-break:break-word}
+.rv:first-of-type{border-top:0}
+.opt{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:7px 10px;margin:6px 0;cursor:pointer;background:var(--bg-base)}
+.opt.on{border-color:var(--primary);background:rgba(74,95,168,.08)}
+.opt input{margin-top:3px}
+.opt .on-label{font-weight:700}
+.opt .n{font-size:11px;color:var(--text-muted);margin-left:6px}
+.free{margin:4px 0 6px 24px;display:flex;flex-direction:column;gap:6px}
+.card textarea,.card input[type=text],.card select{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--bg-base);width:100%}
+.card textarea{resize:vertical}
+.free textarea{height:90px}
+.cnt{font-family:var(--mono);font-size:10.5px;color:var(--text-muted);text-align:right}
+.cnt.over{color:var(--danger);font-weight:700}
+.draft{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:8px 10px;margin:8px 0;background:var(--bg-base)}
+.draft.off{opacity:.55}
+.exgroup{margin-top:12px;border-top:1px dashed var(--bg-grid);padding-top:8px}
+.exgroup h4{font-size:12.5px;color:var(--success)}
+.draft .dh2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px}
+.draft .dh2 label{display:flex;gap:6px;align-items:center;font-weight:700;cursor:pointer}
+.draft .dh2 .sp{flex:1}
+.origin{font-size:10.5px;border:1px solid var(--bg-grid);border-radius:999px;padding:0 7px;color:var(--text-muted)}
+.origin.edited{border-color:var(--warning);color:#A97C1F}
+.origin.human{border-color:var(--primary);color:var(--primary)}
+.lockline{font-size:11.5px;color:var(--primary-deep);background:rgba(74,95,168,.1);border-radius:6px;padding:2px 8px;margin-top:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.fld{display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:11.5px}
+.fld .lb{color:var(--text-muted)}
+.fld .lb b{color:var(--danger);font-weight:700;margin-left:2px}
+.prob{font-size:11.5px;color:var(--danger);margin-top:4px}
+.btn{border:1px solid var(--bg-grid);background:var(--surface);border-radius:var(--radius-sm);padding:6px 12px;cursor:pointer;font-weight:700;font-size:12.5px}
+.btn.primary{background:var(--primary-deep);color:#EDF1F7;border-color:var(--primary-deep)}
+.btn.sm{padding:3px 9px;font-size:11.5px}
+.btn[disabled]{opacity:.5;cursor:default}
+.preview{border:1px solid var(--primary);border-radius:var(--radius-sm);padding:8px 10px;background:var(--surface);margin-bottom:8px}
+.preview .pvh{font-size:12px;font-weight:700;color:var(--primary-deep);margin-bottom:4px}
+.preview .pvi{font-size:12px;padding:3px 0;border-top:1px dashed var(--bg-grid);word-break:break-word}
+.preview .pvi:first-of-type{border-top:0}
+.preview .pvi.bad{color:var(--danger)}
+.preview .pvi .tag{margin-right:6px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--text-muted)}
+.hint.warn{color:#A97C1F;margin-top:6px}
+.banner{border:1px solid var(--success);border-radius:var(--radius);padding:10px 14px;background:rgba(59,138,110,.08);margin-bottom:14px}
+.banner.skip{border-color:var(--warning);background:rgba(201,154,59,.08)}
+.banner.dismiss{border-color:var(--text-muted);background:var(--surface-2)}
+.banner h3{font-size:14px;margin-bottom:6px}
+.note{font-size:12px;color:var(--text-muted);border:1px dashed var(--bg-grid);border-radius:var(--radius-sm);padding:5px 9px;margin-bottom:8px}
+.emptystate{max-width:520px;margin:14vh auto;text-align:center;color:var(--text-muted)}
+dialog{border:1px solid var(--bg-grid);border-radius:var(--radius);background:var(--surface);width:min(640px,92vw);padding:18px}
+dialog textarea{width:100%;height:240px;font-family:var(--mono);font-size:12px}
+.zoom{position:fixed;inset:0;background:rgba(30,45,74,.7);display:none;align-items:center;justify-content:center;z-index:50;cursor:zoom-out}
+.zoom.on{display:flex}
+.zoom img{max-width:92vw;max-height:92vh;background:var(--bg-base)}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--text-strong);color:#EDF1F7;padding:8px 14px;border-radius:var(--radius-sm);font-size:12.5px;opacity:0;pointer-events:none;z-index:60;max-width:480px}
+.toast.on{opacity:1}
+.donesum{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.donesum span{font-size:12px;border:1px solid var(--bg-grid);border-radius:999px;padding:1px 10px;background:var(--bg-base)}
+.donesum span.w{border-color:var(--warning);color:#A97C1F}
+ol.next{margin:8px 0 0 18px;font-size:13px;line-height:1.7}
+ol.next li{margin-bottom:4px}
+.manual{margin-top:8px;font-size:12px}
+.manual summary{cursor:pointer;color:var(--primary)}
+.manual pre{white-space:pre-wrap;word-break:break-all;background:var(--bg-base);border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:8px;margin-top:6px;font-size:11.5px}
+.applied{margin-top:4px}
+.applied p.warn{color:#A97C1F;font-size:13px;margin:6px 0}
+.donetag{font-size:11.5px;font-weight:700;color:var(--success);border:1px solid var(--success);border-radius:999px;padding:1px 9px;background:transparent;cursor:pointer}
+@media (max-width:1180px){ .two{grid-template-columns:1fr} }
+@media (max-width:860px){ .app{height:auto} .cols{grid-template-columns:1fr} .items{max-height:260px} .evcard{grid-template-columns:1fr} .grid2{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="zoom" id="zoom" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status"></div>
+<dialog id="dlg">
+  <h3>답 JSON 텍스트</h3>
+  <p id="dlgP" class="muted"></p>
+  <textarea id="dlgTa" readonly aria-label="답 JSON"></textarea>
+  <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" id="dlgSel" type="button">전체 선택</button>
+    <button class="btn primary" id="dlgClose" type="button">닫기</button>
+  </div>
+</dialog>
+<dialog id="doneDlg" aria-labelledby="doneH">
+  <h3 id="doneH">답변 완료 · 다음 단계</h3>
+  <p id="doneFile" class="muted"></p>
+  <div id="doneSum" class="donesum"></div>
+  <div id="doneApplied" class="applied" hidden></div>
+  <ol class="next" id="doneNext">
+    <li>Claude에게 <b>"질문 답변 끝났어"</b>라고 알려 주세요. <button class="btn sm" id="donePhrase" type="button">문구 복사</button></li>
+    <li id="doneMove"></li>
+    <li>확정한 초안만 라벨링 규칙과 taxonomy 수정 보드에 반영하고 건수를 알려 줍니다. 손대지 않은 질문과 '나중에'는 다음에 다시 올라옵니다.</li>
+  </ol>
+  <details class="manual" id="doneManual"><summary>Claude 없이 직접 하려면</summary><pre id="doneCmd" class="mono"></pre></details>
+  <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" id="doneAgain" type="button">다시 저장</button>
+    <button class="btn primary" id="doneClose" type="button">닫기</button>
+  </div>
+</dialog>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+(function(){
+  "use strict";
+  var root = document.getElementById("root");
+
+  function h(tag, attrs, kids){
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs){
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else if (k.slice(0,2) === "on") e.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function(c){ if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("on");
+    clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("on"); }, 2600);
+  }
+
+  if (!DATA || DATA.kind !== "engr_questions_screen"){
+    root.appendChild(h("div", {class:"emptystate"}, [
+      h("h2", {text:"표시할 데이터가 없습니다"}),
+      h("p", {text:"이 화면은 Domain-Engr-bot questions 명령이 질문 묶음을 채워 넣은 뒤에 사용합니다."})
+    ]));
+    return;
+  }
+
+  var QS = DATA.questions || [];
+  var byId = {};
+  QS.forEach(function(q){ byId[q.question_id] = q; });
+  var LIM = DATA.limits || {};
+  var AXES = DATA.axes || [];
+  var AXIS_NAMES = AXES.map(function(a){ return a.name; });
+  var REQ = DATA.tax_required || {};
+  var ANSWERS_NAME = DATA.answers_name;
+  // questions serve로 열었으면 답을 서버에 보내 작업 폴더 qa/inbox/에 바로 쓴다. 파일로 열었으면 내려받는다.
+  var SERVED = location.protocol !== "file:";
+  var DRAFT_ON = false;   // 서버가 자유 답 초안 기능을 켰는가(GET inbox/status의 draft)
+  var APPLY_ON = false;   // 서버가 저장하자마자 반영하는가(GET inbox/status의 apply). 반영하면 서버는 닫힌다
+
+  var GOAL = {labeling:"라벨링", taxonomy:"taxonomy"};
+  var STATUS = {answered:"답함", skip:"나중에", dismiss:"묻지 않음"};
+  var STAGE = {classify:"1차 분류", label:"3차 라벨링"};
+  var TAX_KIND = {value_add:"새 값", value_def:"값 정의 보완", axis_def:"축 정의 보완", overlap:"겹치는 값", value_off:"값 끄기",
+                  new_axis:"새 축", synonym:"동의어", q_edit:"질문 문장 수정", q_new:"새 질문"};
+  // taxonomy kind마다 쓰는 칸(qmodel.TAX_FIELDS). 이 칸만 보여 주고 편집하고 내보낸다(보이지 않는 칸은 확정하지 않는다).
+  var TAX_FIELDS = DATA.tax_fields || {};
+  var FIELD_LABEL = {axis:"축", value:"값", parent:"상위 값", name:"새 축 이름", alias:"동의어(바꿔 쓰는 말)", canonical:"표준어(taxonomy 값)",
+                     qid:"질문 ID", text:"질문 문장", definition:"정의", include:"포함 기준", exclude:"제외 기준", memo:"메모", values:"겹치는 두 값"};
+  var NAME_KEYS = ["axis","value","parent","name","alias","canonical","qid"];
+  var LONG_KEYS = ["text","definition","include","exclude"];
+  var EV_KIND = {chunk_same:"같은 슬라이드", chunk_other:"다른 슬라이드", file_name:"파일 이름", doc_title:"문서 제목"};
+  var ORIGIN = {llm:"LLM 초안", edited:"사람이 고침", human:"직접 씀"};
+  var TOPIC = {axis_value:"축 값", axis:"축", question:"질문", term:"용어", general:"일반"};
+
+  // ---------- 상태(브라우저 자동 저장) ----------
+  var KEY = "engrbot_questions_" + DATA.set_id;
+  var st = {reviewer:"", q:{}};
+  var selId = QS.length ? QS[0].question_id : null, renderedSel = null;
+  var busy = {};   // 초안 만드는 중인 질문(저장하지 않는다)
+  var refs = {};   // 다시 그리지 않고 고칠 요소(입력 중 포커스를 잃지 않게)
+  function load(){
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      if (o && typeof o.q === "object" && o.q) st.q = o.q;
+      if (o && typeof o.reviewer === "string") st.reviewer = o.reviewer;
+      if (o && typeof o.completedAt === "string") st.completedAt = o.completedAt;
+      if (o && typeof o.savedTo === "string") st.savedTo = o.savedTo;
+      if (o && o.apply && typeof o.apply === "object") st.apply = o.apply;
+    } catch(e){}
+  }
+  var saveT = null;
+  function save(){
+    clearTimeout(saveT);
+    saveT = setTimeout(function(){
+      try { window.localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){}
+    }, 150);
+  }
+  load();
+  function qs(id){
+    var s = st.q[id];
+    if (!s || typeof s !== "object") s = st.q[id] = {};
+    if (!s.sets || typeof s.sets !== "object") s.sets = {};
+    if (typeof s.free !== "string") s.free = "";
+    return s;
+  }
+
+  // ---------- 초안 도우미 ----------
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  function collapse(t){ return String(t === null || t === undefined ? "" : t).replace(/\s+/g, " ").trim(); }
+  function hasMark(t){ return t.indexOf("{{") >= 0 || t.indexOf("}}") >= 0; }
+  function topicAxis(q){
+    var a = (q.topic || {}).axis || "";
+    return !AXIS_NAMES.length || AXIS_NAMES.indexOf(a) >= 0 ? a : "";
+  }
+  function optionOf(q, id){ return (q.options || []).filter(function(o){ return o.option_id === id; })[0] || null; }
+  function autoRule(q, text){ return {type:"rule", stage:"classify", target:topicAxis(q), text:collapse(text)}; }
+  // 질문의 few-shot 사례 후보(EX-)는 어느 답에도 example 초안으로 올린다(기본 켜짐).
+  function withExamples(q, items){
+    var have = {};
+    items.forEach(function(it){ if (it.draft.type === "example") have[it.draft.example_id] = true; });
+    (q.examples || []).forEach(function(e){
+      if (!have[e.example_id]) items.push({draft:{type:"example", example_id:e.example_id}, on:true, origin:"llm"});
+    });
+    return items;
+  }
+  function ensureSet(q, s, key){
+    if (s.sets[key]) return s.sets[key];
+    var items;
+    if (key === "FREE") items = DRAFT_ON ? [] : [{draft:autoRule(q, s.free), on:true, origin:"human", auto:true}];
+    else items = ((optionOf(q, key) || {}).drafts || []).map(function(d){ return {draft:clone(d), on:true, origin:"llm"}; });
+    s.sets[key] = withExamples(q, items);
+    return s.sets[key];
+  }
+  // 화면에서 미리 보는 형식 검사. qmodel.clean_text·check_draft와 같은 기준이다(반영할 때 answers가 다시 검증한다).
+  // 금지 글자: 줄바꿈·탭 밖의 제어 문자, 폭 없는 문자(U+200B~200F), 방향 제어 문자(U+202A~202E, U+2066~2069).
+  var BAD_TEXT = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/;
+  // 칸 하나 → 문제 문장 또는 "". need면 비어 있으면 안 된다.
+  function textProblem(raw, lim, label, need){
+    var s = raw === null || raw === undefined ? "" : String(raw);
+    if (BAD_TEXT.test(s)) return label + " 칸에 쓸 수 없는 글자(제어 문자 · 폭 없는 문자 · 방향 제어 문자)가 있습니다";
+    var t = collapse(s);
+    if (!t) return need ? label + " 칸을 채우세요" : "";
+    if (t.length > lim) return label + " 칸이 " + lim + "자를 넘습니다";
+    if (hasMark(t)) return label + " 칸에 {{ }} 표식을 쓸 수 없습니다";
+    return "";
+  }
+  function fieldLimit(k){ return NAME_KEYS.indexOf(k) >= 0 || k === "values" ? LIM.name : k === "memo" ? LIM.memo : LIM.long; }
+  // 문제가 있으면 문장, 없으면 "". 문제 있는 초안은 확정 건수에서 빠지고 확정 버튼을 막는다.
+  function draftProblem(d){
+    if (d.type === "rule"){
+      return textProblem(d.text, LIM.rule_text, "규칙 문장", true) || textProblem(d.target, LIM.name, "대상 축", false);
+    }
+    if (d.type === "example") return /^EX-[0-9a-f]{12}$/.test(d.example_id || "") ? "" : "사례 ID가 맞지 않습니다";
+    if (d.type === "taxonomy"){
+      var req = REQ[d.kind], fields = TAX_FIELDS[d.kind];
+      if (!req || !fields) return "모르는 taxonomy 종류입니다";
+      for (var i = 0; i < fields.length; i++){
+        var k = fields[i], p;
+        if (k === "values"){
+          var vs = Array.isArray(d.values) ? d.values : [];
+          for (var m = 0; m < vs.length; m++){ p = textProblem(vs[m], LIM.name, FIELD_LABEL.values, false); if (p) return p; }
+          if (req.indexOf("values") >= 0 && vs.map(collapse).filter(Boolean).length !== 2) return "겹치는 두 값을 모두 적으세요";
+        } else {
+          p = textProblem(d[k], fieldLimit(k), FIELD_LABEL[k] || k, req.indexOf(k) >= 0);
+          if (p) return p;
+        }
+      }
+      return "";
+    }
+    return "모르는 초안입니다";
+  }
+  // 확정할 때 답 파일에 넣는 꼴(qmodel 4.2절 + origin)
+  function finalDraft(it){
+    var d = it.draft, out;
+    if (d.type === "rule"){
+      out = {type:"rule", stage:d.stage === "label" ? "label" : "classify", target:collapse(d.target), text:collapse(d.text)};
+      if (d.pattern_id) out.pattern_id = d.pattern_id;
+    } else if (d.type === "example"){
+      out = {type:"example", example_id:d.example_id};
+    } else {
+      // 그 kind가 쓰는 칸만 내보낸다(나머지는 비운다: 사람이 보지 못한 문장을 확정하지 않는다).
+      var allow = TAX_FIELDS[d.kind] || [];
+      out = {type:"taxonomy", kind:d.kind};
+      NAME_KEYS.concat(LONG_KEYS, ["memo"]).forEach(function(k){ out[k] = allow.indexOf(k) >= 0 ? collapse(d[k]) : ""; });
+      out.values = allow.indexOf("values") >= 0 ? (d.values || []).map(collapse).filter(Boolean) : [];
+    }
+    out.origin = ORIGIN[it.origin] ? it.origin : "llm";
+    return out;
+  }
+  function typeLabel(d){
+    if (d.type === "rule") return "규칙";
+    if (d.type === "example") return "few-shot";
+    return "taxonomy · " + (TAX_KIND[d.kind] || d.kind);
+  }
+  function draftSummary(d){
+    if (d.type === "rule"){
+      return STAGE[d.stage === "label" ? "label" : "classify"] + (collapse(d.target) ? " · " + collapse(d.target) : "") +
+        (d.pattern_id ? " · " + d.pattern_id : "") + " — " + collapse(d.text);
+    }
+    if (d.type === "example") return "사례 " + d.example_id + "를 few-shot 예시로 씀";
+    var parts = [];
+    (TAX_FIELDS[d.kind] || []).forEach(function(k){
+      var v = k === "values" ? (d.values || []).map(collapse).filter(Boolean).join(", ") : collapse(d[k]);
+      if (v) parts.push(FIELD_LABEL[k] + ": " + v);
+    });
+    return parts.join(" · ");
+  }
+
+  // ---------- 답 파일(4.3절 형식) ----------
+  function buildOutput(){
+    var answers = [];
+    QS.forEach(function(q){
+      var s = st.q[q.question_id];
+      if (!s || !s.status) return;
+      if (s.status === "answered" && s.answer){
+        answers.push({question_id:q.question_id, action:"answer", option_id:s.answer.option_id, option_label:s.answer.option_label,
+                      free_text:s.answer.free_text, confirmed:s.answer.confirmed});
+      } else if (s.status === "dismiss" || s.status === "skip"){
+        answers.push({question_id:q.question_id, action:s.status});
+      }
+    });
+    return {kind:DATA.answers_kind, set_id:DATA.set_id, reviewer:st.reviewer || "", answers:answers};
+  }
+  function counts(){
+    var n = {answered:0, dismiss:0, skip:0, open:0};
+    QS.forEach(function(q){ var s = st.q[q.question_id] || {}; n[STATUS[s.status] ? s.status : "open"] += 1; });
+    return n;
+  }
+  // done(where): "inbox"(작업 폴더에 저장) · "download"(내려받기 시작) · null(둘 다 막혀 텍스트 창을 띄움).
+  function saveAnswers(done){
+    var text = JSON.stringify(buildOutput(), null, 2);
+    if (!SERVED){ done(download(text) ? "download" : null); return; }
+    function fail(code){
+      toast("작업 폴더 저장 실패(" + code + "). 내려받기로 저장합니다");
+      done(download(text) ? "download" : null);
+    }
+    try {
+      fetch("inbox/engr_answers", {method:"POST", headers:{"Content-Type":"application/json"}, body:text})
+        .then(function(res){ return res.json().then(function(j){ return {ok:res.ok && j && j.ok, j:j || {}}; }); })
+        .then(function(x){
+          if (x.j.code === "ALREADY_APPLIED" || x.j.code === "APPLY_BUSY"){
+            toast(x.j.code === "APPLY_BUSY" ? "반영하는 중입니다. 잠시 뒤 결과가 나옵니다" : "이미 반영했습니다");
+            return;
+          }
+          if (!x.ok) return fail(x.j.code || "SAVE_FAILED");
+          if (x.j.applied) toast("저장하고 반영했습니다");
+          else if (x.j.apply_code) toast("저장했지만 반영하지 못했습니다(" + x.j.apply_code + ")");
+          else toast("작업 폴더 qa/inbox/에 " + ANSWERS_NAME + " 를 저장했습니다");
+          done("inbox", x.j);
+        }, function(){ fail("SERVER_UNREACHABLE"); });
+    } catch(e){ fail("SERVER_UNREACHABLE"); }
+  }
+  // 반환: 내려받기를 시작했으면 true. 막히면 텍스트 창을 띄우고 false.
+  function download(text){
+    try {
+      var blob = new Blob([text], {type:"application/json"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = ANSWERS_NAME;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+      toast(ANSWERS_NAME + " 내려받기를 시작했습니다");
+      return true;
+    } catch(e){
+      showText(text, "내려받기가 막혔습니다. 아래 텍스트를 복사해 Claude에게 붙여 넣고 \"질문 답변 끝났어\"라고 알려 주세요.");
+      return false;
+    }
+  }
+  // 서버로 반영 결과를 받으면 건수·코드만 기억한다(답 문장은 이미 st.q에 있다).
+  function keepApply(j){
+    if (!j || !(j.applied || j.apply_code)) { delete st.apply; return; }
+    st.apply = {applied:!!j.applied, code:j.apply_code || null, result:j.apply || {}, board:j.board || null};
+    if (j.applied) APPLY_ON = false;   // 서버가 닫힌다. 다시 누르면 저장하지 않고 결과만 다시 보여 준다
+  }
+  function complete(){
+    if (st.apply && st.apply.applied && !APPLY_ON){ openDone(); return; }   // 반영을 마쳐 서버가 닫혔다
+    var left = counts().open;
+    var msg = APPLY_ON
+      ? "답을 저장하고 바로 반영합니다(확정한 규칙·사례는 라벨링 규칙에, taxonomy 행은 수정 보드에)." +
+        (left ? "\n아직 답하지 않은 질문 " + left + "개는 다음에 다시 올라옵니다." : "") + "\n계속할까요?"
+      : (left ? "아직 답하지 않은 질문이 " + left + "개 있습니다. 답한 것만 저장할까요?\n(손대지 않은 질문은 다음에 다시 올라옵니다)" : "");
+    if (msg && !window.confirm(msg)) return;
+    saveAnswers(function(where, j){
+      if (!where) return;
+      st.completedAt = new Date().toTimeString().slice(0, 5);
+      st.savedTo = where;
+      keepApply(j);
+      save(); render(); openDone();
+    });
+  }
+  function appliedView(a){
+    var r = a.result || {}, box = document.getElementById("doneApplied");
+    box.textContent = "";
+    if (!a.applied){
+      box.appendChild(h("p", {class:"warn", text:"답은 저장했지만 반영하지 못했습니다(" + (a.code || "APPLY_FAILED") +
+        "). '다시 저장'을 누르면 다시 반영합니다. 계속 안 되면 Claude에게 \"질문 답변 끝났어\"라고 알려 주세요."}));
+      return;
+    }
+    var bad = (r.invalid || []).length, items = [
+      "라벨링 규칙 승인 파일(taxonomy/labeling_rules.json)에 규칙 " + (r.rules || 0) + "개 · 사례 " + (r.examples || 0) +
+        "개를 반영했습니다(후보 승인 " + (r.patterns_approved || 0) + "). 다음 /BEOL-labeling 실행부터 프롬프트에 들어갑니다."];
+    if (r.taxonomy) items.push("taxonomy 제안 " + r.taxonomy + "개를 수정 보드(출처 S7)에 올렸습니다" +
+      (a.board ? ": " + a.board.replace("[taxonomy-board] ", "") : "") + ". 보드에서 행 복사해 taxonomy.xlsx에 붙여넣으세요.");
+    if (bad) items.push("확정한 초안이 없거나 형식이 맞지 않은 답 " + bad + "개는 반영하지 않았습니다. 그 질문은 다음에 다시 올라옵니다.");
+    if ((r.not_open || []).length) items.push("이미 반영했거나 닫힌 질문의 답 " + r.not_open.length + "개는 건너뛰었습니다.");
+    items.push("질문 화면 서버를 닫았습니다. Claude가 마무리 보고를 합니다. 이 탭은 닫아도 됩니다.");
+    box.appendChild(h("ol", {class:"next"}, items.map(function(t){ return h("li", {text:t}); })));
+  }
+  function openDone(){
+    var n = counts(), inbox = st.savedTo === "inbox", a = inbox ? st.apply : null, applied = !!(a && a.applied);
+    document.getElementById("doneFile").textContent = (inbox ? "작업 폴더 qa/inbox/에 " : "내려받기 폴더에 ") + ANSWERS_NAME +
+      (applied ? " 를 저장하고 바로 반영했습니다" : " 를 저장했습니다") + (st.completedAt ? " (" + st.completedAt + ")" : "") + "." +
+      (inbox && !applied ? " 파일을 옮길 필요가 없습니다." : "");
+    document.getElementById("doneH").textContent = applied ? "답변 완료 · 반영함" : "답변 완료 · 다음 단계";
+    var ap = document.getElementById("doneApplied");
+    ap.hidden = !a;
+    if (a) appliedView(a);
+    document.getElementById("doneNext").hidden = applied;
+    document.getElementById("doneManual").hidden = applied;
+    document.getElementById("doneAgain").hidden = applied;
+    document.getElementById("doneMove").textContent = inbox
+      ? "Claude가 qa/inbox/의 이 답 파일을 확인받습니다."
+      : "Claude가 내려받기 폴더에서 이 답 파일을 찾아 확인을 받은 뒤 작업 폴더의 qa/inbox/로 옮깁니다.";
+    document.getElementById("doneAgain").textContent = SERVED ? "다시 저장" : "다시 내려받기";
+    var sum = document.getElementById("doneSum");
+    sum.textContent = "";
+    [["답", n.answered], ["묻지 않음", n.dismiss], ["나중에", n.skip]].forEach(function(x){
+      sum.appendChild(h("span", {text:x[0] + " " + x[1]}));
+    });
+    if (n.open) sum.appendChild(h("span", {class:"w", text:"미답 " + n.open}));
+    var cmds = ["python -m domain_engrbot questions apply --workspace \"<작업 폴더>\""];
+    if (!inbox) cmds.unshift(ANSWERS_NAME + " 를 <작업 폴더>/qa/inbox/ 로 옮긴다");
+    document.getElementById("doneCmd").textContent = cmds.map(function(c, i){ return (i + 1) + ") " + c; }).join("\n");
+    var d = document.getElementById("doneDlg");
+    try { d.showModal(); } catch(e){ d.setAttribute("open", ""); }
+  }
+  function closeDlg(id){ var d = document.getElementById(id); try { d.close(); } catch(e){ d.removeAttribute("open"); } }
+  document.getElementById("doneClose").addEventListener("click", function(){ closeDlg("doneDlg"); });
+  document.getElementById("doneAgain").addEventListener("click", function(){
+    saveAnswers(function(where, j){ if (where){ st.savedTo = where; keepApply(j); save(); render(); openDone(); } });
+  });
+  function copy(text, ok, fallback){
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ toast(ok); }, fallback);
+        return;
+      }
+    } catch(e){}
+    fallback();
+  }
+  document.getElementById("donePhrase").addEventListener("click", function(){
+    copy("질문 답변 끝났어", "문구를 복사했습니다", function(){ toast("복사가 막혔습니다. 직접 입력해 주세요"); });
+  });
+  function showText(text, msg){
+    var dlg = document.getElementById("dlg"), ta = document.getElementById("dlgTa");
+    document.getElementById("dlgP").textContent = msg || "";
+    ta.value = text;
+    try { dlg.showModal(); } catch(e){ dlg.setAttribute("open", ""); }
+    ta.focus(); ta.select();
+  }
+  function copyText(){
+    var text = JSON.stringify(buildOutput(), null, 2);
+    copy(text, "텍스트로 복사했습니다", function(){ showText(text, "자동 복사가 막혀 있습니다. 텍스트를 선택해 복사(Ctrl+C)하세요."); });
+  }
+  document.getElementById("dlgClose").addEventListener("click", function(){ closeDlg("dlg"); });
+  document.getElementById("dlgSel").addEventListener("click", function(){
+    var ta = document.getElementById("dlgTa"); ta.focus(); ta.select();
+  });
+  var zoom = document.getElementById("zoom");
+  zoom.addEventListener("click", function(){ zoom.classList.remove("on"); zoom.textContent = ""; });
+  function openZoom(url){
+    zoom.textContent = "";
+    zoom.appendChild(h("img", {src:url, alt:"확대 이미지"}));
+    zoom.classList.add("on");
+  }
+
+  // ---------- 서버 초안 기능 ----------
+  if (SERVED){
+    try {
+      fetch("inbox/status").then(function(res){ return res.json(); }).then(function(j){
+        if (!(j && j.ok && j.set_id === DATA.set_id)) return;
+        if (j.apply){ APPLY_ON = true; render(); }
+        if (!j.draft) return;
+        DRAFT_ON = true;
+        // 초안 기능이 있으면 자유 답을 그대로 규칙으로 두지 않는다(손대지 않은 자동 초안은 뺀다).
+        Object.keys(st.q).forEach(function(id){
+          var s = st.q[id];
+          if (s && s.sets && s.sets.FREE) s.sets.FREE = s.sets.FREE.filter(function(it){ return !(it.auto && !it.edited); });
+        });
+        render();
+      }, function(){});
+    } catch(e){}
+  }
+  function makeDrafts(q){
+    var s = qs(q.question_id), id = q.question_id;
+    if (!collapse(s.free)){ toast("자유 답을 먼저 쓰세요"); return; }
+    busy[id] = true; render();
+    // 사람이 고치거나 직접 쓴 초안과 사례 초안은 남기고, 새 초안은 그 뒤에 더한다(같은 내용은 한 번만).
+    function kept(){
+      return (s.sets.FREE || []).filter(function(it){
+        if (it.auto) return false;   // 자유 답에서 온 자동 규칙은 새것 하나로 바꾼다(다시 만들 때마다 쌓이지 않게)
+        return it.origin === "edited" || it.origin === "human" || it.draft.type === "example";
+      });
+    }
+    function merged(add){
+      var out = kept(), have = {};
+      out.forEach(function(it){ have[sameKey(it.draft)] = true; });
+      add.forEach(function(it){ var k = sameKey(it.draft); if (!have[k]){ have[k] = true; out.push(it); } });
+      return withExamples(q, out);
+    }
+    function fallback(code){
+      busy[id] = false;
+      s.sets.FREE = merged([{draft:autoRule(q, s.free), on:true, origin:"human", auto:true, edited:true}]);
+      save(); toast("초안 만들기 실패(" + code + "). 자유 답을 규칙 초안 하나로 두었습니다"); render();
+    }
+    try {
+      fetch("draft", {method:"POST", headers:{"Content-Type":"application/json"},
+                      body:JSON.stringify({question_id:id, answer_text:s.free})})
+        .then(function(res){ return res.json().then(function(j){ return {ok:res.ok && j && j.ok, j:j || {}}; }); })
+        .then(function(x){
+          if (!x.ok) return fallback(x.j.code || "DRAFT_FAILED");
+          var ds = Array.isArray(x.j.drafts) ? x.j.drafts : [];
+          if (!ds.length) return fallback("DRAFT_EMPTY");
+          busy[id] = false;
+          s.sets.FREE = merged(ds.map(function(d){ return {draft:d, on:true, origin:"llm"}; }));
+          save(); toast("초안 " + ds.length + "개를 만들었습니다. 고칠 곳을 고친 뒤 확정하세요"); render();
+        }, function(){ fallback("SERVER_UNREACHABLE"); });
+    } catch(e){ fallback("SERVER_UNREACHABLE"); }
+  }
+
+  // ---------- 상태 바꾸기 ----------
+  function nextOpen(q){
+    var i = QS.indexOf(q);
+    for (var k = 1; k <= QS.length; k++){
+      var o = QS[(i + k) % QS.length];
+      if (!(st.q[o.question_id] || {}).status) return o.question_id;
+    }
+    return q.question_id;
+  }
+  function setStatus(q, status){
+    var s = qs(q.question_id);
+    s.status = status;
+    if (status !== "answered") s.answer = null;
+    save();
+    if (status) selId = nextOpen(q);
+    render();
+  }
+  // 체크한 초안 집계: 규칙·taxonomy 초안 수(n), 사례 수(m), 문제 있는 초안 수(bad). 문제 있는 초안은 n·m에서 뺀다.
+  // 확정하려면 문제 있는 초안이 없고 규칙·taxonomy 초안이 1개 이상이어야 한다(사례만으로는 확정하지 않는다).
+  function tally(s){
+    var items = (s.sets[s.opt] || []).filter(function(it){ return it.on; }), t = {items:items, n:0, m:0, bad:0};
+    items.forEach(function(it){
+      if (draftProblem(it.draft)) t.bad += 1;
+      else if (it.draft.type === "example") t.m += 1;
+      else t.n += 1;
+    });
+    t.ok = !!s.opt && !t.bad && t.n > 0;
+    return t;
+  }
+  function confirmLabel(t){ return "초안 " + t.n + "개" + (t.m ? " · 사례 " + t.m + "개" : "") + " 확정"; }
+  function sameKey(d){ return JSON.stringify(finalDraft({draft:d})); }
+  function confirmAnswer(q){
+    var s = qs(q.question_id), t = tally(s), items = t.items;
+    if (!t.ok) return;
+    var o = optionOf(q, s.opt);
+    s.answer = {option_id:s.opt === "FREE" ? null : s.opt, option_label:o ? o.label : "",
+                free_text:s.opt === "FREE" ? s.free : "", confirmed:items.map(finalDraft)};
+    s.status = "answered";
+    save();
+    selId = nextOpen(q);
+    toast(confirmLabel(t) + "했습니다");
+    render();
+  }
+
+  // ---------- 그리기 ----------
+  function render(){
+    var oldDetail = root.querySelector(".detail"), oldItems = root.querySelector(".items");
+    var dtop = oldDetail ? oldDetail.scrollTop : 0, itop = oldItems ? oldItems.scrollTop : 0;
+    refs = {};
+    root.textContent = "";
+    var n = counts();
+    var app = h("div", {class:"app"});
+    var reviewer = h("input", {type:"text", value:st.reviewer, placeholder:"답한 사람(선택)", "aria-label":"답한 사람",
+      oninput:function(e){ st.reviewer = e.target.value; save(); }});
+    app.appendChild(h("div", {class:"bar"}, [
+      h("h1", {text:"Domain-Engr-bot 질문"}),
+      h("span", {class:"meta mono", text:"질문 묶음 " + DATA.set_id + (DATA.workspace ? " · " + DATA.workspace : "")}),
+      h("span", {class:"sp"}),
+      h("span", {class:"progress", title:"답함 + 묻지 않음 / 전체", text:"진행 " + (n.answered + n.dismiss) + " / " + QS.length}),
+      st.completedAt ? h("button", {class:"donetag", type:"button", title:"결과·다음 단계 다시 보기",
+        text:(st.apply && st.apply.applied ? "반영함 " : "저장함 ") + st.completedAt, onclick:openDone}) : null,
+      reviewer,
+      h("button", {class:"btn primary", type:"button", text:"답변 완료 · 저장",
+        title:APPLY_ON ? "답 JSON을 작업 폴더 qa/inbox/에 저장하고 바로 반영합니다(라벨링 규칙·taxonomy 수정 보드)"
+          : SERVED ? "답 JSON을 작업 폴더 qa/inbox/에 저장하고 다음 단계를 안내합니다" : "답 JSON을 내려받고 다음 단계를 안내합니다", onclick:complete}),
+      h("button", {class:"btn", type:"button", text:"텍스트로 복사", onclick:copyText}),
+      h("div", {class:"hint", style:"flex-basis:100%",
+        text:"질문마다 답을 고르고 초안을 확인해 '초안 n개 확정'을 누르세요(체크한 few-shot 사례도 함께 승인됩니다). 확정한 초안만 반영됩니다. " +
+          (APPLY_ON ? "다 했으면 '답변 완료 · 저장'을 누르세요. 저장하자마자 라벨링 규칙과 taxonomy 수정 보드에 반영하고 서버를 닫습니다."
+                    : "다 했으면 '답변 완료 · 저장'을 누르고 Claude에게 \"질문 답변 끝났어\"라고 알려 주세요.") +
+          " 진행 상황은 이 브라우저에 자동 저장됩니다."})
+    ]));
+    if (!QS.length){
+      app.appendChild(h("div", {class:"emptystate"}, [h("h2", {text:"지금 열린 질문이 없습니다"}),
+        h("p", {text:"새 검수 결과가 쌓이면 Domain-Engr-bot이 다음 질문을 만듭니다."})]));
+      root.appendChild(app);
+      return;
+    }
+    if (!byId[selId]) selId = QS[0].question_id;
+    var items = h("div", {class:"items"});
+    QS.forEach(function(q){
+      var s = st.q[q.question_id] || {};
+      items.appendChild(h("button", {class:"item" + (q.question_id === selId ? " on" : ""), type:"button",
+        onclick:function(){ selId = q.question_id; render(); }}, [
+        h("div", {class:"l1"}, [h("span", {class:"rank", text:"#" + q.rank}),
+          h("span", {class:"goal " + (q.goal || ""), text:GOAL[q.goal] || q.goal || ""}),
+          q.carried ? h("span", {class:"carry", title:"지난 묶음에서 넘어온 질문", text:"이월"}) : null,
+          q.reopened ? h("span", {class:"reopen", title:"답했거나 묻지 않기로 한 질문에 새 근거가 붙어 다시 올라왔습니다", text:"새 근거"}) : null,
+          h("span", {class:"sp"}),
+          h("span", {class:"st " + (s.status || ""), text:STATUS[s.status] || "미답"})]),
+        h("div", {class:"l2", text:q.text})
+      ]));
+    });
+    var list = h("div", {class:"list"}, [
+      h("div", {class:"listhead", text:"질문 " + QS.length + "개 · 답함 " + n.answered + " · 묻지 않음 " + n.dismiss + " · 나중에 " + n.skip + " · 미답 " + n.open}),
+      items
+    ]);
+    var detail = h("div", {class:"detail"}, [renderQuestion(byId[selId])]);
+    app.appendChild(h("div", {class:"cols"}, [list, detail]));
+    app.appendChild(h("datalist", {id:"dl-axes"}, AXIS_NAMES.map(function(a){ return h("option", {value:a}); })));
+    AXES.forEach(function(a, i){
+      app.appendChild(h("datalist", {id:"dl-v" + i}, (a.values || []).map(function(v){ return h("option", {value:v}); })));
+    });
+    root.appendChild(app);
+    items.scrollTop = itop;
+    if (renderedSel === selId) detail.scrollTop = dtop;
+    renderedSel = selId;
+  }
+
+  function renderQuestion(q){
+    var s = qs(q.question_id), wrap = h("div");
+    var t = q.topic || {}, topic = [TOPIC[t.type] || "일반"];
+    if (t.axis) topic.push("축 " + t.axis);
+    if ((t.values || []).length) topic.push("값 " + t.values.join(", "));
+    if (t.qid) topic.push("질문 " + t.qid);
+    if (t.term) topic.push("용어 " + t.term);
+    wrap.appendChild(h("div", {class:"dh"}, [
+      h("div", {class:"tagline"}, [h("span", {class:"rank", text:"#" + q.rank}),
+        h("span", {class:"goal " + (q.goal || ""), text:GOAL[q.goal] || q.goal || ""}),
+        q.carried ? h("span", {class:"carry", text:"이월"}) : null,
+        q.reopened ? h("span", {class:"reopen", text:"새 근거로 다시 올라온 질문"}) : null,
+        h("span", {class:"st " + (s.status || ""), text:STATUS[s.status] || "미답"}),
+        h("span", {class:"mono", text:q.question_id})]),
+      h("h2", {class:"qtext", text:q.text}),
+      h("div", {class:"topic", text:"주제: " + topic.join(" · ")})
+    ]));
+    var left = h("div"), right = h("div");
+    var why = h("div", {class:"card"}, [h("h3", {text:"왜 묻나요"}), h("div", {class:"why", text:q.why || "-"})]);
+    var imp = (q.impact || {}).records;
+    why.appendChild(h("div", {class:"impact"}, ["영향 레코드 ", h("b", {text:String(imp === undefined || imp === null ? "-" : imp)}), "건"]));
+    left.appendChild(why);
+    if ((q.patterns || []).length) left.appendChild(patternCard(q));
+    left.appendChild(evidenceCard(q));
+    if ((q.revisits || []).length) left.appendChild(revisitCard(q));
+    right.appendChild(answerSection(q, s));
+    wrap.appendChild(h("div", {class:"two"}, [left, right]));
+    return wrap;
+  }
+
+  function patternText(p){
+    if (p.missing) return p.rule_id + " · 지금 장부에 없는 패턴입니다";
+    var t = p.target, n = ", " + p.count + "건";
+    if (p.kind === "REPLACE") return "「" + t + "」 축: 봇 '" + p.from + "' → 사람 '" + p.to + "'" + n;
+    if (p.kind === "REMOVE") return "「" + t + "」 축: 봇 '" + p.from + "' → 사람이 뺌" + n;
+    if (p.kind === "ADD") return "「" + t + "」 축: 봇이 놓침 → 사람 '" + p.to + "'" + n;
+    if (p.kind === "ANSWER") return "질문 " + t + ": 봇 '" + p.from + "' → 사람 '" + p.to + "'" + n;
+    if (p.kind === "GEN_ANSWER") return "검증 질문 「" + t + "」: 봇 '" + p.from + "' → 사람 '" + p.to + "'" + n;
+    return p.kind + " " + t + n;
+  }
+  function patternCard(q){
+    var card = h("div", {class:"card"}, [h("h3", {text:"관련 교정 패턴"})]);
+    q.patterns.forEach(function(p){
+      card.appendChild(h("div", {class:"pat"}, [h("span", {class:"tag", text:p.rule_id}), h("span", {text:patternText(p)}),
+        p.conflict ? h("span", {class:"tag warn", title:"반대 방향으로 고친 사례도 많습니다", text:"상충: 반대 방향 " + p.reverse_count + "건"}) : null]));
+    });
+    return card;
+  }
+
+  function fieldLabel(f){
+    f = f || "";
+    var k = f.split(":")[0], key = f.slice(f.indexOf(":") + 1);
+    if (k === "axis") return "축 · " + key;
+    if (k === "answer") return "질문 · " + key;
+    return f;
+  }
+  function vals(v, cls){
+    var list = Array.isArray(v) ? v : (v === null || v === undefined || v === "" ? [] : [v]);
+    if (!list.length) return [h("span", {class:"v " + cls, text:"(없음)"})];
+    return list.map(function(x){ return h("span", {class:"v " + cls, text:String(x)}); });
+  }
+  function evidenceCard(q){
+    var card = h("div", {class:"card"}, [h("h3", {}, ["근거 (검수 교정)", h("span", {class:"muted small", text:(q.evidence || []).length + "건"})])]);
+    if (!(q.evidence || []).length) card.appendChild(h("p", {class:"muted", text:"이 질문에 붙은 교정 사례가 없습니다."}));
+    var shown = {};
+    (q.evidence || []).forEach(function(v){
+      var sl = (DATA.slides || {})[v.slide_key] || {};
+      var label = "슬라이드 " + (sl.slide_no === null || sl.slide_no === undefined ? "-" : sl.slide_no) + (sl.title ? " · " + sl.title : "");
+      var pic = sl.preview
+        ? h("img", {class:"slideprev", src:sl.preview, alt:label + " 미리보기", title:"누르면 크게 봅니다", onclick:function(){ openZoom(sl.preview); }})
+        : h("div", {class:"noprev", text:"미리보기 없음"});
+      var info = h("div", {}, [
+        h("div", {class:"evh", text:(v.record_id || "-") + " · " + (v.source_ws || "-") + " · " + label}),
+        h("div", {class:"fh"}, [h("b", {text:fieldLabel(v.field)}),
+          h("span", {class:"badge " + (v.kind || ""), text:v.kind === "corrected" ? "교정" : v.kind === "confirmed" ? "확인" : (v.kind || "")})])
+      ]);
+      var line = h("div", {class:"vals"}, [h("span", {class:"muted", text:"봇"})].concat(vals(v.bot, v.kind === "corrected" ? "bot" : ""),
+        [h("span", {class:"arrow", text:"→"}), h("span", {class:"muted", text:"사람"})], vals(v.human, "human")));
+      info.appendChild(line);
+      (v.items || []).forEach(function(x){
+        info.appendChild(h("div", {class:"ev"}, [h("span", {class:"tag", text:(EV_KIND[x.kind] || x.kind || "근거") +
+          (x.slide_no !== null && x.slide_no !== undefined ? " · 슬라이드 " + x.slide_no : "")}), x.quote || ""]));
+      });
+      if (v.reason) info.appendChild(h("div", {class:"reason"}, [h("b", {text:"이유 "}), v.reason]));
+      if (!(v.items || []).length && !v.reason) info.appendChild(h("div", {class:"muted", text:"검수자가 남긴 인용·이유가 없습니다."}));
+      (v.examples || []).forEach(function(e){
+        shown[e] = true;
+        info.appendChild(h("span", {class:"exb", title:"답할 때 초안 패널에 few-shot 사례 초안으로 올라갑니다", text:"few-shot 사례 후보 " + e}));
+      });
+      card.appendChild(h("div", {class:"evcard"}, [pic, info]));
+    });
+    var rest = (q.examples || []).filter(function(e){ return !shown[e.example_id]; });
+    if (rest.length){
+      card.appendChild(h("div", {class:"note", text:"few-shot 사례 후보: " + rest.map(function(e){
+        return e.example_id + (e.record_id ? " (" + e.record_id + ")" : ""); }).join(", ")}));
+    }
+    if (q.evidence_missing) card.appendChild(h("div", {class:"note", text:"장부에서 찾지 못한 근거 " + q.evidence_missing + "건은 뺐습니다."}));
+    return card;
+  }
+  function revisitCard(q){
+    var card = h("div", {class:"card"}, [h("h3", {text:"재검토 메모"})]);
+    q.revisits.forEach(function(r){
+      var head = [r.reason, r.target, r.key].filter(Boolean).join(" · ");
+      card.appendChild(h("div", {class:"rv"}, [h("span", {class:"tag", text:(r.count || 1) + "건"}), " ", head,
+        r.memo ? h("div", {class:"muted", text:r.memo}) : null]));
+    });
+    return card;
+  }
+
+  // ---------- 답과 초안 ----------
+  function answerSection(q, s){
+    var wrap = h("div");
+    if (s.status === "answered" && s.answer){
+      var box = h("div", {class:"banner"}, [h("h3", {text:"확정한 답"}),
+        h("div", {text:s.answer.option_id ? s.answer.option_id + ". " + s.answer.option_label : "직접 답하기"})]);
+      if (s.answer.free_text) box.appendChild(h("div", {class:"why muted", text:s.answer.free_text}));
+      var pv = h("div", {class:"preview", style:"margin-top:8px"}, [h("div", {class:"pvh", text:"확정한 초안 " + s.answer.confirmed.length + "개"})]);
+      s.answer.confirmed.forEach(function(d){
+        pv.appendChild(h("div", {class:"pvi"}, [h("span", {class:"tag", text:typeLabel(d)}), h("span", {class:"origin " + d.origin, text:ORIGIN[d.origin] || ""}), " ", draftSummary(d)]));
+      });
+      box.appendChild(pv);
+      box.appendChild(h("button", {class:"btn sm", type:"button", text:"확정 취소하고 고치기", onclick:function(){ setStatus(q, null); }}));
+      wrap.appendChild(box);
+      return wrap;
+    }
+    if (s.status === "skip" || s.status === "dismiss"){
+      wrap.appendChild(h("div", {class:"banner " + s.status}, [
+        h("h3", {text:s.status === "skip" ? "나중에 답하기로 했습니다" : "묻지 않기로 했습니다"}),
+        h("p", {class:"hint", text:s.status === "skip" ? "다음 질문 묶음에 다시 올라옵니다." : "이 질문은 다시 묻지 않고, 관련 교정 패턴 후보도 종결합니다."}),
+        h("button", {class:"btn sm", type:"button", text:"되돌리기", onclick:function(){ setStatus(q, null); }})
+      ]));
+      return wrap;
+    }
+    var card = h("div", {class:"card"}, [h("h3", {text:"답"})]);
+    var choices = (q.options || []).map(function(o){ return [o.option_id, o.label, (o.drafts || []).length]; });
+    choices.push(["FREE", "직접 답하기", null]);
+    choices.forEach(function(c){
+      var on = s.opt === c[0];
+      var lab = h("label", {class:"opt" + (on ? " on" : "")}, [
+        h("input", {type:"radio", name:"opt-" + q.question_id, value:c[0], checked:on ? "checked" : null, onchange:function(){
+          s.opt = c[0]; ensureSet(q, s, c[0]); save(); render();
+        }}),
+        h("span", {}, [h("span", {class:"on-label", text:(c[0] === "FREE" ? "" : c[0] + ". ") + c[1]}),
+          c[2] !== null ? h("span", {class:"n", text:"초안 " + c[2] + "개"}) : null])
+      ]);
+      card.appendChild(lab);
+      if (c[0] === "FREE" && on) card.appendChild(freeBox(q, s));
+    });
+    wrap.appendChild(card);
+    if (s.opt) wrap.appendChild(draftPanel(q, s));
+    var foot = h("div", {class:"card"});
+    refs.footer = function(){ fillFooter(foot, q, s); };
+    refs.footer();
+    wrap.appendChild(foot);
+    return wrap;
+  }
+
+  function freeBox(q, s){
+    var id = q.question_id;
+    var cnt = h("div", {class:"cnt"});
+    function setCnt(){ cnt.textContent = s.free.length + " / " + LIM.free; }
+    var ta = h("textarea", {maxlength:String(LIM.free), placeholder:"질문에 대한 엔지니어의 답을 자유롭게 쓰세요", "aria-label":"자유 답",
+      oninput:function(e){
+        s.free = e.target.value; setCnt();
+        // 초안 기능이 없으면 자유 답이 곧 규칙 문장 초안이다(사람이 그 초안을 고치기 전까지 따라간다).
+        var auto = (s.sets.FREE || []).filter(function(it){ return it.auto && !it.edited; })[0];
+        if (auto && !DRAFT_ON){ auto.draft.text = collapse(s.free); if (refs.autoSync) refs.autoSync(); }
+        save(); if (refs.footer) refs.footer();
+      }});
+    ta.value = s.free;
+    setCnt();
+    var box = h("div", {class:"free"}, [ta, cnt]);
+    if (DRAFT_ON){
+      box.appendChild(h("div", {}, [h("button", {class:"btn sm primary", type:"button", disabled:busy[id] ? "disabled" : null,
+        text:busy[id] ? "초안 만드는 중…" : "초안 만들기", title:"자유 답을 규칙 문장 · taxonomy 초안으로 바꿉니다(LLM)",
+        onclick:function(){ makeDrafts(q); }}),
+        h("span", {class:"hint", text:"  자유 답에서 초안을 만들고, 아래 초안 패널에서 고친 뒤 확정합니다."})]));
+    } else {
+      box.appendChild(h("div", {class:"hint", text:(SERVED ? "이 서버에는 초안 기능이 없어" : "파일로 열어 초안 기능이 없어") +
+        " 자유 답을 규칙 문장 초안 하나로 둡니다(아래 초안 패널에서 고칠 수 있습니다)."}));
+    }
+    return box;
+  }
+
+  function draftPanel(q, s){
+    var items = ensureSet(q, s, s.opt);
+    var box = h("div", {class:"card"}, [h("h3", {}, ["초안", h("span", {class:"muted small", text:"체크한 초안만 확정됩니다. 칸을 고치면 '사람이 고침'으로 남습니다."})])]);
+    if (!items.length){
+      box.appendChild(h("p", {class:"muted", text:s.opt === "FREE" && DRAFT_ON
+        ? "자유 답을 쓰고 '초안 만들기'를 누르거나, 아래 '규칙 문장 직접 추가'로 직접 쓰세요."
+        : "이 선택지에는 초안이 없습니다. 필요하면 규칙 문장을 직접 추가하세요."}));
+    }
+    items.forEach(function(it, i){ if (it.draft.type !== "example") box.appendChild(draftEditor(q, s, items, it, i)); });
+    box.appendChild(h("button", {class:"btn sm", type:"button", text:"+ 규칙 문장 직접 추가", onclick:function(){
+      items.push({draft:{type:"rule", stage:"classify", target:topicAxis(q), text:""}, on:true, origin:"human"});
+      save(); render();
+    }}));
+    if (items.some(function(it){ return it.draft.type === "example"; })){
+      var ex = h("div", {class:"exgroup"}, [h("h4", {text:"few-shot 사례(다음 라벨링 프롬프트에 예시로 들어감)"}),
+        h("p", {class:"hint", text:"체크한 사례는 답을 확정할 때 함께 승인됩니다. 사례만으로는 확정할 수 없습니다."})]);
+      items.forEach(function(it, i){ if (it.draft.type === "example") ex.appendChild(draftEditor(q, s, items, it, i)); });
+      box.appendChild(ex);
+    }
+    return box;
+  }
+
+  function draftEditor(q, s, items, it, i){
+    var d = it.draft;
+    var card = h("div", {class:"draft" + (it.on ? "" : " off")});
+    var originTag = h("span", {class:"origin " + (it.origin || "llm"), text:ORIGIN[it.origin] || ORIGIN.llm});
+    var prob = h("div", {class:"prob"});
+    function showProb(){ prob.textContent = it.on ? draftProblem(d) : ""; }
+    function touched(){
+      if (it.origin !== "human" && it.origin !== "edited"){ it.origin = "edited"; originTag.textContent = ORIGIN.edited; originTag.className = "origin edited"; }
+      it.edited = true;
+      showProb(); save();
+      if (refs.footer) refs.footer();
+    }
+    var include = h("input", {type:"checkbox", checked:it.on ? "checked" : null, onchange:function(e){
+      it.on = e.target.checked; card.className = "draft" + (it.on ? "" : " off"); showProb(); save();
+      if (refs.footer) refs.footer();
+    }});
+    var title = d.type === "example" ? "이 교정 사례를 few-shot 예시로 쓰기"
+      : d.type === "rule" ? (it.auto ? "규칙 문장 (자유 답에서)" : "규칙 문장") : "taxonomy · " + (TAX_KIND[d.kind] || d.kind);
+    card.appendChild(h("div", {class:"dh2"}, [h("label", {}, [include, title]), originTag, h("span", {class:"sp"}),
+      it.origin === "human" && !it.auto ? h("button", {class:"btn sm", type:"button", text:"삭제", onclick:function(){
+        items.splice(i, 1); save(); render(); }}) : null]));
+    if (d.type === "rule") ruleFields(card, q, it, touched, showProb);
+    else if (d.type === "taxonomy") taxFields(card, d, touched);
+    else if (d.type === "example") card.appendChild(exampleLine(q, d));
+    card.appendChild(prob);
+    showProb();
+    return card;
+  }
+
+  function ruleFields(card, q, it, touched, showProb){
+    var d = it.draft, locked = !!d.pattern_id;
+    if (locked) card.appendChild(h("div", {class:"lockline", text:"교정 패턴 " + d.pattern_id + " 규칙 · 단계와 대상 축은 패턴이 정합니다"}));
+    var stage = h("select", {"aria-label":"단계", disabled:locked ? "disabled" : null, onchange:function(e){ d.stage = e.target.value; touched(); }},
+      ["classify", "label"].map(function(v){ return h("option", {value:v, selected:(d.stage === "label" ? "label" : "classify") === v ? "selected" : null, text:STAGE[v]}); }));
+    var names = AXIS_NAMES.slice();
+    if (d.target && names.indexOf(d.target) < 0) names.unshift(d.target);
+    var target = h("select", {"aria-label":"대상 축", disabled:locked ? "disabled" : null, onchange:function(e){ d.target = e.target.value; touched(); }},
+      [h("option", {value:"", selected:d.target ? null : "selected", text:"(대상 축 지정 없음)"})].concat(names.map(function(n){
+        return h("option", {value:n, selected:d.target === n ? "selected" : null, text:n}); })));
+    card.appendChild(h("div", {class:"grid2"}, [
+      h("div", {class:"fld"}, [h("span", {class:"lb", text:"단계"}), stage]),
+      h("div", {class:"fld"}, [h("span", {class:"lb", text:"대상 축"}), target])
+    ]));
+    var cnt = h("div", {class:"cnt"});
+    function setCnt(){ var n = collapse(d.text).length; cnt.textContent = n + " / " + LIM.rule_text; cnt.className = "cnt" + (n > LIM.rule_text ? " over" : ""); }
+    var ta = h("textarea", {rows:"3", "aria-label":"규칙 문장", placeholder:"라벨러에게 줄 규칙 문장(본문을 붙여 넣지 마세요)",
+      oninput:function(e){ d.text = e.target.value; setCnt(); touched(); }});
+    ta.value = d.text || "";
+    setCnt();
+    if (it.auto && !it.edited) refs.autoSync = function(){ ta.value = d.text || ""; setCnt(); showProb(); };
+    card.appendChild(h("div", {class:"fld"}, [h("span", {class:"lb", text:"문장"}), ta, cnt]));
+  }
+
+  function axisIndex(name){ return AXIS_NAMES.indexOf(name); }
+  function taxFields(card, d, touched){
+    var req = REQ[d.kind] || [];
+    (TAX_FIELDS[d.kind] || []).forEach(function(k){
+      var lb = h("span", {class:"lb"}, [FIELD_LABEL[k] || k, req.indexOf(k) >= 0 ? h("b", {text:"*"}) : null]);
+      var ai = axisIndex(d.axis);
+      var valueList = ai >= 0 ? "dl-v" + ai : null;
+      if (k === "values"){
+        d.values = Array.isArray(d.values) ? d.values : [];
+        var two = h("div", {class:"grid2"}, [0, 1].map(function(j){
+          return h("input", {type:"text", value:d.values[j] || "", maxlength:String(LIM.name), list:valueList, "aria-label":"겹치는 값 " + (j + 1),
+            oninput:function(e){ d.values[j] = e.target.value; touched(); }});
+        }));
+        card.appendChild(h("div", {class:"fld"}, [lb, two]));
+        return;
+      }
+      if (NAME_KEYS.indexOf(k) >= 0){
+        var list = k === "axis" ? "dl-axes" : (k === "value" || k === "parent" || k === "canonical") ? valueList : null;
+        card.appendChild(h("div", {class:"fld"}, [lb, h("input", {type:"text", value:d[k] || "", maxlength:String(LIM.name), list:list,
+          "aria-label":FIELD_LABEL[k] || k, oninput:function(e){ d[k] = e.target.value; touched(); }})]));
+        return;
+      }
+      var lim = k === "memo" ? LIM.memo : LIM.long;
+      var cnt = h("div", {class:"cnt"});
+      function setCnt(){ var n = collapse(d[k]).length; cnt.textContent = n + " / " + lim; cnt.className = "cnt" + (n > lim ? " over" : ""); }
+      var ta = h("textarea", {rows:"2", "aria-label":FIELD_LABEL[k] || k, oninput:function(e){ d[k] = e.target.value; setCnt(); touched(); }});
+      ta.value = d[k] || "";
+      setCnt();
+      card.appendChild(h("div", {class:"fld"}, [lb, ta, cnt]));
+    });
+  }
+
+  function exampleLine(q, d){
+    var e = (q.examples || []).filter(function(x){ return x.example_id === d.example_id; })[0] || {};
+    return h("div", {class:"hint", text:"사례 " + d.example_id + (e.record_id ? " · 레코드 " + e.record_id : "") +
+      (e.source_ws ? " · " + e.source_ws : "") + " — 체크하면 이 사례의 확정 라벨을 라벨러 few-shot 예시로 씁니다."});
+  }
+
+  function fillFooter(box, q, s){
+    box.textContent = "";
+    var t = tally(s), items = t.items, bad = t.bad;
+    if (s.opt && items.length){
+      var pv = h("div", {class:"preview"}, [h("div", {class:"pvh", text:"확정될 초안 " + t.n + "개" + (t.m ? " · 사례 " + t.m + "개" : "") +
+        (bad ? " · 고칠 초안 " + bad + "개" : "") + " (전문)"})]);
+      items.forEach(function(it){
+        pv.appendChild(h("div", {class:"pvi" + (draftProblem(it.draft) ? " bad" : "")}, [h("span", {class:"tag", text:typeLabel(it.draft)}),
+          h("span", {class:"origin " + (it.origin || "llm"), text:ORIGIN[it.origin] || ORIGIN.llm}), " ", draftSummary(it.draft)]));
+      });
+      box.appendChild(pv);
+    }
+    var msg = !s.opt ? "선택지를 고르거나 '직접 답하기'로 답하세요. 규칙이 필요 없으면 '묻지 않기'를 고르세요."
+      : bad ? "체크한 초안 중 " + bad + "개를 고치거나 체크를 풀어야 확정할 수 있습니다."
+      : !t.n ? "규칙·taxonomy 초안이 1개 이상 있어야 확정됩니다. 규칙이 필요 없으면 '묻지 않기'를 고르세요." : "";
+    box.appendChild(h("div", {class:"actions"}, [
+      h("button", {class:"btn primary", type:"button", disabled:t.ok ? null : "disabled",
+        text:confirmLabel(t), onclick:function(){ confirmAnswer(q); }}),
+      h("button", {class:"btn", type:"button", text:"나중에", title:"다음 질문 묶음에 다시 올립니다", onclick:function(){ setStatus(q, "skip"); }}),
+      h("button", {class:"btn", type:"button", text:"묻지 않기", title:"이 질문을 다시 묻지 않습니다. 규칙 · taxonomy 제안을 남기지 않습니다",
+        onclick:function(){ setStatus(q, "dismiss"); }})
+    ]));
+    if (msg) box.appendChild(h("p", {class:"hint warn", text:msg}));
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

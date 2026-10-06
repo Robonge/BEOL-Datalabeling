@@ -1,0 +1,32 @@
+{
+  "version": "2026-10-04.1",
+  "layers": ["L0", "L1", "L2", "L3A", "L3B", "L6"],
+  "verdict": {
+    "severity_to_verdict": {"critical": "REJECT", "major": "REVIEW", "fixable": "AUTO_FIX", "minor": "PASS", "info": "PASS"},
+    "score_weights": {"critical": 100, "major": 30, "minor": 5, "fixable": 1, "info": 0}
+  },
+  "severity_overrides": {},
+  "l0": {"coverage_major": 0.6, "coverage_minor": 0.85, "min_raw_chars": 20, "empty_chars": 10,
+         "empty_ratio_major": 0.5, "repeated_line_ratio": 0.6, "cell_ratio_minor": 0.8,
+         "garbled_major": 0.02, "garbled_minor": 0.005, "verify_image_hash": true, "image_min_bytes": 2048,
+         "warning_severity": {"TRUNCATED": "minor", "SMARTART": "minor", "*": "info"}},
+  "l2": {"unknown_ratio_major": 0.5, "catchall_values": ["unknown"], "mutex_groups": []},
+  "l3": {"short_quote": {"hangul_max": 2, "alnum_max": 4},
+         "long_quote": {"chars": 300, "ratio": 0.8}},
+  "judge": {"enabled": true, "transport": "mock", "mode": "json", "inherit_llm": "pipeline.llm",
+            "model": null, "temperature": 0, "timeout": 60, "max_retries": 2, "workers": 4,
+            "max_items_per_call": 12,
+            "route_to_review": false, "skip_human_reviewed": true},
+  "autofix": {"approved_rules": []},
+  "feedback": {"min_n": 20, "axis_issue_rate": 0.3, "question_issue_rate": 0.3,
+               "quote_issue_rate": 0.1, "format_rule_min_count": 10},
+  "l6": {"min_n": 30, "jsd_notice": 0.05, "jsd_alert": 0.10, "unknown_rate_alert": 0.3,
+         "pass_rate_drop_alert": 0.10, "unused_runs": 2,
+         "terms": {"min_df": 3, "min_lift": 1.5, "top_k": 50, "stoplist": []}},
+  "output": {"include_text": true, "excerpt_chars": 200},
+  "ledger": {"enabled": true, "dir": null, "auto_intake": true, "quote_chars": 300,
+             "judge_examples": {"enabled": true, "k_per_item": 2, "max_per_call": 6},
+             "candidates": {"min_support": 3, "min_files": 2, "min_confidence": 0.9, "min_lift": 0.1, "min_corrected": 1, "min_forbid": 2,
+                            "min_title": 2, "max_rules": 30},
+             "labeling": {"min_count": 2, "min_evidence": 1}}
+}

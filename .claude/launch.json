@@ -7,19 +7,19 @@
       "runtimeArgs": [
         "C:/Users/dltkd/Desktop/261004 BEOL AX day2/.claude/skills/BEOL-labeling/scripts/serve_screens.py",
         "--workspace",
-        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261005-113123",
+        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261006-134010",
         "--port",
         "8771"
       ],
       "port": 8771
     },
     {
-      "name": "screens-parshing-test-files-023720",
+      "name": "screens-parshing-test-files-222213",
       "runtimeExecutable": "python",
       "runtimeArgs": [
         "C:/Users/dltkd/Desktop/261004 BEOL AX day2/.claude/skills/BEOL-labeling/scripts/serve_screens.py",
         "--workspace",
-        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261005-023720",
+        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261005-222213",
         "--port",
         "8772"
       ],

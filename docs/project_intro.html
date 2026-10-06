@@ -169,6 +169,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit}
 .agline .kk{font-family:var(--mono);font-size:.78em;color:var(--primary);margin-right:.3em}
 .agline .sp{color:var(--text-muted)}
 .orch .wire.loop{stroke:var(--warning);stroke-width:2}
+.orch .wire.relab{stroke:var(--success);stroke-width:2}
 
 /* ---------- S5 ---------- */
 .s5top{display:flex;align-items:flex-end;justify-content:space-between;gap:1em}
@@ -422,21 +423,42 @@ button{font:inherit;letter-spacing:inherit;color:inherit}
   <div class="eyebrow">04 — MULTI-AGENT ORCHESTRATION</div>
   <h2 class="h md rv">이 일은 AI 한 명이 아니라 <em>팀</em>이 합니다</h2>
   <p class="agline rv" style="--d:150ms" id="agc"></p>
-  <svg class="orch rv" style="--d:300ms" id="orch" viewBox="0 0 1000 462" role="img" aria-label="위에 Orchestrator, 가운데 pptx에서 DB까지의 main flow, 그 아래 공유 작업대와 감시 agent 둘. 검수 엔지니어의 1차 검수 결과가 Engr-bot으로 가고 Engr-bot이 BEOL-labeling에 feedback하는 loop가 있다">
+  <svg class="orch rv" style="--d:300ms" id="orch" viewBox="0 0 1000 520" role="img" aria-label="위에 Orchestrator, 가운데 pptx에서 vector DB까지의 main flow, 그 아래 TAXONOMY와 공유 작업대, 맨 아래 Code-Engr-bot · 답변 엔지니어 · Domain-Engr-bot. 교정이 장부를 거쳐 Domain-Engr-bot 질문과 엔지니어 답으로 TAXONOMY를 고치는 knowledge loop, Code-Engr-bot이 바뀐 taxonomy 축을 찾아 다시 라벨링하는 relabel loop가 있다">
     <defs>
       <marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="#4A5FA8"/></marker>
       <marker id="arw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="#C99A3B"/></marker>
+      <marker id="arg" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="#3B8A6E"/></marker>
     </defs>
+
+    <!-- 범례 -->
+    <g>
+      <path class="wire" d="M24 16H48" style="stroke-width:2"/><text x="54" y="20" class="cap">main flow</text>
+      <path class="wire loop" d="M150 16H174"/><text x="180" y="20" class="cap">knowledge loop ①–④</text>
+      <path class="wire relab" d="M24 36H48"/><text x="54" y="40" class="cap">relabel loop ⑤–⑥</text>
+      <path class="wire" d="M150 36H174" stroke-dasharray="5 5"/><text x="180" y="40" class="cap">skill 호출 · 보고</text>
+    </g>
 
     <!-- 요청자 ⇄ Orchestrator -->
     <path class="wire" data-k="req orch" d="M774 28H542" marker-end="url(#ar)" marker-start="url(#ar)" opacity=".6"/>
     <text data-k="req orch" x="658" y="20" text-anchor="middle" class="cap">요청 ⇄ 보고</text>
 
-    <!-- Orchestrator가 main flow의 두 agent를 관리 -->
+    <!-- Orchestrator가 main flow의 두 skill을 호출 · 관리 -->
     <path class="wire" data-k="orch lab" d="M470 100C450 132 232 124 210 160" stroke-dasharray="5 5" marker-end="url(#ar)" opacity=".75"/>
     <text data-k="orch lab" x="300" y="116" text-anchor="middle" class="cap">skill 호출 · 관리</text>
     <path class="wire" data-k="orch fb" d="M530 100C552 132 656 124 678 160" stroke-dasharray="5 5" marker-end="url(#ar)" opacity=".75"/>
     <text data-k="orch fb" x="640" y="116" text-anchor="middle" class="cap">skill 호출 · 관리</text>
+
+    <!-- 두 bot ⇄ Orchestrator (각자 한 줄) -->
+    <g data-k="code orch">
+      <path class="wire" d="M30 496H6V54H460" stroke-dasharray="5 5" marker-end="url(#ar)" marker-start="url(#ar)"/>
+      <text x="14" y="100" class="pl">finding · 판정 · 축 점검</text>
+      <text x="14" y="114" class="cap">Code-Engr-bot ⇄ Orchestrator</text>
+    </g>
+    <g data-k="engr orch">
+      <path class="wire" d="M932 470H986V54H540" stroke-dasharray="5 5" marker-end="url(#ar)" marker-start="url(#ar)"/>
+      <text x="978" y="104" text-anchor="end" class="pl">질문 · 반영 건수</text>
+      <text x="978" y="118" text-anchor="end" class="cap">Domain-Engr-bot ⇄ Orchestrator</text>
+    </g>
 
     <!-- main flow 틀 -->
     <rect x="20" y="146" width="940" height="122" rx="14" fill="rgba(255,255,255,.55)" stroke="#4A5FA8" stroke-width="1.2"/>
@@ -454,41 +476,43 @@ button{font:inherit;letter-spacing:inherit;color:inherit}
     <path class="wire" data-k="fb" d="M720 196H862" marker-end="url(#ar)" style="stroke-width:2"/>
     <g data-k="fb"><rect x="738" y="172" width="104" height="17" rx="8.5" fill="#EDF1F7" stroke="#C8D4E4" stroke-width=".8"/><text x="790" y="184" text-anchor="middle" class="pl">embedding · 적재</text>
       <g class="ic"><ellipse cx="892" cy="180" rx="24" ry="7.5"/><path d="M868 180v32c0 4 10.7 7.5 24 7.5s24-3.5 24-7.5v-32"/></g>
-      <text x="892" y="244" text-anchor="middle" class="rl">vector DB</text></g>
+      <text x="892" y="242" text-anchor="middle" class="rl">vector DB</text>
+      <text x="892" y="257" text-anchor="middle" class="cap">Supabase</text></g>
 
-    <!-- main flow ⇄ 작업대 -->
-    <path class="wire" data-k="lab ws" d="M200 270C200 292 292 286 318 300" marker-end="url(#ar)" marker-start="url(#ar)" opacity=".55"/>
-    <path class="wire" data-k="hum ws" d="M450 272V298" marker-end="url(#ar)" marker-start="url(#ar)" opacity=".55"/>
-    <text data-k="hum ws" x="458" y="290" class="cap">읽고 쓰기</text>
-    <path class="wire" data-k="fb ws" d="M680 270C680 290 560 284 530 298" marker-end="url(#ar)" marker-start="url(#ar)" opacity=".55"/>
+    <!-- 검수 기록 → 작업대 -->
+    <path class="wire" data-k="hum ws" d="M470 268L596 304" marker-end="url(#ar)" opacity=".55"/>
+    <text data-k="hum ws" x="540" y="282" class="cap">검수 기록</text>
 
-    <!-- 감시 · 보고 선 -->
-    <path class="wire" data-k="engr ws" d="M356 390V362" stroke-dasharray="3 3" marker-end="url(#ar)"/>
-    <text data-k="engr ws" x="362" y="376" class="cap">감시</text>
-    <path class="wire" data-k="code ws" d="M626 390V362" stroke-dasharray="3 3" marker-end="url(#ar)"/>
-    <text data-k="code ws" x="632" y="376" class="cap">감시</text>
-    <path class="wire" data-k="engr orch" d="M300 446H12V54H460" marker-end="url(#ar)"/>
-    <g data-k="engr orch"><text x="20" y="100" class="pl">판정 · report</text><text x="20" y="114" class="cap">Engr-bot → Orchestrator</text></g>
-    <path class="wire" data-k="code orch" d="M860 446H986V54H540" marker-end="url(#ar)"/>
-    <g data-k="code orch"><text x="980" y="300" text-anchor="end" class="pl">finding</text><text x="980" y="314" text-anchor="end" class="cap">code-bot → Orchestrator</text></g>
-
-    <!-- feedback loop: 검수 엔지니어 → Engr-bot → BEOL-labeling -->
-    <g data-k="hum engr">
-      <path class="wire loop" d="M429 210C380 222 300 220 286 262V404H324" marker-end="url(#arw)"/>
-      <rect x="100" y="318" width="128" height="17" rx="8.5" fill="#fff" stroke="#C99A3B" stroke-width=".9"/>
-      <text x="164" y="330" text-anchor="middle" class="pl">① 1차 검수 결과</text>
-      <text x="228" y="350" text-anchor="end" class="cap">사람 교정 · 확인 기록</text>
+    <!-- knowledge loop: 교정 → 장부 → Domain-Engr-bot → 답변 엔지니어 → TAXONOMY → BEOL-labeling -->
+    <g data-k="fb engr">
+      <path class="wire loop" d="M700 268C716 290 800 284 830 304" marker-end="url(#arw)"/>
+      <text x="846" y="292" class="pl">① 교정 → 장부</text>
     </g>
-    <g data-k="engr lab">
-      <path class="wire loop" d="M326 432H236V274" marker-end="url(#arw)"/>
-      <rect x="62" y="372" width="166" height="17" rx="8.5" fill="#fff" stroke="#C99A3B" stroke-width=".9"/>
-      <text x="145" y="384" text-anchor="middle" class="pl">② feedback 묶음</text>
-      <text x="228" y="404" text-anchor="end" class="cap">교정 · 재작업 · 규칙/용어 제안</text>
-      <text x="228" y="418" text-anchor="end" class="cap">다음 실행에 반영 (사람 승인)</text>
+    <path class="wire loop" data-k="ws engr" d="M855 364V428" marker-end="url(#arw)"/>
+    <g data-k="engr ans">
+      <path class="wire loop" d="M638 456H492" marker-end="url(#arw)"/>
+      <rect x="546" y="432" width="90" height="17" rx="8.5" fill="#fff" stroke="#C99A3B" stroke-width=".9"/>
+      <text x="591" y="444" text-anchor="middle" class="pl">② 질문 10개 안팎</text>
+      <text x="591" y="474" text-anchor="middle" class="cap">질문 화면</text>
     </g>
-    <g data-k="hum engr lab">
-      <rect x="40" y="290" width="104" height="17" rx="8.5" fill="#C99A3B"/>
-      <text x="92" y="302" text-anchor="middle" class="pl" style="fill:#fff;font-weight:700">FEEDBACK LOOP</text>
+    <g data-k="ans tax">
+      <path class="wire loop" d="M443 452C380 452 350 420 316 384" marker-end="url(#arw)"/>
+      <rect x="372" y="392" width="186" height="17" rx="8.5" fill="#fff" stroke="#C99A3B" stroke-width=".9"/>
+      <text x="465" y="404" text-anchor="middle" class="pl">③ 답 · 초안 확정 → 규칙 · taxonomy</text>
+    </g>
+    <g data-k="tax lab">
+      <path class="wire loop" d="M250 304V268" marker-end="url(#arw)"/>
+      <text x="258" y="292" class="pl">④ 다음 실행에 반영</text>
+    </g>
+
+    <!-- relabel loop: TAXONOMY → Code-Engr-bot 축 비교 → BEOL-labeling 자동 재라벨링 -->
+    <g data-k="tax code">
+      <path class="wire relab" d="M250 398V428" marker-end="url(#arg)"/>
+      <text x="258" y="418" class="pl">⑤ 축 비교</text>
+    </g>
+    <g data-k="code lab">
+      <path class="wire relab" d="M30 468H18V280H150V270" marker-end="url(#arg)"/>
+      <text x="26" y="418" class="pl">⑥ 자동 재라벨링</text>
     </g>
 
     <!-- 노드: Orchestrator -->
@@ -530,42 +554,67 @@ button{font:inherit;letter-spacing:inherit;color:inherit}
       <text x="680" y="236" text-anchor="middle" class="nm">BEOL-labeling-feedback</text>
       <text x="680" y="254" text-anchor="middle" class="rl">교정을 반영하고 DB에 적재한다</text>
     </g>
+    <!-- 노드: TAXONOMY -->
+    <g class="nd" data-k="tax" data-n="tax">
+      <rect class="hit" x="26" y="292" width="290" height="108" rx="12"/>
+      <rect x="30" y="306" width="282" height="90" rx="12" fill="#fff" stroke="#354690" stroke-width="1.6"/>
+      <rect x="40" y="298" width="92" height="17" rx="8.5" fill="#354690"/>
+      <text x="86" y="310" text-anchor="middle" class="pl" style="fill:#fff;font-weight:700">TAXONOMY</text>
+      <text x="140" y="302" class="cap">분류 기준 · 지식</text>
+      <g class="ic" transform="translate(42,322)"><rect x="0" y="0" width="16" height="13" rx="2"/><path d="M0 4.5h16M5.5 4.5v8.5"/></g>
+      <text x="64" y="334" class="nm" style="font-size:12.5px">taxonomy.xlsx</text>
+      <text x="42" y="352" class="cap">축 · 값 · 정의 · 검증 질문</text>
+      <path d="M164 320V362" stroke="#C8D4E4"/>
+      <g class="ic" transform="translate(174,321)"><path d="M0 0h9l4 4v11H0z"/><path d="M3 9l2.5 2.5L10 6.5"/></g>
+      <text x="192" y="334" class="nm" style="font-size:11.5px">labeling_rules.json</text>
+      <text x="174" y="352" class="cap">확정 규칙 · 사례</text>
+      <path d="M42 366H300" stroke="#C8D4E4"/>
+      <text x="171" y="385" text-anchor="middle" class="cap">봇은 쓰지 않고 사람만 고친다 · 수정 보드 → 붙여넣기</text>
+    </g>
     <!-- 노드: 공유 작업대 -->
-    <g class="nd" data-k="ws" data-n="ws">
-      <rect class="hit" x="296" y="284" width="408" height="78" rx="12"/>
-      <text x="324" y="296" class="cap">workspace · 공유 작업대</text>
-      <rect x="300" y="302" width="400" height="56" rx="12" fill="#fff" stroke="#C8D4E4"/>
-      <path d="M560 310V350" stroke="#C8D4E4"/>
-      <text x="430" y="326" text-anchor="middle" class="nm">자료 · label DB</text>
-      <text x="430" y="345" text-anchor="middle" class="cap">chunk · label · 검수 기록</text>
-      <text x="630" y="326" text-anchor="middle" class="nm">코드 · workflow</text>
-      <text x="630" y="345" text-anchor="middle" class="cap">labelbot · skill</text>
+    <g class="nd" data-k="ws code engr" data-n="ws">
+      <rect class="hit" x="346" y="292" width="618" height="74" rx="12"/>
+      <rect x="350" y="306" width="610" height="56" rx="12" fill="#fff" stroke="#C8D4E4"/>
+      <rect x="360" y="298" width="140" height="17" rx="8.5" fill="#fff" stroke="#7A9CC0" stroke-width=".8"/>
+      <text x="430" y="310" text-anchor="middle" class="pl">workspace · 공유 작업대</text>
+      <path d="M540 316V354M750 316V354" stroke="#C8D4E4"/>
+      <text x="445" y="333" text-anchor="middle" class="nm">코드 · workflow</text>
+      <text x="445" y="351" text-anchor="middle" class="cap">labelbot · skill</text>
+      <text x="645" y="333" text-anchor="middle" class="nm">자료 · label DB</text>
+      <text x="645" y="351" text-anchor="middle" class="cap">chunk · label · 검수 기록</text>
+      <text x="855" y="333" text-anchor="middle" class="nm">교정 장부</text>
+      <text x="855" y="351" text-anchor="middle" class="cap">ledger · 누적 교정 · 동의어</text>
     </g>
-    <!-- 감시 agent 틀 -->
-    <g data-k="engr code">
-      <rect x="300" y="378" width="560" height="78" rx="14" fill="rgba(107,130,196,.06)" stroke="#7A9CC0" stroke-dasharray="5 5" opacity=".9"/>
-      <rect x="700" y="370" width="150" height="17" rx="8.5" fill="#EDF1F7" stroke="#C8D4E4" stroke-width=".8"/>
-      <text x="775" y="382" text-anchor="middle" class="pl">감시 agent · 같은 층 · 상시</text>
-    </g>
-    <!-- 노드: Engr-bot -->
-    <g class="nd" data-k="engr" data-n="engr">
-      <rect class="hit" x="320" y="388" width="240" height="66" rx="10"/>
-      <use href="#clawd" x="330" y="394" width="52" height="39"/>
-      <circle cx="380" cy="396" r="9.5" fill="#fff" stroke="#C8D4E4"/><g class="ic" transform="translate(374,390) scale(.6)"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M12.5 12.5L18 18"/></g>
-      <text x="394" y="408" class="nm">Engr-bot</text>
-      <text x="394" y="426" class="rl">label을 도메인 지식으로 감시</text>
-      <rect x="394" y="433" width="150" height="17" rx="8.5" fill="#fff" stroke="#9DAABF" stroke-dasharray="3 3"/>
-      <text x="469" y="445" text-anchor="middle" class="cap" style="font-size:9.5px">PLANNED · 도메인 LLM judge</text>
-    </g>
-    <!-- 노드: code-bot -->
+    <!-- 노드: Code-Engr-bot -->
     <g class="nd" data-k="code" data-n="code">
-      <rect class="hit" x="590" y="388" width="250" height="66" rx="10"/>
-      <use href="#clawd" x="600" y="394" width="52" height="39"/>
-      <circle cx="650" cy="396" r="9.5" fill="#fff" stroke="#C8D4E4"/><g class="ic" transform="translate(644,390) scale(.6)"><path d="M7 5l-4.5 5 4.5 5M13 5l4.5 5-4.5 5"/></g>
-      <text x="664" y="408" class="nm">code-bot</text>
-      <text x="664" y="426" class="rl">코드 · workflow 규칙 감시</text>
-      <rect x="664" y="433" width="168" height="17" rx="8.5" fill="#fff" stroke="#9DAABF" stroke-dasharray="3 3"/>
-      <text x="748" y="445" text-anchor="middle" class="cap" style="font-size:9.5px">PLANNED · 실행 흔적 · LLM 리뷰</text>
+      <rect class="hit" x="30" y="430" width="282" height="80" rx="12"/>
+      <rect x="30" y="430" width="282" height="80" rx="12" fill="rgba(59,138,110,.05)" stroke="#3B8A6E" stroke-dasharray="5 5"/>
+      <use href="#clawd" x="40" y="440" width="52" height="39"/>
+      <circle cx="90" cy="442" r="9.5" fill="#fff" stroke="#C8D4E4"/><g class="ic" transform="translate(84,436) scale(.6)"><path d="M7 5l-4.5 5 4.5 5M13 5l4.5 5-4.5 5"/></g>
+      <text x="104" y="454" class="nm">Code-Engr-bot</text>
+      <text x="172" y="454" class="cap">감시 agent</text>
+      <text x="104" y="472" class="rl">코드 규칙 검수 · taxonomy 축 점검</text>
+      <rect x="104" y="481" width="168" height="17" rx="8.5" fill="#fff" stroke="#9DAABF" stroke-dasharray="3 3"/>
+      <text x="188" y="493" text-anchor="middle" class="cap" style="font-size:9.5px">PLANNED · 실행 흔적 · LLM 리뷰</text>
+    </g>
+    <!-- 노드: 답변 엔지니어 -->
+    <g class="nd" data-k="ans" data-n="ans">
+      <rect class="hit" x="380" y="420" width="170" height="92" rx="12"/>
+      <circle cx="465" cy="448" r="20" fill="#fff" stroke="#C99A3B" stroke-width="1.5"/>
+      <g class="ic" transform="translate(455,437)"><circle cx="10" cy="6.5" r="3.6"/><path d="M2.5 19c1-4.4 4-6 7.5-6s6.5 1.6 7.5 6"/></g>
+      <text x="465" y="487" text-anchor="middle" class="nm">답변 엔지니어</text>
+      <text x="465" y="504" text-anchor="middle" class="cap">질문에 답하고 초안 확정</text>
+    </g>
+    <!-- 노드: Domain-Engr-bot -->
+    <g class="nd" data-k="engr" data-n="engr">
+      <rect class="hit" x="640" y="430" width="292" height="80" rx="12"/>
+      <rect x="640" y="430" width="292" height="80" rx="12" fill="rgba(201,154,59,.06)" stroke="#C99A3B" stroke-dasharray="5 5"/>
+      <use href="#clawd" x="650" y="440" width="52" height="39"/>
+      <circle cx="700" cy="442" r="9.5" fill="#fff" stroke="#C8D4E4"/><g class="ic" transform="translate(694,436) scale(.6)"><path d="M3 4h14v9H9l-4 4v-4H3z"/></g>
+      <text x="714" y="454" class="nm">Domain-Engr-bot</text>
+      <text x="784" y="454" class="cap">질문 agent</text>
+      <text x="714" y="472" class="rl">교정 장부로 엔지니어에게 질문</text>
+      <text x="714" y="492" class="cap">확정한 답만 규칙 · taxonomy 제안으로</text>
     </g>
   </svg>
   <span class="pg">04 / 08</span>
@@ -598,7 +647,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit}
   <h2 class="h rv">AI가 틀리면 어떡하죠?<br>그래서 <em>세 겹</em>으로 확인합니다</h2>
   <div class="three">
     <div class="card rv" style="--d:250ms"><span class="k">1겹 · 검증 질문</span><h3>LLM이 자기 label에 O/X 질문을 던진다</h3><p>label마다 "정말 맞아?"를 확인하고, 근거 문장을 원문에서 그대로 인용합니다. 인용문이 원문에 없거나 확신도가 낮으면 불량 chunk<span class="gls">의심 조각</span> 목록에 올립니다.</p></div>
-    <div class="card rv" style="--d:500ms"><span class="k">2겹 · 감시 agent</span><h3>Engr-bot과 code-bot이 따로 본다</h3><p>label을 붙인 agent와 감시하는 agent를 분리했습니다. Engr-bot은 label을 도메인 지식으로 보고 사람의 1차 검수 결과를 BEOL-labeling에 되돌려 주며(feedback loop), code-bot은 코드가 사내 규칙을 지키는지 봅니다.</p></div>
+    <div class="card rv" style="--d:500ms"><span class="k">2겹 · 감시 agent</span><h3>Domain-Engr-bot과 Code-Engr-bot이 따로 본다</h3><p>label을 붙인 agent와 감시하는 agent를 분리했습니다. Domain-Engr-bot은 교정 장부로 엔지니어에게 질문해 확정한 도메인 지식을 TAXONOMY로 돌려주고(knowledge loop), Code-Engr-bot은 코드 규칙과 taxonomy 축 변경을 보고 축이 바뀐 실행을 다시 라벨링합니다(relabel loop).</p></div>
     <div class="card rv" style="--d:750ms"><span class="k">3겹 · human in the loop</span><h3>마지막 결정은 엔지니어가 한다</h3><p>사람이 고친 값이 최종 label입니다. 검수 화면의 "검수 완료"를 누르기 전에는 DB에 적재하지 않습니다.</p></div>
   </div>
   <p class="foot rv" style="--d:950ms">사내 문서는 밖으로 나가지 않습니다. 사외 개발은 더미<span class="gls">연습용 가짜 자료</span>로만 하고, 사내 파일은 DRM<span class="gls">문서 보안</span> 규칙에 따라 한 곳에서만 엽니다.</p>
@@ -663,7 +712,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit}
   <h2 class="h md rv">감시 agent의 첫 점검과 <em>다음 단계</em></h2>
   <div class="two8">
     <div class="bot rv" style="--d:200ms">
-      <div class="bh"><svg><use href="#clawd"/></svg><div><b>Engr-bot</b><span class="mono">QA-20261004T185802-7565 · label 17건 · 8개 층</span></div><span class="badge b-info"><i></i>REVIEW 17</span></div>
+      <div class="bh"><svg><use href="#clawd"/></svg><div><b>Domain-Engr-bot</b><span class="mono">옛 QA 점검(이력, 2026-10-05) · QA-20261004T185802-7565 · label 17건 · 8개 층</span></div><span class="badge b-info"><i></i>REVIEW 17</span></div>
+      <p style="font-size:.72em;color:var(--text-body);line-height:1.5"><b>2026-10-06 첫 질문 생성:</b> 질문 8건(라벨링 5 · taxonomy 3), LLM 호출 1회, 질문 재료 chunk 6건(최근 폴더 5 · 무작위 1)</p>
       <div class="bar"><span class="lb">L0~L1<code>파싱 · 형식</code></span><span class="tr"><span class="fl" data-w="0"></span></span><span class="vl">0%</span></div>
       <div class="bar"><span class="lb">L2<code>분류표 일치</code></span><span class="tr"><span class="fl w" data-w="23.5"></span></span><span class="vl">23.5%</span></div>
       <div class="bar"><span class="lb">L3A<code>근거 인용</code></span><span class="tr"><span class="fl w" data-w="5.9"></span></span><span class="vl">5.9%</span></div>
@@ -672,7 +722,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit}
       <div class="callout"><i>!</i><span><b>이번 L3B 심사관은 mock<span class="gls">연습용 가짜 심사관</span>이었습니다.</b> 그래서 17건 모두 REVIEW이고 실제 판정이 아닙니다. 도메인 규칙(L4)도 아직 draft라 기록만 합니다. 실제 심사는 PLANNED입니다.</span></div>
     </div>
     <div class="bot rv" style="--d:350ms">
-      <div class="bh"><svg><use href="#clawd"/></svg><div><b>code-bot</b><span class="mono">CR-20261004T185806-fb5c · C1~C4 · 5개 폴더</span></div><span class="badge b-warn"><i></i>COMMENT</span></div>
+      <div class="bh"><svg><use href="#clawd"/></svg><div><b>Code-Engr-bot</b><span class="mono">CR-20261004T185806-fb5c · C1~C4 · 5개 폴더</span></div><span class="badge b-warn"><i></i>COMMENT</span></div>
       <div class="cnt">
         <div class="c"><b data-n="0">0</b><span>critical</span></div>
         <div class="m"><b data-n="2">0</b><span>major</span></div>
@@ -680,7 +730,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit}
         <div class="s"><b data-n="2">0</b><span>억제</span></div>
       </div>
       <p style="font-size:.74em;color:var(--text-body);line-height:1.55"><b style="color:var(--text-strong)">critical 0</b> = DRM · 쓰기 규칙(경로 파서, 금지 확장자, 표준 라이브러리 밖 import)을 어긴 코드가 없습니다. major 2건은 고칠 거리로 남겼고, 억제 2건은 사람이 사유를 적어 허용한 줄입니다.</p>
-      <p style="font-size:.7em;color:var(--text-muted)">대상: labelbot · engrbot · codebot · tests · skills</p>
+      <p style="font-size:.7em;color:var(--text-muted)">대상: labelbot · domain_engrbot · code_engrbot · tests · skills</p>
     </div>
   </div>
   <div class="road sm">
@@ -805,14 +855,16 @@ function countUp(root){
 (function(){
   var svg=document.getElementById('orch'), card=document.getElementById('agc');
   var AG={
-    orch:{n:'Orchestrator',s:'지휘자',i:'엔지니어의 요청, 감시 agent의 보고',d:'BEOL-labeling과 BEOL-labeling-feedback을 순서대로 skill로 부르고 관리한다',o:'진행 현황과 결과 보고'},
+    orch:{n:'Orchestrator',s:'지휘자',i:'엔지니어의 요청, 각 skill의 보고',d:'BEOL-labeling → BEOL-labeling-feedback을 순서대로 부르고, Domain-Engr-bot · Code-Engr-bot도 skill로 불러 결과를 모은다',o:'진행 현황과 결과 보고'},
     req:{n:'엔지니어',s:'요청자',i:'Orchestrator의 보고',d:'일을 맡기고 최종 결정을 내린다',o:'요청 · 결정'},
-    lab:{n:'BEOL-labeling',s:'agent',i:'pptx 폴더 + taxonomy(분류표) + Engr-bot의 feedback(다음 실행)',d:'파싱 → 1차 분류 → 2차 검증 질문 → 3차 라벨링 → 불량 목록. 검수 대기에서 멈춘다',o:'label · 불량 chunk 목록 · 결과 dashboard'},
-    hum:{n:'검수 엔지니어',s:'1차 검수',i:'불량 chunk 목록 + 슬라이드 미리보기',d:'봇의 답을 확인 · 교정하고 "검수 완료"를 누른다',o:'교정 JSON → feedback agent · 1차 검수 결과 → Engr-bot'},
-    fb:{n:'BEOL-labeling-feedback',s:'agent',i:'교정 JSON',d:'사람 교정을 최종 label로 반영하고 embedding을 만들어 적재한다',o:'확정 label · vector DB 행'},
-    ws:{n:'workspace',s:'공유 작업대',i:'main flow가 쓰는 자료 · label · 검수 기록, 저장소의 코드 · workflow',d:'agent끼리 직접 대화하지 않고 여기를 거쳐 주고받는다',o:'모두가 읽는 한 곳의 기록'},
-    engr:{n:'Engr-bot',s:'감시 agent',i:'작업대의 label DB + 검수 엔지니어의 1차 검수 결과',d:'형식 · 분류표 · 근거 · 도메인 규칙 · 중복 일관성을 보고, 사람 교정을 모아 규칙 · 용어 제안으로 묶는다',o:'판정 · report → Orchestrator, feedback 묶음 → BEOL-labeling(사람 승인 후 다음 실행)'},
-    code:{n:'code-bot',s:'감시 agent',i:'작업대의 코드 · workflow (읽기 전용)',d:'DRM · 쓰기 규칙(C1), stack(C2), 단계 계약(C3), 완료 위생(C4)을 정적 분석한다',o:'finding · 판정 → Orchestrator'}
+    lab:{n:'BEOL-labeling',s:'agent',i:'pptx 폴더 + TAXONOMY(taxonomy.xlsx · 확정 규칙)',d:'파싱 → 1차 분류 → 2차 검증 질문 → 3차 라벨링 → 불량 목록. 검수 대기에서 멈춘다. Code-Engr-bot이 축이 바뀐 실행을 찾으면 새 작업 폴더로 다시 라벨링한다',o:'label · 불량 chunk 목록 · 결과 dashboard'},
+    hum:{n:'검수 엔지니어',s:'1차 검수',i:'불량 chunk 목록 + 슬라이드 미리보기',d:'봇의 답을 확인 · 교정하고 "검수 완료"를 누른다',o:'교정 JSON → BEOL-labeling-feedback'},
+    fb:{n:'BEOL-labeling-feedback',s:'agent',i:'교정 JSON',d:'사람 교정을 최종 label로 반영하고, 교정을 Domain-Engr-bot 교정 장부에 넘긴 뒤 embedding을 만들어 적재한다',o:'확정 label · 교정 장부 · vector DB 행'},
+    ws:{n:'workspace',s:'공유 작업대',i:'코드 · workflow, 자료 · label DB, 교정 장부',d:'agent끼리 직접 대화하지 않고 여기를 거쳐 주고받는다',o:'모두가 읽는 한 곳의 기록'},
+    tax:{n:'TAXONOMY',s:'분류 기준 · 지식',i:'답변 엔지니어가 확정한 규칙 · taxonomy 수정',d:'축 · 값 · 정의 · 검증 질문(taxonomy.xlsx)과 확정 규칙 · 사례(labeling_rules.json)를 둔다. 봇은 쓰지 않고 사람만 고친다',o:'다음 BEOL-labeling의 기준과 프롬프트, Code-Engr-bot 축 비교의 기준'},
+    engr:{n:'Domain-Engr-bot',s:'질문 agent',i:'교정 장부(사람 교정 · 재검토 요청 · 동의어 누적)',d:'LLM으로 도메인 질문 10개 안팎을 만들어 질문 화면에 띄운다. 답을 대신 정하지 않는다',o:'질문 → 답변 엔지니어, 질문 · 반영 건수 → Orchestrator'},
+    ans:{n:'답변 엔지니어',s:'도메인 지식',i:'Domain-Engr-bot의 질문 + 근거 · 선택지 · 초안',d:'질문에 답하고 규칙 문장 · taxonomy 행 초안을 고쳐 확정한다. taxonomy.xlsx는 수정 보드의 붙여넣기 행으로 직접 고친다',o:'확정 규칙 → labeling_rules.json, taxonomy 수정 → taxonomy.xlsx'},
+    code:{n:'Code-Engr-bot',s:'감시 agent',i:'작업대의 코드 · workflow + TAXONOMY와 최신 실행의 축',d:'DRM · 쓰기 규칙(C1), stack(C2), 단계 계약(C3), 완료 위생(C4)을 정적 분석하고, taxonomy 축이 바뀐 실행을 찾는다',o:'finding · 판정 → Orchestrator, 축이 바뀐 입력 폴더 → BEOL-labeling 자동 재라벨링'}
   };
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
   function idle(){ card.innerHTML='<span class="an">multi-agent orchestration</span><span class="gls">역할을 나눈 AI 여럿을 지휘자가 조율하는 방식</span><span class="sp">캐릭터나 작업대를 누르면 연결된 선만 켜지고 받는 것 · 하는 일 · 내놓는 것이 여기에 나옵니다</span>'; }
@@ -838,17 +890,17 @@ function countUp(root){
     {t:'3차 라벨링',r:'O/X/N/A + 근거 답하기',g:'질문마다 O/X로 답하기',w:'BEOL-labeling',tk:'질문',i:'chunk + 질문 목록',p:'질문마다 O, X, N/A(해당 없음)로 답하고 근거 문장을 원문에서 그대로 인용합니다. 검증 질문의 X는 1차 label이 본문과 어긋났다는 신호입니다.',o:'답과 근거 인용문',n:'답 109 · O 92 · X 3 · N/A 14',
      d:['chunk당 LLM 호출 1회(질문 전부를 한 번에)','뒷받침 = O · 반박 = X · 근거 없음일 때만 N/A','날짜 · 담당자도 함께 추출','실패는 chunk 단위로 기록하고 실행은 계속']},
     {t:'불량 목록',r:'의심 chunk 고르기',g:'의심스러운 chunk 골라내기',w:'BEOL-labeling',tk:'답 109',i:'label + 답',p:'"모름"이 많거나, 확신도가 낮거나, 인용문이 원문에 없는 chunk를 규칙으로 골라냅니다. 결과 dashboard를 띄우고 검수 대기에서 멈춥니다.',o:'불량 chunk 목록 · 결과 dashboard',n:'불량 7 · 분포 알림 2',
-     d:['사유 6종: UNKNOWN_HIGH · LOW_CONFIDENCE · QUOTE_NOT_FOUND · PARSE_WARNING · CLASSIFY_FAILED · LABEL_FAILED','분포 알림(H5): N/A 비율 12.8% · 중복 label 41.1%, 알리기만 하고 계속','화면 3개 생성: 결과 dashboard · 검수 · 파싱 대조','LLM 호출 0회, 아직 DB에 올리지 않는다']},
+     d:['사유 8종: UNKNOWN_HIGH · LOW_CONFIDENCE · QUOTE_NOT_FOUND · PARSE_WARNING · CLASSIFY_FAILED · LABEL_FAILED · CONTROL_O · UNKNOWN_O','분포 알림(H5): N/A 비율 12.8% · 중복 label 41.1%, 알리기만 하고 계속','화면 3개 생성: 결과 dashboard · 검수 · 파싱 대조','LLM 호출 0회, 아직 DB에 올리지 않는다']},
     {t:'1차 검수',r:'사람이 확인 · 교정',g:'엔지니어가 확인하고 고치기',w:'검수 엔지니어',h:1,tk:'불량 7',i:'불량 chunk 7개 + 슬라이드 미리보기',p:'검수 엔지니어가 봇의 답을 확인하고 틀린 곳을 고칩니다. 다 끝나면 화면 상단의 "검수 완료"를 누릅니다(고칠 것이 없어도 누름).',o:'교정 JSON (inbox 자동 저장)',n:'축 45 · 답 5 · 이상 없음 2',
      d:['시작할 때 파싱 대조(H2)도 할지 묻는다(선택)','답 교정 · "확인, 이상 없음" · "판단 불가(이미지)" · 동의어 등록','분류표가 맞지 않으면 taxonomy 재검토 요청(메모 500자)','"검수 완료" 신호로 다음 단계가 자동으로 이어진다']},
     {t:'교정 반영',r:'사람 값으로 확정',g:'사람이 고친 값으로 확정',w:'BEOL-labeling-feedback',tk:'교정 50',i:'교정 JSON',p:'사람이 고친 값을 최종 label로 반영하고, 확정 label로 화면과 기준선 리포트를 다시 만듭니다.',o:'확정 label · 리포트',n:'교정 50건 반영 · LLM 호출 0회',
      d:['inbox의 검수 · 대조 JSON을 모은다','labelbot apply: 사람 값이 최종 label, 두 번 반영해도 결과 동일','review · dashboard · report 재생성']},
     {t:'임베딩 · 적재',r:'DB에 올리기',g:'DB에 올리기',w:'BEOL-labeling-feedback',tk:'확정 label',i:'확정 label이 붙은 chunk',p:'chunk를 embedding(AI가 비교할 수 있는 숫자)으로 바꿔 vector DB(Supabase)에 올립니다. 슬라이드 미리보기 JPG도 함께 올립니다.',o:'vector DB 행',n:'embedding 17 · Supabase 17행',
      d:['embed: 이미 만든 벡터는 다시 부르지 않는다','slide-images: 슬라이드 미리보기 JPG(.b64 보관)','push-vectors: 확정 label로 Supabase pgvector에 사본 적재','push-slides: JPG를 Storage에 올리고 벡터 행에 연결']},
-    {wt:1,t:'Engr-bot',g:'도메인 지식으로 label 감시 · feedback',w:'Engr-bot',i:'작업대의 label DB + 1차 검수 결과(사람 교정)',p:'형식, 분류표, 근거, 도메인 규칙(L4), 중복 문서 일관성(L5)을 검사해 Orchestrator에 보고합니다. 사람 교정을 모아 BEOL-labeling에 넘길 feedback 묶음을 만듭니다.',o:'판정 + report → Orchestrator · feedback 묶음 → BEOL-labeling',n:'L2 23.5% · L3A 5.9% · L4·L5 0%',
-     d:['L0 파싱 충실도 · L1 형식 · L2 분류표 일치','L3A 근거 인용 실재 · L3B AI 심사(이번엔 mock)','L4 도메인 규칙(draft는 기록만) · L5 중복 묶음 일관성 · L6 배치 분포','feedback 묶음: 사람 교정 · 재작업 목록 · 규칙/용어 제안(엑셀에 붙일 행)','반영은 사람이 승인해 다음 라벨링 실행에 넣는다. 봇은 taxonomy · 프롬프트를 고치지 않는다']},
-    {wt:1,t:'code-bot',g:'코드 · workflow 규칙 감시',w:'code-bot',i:'작업대의 코드 · workflow (읽기 전용)',p:'DRM 규칙, 표준 라이브러리 사용, 단계 사이 계약을 지키는지 정적 분석으로 검사합니다. 코드는 고치지 않습니다.',o:'finding(path:line · 규칙 ID) + 판정',n:'COMMENT · critical 0 · major 2 · minor 3',
-     d:['C1 프로젝트 규칙: 경로 파서 · 금지 확장자 쓰기 · 원본 open 위치','C2 stack: Python 3.14 문법 · 사외 전송 우회 · 비밀값 리터럴','C3 workflow 계약: skill의 명령이 CLI에 있는지 · 표 · 열 계약','C4 완료 위생: 테스트 skip · TODO · 빈 함수']}
+    {wt:1,t:'Domain-Engr-bot',g:'검수 결과로 엔지니어에게 질문 · feedback',w:'Domain-Engr-bot',i:'교정 장부(1차 검수 교정 · 재검토 요청 · 동의어 누적)',p:'검수 결과로 엔지니어에게 물을 도메인 질문을 만들고, 엔지니어가 질문 화면에서 답하고 확정한 초안만 규칙 · taxonomy 제안으로 돌려줍니다. 봇은 결정을 만들지 않습니다(2026-10-06 사용자 결정).',o:'확정 규칙 · taxonomy 수정 → TAXONOMY(다음 실행)',n:'L2 23.5% · L3A 5.9% · L4·L5 0%',
+     d:['재료: 1차 검수 교정 · 재검토 요청 · 검수 등록 동의어 + 누적 교정 장부','LLM이 질문 10개 안팎과 답마다의 초안(규칙 문장 · taxonomy 행)을 만든다','엔지니어가 질문 화면에서 답하고 초안을 고쳐 확정한다(나중에 · 묻지 않기 가능)','확정 규칙 · 사례 → taxonomy/labeling_rules.json(다음 라벨링 프롬프트), taxonomy 제안 → 수정 보드 S7','봇은 결정을 만들지 않고 taxonomy.xlsx를 쓰지 않는다. 예전 도메인 검수(L0~L6)는 명령만 남았다']},
+    {wt:1,t:'Code-Engr-bot',g:'코드 규칙 감시 · taxonomy 축 점검',w:'Code-Engr-bot',i:'작업대의 코드 · workflow + TAXONOMY와 최신 실행의 축',p:'DRM 규칙, 표준 라이브러리 사용, 단계 사이 계약을 정적 분석으로 검사합니다(코드는 고치지 않음). taxonomy 축이 바뀐 실행을 찾아 BEOL-labeling으로 자동 재라벨링합니다.',o:'finding(path:line · 규칙 ID) + 판정 · 재라벨링 대상 폴더',n:'COMMENT · critical 0 · major 2 · minor 3',
+     d:['C1 프로젝트 규칙: 경로 파서 · 금지 확장자 쓰기 · 원본 open 위치','C2 stack: Python 3.14 문법 · 사외 전송 우회 · 비밀값 리터럴','C3 workflow 계약: skill의 명령이 CLI에 있는지 · 표 · 열 계약','C4 완료 위생: 테스트 skip · TODO · 빈 함수','축 점검: labelbot taxonomy-diff로 축 추가 · 삭제 · 종류 변경을 찾고, 걸린 입력 폴더는 묻지 않고 새 작업 폴더로 다시 라벨링']}
   ];
   var box=document.getElementById('stations'), wbox=document.getElementById('watch'), all=[], k0=0, timer=null;
   var token=document.getElementById('token'), lane=document.getElementById('watchLane'), proc=document.getElementById('ioProc');

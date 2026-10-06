@@ -28,8 +28,12 @@ class MockChatTransport:
         if hint.get("task") == "classify":
             return json.dumps(self._classify(hint), ensure_ascii=False)
         if hint.get("task") == "question_gen":
-            return json.dumps({"questions": [{"axis": a, "value": v, "text": "이 chunk는 %s=%s 라벨에 해당하는가?" % (a, v)}
-                                             for a, v in hint["targets"]]}, ensure_ascii=False)
+            def qs(targets):
+                return [{"axis": a, "value": v, "text": "이 chunk는 %s=%s 라벨에 해당하는가?" % (a, v)} for a, v in targets]
+            cands = hint.get("candidates") or {}
+            targets = [(a, v if v is not None else cands[a][0]) for a, v in hint["targets"]]  # unknown 축은 첫 후보
+            return json.dumps({"questions": qs(targets), "controls": qs(hint.get("controls") or [])},
+                              ensure_ascii=False)
         if hint.get("task") == "label":
             return json.dumps(self._label(hint), ensure_ascii=False)
         return json.dumps({"ok": True})

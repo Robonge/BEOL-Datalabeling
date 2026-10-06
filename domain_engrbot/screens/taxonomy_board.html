@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>taxonomy 수정 보드</title>
+<style>
+/* BEOL AX Design System (design.md.md) — 토큰 3단: primitive → semantic → component */
+:root{
+  /* primitive */
+  --indigo-900:#354690; --indigo-700:#4A5FA8; --indigo-600:#4A6BAF; --indigo-400:#6B82C4;
+  --bluegray-50:#EDF1F7; --bluegray-100:#E3E9F2; --bluegray-200:#C8D4E4; --bluegray-300:#A8BDD4; --bluegray-400:#7A9CC0;
+  --ink-900:#1E2D4A; --ink-500:#5E6E8A; --ink-400:#9DAABF; --ink-300:#B0BCCC;
+  --paper:#F7F9FC;
+  --coral-600:#C25450; --mustard-600:#C99A3B; --mustard-800:#9A7425; --teal-600:#3B8A6E;
+  --coral-50:#F7E7E6; --mustard-50:#F8F0DC; --teal-50:#E2F0EA;
+
+  /* semantic */
+  --primary-deep:var(--indigo-900); --primary:var(--indigo-700); --primary-mid:var(--indigo-600); --primary-soft:var(--indigo-400);
+  --bg-base:var(--bluegray-50); --bg-grid:var(--bluegray-200); --dot:var(--bluegray-300); --line:var(--bluegray-400);
+  --surface:var(--paper); --surface-sunk:var(--bluegray-100);
+  --text-strong:var(--ink-900); --text-body:var(--ink-500); --text-muted:var(--ink-400); --text-footer:var(--ink-300);
+  --on-primary:#FFFFFF; --on-primary-muted:rgba(237,241,247,.72);
+  --danger:var(--coral-600); --warning:var(--mustard-600); --warning-text:var(--mustard-800); --success:var(--teal-600);
+  --grad-main:linear-gradient(148deg, var(--indigo-700) 0%, var(--indigo-900) 100%);
+  --grad-sub:linear-gradient(148deg, var(--indigo-400) 0%, var(--indigo-600) 100%);
+  --shadow-sm:0 2px 8px rgba(53,70,144,.06); --shadow-md:0 8px 20px rgba(53,70,144,.14);
+  --ease-elastic:cubic-bezier(0.34,1.56,0.64,1); --dur:.28s;
+  --radius-xs:5px; --radius-sm:8px; --radius:12px; --radius-pill:999px;
+  --font:'Pretendard','Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+  --ls-logo:-0.055em; --ls-title:-0.048em; --ls-body:-0.02em; --ls-cap:-0.015em;
+
+  /* component */
+  --card-bg:var(--surface); --card-border:var(--bg-grid); --card-accent:var(--bg-grid);
+  --chip-border:var(--bg-grid); --chip-bg:rgba(247,249,252,.6);
+  --cell-edit-bg:var(--mustard-50); --cell-edit-line:var(--warning);
+  --cell-req-bg:var(--coral-50); --cell-chg-bg:var(--teal-50);
+  --bar-bg:rgba(237,241,247,.86);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:var(--font);font-size:13.5px;line-height:1.55;letter-spacing:var(--ls-body);color:var(--text-strong);
+  background-color:var(--bg-base);
+  background-image:linear-gradient(rgba(200,212,228,.5) .4px, transparent .4px),
+                   linear-gradient(90deg, rgba(200,212,228,.5) .4px, transparent .4px);
+  background-size:48px 48px;background-attachment:fixed;overflow-wrap:anywhere;
+}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+#root{position:relative;z-index:1}
+h1,h2,h3{margin:0;font-weight:700}
+button,input,select{font:inherit;letter-spacing:inherit;color:inherit}
+.mono{font-family:var(--mono);letter-spacing:var(--ls-cap)}
+.muted,.sub{color:var(--text-muted)}
+.sub{font-size:11.5px;letter-spacing:var(--ls-cap)}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+/* 머리 */
+.top{max-width:1120px;margin:0 auto;padding:18px 16px 8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.mark{width:26px;height:26px;border-radius:var(--radius-sm);background:var(--grad-main);box-shadow:var(--shadow-sm);position:relative;flex:none}
+.mark::after{content:"";position:absolute;inset:8px;border-radius:50%;background:var(--bg-base);opacity:.9}
+.top h1{font-size:20px;letter-spacing:var(--ls-logo)}
+.top .meta{font-family:var(--mono);font-size:11px;color:var(--text-muted);letter-spacing:var(--ls-cap)}
+.top .sp{flex:1}
+.top details{font-size:11px;color:var(--text-muted)}
+.top summary{cursor:pointer;list-style:none;border:1px solid var(--chip-border);border-radius:var(--radius-pill);padding:2px 10px;background:var(--chip-bg)}
+.top summary::-webkit-details-marker{display:none}
+.top details[open] div{margin-top:6px}
+
+/* hero: 인디고 그라디언트 카드 */
+.hero{max-width:1120px;margin:0 auto;padding:0 16px}
+.hcard{background:var(--grad-main);color:var(--on-primary);border-radius:var(--radius);padding:20px 22px;
+  display:grid;grid-template-columns:minmax(0,1.15fr) auto minmax(0,1fr);gap:22px;align-items:center;box-shadow:var(--shadow-md)}
+.hcard .kick{font-size:11.5px;color:var(--on-primary-muted);letter-spacing:var(--ls-cap)}
+.hcard .big{font-size:40px;line-height:1.05;font-weight:700;letter-spacing:var(--ls-logo);margin:4px 0 6px}
+.hcard .big small{font-size:15px;font-weight:400;color:var(--on-primary-muted);margin-left:6px;letter-spacing:var(--ls-body)}
+.hcard .say{font-size:13px;color:var(--on-primary-muted)}
+.hcard .say b{color:var(--on-primary)}
+.donut{width:112px;height:112px;border-radius:50%;position:relative;flex:none;transition:transform var(--dur) var(--ease-elastic)}
+.donut:hover{transform:scale(1.04)}
+.donut::after{content:"";position:absolute;inset:15px;border-radius:50%;background:var(--primary-deep)}
+.donut span{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;font-size:10.5px;color:var(--on-primary-muted)}
+.donut span b{font-size:22px;color:var(--on-primary);letter-spacing:var(--ls-title);line-height:1.1}
+.legend{display:flex;flex-direction:column;gap:3px;margin-top:10px}
+.lg{display:flex;align-items:center;gap:7px;border:0;background:transparent;color:var(--on-primary-muted);font-size:12px;padding:2px 6px;margin-left:-6px;border-radius:var(--radius-xs);cursor:pointer;text-align:left;transition:background var(--dur)}
+.lg:hover,.lg.on{background:rgba(237,241,247,.12);color:var(--on-primary)}
+.lg i{width:8px;height:8px;border-radius:50%;flex:none}
+.lg .v{font-family:var(--mono);margin-left:auto;color:var(--on-primary)}
+.srcbox .kick{margin-bottom:6px}
+.sb{display:grid;grid-template-columns:96px minmax(0,1fr) 30px;gap:8px;align-items:center;font-size:11.5px;margin:3px 0;color:var(--on-primary-muted)}
+.sb .tr{height:6px;border-radius:var(--radius-pill);background:rgba(237,241,247,.14);overflow:hidden}
+.sb .tr i{display:block;height:100%;border-radius:var(--radius-pill);background:var(--on-primary);opacity:.82;transform-origin:left;animation:grow .6s var(--ease-elastic) both}
+.sb .v{font-family:var(--mono);text-align:right;color:var(--on-primary)}
+.sb.zero{opacity:.5}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* 고정 필터 막대 */
+.bar{position:sticky;top:0;z-index:5;background:var(--bar-bg);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--bg-grid);margin-top:14px}
+.bari{max-width:1120px;margin:0 auto;padding:8px 16px}
+.frow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.frow+.frow{margin-top:6px}
+.frow .lb{font-size:11px;color:var(--text-muted);margin:0 2px 0 6px}
+.chip{border:1px solid var(--chip-border);background:var(--chip-bg);border-radius:var(--radius-pill);padding:3px 11px;font-size:11.5px;cursor:pointer;
+  transition:transform var(--dur) var(--ease-elastic),border-color var(--dur),background var(--dur)}
+.chip:hover{transform:translateY(-1px);border-color:var(--primary-soft)}
+.chip.on{background:var(--grad-main);border-color:var(--primary-deep);color:var(--on-primary)}
+.chip .n{font-family:var(--mono);margin-left:6px;opacity:.8}
+.chip .d{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.chip.on .d{box-shadow:0 0 0 1.5px var(--on-primary)}
+select.sel{border:1px solid var(--chip-border);border-radius:var(--radius-pill);padding:3px 10px;background:var(--chip-bg);font-size:11.5px;cursor:pointer}
+input.q{flex:1 1 180px;min-width:0;border:1px solid var(--chip-border);border-radius:var(--radius-pill);padding:4px 12px;background:var(--surface);font-size:12.5px;
+  transition:border-color var(--dur),box-shadow var(--dur)}
+input.q:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(74,95,168,.14)}
+
+.wrap{max-width:1120px;margin:0 auto;padding:16px 16px 96px}
+
+/* 쓰는 법: 4단 스텝 */
+.howto{background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;counter-reset:st;margin:0;padding:0;list-style:none}
+.steps li{position:relative;padding:2px 0 0 30px;font-size:12px;color:var(--text-body);counter-increment:st}
+.steps li::before{content:counter(st);position:absolute;left:0;top:1px;width:21px;height:21px;border-radius:50%;background:var(--grad-sub);color:var(--on-primary);
+  font-family:var(--mono);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps li b{display:block;color:var(--text-strong);font-size:12.5px}
+.howto details{margin-top:10px;border-top:1px dashed var(--bg-grid);padding-top:8px;font-size:11.5px;color:var(--text-muted)}
+.howto summary{cursor:pointer;color:var(--text-body)}
+.howto details p{margin:6px 0 0}
+.legend2{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.legend2 span{display:inline-flex;align-items:center;gap:5px}
+.legend2 i{width:14px;height:10px;border-radius:2px;display:inline-block}
+.cleared{margin-top:8px;font-size:11.5px;color:var(--text-muted);display:flex;gap:6px;align-items:center}
+.cleared::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--line)}
+
+.errbox{background:var(--surface);border:1px solid var(--bg-grid);border-left:3px solid var(--danger);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:12.5px}
+.errbox ul{margin:4px 0 0;padding-left:20px}
+
+/* 구역 */
+section{margin-bottom:22px}
+.sh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 10px}
+.sh h2{font-size:16px;letter-spacing:var(--ls-title)}
+.sh .n{font-family:var(--mono);font-size:11px;color:var(--primary);border:1px solid var(--bg-grid);border-radius:var(--radius-pill);padding:0 8px;background:var(--surface)}
+.sh .sp{flex:1}
+.axh{display:flex;gap:10px;align-items:flex-start;margin:16px 0 8px}
+.axh .ax-dot{width:10px;height:10px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 3px var(--bg-base),0 0 0 4px var(--bg-grid);margin-top:5px;flex:none}
+.axh .nm{font-weight:700;letter-spacing:var(--ls-title);font-size:14px}
+.axh .ml{font-size:11px;color:var(--text-muted);font-family:var(--mono);letter-spacing:var(--ls-cap)}
+.axh details{font-size:11.5px;color:var(--text-muted)}
+.axh summary{cursor:pointer}
+
+/* 카드 */
+.card{position:relative;background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:12px 14px 12px 17px;margin-bottom:10px;min-width:0;
+  box-shadow:var(--shadow-sm);transition:transform var(--dur) var(--ease-elastic),box-shadow var(--dur),border-color var(--dur)}
+.card::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--card-accent)}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--bluegray-300)}
+.card.s-open{--card-accent:var(--primary)}
+.card.s-blocked{--card-accent:var(--warning)}
+.card.s-done{--card-accent:var(--success);opacity:.78}
+.card.s-rejected{--card-accent:var(--text-muted);opacity:.64}
+.card.s-unknown{--card-accent:var(--dot)}
+.card.hid{border-style:dashed;opacity:.6}
+.ch{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ch .title{font-weight:700;letter-spacing:var(--ls-title);font-size:14px;margin-left:2px}
+.badge{font-size:10.5px;border:1px solid var(--bg-grid);border-radius:var(--radius-xs);padding:0 7px;color:var(--text-body);white-space:nowrap;background:var(--surface);line-height:1.7}
+.badge.act{border-color:var(--primary-soft);color:var(--primary-deep);font-weight:700}
+.badge.a-disable{border-color:var(--danger);color:var(--danger)}
+.badge.a-new_axis{border-color:var(--warning);color:var(--warning-text)}
+.badge.st{display:inline-flex;align-items:center;gap:5px}
+.badge.st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge.st-open{color:var(--primary);border-color:var(--primary-soft)}
+.badge.st-done{border-color:var(--success);color:var(--success)}
+.badge.st-rejected{color:var(--text-muted)}
+.badge.st-blocked{border-color:var(--warning);color:var(--warning-text);font-weight:700}
+.badge.st-unknown{color:var(--line)}
+.badge.warn{border-color:var(--warning);color:var(--warning-text);font-weight:700}
+.card>.sub{margin-top:5px}
+.warnline{font-size:11.5px;color:var(--warning-text);margin-top:5px}
+.rowb{margin-top:10px}
+.rowtop{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rowtop .rl{font-size:11px;font-weight:700;color:var(--text-body)}
+.place{font-size:12px;color:var(--primary-deep);font-weight:700;letter-spacing:var(--ls-body)}
+.place.where{margin-top:8px}
+.tw{overflow-x:auto;max-width:100%;margin-top:6px;border-radius:var(--radius-sm);border:1px solid var(--bg-grid)}
+table.sheet{border-collapse:collapse;font-size:12px;min-width:100%;background:var(--surface)}
+table.sheet.n11{min-width:1040px}
+table.sheet th,table.sheet td{border-right:1px solid var(--bg-grid);border-bottom:1px solid var(--bg-grid);padding:4px 7px;text-align:left;vertical-align:top}
+table.sheet tr>*:last-child{border-right:0}
+table.sheet tbody tr:last-child td{border-bottom:0}
+table.sheet th{background:var(--surface-sunk);white-space:nowrap;font-weight:700;font-size:11px;color:var(--text-body)}
+table.sheet th .L{font-family:var(--mono);color:var(--text-muted);margin-right:4px;font-weight:400}
+table.sheet th.edh{color:var(--warning-text)}
+table.sheet th.chgh{color:var(--success)}
+table.sheet td{min-width:56px;max-width:300px;white-space:pre-wrap;word-break:break-word}
+table.sheet td.ed{background:var(--cell-edit-bg);box-shadow:inset 0 0 0 1px var(--cell-edit-line);cursor:text;transition:box-shadow var(--dur)}
+table.sheet td.ed:hover{box-shadow:inset 0 0 0 1.5px var(--cell-edit-line)}
+table.sheet td.ed:focus{outline:none;box-shadow:inset 0 0 0 2px var(--primary)}
+table.sheet td.chg{background:var(--cell-chg-bg);box-shadow:inset 0 0 0 1.5px var(--success);font-weight:700}
+table.sheet td.req{background:var(--cell-req-bg);box-shadow:inset 0 0 0 1.5px var(--danger)}
+.chgline{font-size:11.5px;font-weight:700;color:var(--success);margin-top:4px}
+.opts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.btn{border:1px solid var(--bg-grid);background:var(--surface);border-radius:var(--radius-sm);padding:5px 12px;cursor:pointer;font-weight:700;font-size:12px;
+  transition:transform var(--dur) var(--ease-elastic),box-shadow var(--dur),border-color var(--dur)}
+.btn:hover:not(:disabled){transform:translateY(-1px);border-color:var(--primary-soft);box-shadow:var(--shadow-sm)}
+.btn:active:not(:disabled){transform:translateY(0)}
+.btn.primary{background:var(--grad-main);color:var(--on-primary);border-color:var(--primary-deep)}
+.btn.primary:hover:not(:disabled){box-shadow:var(--shadow-md)}
+.btn.sm{padding:3px 10px;font-size:11.5px}
+.btn.ghost{background:transparent;color:var(--text-body)}
+.btn:disabled{opacity:.45;cursor:default}
+/* 최종 완료(우측 상단, 고정 막대) */
+.btn.finalize{margin-left:auto;padding:6px 16px;font-size:12.5px;border-radius:var(--radius-pill);display:inline-flex;align-items:center;gap:7px}
+.btn.finalize::before{content:"";width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45);flex:none}
+.btn.finalize.ready::before{background:var(--on-primary);box-shadow:0 0 0 3px rgba(59,138,110,.55)}
+.btn.finalize:disabled{opacity:.6;cursor:progress}
+/* Excel 반영 표시 */
+.btn.applybtn{border-color:var(--success);color:var(--success);background:var(--surface);display:inline-flex;align-items:center;gap:6px}
+.btn.applybtn::before{content:"";width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--success);flex:none}
+.btn.applybtn:hover:not(:disabled){border-color:var(--success);background:var(--teal-50)}
+.btn.applybtn.on{background:var(--teal-50);color:var(--text-body);border-color:var(--bg-grid);font-weight:400}
+.btn.applybtn.on::before{background:var(--success);box-shadow:none}
+.btn.rejectbtn{border-color:var(--bg-grid);color:var(--danger);background:var(--surface);display:inline-flex;align-items:center;gap:6px}
+.btn.rejectbtn::before{content:"";width:12px;height:12px;flex:none;
+  background:linear-gradient(45deg,transparent 44%,currentColor 44%,currentColor 56%,transparent 56%),
+             linear-gradient(-45deg,transparent 44%,currentColor 44%,currentColor 56%,transparent 56%)}
+.btn.rejectbtn:hover:not(:disabled){border-color:var(--danger);background:var(--coral-50)}
+.btn.rejectbtn.on{background:var(--surface-sunk);color:var(--text-body);border-color:var(--bg-grid);font-weight:400}
+.card.marked{background:rgba(247,249,252,.72)}
+.card.m-applied{--card-accent:var(--success)}
+.card.m-rejected{--card-accent:var(--text-muted)}
+.card.m-rejected .title{text-decoration:line-through;text-decoration-color:var(--text-muted)}
+.card.folded{padding-top:9px;padding-bottom:9px}
+.card.folded .title{color:var(--text-body)}
+.card .ch .sp{flex:1}
+.badge.st-m-applied{border-color:var(--success);color:var(--success);font-weight:700;font-family:var(--font)}
+.badge.st-m-rejected{border-color:var(--text-muted);color:var(--text-body);font-weight:700;font-family:var(--font)}
+.prog{display:grid;grid-template-columns:auto minmax(60px,1fr) auto;gap:8px;align-items:center;margin-top:12px;font-size:11.5px;color:var(--on-primary-muted)}
+.prog .pt{height:6px;border-radius:var(--radius-pill);background:rgba(237,241,247,.14);overflow:hidden;display:flex}
+.prog .pt i{display:block;height:100%;transition:width .32s var(--ease-elastic)}
+.prog .pt i.a{background:var(--success)}
+.prog .pt i.r{background:var(--ink-400)}
+.prog .pv{font-family:var(--mono);color:var(--on-primary)}
+.srcs{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+.src{font-size:10.5px;border:1px solid var(--bg-grid);border-radius:var(--radius-pill);padding:0 9px;background:var(--bg-base);color:var(--text-body);line-height:1.8}
+.src.rej{text-decoration:line-through;opacity:.7}
+.ctx{margin-top:8px;font-size:12px}
+.ctx ul{margin:2px 0;padding-left:18px;color:var(--text-body)}
+.ctx details{margin-top:2px}
+.ctx summary{cursor:pointer;color:var(--text-muted);font-size:11.5px}
+.ctx .memo{margin-top:6px}
+.ctx .memo .ml2{font-size:11px;font-weight:700;color:var(--text-body)}
+.ctx p.q{margin:4px 0 0;white-space:pre-wrap;border-left:2px solid var(--primary-soft);padding:4px 10px;background:var(--bg-base);border-radius:0 var(--radius-xs) var(--radius-xs) 0}
+/* 왜 올라왔나 + 근거 슬라이드 */
+.why{margin-top:10px;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--bg-base);padding:8px 10px}
+.why .wh{font-size:11px;font-weight:700;color:var(--text-body);margin-bottom:4px;display:flex;gap:8px;align-items:center}
+.why .wh .n{font-family:var(--mono);font-weight:400;color:var(--text-muted)}
+.why ul{list-style:none;margin:0;padding:0}
+.why li{display:flex;gap:8px;align-items:baseline;font-size:12px;padding:2px 0}
+.why li .lb{flex:none;font-size:10px;border:1px solid var(--bg-grid);border-radius:var(--radius-pill);padding:0 7px;color:var(--primary);background:var(--surface);white-space:nowrap}
+.slides{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:8px}
+.sl{border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:var(--surface);overflow:hidden;display:flex;flex-direction:column;min-width:0;
+  transition:transform var(--dur) var(--ease-elastic),box-shadow var(--dur),border-color var(--dur)}
+.sl:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--primary-soft)}
+.sl .th{aspect-ratio:16/9;background:var(--surface-sunk);display:flex;align-items:center;justify-content:center;border:0;padding:0;width:100%;cursor:default;
+  font-family:var(--mono);font-size:18px;font-weight:700;color:var(--dot);letter-spacing:var(--ls-title)}
+.sl .th img{width:100%;height:100%;object-fit:contain;display:block;background:var(--surface)}
+.sl button.th{cursor:zoom-in}
+.sl .cap{padding:5px 8px 7px;font-size:11px;line-height:1.4}
+.sl .cap b{display:block;font-size:11.5px;color:var(--primary-deep)}
+.sl .cap .f{display:block;color:var(--text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl .cap .t{display:block;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl .cap .src2{display:block;color:var(--text-footer);font-size:10px}
+.sl.miss .th{font-size:11px;font-weight:400}
+.more{font-size:11px;color:var(--text-muted);margin-top:6px}
+.lightbox{position:fixed;inset:0;z-index:80;background:rgba(30,45,74,.72);display:none;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+.lightbox.on{display:flex}
+.lightbox figure{margin:0;max-width:min(1100px,100%);max-height:100%;display:flex;flex-direction:column;gap:8px;animation:cardin .32s var(--ease-elastic) both}
+.lightbox img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;border-radius:var(--radius-sm);box-shadow:var(--shadow-md);background:var(--surface)}
+.lightbox figcaption{color:var(--bg-base);font-size:12.5px;text-align:center}
+details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing:var(--ls-title);margin:8px 0 10px}
+.empty{color:var(--text-muted);text-align:center;padding:48px 16px;border:1px dashed var(--bg-grid);border-radius:var(--radius);background:rgba(247,249,252,.6)}
+.empty b{display:block;color:var(--text-strong);font-size:15px;letter-spacing:var(--ls-title);margin-bottom:4px}
+.toast{position:fixed;right:16px;bottom:16px;max-width:calc(100vw - 32px);background:var(--grad-main);color:var(--on-primary);padding:9px 15px;border-radius:var(--radius-sm);
+  font-size:12.5px;box-shadow:var(--shadow-md);opacity:0;transform:translateY(8px);pointer-events:none;z-index:60;transition:opacity .24s,transform .32s var(--ease-elastic)}
+.toast.on{opacity:1;transform:none}
+.cardin{animation:cardin .32s var(--ease-elastic) both}
+@keyframes cardin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+@media (max-width:860px){
+  .hcard{grid-template-columns:minmax(0,1fr) auto}
+  .srcbox{grid-column:1/-1}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:520px){
+  .hcard{grid-template-columns:minmax(0,1fr);padding:16px}
+  .donut{width:96px;height:96px}
+  .steps{grid-template-columns:minmax(0,1fr)}
+  .sb{grid-template-columns:84px minmax(0,1fr) 26px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="root"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="슬라이드 크게 보기"><figure id="lbfig"><figcaption id="lbcap"></figcaption></figure></div>
+<script>
+(function(){
+  "use strict";
+  var DATA = /*__DATA__*/null;
+  var root = document.getElementById("root");
+  backdrop();
+  if (!DATA){ root.textContent = "데이터가 없습니다. python -m domain_engrbot taxonomy-board 로 다시 만드세요."; return; }
+
+  var COLS = DATA.columns;
+  var LETTERS = "ABCDEFGHIJK";
+  var ST = {open:"미반영", done:"반영됨", rejected:"기각됨", blocked:"먼저 할 일", unknown:"확인 불가"};
+  var ST_ORDER = ["open", "blocked", "done", "rejected", "unknown"];
+  // 상태 점 색(소면적): 도넛·범례·칩 점에만 쓴다
+  var ST_DOT = {open:"#EDF1F7", blocked:"#C99A3B", done:"#3B8A6E", rejected:"#9DAABF", unknown:"#6B82C4"};
+  var ST_CHIP = {open:"#4A5FA8", blocked:"#C99A3B", done:"#3B8A6E", rejected:"#9DAABF", unknown:"#A8BDD4"};
+  var SRC = [["S1", "Domain-Engr-bot 승인"], ["S2", "Domain-Engr-bot 제안"], ["S3", "Domain-Engr-bot L6"], ["S4", "labelbot 후보"],
+             ["S5", "재검토 요청"], ["S6", "교정 장부"], ["S7", "엔지니어 답변"]];
+  var ACT = {add:"추가", overwrite:"덮어쓰기", disable:"끄기", new_axis:"새 축", edit:"문장 수정", term:"용어 후보",
+             outside:"taxonomy 밖"};
+  var GROUP = {taxonomy:"taxonomy 시트", synonyms:"synonyms 시트", questions:"questions 시트", term:"용어 후보",
+               outside:"taxonomy 밖"};
+  var BULK = {taxonomy:true, synonyms:true, questions:true};
+  var KEY = "taxonomy_board:v1";
+  var store = loadStore();
+  var ui = {status: DATA.taxonomy.readable ? "open" : "all", sheet: "all", action: "all", q: "", showHidden: false};
+  var ACTION_FILTER = [["all", "전체"], ["add", "추가"], ["edit", "문장 수정"], ["disable", "끄기"], ["new_axis", "새 축"],
+                       ["overwrite", "덮어쓰기 전체"]];
+  var QIDS = Object.create(null);
+  (DATA.question_ids || []).forEach(function(q){ QIDS[q] = 1; });
+  var body = null, hiddenChip = null, appliedChip = null, progress = null, toastTimer = null, chipSets = {},
+      legendBtns = [], finalBtn = null;
+  // '최종 완료'는 보드 서버(--serve)로 열었을 때만 된다. 파일로 연 화면은 안내만 한다
+  var SERVED = location.protocol.indexOf("file") !== 0;
+  ui.hideApplied = false;
+
+  // ---- 저장(편의 기능: 없어도 화면은 동작한다) ----
+  function loadStore(){
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e){ s = null; }
+    if (!s || typeof s !== "object" || Array.isArray(s)) s = {};
+    if (!s.edits || typeof s.edits !== "object") s.edits = {};
+    if (!s.hidden || typeof s.hidden !== "object") s.hidden = {};
+    if (!s.applied || typeof s.applied !== "object") s.applied = {};
+    if (!s.rejects || typeof s.rejects !== "object") s.rejects = {};
+    return s;
+  }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e){} }
+
+  // ---- 사람이 처리했다는 표시(이 브라우저에만 저장): 반영함(store.applied)·기각함(store.rejects).
+  // 시트에서 확인되면(반영됨·기각됨) 표시를 지운다. 기각 행이 없는 항목의 기각 표시는 사람이 취소할 때까지 남는다.
+  var MARK = {applied: {store: "applied", badge: "반영함", cls: "m-applied"},
+              rejected: {store: "rejects", badge: "기각함", cls: "m-rejected"}};
+  (function(){
+    var byId = {}, changed = false;
+    DATA.items.forEach(function(it){ byId[it.id] = it; });
+    ["applied", "rejects"].forEach(function(k){
+      Object.keys(store[k]).forEach(function(id){
+        var it = byId[id];
+        if (!it || it.status === "done" || it.status === "rejected"){ delete store[k][id]; changed = true; }
+      });
+    });
+    if (changed) save();
+  })();
+  var expanded = {};
+  // 지금 표시: {kind: "applied"|"rejected", at} 또는 null. 시트가 이미 판정한 항목(반영됨·기각됨)은 표시하지 않는다
+  function markOf(it){
+    if (it.status === "done" || it.status === "rejected") return null;
+    if (has(store.applied, it.id)) return {kind: "applied", at: store.applied[it.id]};
+    if (has(store.rejects, it.id)) return {kind: "rejected", at: store.rejects[it.id]};
+    return null;
+  }
+  function isApplied(it){ return markOf(it) !== null; }
+  function stamp(iso){
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    function p(n){ return (n < 10 ? "0" : "") + n; }
+    return p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  // kind: "applied"|"rejected"|null(취소). 두 표시는 함께 붙지 않는다
+  function setMark(it, kind, msg){
+    delete store.applied[it.id];
+    delete store.rejects[it.id];
+    if (kind) store[MARK[kind].store][it.id] = new Date().toISOString();
+    delete expanded[it.id];
+    save();
+    updateAppliedUI();
+    var keep = window.scrollY;
+    renderBody();
+    window.scrollTo(0, keep);
+    if (msg) toast(msg);
+  }
+  // ---- 최종 완료: 표시(반영함·기각함)를 서버에 보내 확정하고 시트를 다시 읽은 보드로 새로고침 ----
+  function postDecisions(marks, busyText){
+    if (!SERVED){
+      toast("최종 완료는 보드 서버에서 됩니다: python -m domain_engrbot taxonomy-board --serve --open");
+      return;
+    }
+    if (finalBtn){ finalBtn.disabled = true; finalBtn.textContent = busyText; }
+    fetch("board/finalize", {method: "POST", headers: {"Content-Type": "application/json"},
+                             body: JSON.stringify({kind: "taxonomy_board_decisions", marks: marks})})
+      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok && j && j.ok, j: j}; }); })
+      .then(function(res){
+        if (!res.ok) throw new Error((res.j && (res.j.detail || res.j.code)) || "FAILED");
+        Object.keys(marks).forEach(function(id){ delete store.applied[id]; delete store.rejects[id]; });
+        save();
+        try { sessionStorage.setItem(KEY + ":toast", "최종 완료: 확정 " + res.j.changed + "건 · 미반영 " + res.j.counts.open +
+          " · 반영됨 " + res.j.counts.done + " · 기각 " + res.j.counts.rejected); } catch(e){}
+        location.reload();
+      })
+      .catch(function(e){
+        toast("최종 완료에 실패했습니다(" + e.message + "). 서버 창을 확인하세요.");
+        updateAppliedUI();
+      });
+  }
+  function finalize(){
+    var marks = {}, na = 0, nr = 0;
+    DATA.items.forEach(function(it){
+      var m = markOf(it);
+      if (!m) return;
+      marks[it.id] = m.kind;
+      if (m.kind === "applied") na++; else nr++;
+    });
+    var msg = (na || nr) ? "반영함 " + na + "건 · 기각함 " + nr + "건을 확정하고 taxonomy.xlsx를 다시 읽습니다.\n" +
+      "Excel에서 저장했는지 확인하세요. 표시하지 않은 항목은 미반영으로 남습니다."
+      : "확정할 표시가 없습니다. taxonomy.xlsx를 다시 읽어 현황만 갱신할까요?";
+    if (!window.confirm(msg)) return;
+    postDecisions(marks, "확정하는 중…");
+  }
+  function undoDecision(it){
+    if (!window.confirm("'" + it.title + "'의 확정을 취소하고 시트 기준으로 다시 판정할까요?")) return;
+    var m = {};
+    m[it.id] = null;
+    postDecisions(m, "취소하는 중…");
+  }
+
+  function appliedCount(kind){
+    return DATA.items.filter(function(it){ var m = markOf(it); return m && (!kind || m.kind === kind); }).length;
+  }
+
+  // ---- 도구 ----
+  function el(tag, cls, text){
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function button(cls, text, fn, title){
+    var b = el("button", cls, text);
+    b.type = "button";
+    if (title) b.title = title;
+    b.addEventListener("click", fn);
+    return b;
+  }
+  function norm(s){ return String(s || "").normalize("NFKC").replace(/\s+/g, "").toLowerCase(); }
+  function has(o, k){ return Object.prototype.hasOwnProperty.call(o, k); }
+  function pct(v){ return v == null ? "-" : (Math.round(v * 1000) / 10) + "%"; }
+  function today(){
+    var d = new Date();
+    function p(n){ return (n < 10 ? "0" : "") + n; }
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("on"); }, 2600);
+  }
+
+  // ---- 행 값 ----
+  function cellVal(it, ri, ci){
+    var ed = store.edits[it.id], k = ri + "_" + ci;
+    if (ed && has(ed, k)) return String(ed[k]);
+    return it.rows[ri].cells[ci];
+  }
+  // Excel 클립보드 TSV 칸: 줄바꿈은 LF로 통일, 수식 시작 문자(= + - @) 앞에 ',
+  // 탭·줄바꿈·큰따옴표가 있으면 "…"로 감싸고 안의 "는 ""로 쓴다. 행 복사·묶음 복사·기각 행이 모두 이 함수를 쓴다.
+  function tsvCell(v){
+    v = String(v == null ? "" : v).replace(/\r\n?/g, "\n");
+    if (/^[=+\-@]/.test(v)) v = "'" + v;
+    return /[\t\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+  function tsvRow(cells){ return cells.map(tsvCell).join("\t"); }
+  function rowCells(it, ri){ return it.rows[ri].cells.map(function(_, ci){ return cellVal(it, ri, ci); }); }
+  function validTarget(v){
+    if (v === "공통") return true;
+    var i = v.indexOf("=");
+    if (i < 0) return false;
+    var axis = v.slice(0, i).trim(), val = norm(v.slice(i + 1));
+    return (DATA.targets || []).some(function(t){ return t[0] === axis && t[1] === val; });
+  }
+  function validParent(axis, v, self){
+    var p = norm(v);
+    if (p === norm(self)) return false;
+    return (DATA.targets || []).some(function(t){ return t[0] === axis && t[1] === p; });
+  }
+  // 칸별 문제: 필수 빈칸과 형식(Y/N, 분류/상태, 정수, 적용 대상, 새 질문 ID). 반환: [{ci, why}]
+  function problems(it, ri){
+    var r = it.rows[ri], out = [];
+    r.cells.forEach(function(_, ci){
+      var v = String(cellVal(it, ri, ci)).trim(), rule = (r.checks || {})[String(ci)];
+      if (r.required.indexOf(ci) >= 0 && !v){ out.push({ci: ci, why: "필수 칸입니다"}); return; }
+      if (!rule || !v) return;
+      if (rule === "yn" && !/^[YN]$/i.test(v)) out.push({ci: ci, why: "Y 또는 N이어야 합니다"});
+      else if (rule === "kind" && v !== "분류" && v !== "상태") out.push({ci: ci, why: "분류 또는 상태여야 합니다"});
+      else if (rule === "int" && !/^[+-]?\d+$/.test(v)) out.push({ci: ci, why: "정수여야 합니다"});
+      else if (rule === "target" && !validTarget(v)) out.push({ci: ci, why: "공통 또는 시트에 있는 켜진 축=값이어야 합니다"});
+      else if (rule === "qid_new" && QIDS[v]) out.push({ci: ci, why: "이미 있는 질문 ID입니다"});
+      else if (rule === "axis" && (DATA.axis_names || []).indexOf(v) < 0) out.push({ci: ci, why: "시트에 있는 켜진 축 이름과 똑같아야 합니다"});
+      else if (rule === "parent" && !validParent(String(cellVal(it, ri, 0)).trim(), v, String(cellVal(it, ri, 1))))
+        out.push({ci: ci, why: "같은 축에 있는 켜진 값이어야 합니다(자기 자신은 안 됩니다)"});
+    });
+    return out;
+  }
+  function setEdit(it, ri, ci, v){
+    var k = ri + "_" + ci;
+    if (!store.edits[it.id]) store.edits[it.id] = {};
+    if (v === it.rows[ri].cells[ci]) delete store.edits[it.id][k];
+    else store.edits[it.id][k] = v;
+    if (!Object.keys(store.edits[it.id]).length) delete store.edits[it.id];
+    save();
+  }
+
+  // ---- 복사 ----
+  function copyText(text, msg){
+    function fallback(){
+      var ta = document.createElement("textarea"), ok = false;
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      document.body.appendChild(ta);
+      ta.select();
+      try { ok = document.execCommand("copy"); } catch(e){ ok = false; }
+      document.body.removeChild(ta);
+      toast(ok ? msg : "복사하지 못했습니다. 브라우저의 클립보드 권한을 확인하세요.");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ toast(msg); }, fallback);
+    } else {
+      fallback();
+    }
+  }
+  function copyRow(it, ri){
+    var r = it.rows[ri], bad = problems(it, ri);
+    if (it.status === "blocked" &&
+        !window.confirm("먼저 할 일이 있습니다: " + (it.status_note || "") + "\n그래도 이 행을 복사할까요?")) return;
+    if (bad.length){
+      var names = bad.map(function(p){ return LETTERS.charAt(p.ci) + " " + (COLS[r.sheet] || [])[p.ci] + "(" + p.why + ")"; }).join(", ");
+      if (!window.confirm("칸을 확인하세요: " + names + "\n이대로 붙이면 taxonomy.xlsx를 읽지 못합니다. 그래도 복사할까요?")) return;
+    }
+    copyText(tsvRow(rowCells(it, ri)), "행을 복사했습니다. " + r.place + " · 붙여 넣은 뒤 'Excel에 반영함'을 누르세요");
+  }
+  function copyReject(it, msg){
+    var c = it.reject_row.slice();   // 내용은 항상 원래 값(편집 전)이다
+    c[2] = today();
+    copyText(tsvRow(c), msg || "기각 행을 복사했습니다. rejected 시트 빈 행에 붙입니다.");
+  }
+  // 묶음 복사: 미반영(먼저 할 일·확인 불가 제외)이고 숨기지 않았고 문제 칸이 없는 '빈 행에 추가' 행만.
+  // 같은 새 질문 ID가 두 행에 있으면 둘 다 붙였을 때 시트를 읽지 못하므로 뒤 행은 뺀다.
+  function bulkRows(group){
+    var out = [], qids = {};
+    DATA.items.forEach(function(it){
+      if (it.group !== group || it.status !== "open" || store.hidden[it.id] || isApplied(it)) return;
+      it.rows.forEach(function(r, ri){
+        if (r.target.mode !== "append" || problems(it, ri).length) return;
+        var cells = rowCells(it, ri);
+        if ((r.checks || {})["0"] === "qid_new"){
+          var q = String(cells[0]).trim();
+          if (qids[q]) return;
+          qids[q] = true;
+        }
+        out.push(tsvRow(cells));
+      });
+    });
+    return out;
+  }
+
+  // ---- 필터 상태 ----
+  function setFilter(key, val){
+    ui[key] = val;
+    (chipSets[key] || []).forEach(function(x){ x.c.classList.toggle("on", x.v === val); });
+    if (key === "status") legendBtns.forEach(function(x){ x.c.classList.toggle("on", x.v === val); });
+    renderBody();
+  }
+
+  // ---- 머리 ----
+  function top(){
+    var t = el("div", "top");
+    t.appendChild(el("span", "mark"));
+    t.appendChild(el("h1", null, "taxonomy 수정 보드"));
+    t.appendChild(el("span", "meta", DATA.generated_at.replace("T", " ").slice(0, 16) + " · 작업 폴더 " + DATA.workspaces.length));
+    t.appendChild(el("span", "sp"));
+    var hashes = DATA.taxonomy.sheet_hashes || {};
+    var d = el("details");
+    d.appendChild(el("summary", null, "시트 해시"));
+    d.appendChild(el("div", "mono", Object.keys(hashes).map(function(k){
+      return k + " " + hashes[k];
+    }).join(" · ") || "읽지 못함"));
+    t.appendChild(d);
+    return t;
+  }
+
+  // 인디고 hero: 미반영 수, 상태 도넛(범례 클릭 = 상태 필터), 출처별 제안 수
+  function hero(){
+    var c = DATA.counts, total = DATA.items.length;
+    var wrap = el("div", "hero"), h = el("div", "hcard");
+
+    var left = el("div");
+    left.appendChild(el("div", "kick", "흩어진 taxonomy 수정 제안 · 중복을 합친 항목"));
+    var big = el("div", "big", String(c.open || 0));
+    big.appendChild(el("small", null, "건 미반영"));
+    left.appendChild(big);
+    var say = el("div", "say");
+    if (!DATA.taxonomy.readable){
+      say.textContent = "taxonomy.xlsx를 읽지 못해 상태를 판정하지 못했습니다.";
+    } else if (!total){
+      say.textContent = "올라온 수정 제안이 없습니다. 다음 실행에서 새 제안이 생기면 여기에 모입니다.";
+    } else {
+      say.appendChild(document.createTextNode("전체 " + total + "건 중 "));
+      say.appendChild(el("b", null, (c.open || 0) + "건"));
+      say.appendChild(document.createTextNode("을 Excel에 붙일 차례입니다" + (c.blocked ? ", 먼저 할 일 " + c.blocked + "건." : ".")));
+    }
+    left.appendChild(say);
+    progress = el("div", "prog");
+    progress.appendChild(el("span", "pl", "처리 표시"));
+    var pt = el("span", "pt");
+    pt.appendChild(el("i", "a"));
+    pt.appendChild(el("i", "r"));
+    progress.appendChild(pt);
+    progress.appendChild(el("span", "pv"));
+    left.appendChild(progress);
+    h.appendChild(left);
+
+    var mid = el("div");
+    var dn = el("div", "donut"), acc = 0, stops = [];
+    ST_ORDER.forEach(function(k){
+      var n = c[k] || 0;
+      if (!n || !total) return;
+      var a = acc / total * 360, b = (acc + n) / total * 360;
+      stops.push(ST_DOT[k] + " " + a + "deg " + b + "deg");
+      acc += n;
+    });
+    dn.style.background = stops.length ? "conic-gradient(" + stops.join(",") + ")" : "rgba(237,241,247,.18)";
+    var dl = el("span");
+    dl.appendChild(el("b", null, String(total)));
+    dl.appendChild(document.createTextNode("항목"));
+    dn.appendChild(dl);
+    mid.appendChild(dn);
+    h.appendChild(mid);
+
+    var right = el("div", "srcbox");
+    var lg = el("div", "legend");
+    ST_ORDER.forEach(function(k){
+      if (k === "unknown" && !c.unknown) return;
+      var b = button("lg" + (ui.status === k ? " on" : ""), "", function(){ setFilter("status", ui.status === k ? "all" : k); },
+        ST[k] + "만 보기");
+      var i = el("i"); i.style.background = ST_DOT[k];
+      b.appendChild(i);
+      b.appendChild(el("span", null, ST[k]));
+      b.appendChild(el("span", "v", String(c[k] || 0)));
+      legendBtns.push({c: b, v: k});
+      lg.appendChild(b);
+    });
+    left.appendChild(lg);
+
+    right.appendChild(el("div", "kick", "출처별 제안 수 (합치기 전)"));
+    var srcs = DATA.sources || {}, max = 0;
+    SRC.forEach(function(s){ max = Math.max(max, srcs[s[0]] || 0); });
+    SRC.forEach(function(s, i){
+      var n = srcs[s[0]] || 0, row = el("div", "sb" + (n ? "" : " zero"));
+      row.appendChild(el("span", null, s[0] + " " + s[1]));
+      var tr = el("span", "tr"), bar = el("i");
+      bar.style.width = (max ? Math.max(n ? 3 : 0, n / max * 100) : 0) + "%";
+      bar.style.animationDelay = (i * 40) + "ms";
+      tr.appendChild(bar);
+      row.appendChild(tr);
+      row.appendChild(el("span", "v", String(n)));
+      right.appendChild(row);
+    });
+    h.appendChild(right);
+    wrap.appendChild(h);
+    return wrap;
+  }
+
+  function chipGroup(row, list, key){
+    chipSets[key] = [];
+    list.forEach(function(p){
+      var c = button("chip" + (ui[key] === p[0] ? " on" : ""), "", function(){ setFilter(key, p[0]); });
+      if (key === "status" && ST_CHIP[p[0]]){
+        var d = el("span", "d"); d.style.background = ST_CHIP[p[0]];
+        c.appendChild(d);
+      }
+      c.appendChild(document.createTextNode(p[1]));
+      if (p[2] != null) c.appendChild(el("span", "n", String(p[2])));
+      chipSets[key].push({c: c, v: p[0]});
+      row.appendChild(c);
+    });
+  }
+  // 고정 영역: 상태(+검색) 한 줄, 시트·동작 한 줄
+  function header(){
+    var bar = el("div", "bar"), inner = el("div", "bari");
+    var r1 = el("div", "frow");
+    var st = ST_ORDER.filter(function(k){ return k !== "unknown" || DATA.counts.unknown; }).map(function(k){
+      return [k, ST[k], DATA.counts[k] || 0];
+    });
+    chipGroup(r1, st.concat([["all", "전체", DATA.items.length]]), "status");
+    var q = el("input", "q");
+    q.type = "search";
+    q.placeholder = "검색: 축·값·용어·위치";
+    q.setAttribute("aria-label", "검색");
+    q.addEventListener("input", function(){ ui.q = q.value.trim().toLowerCase(); renderBody(); });
+    r1.appendChild(q);
+    finalBtn = button("btn primary finalize", "최종 완료", finalize,
+      "반영함·기각함 표시를 확정하고 taxonomy.xlsx를 다시 읽어 현황을 갱신합니다. 표시하지 않은 항목은 그대로 남습니다");
+    r1.appendChild(finalBtn);
+    inner.appendChild(r1);
+
+    var r2 = el("div", "frow");
+    var sel = el("select", "sel");
+    sel.setAttribute("aria-label", "시트");
+    [["all", "시트 전체"], ["taxonomy", "taxonomy"], ["synonyms", "synonyms"], ["questions", "questions"],
+     ["term", "용어 후보"], ["outside", "taxonomy 밖"]].forEach(function(p){
+      var o = el("option", null, p[1]);
+      o.value = p[0];
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", function(){ ui.sheet = sel.value; renderBody(); });
+    r2.appendChild(sel);
+    r2.appendChild(el("span", "lb", "동작"));
+    chipGroup(r2, ACTION_FILTER, "action");
+    hiddenChip = button("chip", "", function(){
+      ui.showHidden = !ui.showHidden;
+      hiddenChip.classList.toggle("on", ui.showHidden);
+      renderBody();
+    }, "숨긴 항목도 보기");
+    r2.appendChild(hiddenChip);
+    updateHiddenChip();
+    appliedChip = button("chip", "", function(){
+      ui.hideApplied = !ui.hideApplied;
+      updateAppliedUI();
+      renderBody();
+    }, "반영함·기각함으로 표시한 항목 숨기기/보이기");
+    r2.appendChild(appliedChip);
+    inner.appendChild(r2);
+    bar.appendChild(inner);
+    return bar;
+  }
+  // 반영 표시 수: 필터 칩과 hero 진행 막대(미반영·먼저 할 일 중 표시한 비율)
+  function updateAppliedUI(){
+    var na = appliedCount("applied"), nr = appliedCount("rejected"), n = na + nr;
+    if (finalBtn){
+      finalBtn.disabled = false;
+      finalBtn.textContent = n ? "최종 완료 · " + n + "건 확정" : "최종 완료";
+      finalBtn.classList.toggle("ready", n > 0);
+      if (!SERVED) finalBtn.title = "보드 서버로 열어야 합니다: python -m domain_engrbot taxonomy-board --serve --open";
+    }
+    if (appliedChip){
+      appliedChip.textContent = (ui.hideApplied ? "처리 표시 숨김 " : "처리 표시 ") + n;
+      appliedChip.title = "반영함 " + na + " · 기각함 " + nr + " (누르면 " + (ui.hideApplied ? "보이기" : "숨기기") + ")";
+      appliedChip.classList.toggle("on", ui.hideApplied);
+    }
+    if (progress){
+      var todo = DATA.items.filter(markable).length;
+      progress.querySelector(".pv").textContent = "반영 " + na + " · 기각 " + nr + " / " + todo;
+      progress.querySelector("i.a").style.width = (todo ? Math.min(100, na / todo * 100) : 0) + "%";
+      progress.querySelector("i.r").style.width = (todo ? Math.min(100, nr / todo * 100) : 0) + "%";
+      progress.style.display = todo ? "" : "none";
+    }
+  }
+  function updateHiddenChip(){
+    var n = DATA.items.filter(function(it){ return store.hidden[it.id]; }).length;
+    hiddenChip.textContent = "숨긴 항목 " + n;
+  }
+
+  function notes(){
+    var n = el("div", "howto");
+    var ol = el("ol", "steps");
+    [["항목 고르기", "필요하면 노란 편집 칸을 고칩니다."],
+     ["행 복사", "편집을 반영한 한 행이 클립보드에 담깁니다."],
+     ["Excel에 붙여넣기", "위치 문구대로 A열에 붙이고 저장한 뒤 'Excel에 반영함'을 누릅니다."],
+     ["다시 만들기", "python -m domain_engrbot taxonomy-board 로 반영됨·기각됨을 확인합니다."]
+    ].forEach(function(s){
+      var li = el("li");
+      li.appendChild(el("b", null, s[0]));
+      li.appendChild(document.createTextNode(s[1]));
+      ol.appendChild(li);
+    });
+    n.appendChild(ol);
+    var d = el("details");
+    d.appendChild(el("summary", null, "칸 색과 주의 사항"));
+    var lg = el("div", "legend2");
+    [["var(--cell-edit-bg)", "var(--cell-edit-line)", "편집 칸"], ["var(--cell-req-bg)", "var(--danger)", "필수 빈칸·형식 오류(마우스를 올리면 사유)"],
+     ["var(--cell-chg-bg)", "var(--success)", "덮어쓰기로 바뀌는 칸"]].forEach(function(x){
+      var s = el("span"), i = el("i");
+      i.style.background = x[0];
+      i.style.boxShadow = "inset 0 0 0 1.5px " + x[1];
+      s.appendChild(i);
+      s.appendChild(document.createTextNode(x[2]));
+      lg.appendChild(s);
+    });
+    d.appendChild(lg);
+    d.appendChild(el("p", null, "거절할 항목은 '기각'을 누르면 rejected 시트 행이 복사되고 기각함으로 표시됩니다. 그 행을 rejected 시트 빈 행에 붙입니다.봇은 taxonomy.xlsx를 쓰지 않고 정의 문장을 지어내지 않습니다. " +
+      "이 화면은 용어·메모(본문 표현)를 담으므로 작업 폴더 밖으로 내지 않습니다. 편집 내용과 숨김은 이 브라우저에만 저장됩니다."));
+    if (DATA.notes && DATA.notes.revisit_file) d.appendChild(el("p", null, DATA.notes.revisit_file));
+    n.appendChild(d);
+    if (DATA.cleared) n.appendChild(el("div", "cleared", "초기화(--reset)로 숨긴 항목 " + DATA.cleared + "건은 보이지 않습니다. 같은 제안이 새 실행에서 다시 올라오면 다시 보입니다."));
+    return n;
+  }
+
+  function errors(){
+    var t = DATA.taxonomy, issues = t.issues || [];
+    if (!t.read_code && !issues.length) return null;
+    var b = el("div", "errbox");
+    b.appendChild(el("b", null, t.readable
+      ? "taxonomy.xlsx에 파싱 오류가 있습니다. 상태는 지금 행으로 판정했지만, 오류를 고친 뒤 다시 실행하세요."
+      : "taxonomy.xlsx를 읽지 못했습니다. 상태는 확인 불가로 둡니다."));
+    if (t.read_code) b.appendChild(el("div", "mono", t.read_code));
+    if (issues.length){
+      var ul = el("ul");
+      issues.forEach(function(i){
+        ul.appendChild(el("li", "mono", "시트 " + (i.sheet || "-") + " · " + (i.row != null ? i.row + "행" : "행 -") + " · " + i.code));
+      });
+      b.appendChild(ul);
+    }
+    return b;
+  }
+
+  // ---- 카드 ----
+  function actionMatch(it){
+    if (ui.action === "all") return true;
+    if (ui.action === "overwrite") return it.rows.some(function(r){ return r.target.mode === "overwrite"; });
+    return it.action === ui.action;
+  }
+  function visible(it){
+    if (ui.status !== "all" && it.status !== ui.status) return false;
+    if (ui.sheet !== "all" && it.group !== ui.sheet) return false;
+    if (!actionMatch(it)) return false;
+    if (!ui.showHidden && store.hidden[it.id]) return false;
+    if (ui.hideApplied && isApplied(it)) return false;
+    if (ui.q){
+      var ev = it.evidence || {};
+      var hay = [it.title, it.axis, it.key, it.status_note || "", it.where || ""].concat(it.rows.map(function(r){
+        return r.place + " " + r.cells.join(" ");
+      }), (ev.whys || []).map(function(w){ return w.text; }), (ev.slides || []).map(function(s){
+        return s.file + " " + s.title;
+      })).join(" ").toLowerCase();
+      if (hay.indexOf(ui.q) < 0) return false;
+    }
+    return true;
+  }
+
+  // 문제 칸(필수 빈칸·형식 위반)은 빨간 칸, 사유는 툴팁
+  function markRow(tr, it, ri){
+    var bad = {};
+    problems(it, ri).forEach(function(p){ bad[p.ci] = p.why; });
+    Array.prototype.forEach.call(tr.children, function(td, ci){
+      td.classList.toggle("req", has(bad, ci));
+      if (has(bad, ci)) td.title = bad[ci];
+      else td.removeAttribute("title");
+    });
+  }
+  function editable(td){
+    try { td.contentEditable = "plaintext-only"; } catch(e){ td.contentEditable = "true"; }
+    if (td.contentEditable !== "plaintext-only") td.contentEditable = "true";
+  }
+  function show(v){ return v === "" ? "(빈칸)" : v; }
+
+  function rowBlock(it, r, ri){
+    var b = el("div", "rowb"), top = el("div", "rowtop");
+    var cols = COLS[r.sheet] || [];
+    if (r.label) top.appendChild(el("span", "rl", r.label));
+    top.appendChild(el("span", "place", r.place));
+    top.appendChild(button("btn primary sm", "행 복사", function(){ copyRow(it, ri); },
+      "편집 칸을 반영해 탭으로 구분한 한 행(머리 없음)을 복사합니다"));
+    b.appendChild(top);
+    var changed = {};
+    (r.changes || []).forEach(function(c){ changed[c.col] = 1; });
+    if ((r.changes || []).length){
+      b.appendChild(el("div", "chgline", "바뀌는 칸: " + r.changes.map(function(c){
+        return LETTERS.charAt(c.col) + " " + cols[c.col] + " " + show(c.from) + " → " + show(c.to);
+      }).join(", ")));
+    } else if (r.target.mode === "overwrite" && r.editable.length){
+      b.appendChild(el("div", "chgline", "고칠 칸: " + r.editable.map(function(ci){
+        return LETTERS.charAt(ci) + " " + cols[ci];
+      }).join(", ") + " (나머지 칸은 지금 행 그대로)"));
+    }
+    var tw = el("div", "tw"), t = el("table", "sheet n" + cols.length);
+    var thead = el("thead"), trh = el("tr");
+    cols.forEach(function(name, ci){
+      var th = el("th", changed[ci] ? "chgh" : (r.editable.indexOf(ci) >= 0 ? "edh" : ""));
+      th.appendChild(el("span", "L", LETTERS.charAt(ci)));
+      th.appendChild(document.createTextNode(name));
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+    t.appendChild(thead);
+    var tb = el("tbody"), tr = el("tr");
+    r.cells.forEach(function(_, ci){
+      var td = el("td", changed[ci] ? "chg" : null, cellVal(it, ri, ci));
+      if (r.editable.indexOf(ci) >= 0){
+        td.className = "ed";
+        editable(td);
+        td.setAttribute("aria-label", LETTERS.charAt(ci) + " " + (cols[ci] || "") + " 편집");
+        td.addEventListener("input", function(){ setEdit(it, ri, ci, td.textContent); markRow(tr, it, ri); });
+        td.addEventListener("keydown", function(ev){ if (ev.key === "Enter"){ ev.preventDefault(); td.blur(); } });
+      }
+      tr.appendChild(td);
+    });
+    markRow(tr, it, ri);
+    tb.appendChild(tr);
+    t.appendChild(tb);
+    tw.appendChild(t);
+    b.appendChild(tw);
+    return b;
+  }
+
+  function chips(it){
+    var w = el("div", "srcs");
+    it.sources.forEach(function(s){
+      var parts = [s.label];
+      if (s.ws) parts.push(s.ws);
+      if (s.run && s.src !== "S7") parts.push(s.run);   // 엔지니어 답변의 질문 묶음 ID는 사람에게 의미가 없어 숨긴다
+      if (s.n > 1) parts.push(s.n + "건");
+      var c = el("span", "src" + (s.rejected ? " rej" : ""), parts.join(" · ") + (s.rejected ? " (기각)" : ""));
+      if (s.pid) c.title = "제안 ID " + s.pid;
+      w.appendChild(c);
+    });
+    return w;
+  }
+
+  // ---- 왜 올라왔나 + 근거 슬라이드 ----
+  function slideName(s){
+    if (s.slide_no == null) return "chunk " + s.chunk_id;
+    return (s.is_slide ? "슬라이드 " : "구역 ") + s.slide_no;
+  }
+  function openLightbox(src, cap){
+    var lb = document.getElementById("lightbox"), fig = document.getElementById("lbfig");
+    var old = fig.querySelector("img");
+    if (old) fig.removeChild(old);
+    var img = el("img");
+    img.src = src;
+    img.alt = cap;
+    fig.insertBefore(img, fig.firstChild);
+    document.getElementById("lbcap").textContent = cap;
+    lb.classList.add("on");
+  }
+  function evidence(it){
+    var ev = it.evidence || {}, whys = ev.whys || [], slides = ev.slides || [];
+    if (!whys.length && !slides.length) return null;
+    var box = el("div", "why");
+    var wh = el("div", "wh", "왜 올라왔나");
+    if (slides.length) wh.appendChild(el("span", "n", "근거 " + (slides.length + (ev.more || 0)) + "건"));
+    box.appendChild(wh);
+    if (whys.length){
+      var ul = el("ul");
+      whys.forEach(function(w){
+        var li = el("li");
+        li.appendChild(el("span", "lb", w.label));
+        li.appendChild(el("span", null, w.text));
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+    }
+    if (slides.length){
+      var g = el("div", "slides");
+      slides.forEach(function(s){
+        var c = el("div", "sl" + (s.found ? "" : " miss"));
+        var name = slideName(s), cap = (s.file ? s.file + " · " : "") + name + (s.title ? " · " + s.title : "");
+        var th, src = s.preview ? (DATA.previews || {})[s.preview] : null;
+        if (src){
+          th = button("th", "", function(){ openLightbox(src, cap); }, "크게 보기");
+          var img = el("img");
+          img.src = src;
+          img.alt = cap;
+          img.loading = "lazy";
+          th.appendChild(img);
+        } else {
+          th = el("div", "th", s.found ? (s.slide_no != null ? "#" + s.slide_no : "—") : "찾지 못함");
+          th.title = s.found ? "미리보기 그림이 없습니다(labelbot slide-images로 만들 수 있습니다)"
+                             : "작업 폴더 work.sqlite에서 이 chunk를 찾지 못했습니다";
+        }
+        c.appendChild(th);
+        var cp = el("div", "cap");
+        cp.appendChild(el("b", null, name));
+        if (s.file) cp.appendChild(el("span", "f", s.file)).title = s.file;
+        if (s.title) cp.appendChild(el("span", "t", s.title)).title = s.title;
+        cp.appendChild(el("span", "src2", s.label + (s.ws ? " · " + s.ws : "")));
+        c.appendChild(cp);
+        g.appendChild(c);
+      });
+      box.appendChild(g);
+      if (ev.more) box.appendChild(el("div", "more", "외 근거 chunk " + ev.more + "건"));
+    }
+    return box;
+  }
+
+  function context(it){
+    var m = it.context.metrics || [], memos = it.context.memos || [];
+    if (!m.length && !memos.length) return null;
+    var d = el("div", "ctx");
+    if (m.length){
+      var ul = el("ul");
+      m.forEach(function(x){ ul.appendChild(el("li", null, x)); });
+      d.appendChild(ul);
+    }
+    var labels = it.context.memo_labels || [];
+    memos.forEach(function(x, i){
+      var md = el("div", "memo");
+      md.appendChild(el("span", "ml2", (labels[i] || "재검토 메모") + (memos.length > 1 ? " " + (i + 1) : "")));
+      md.appendChild(el("p", "q", x));
+      d.appendChild(md);
+    });
+    return d;
+  }
+
+  // 처리 표시 버튼(반영함·기각): 미반영·먼저 할 일 항목에만(반영됨·기각됨은 시트가 이미 확인했다)
+  function markable(it){ return it.status !== "done" && it.status !== "rejected"; }
+  function applyButton(it){
+    if (!markable(it) || it.group === "outside") return null;
+    var b = button("btn applybtn", "Excel에 반영함", function(){
+      setMark(it, "applied", "반영함으로 표시했습니다. 보드를 다시 만들면 시트 기준으로 확인합니다.");
+    }, "이 항목을 taxonomy.xlsx에 붙여 넣었다고 표시합니다(이 브라우저에 저장)");
+    b.setAttribute("aria-pressed", "false");
+    return b;
+  }
+  function rejectButton(it){
+    if (!markable(it)) return null;
+    var tip = it.reject_row ? "rejected 시트 행(종류, 내용, 기각일=오늘, 사유=빈칸)을 복사하고 기각함으로 표시합니다"
+                            : "기각함으로 표시합니다" + (it.reject_hint ? "(" + it.reject_hint + ")" : "");
+    var b = button("btn rejectbtn", "기각", function(){
+      if (it.reject_row){
+        copyReject(it, "기각 행을 복사했습니다. rejected 시트 빈 행에 붙이면 다시 만들 때 기각됨이 됩니다.");
+        setMark(it, "rejected");
+      } else {
+        setMark(it, "rejected", "기각함으로 표시했습니다." + (it.reject_hint ? " " + it.reject_hint : ""));
+      }
+    }, tip);
+    b.setAttribute("aria-pressed", "false");
+    return b;
+  }
+  function cancelButton(m, it){
+    var b = button("btn " + (m.kind === "applied" ? "applybtn" : "rejectbtn") + " on", m.kind === "applied" ? "반영 취소" : "기각 취소",
+      function(){ setMark(it, null, (m.kind === "applied" ? "반영" : "기각") + " 표시를 취소했습니다."); },
+      "표시를 지웁니다");
+    b.setAttribute("aria-pressed", "true");
+    return b;
+  }
+  var FOLD_NOTE = {
+    applied: "Excel에 반영했다고 표시한 항목입니다. 보드를 다시 만들면 시트 기준으로 반영됨을 확인하고 이 표시는 사라집니다.",
+    rejected: "기각한다고 표시한 항목입니다. rejected 시트에 붙였다면 보드를 다시 만들 때 기각됨으로 바뀌고 이 표시는 사라집니다."
+  };
+
+  function card(it, i){
+    var m = markOf(it);
+    var folded = m && !expanded[it.id];
+    var c = el("div", "card cardin s-" + it.status + (store.hidden[it.id] ? " hid" : "") + (m ? " marked " + MARK[m.kind].cls : "") +
+               (folded ? " folded" : ""));
+    c.id = "it-" + it.id;
+    c.style.animationDelay = Math.min(i || 0, 12) * 24 + "ms";
+    var h = el("div", "ch");
+    h.appendChild(el("span", "badge act a-" + it.action, ACT[it.action] || it.action));
+    if (m) h.appendChild(el("span", "badge st st-" + MARK[m.kind].cls, MARK[m.kind].badge + " " + stamp(m.at)));
+    else h.appendChild(el("span", "badge st st-" + it.status, ST[it.status] || it.status));
+    if (it.conflict) h.appendChild(el("span", "badge warn", "상충"));
+    if (it.human && it.human.unverified) h.appendChild(el("span", "badge warn", "시트 미확인")).title =
+      "보드에서 반영함으로 확정했지만 taxonomy.xlsx에서 자동으로 확인되지 않았습니다";
+    h.appendChild(el("span", "title", it.title));
+    if (it.human && !m){
+      h.appendChild(el("span", "sp"));
+      h.appendChild(button("btn sm ghost", "확정 취소", function(){ undoDecision(it); },
+        "보드에서 확정한 " + (it.human.decision === "applied" ? "반영함" : "기각함") + "을 취소하고 시트 기준으로 다시 판정합니다"));
+    }
+    if (m){
+      h.appendChild(el("span", "sp"));
+      h.appendChild(button("btn sm ghost", folded ? "펼치기" : "접기", function(){
+        expanded[it.id] = folded;
+        var keep = window.scrollY;
+        renderBody();
+        window.scrollTo(0, keep);
+      }));
+      h.appendChild(cancelButton(m, it));
+    }
+    c.appendChild(h);
+    if (folded){
+      c.appendChild(el("div", "sub", FOLD_NOTE[m.kind]));
+      return c;
+    }
+    if (it.status_note) c.appendChild(el("div", "sub", it.status_note));
+    if (it.conflict) c.appendChild(el("div", "warnline", "같은 동의어에 표준어가 여럿 올라왔습니다. 하나만 붙이세요."));
+    var why = evidence(it);
+    if (why) c.appendChild(why);
+    it.rows.forEach(function(r, ri){ c.appendChild(rowBlock(it, r, ri)); });
+    if (it.where) c.appendChild(el("div", "place where", "고칠 곳: " + it.where));
+    var act = el("div", "opts");
+    if (!m){
+      var ab = applyButton(it), rb = rejectButton(it);
+      if (ab) act.appendChild(ab);
+      if (rb) act.appendChild(rb);
+    }
+    if (!markable(it) && it.reject_row) act.appendChild(button("btn sm", "기각 행 복사", function(){ copyReject(it); },
+      "rejected 시트 4칸(종류, 내용, 기각일=오늘, 사유=빈칸)을 복사합니다"));
+    if (!it.reject_row && it.reject_hint) act.appendChild(el("span", "sub", "기각: " + it.reject_hint));
+    if (store.edits[it.id]) act.appendChild(button("btn sm ghost", "편집 되돌리기", function(){
+      delete store.edits[it.id];
+      save();
+      renderBody();
+    }));
+    act.appendChild(button("btn sm ghost", store.hidden[it.id] ? "숨김 해제" : "숨김", function(){
+      if (store.hidden[it.id]) delete store.hidden[it.id];
+      else store.hidden[it.id] = 1;
+      save();
+      updateHiddenChip();
+      renderBody();
+    }));
+    c.appendChild(act);
+    c.appendChild(chips(it));
+    var ctx = context(it);
+    if (ctx) c.appendChild(ctx);
+    return c;
+  }
+
+  // ---- 구역 ----
+  function section(parent, group, n){
+    var s = el("section"), sh = el("div", "sh");
+    sh.appendChild(el("h2", null, GROUP[group]));
+    sh.appendChild(el("span", "n", n + "건"));
+    sh.appendChild(el("span", "sp"));
+    if (BULK[group]){
+      var rows = bulkRows(group);
+      var b = button("btn sm", "바로 붙일 추가 행 모두 복사 (" + rows.length + ")", function(){
+        var now = bulkRows(group);
+        if (!now.length){ toast("바로 붙일 추가 행이 없습니다."); return; }
+        copyText(now.join("\r\n"), group + " 시트 추가 행 " + now.length + "개를 복사했습니다. 빈 행에 붙입니다.");
+      }, "미반영이고 문제 칸이 없는 '빈 행에 추가' 행만 모읍니다(먼저 할 일·확인 불가·숨김·반영 표시한 항목 제외)");
+      b.disabled = !rows.length;
+      sh.appendChild(b);
+    }
+    s.appendChild(sh);
+    parent.appendChild(s);
+    return s;
+  }
+
+  function axisHead(ax, n){
+    var h = el("div", "axh");
+    h.appendChild(el("span", "ax-dot"));
+    var t = el("div");
+    var line = el("div");
+    line.appendChild(el("span", "nm", ax.name));
+    line.appendChild(el("span", "sub", "  " + n + "건" + (ax.row ? " · 축 정의 " + ax.row + "행" : " · 시트에 없는 축") +
+      (ax.off ? " · 꺼진 축" : "")));
+    t.appendChild(line);
+    (ax.metrics || []).forEach(function(m){
+      t.appendChild(el("div", "ml", "L6 " + m.ws + " · " + m.run + " · 커버리지 " + pct(m.coverage) + " · unknown " +
+        pct(m.unknown_rate) + " · 미사용 값 " + m.unused.length + "개"));
+      if (m.unused.length){
+        var d = el("details");
+        d.appendChild(el("summary", null, "미사용 값 보기"));
+        d.appendChild(el("div", null, m.unused.join(", ")));
+        t.appendChild(d);
+      }
+    });
+    h.appendChild(t);
+    return h;
+  }
+
+  // 표를 첫 바뀌는 칸이 보이게 가로 스크롤한다. 편집 칸은 화면 밖에 완전히 숨었을 때만 따라간다(A 축 열을 가리지 않게)
+  function scrollTables(){
+    Array.prototype.forEach.call(body.querySelectorAll(".tw"), function(tw){
+      var td = tw.querySelector("td.chg");
+      if (td && td.offsetLeft + td.offsetWidth > tw.clientWidth) { tw.scrollLeft = Math.max(0, td.offsetLeft - 120); return; }
+      td = tw.querySelector("td.ed");
+      if (td && td.offsetLeft >= tw.clientWidth) tw.scrollLeft = Math.max(0, td.offsetLeft - 120);
+    });
+  }
+
+  function renderBody(){
+    body.innerHTML = "";
+    var shown = DATA.items.filter(visible), k = 0;
+    function add(s, it){ s.appendChild(card(it, k++)); }
+    var tax = shown.filter(function(it){ return it.group === "taxonomy"; });
+    if (tax.length){
+      var s = section(body, "taxonomy", tax.length), done = {};
+      var na = tax.filter(function(it){ return it.kind === "new_axis"; });
+      if (na.length){
+        s.appendChild(axisHead({name: "새 축", row: null, metrics: []}, na.length));
+        na.forEach(function(it){ add(s, it); done[it.id] = 1; });
+      }
+      DATA.axes.forEach(function(ax){
+        var its = tax.filter(function(it){ return !done[it.id] && norm(it.axis) === norm(ax.name); });
+        if (!its.length) return;
+        s.appendChild(axisHead(ax, its.length));
+        its.forEach(function(it){ add(s, it); done[it.id] = 1; });
+      });
+      tax.forEach(function(it){ if (!done[it.id]) add(s, it); });
+    }
+    ["synonyms", "questions", "term"].forEach(function(g){
+      var its = shown.filter(function(it){ return it.group === g; });
+      if (!its.length) return;
+      var s = section(body, g, its.length);
+      its.forEach(function(it){ add(s, it); });
+    });
+    var out = shown.filter(function(it){ return it.group === "outside"; });
+    if (out.length){
+      var d = el("details", "sec");
+      d.appendChild(el("summary", null, "taxonomy 밖 " + out.length + "건 (프롬프트·검수 정책 등, 목록만)"));
+      out.forEach(function(it){ add(d, it); });
+      body.appendChild(d);
+    }
+    if (!shown.length){
+      var e = el("div", "empty");
+      e.appendChild(el("b", null, DATA.items.length ? "조건에 맞는 항목이 없습니다" : "수정 제안이 없습니다"));
+      e.appendChild(document.createTextNode(DATA.items.length ? "상태·시트·동작 필터를 바꿔 보세요." : "다음 실행에서 새 제안이 올라오면 여기에 나타납니다."));
+      body.appendChild(e);
+    }
+    scrollTables();
+  }
+
+  // ---- 배경: 48px 격자 위 도트 반발 + 커서 주변 별자리 선 (design.md.md 3장) ----
+  function backdrop(){
+    var cv = document.getElementById("fx");
+    if (!cv || !cv.getContext) return;
+    var ctx = cv.getContext("2d"), dpr = Math.max(1, window.devicePixelRatio || 1);
+    var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var G = 48, R = 140, FORCE = 38, DAMP = 0.78, LINK = 110;
+    var dots = [], mx = -9999, my = -9999, raf = 0, idle = 0, trail = [];
+    function layout(){
+      var w = window.innerWidth, h = window.innerHeight;
+      cv.width = w * dpr; cv.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      dots = [];
+      for (var y = G; y < h; y += G) for (var x = G; x < w; x += G) dots.push({ox: x, oy: y, x: x, y: y, vx: 0, vy: 0});
+      draw();
+    }
+    function draw(){
+      var w = window.innerWidth, h = window.innerHeight, moving = false, i, d;
+      ctx.clearRect(0, 0, w, h);
+      for (i = 0; i < trail.length; i++){
+        var p = trail[i], a = (1 - p.age / 28) * 0.16;
+        if (a <= 0) continue;
+        ctx.fillStyle = "rgba(90,130,190," + a.toFixed(3) + ")";
+        ctx.beginPath(); ctx.arc(p.x, p.y, 2.2, 0, 6.2832); ctx.fill();
+        p.age++;
+      }
+      trail = trail.filter(function(p){ return p.age < 28; });
+      var near = [];
+      for (i = 0; i < dots.length; i++){
+        d = dots[i];
+        var dx = d.x - mx, dy = d.y - my, dist = Math.sqrt(dx * dx + dy * dy);
+        if (!still && dist < R && dist > 0.01){
+          var f = (1 - dist / R) * FORCE * 0.06;
+          d.vx += dx / dist * f; d.vy += dy / dist * f;
+        }
+        d.vx += (d.ox - d.x) * 0.06; d.vy += (d.oy - d.y) * 0.06;
+        d.vx *= DAMP; d.vy *= DAMP;
+        d.x += d.vx; d.y += d.vy;
+        var off = Math.abs(d.x - d.ox) + Math.abs(d.y - d.oy);
+        if (off > 0.05 || Math.abs(d.vx) + Math.abs(d.vy) > 0.02) moving = true;
+        var boost = Math.min(1, off / 18);
+        ctx.fillStyle = "rgba(168,189,212," + (0.5 + boost * 0.45).toFixed(3) + ")";
+        ctx.beginPath(); ctx.arc(d.x, d.y, 1.1 + boost * 1.2, 0, 6.2832); ctx.fill();
+        if (dist < LINK) near.push(d);
+      }
+      for (i = 0; i < near.length; i++) for (var j = i + 1; j < near.length; j++){
+        var a1 = near[i], b1 = near[j], ddx = a1.x - b1.x, ddy = a1.y - b1.y, l = Math.sqrt(ddx * ddx + ddy * ddy);
+        if (l > G * 1.6) continue;
+        ctx.strokeStyle = "rgba(122,156,192," + ((1 - l / (G * 1.6)) * 0.35).toFixed(3) + ")";
+        ctx.lineWidth = 0.6;
+        ctx.beginPath(); ctx.moveTo(a1.x, a1.y); ctx.lineTo(b1.x, b1.y); ctx.stroke();
+      }
+      return moving || trail.length > 0;
+    }
+    function loop(){
+      var busy = draw();
+      idle = busy ? 0 : idle + 1;
+      raf = idle > 30 ? 0 : requestAnimationFrame(loop);
+    }
+    function kick(){ if (!raf && !still) raf = requestAnimationFrame(loop); }
+    window.addEventListener("mousemove", function(e){
+      mx = e.clientX; my = e.clientY;
+      if (!still) trail.push({x: mx, y: my, age: 0});
+      kick();
+    }, {passive: true});
+    document.addEventListener("mouseleave", function(){ mx = my = -9999; kick(); });
+    window.addEventListener("resize", layout);
+    layout();
+  }
+
+  var lbox = document.getElementById("lightbox");
+  lbox.addEventListener("click", function(){ lbox.classList.remove("on"); });
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape") lbox.classList.remove("on"); });
+
+  root.appendChild(top());
+  root.appendChild(hero());
+  root.appendChild(header());
+  var wrap = el("div", "wrap");
+  wrap.appendChild(notes());
+  var err = errors();
+  if (err) wrap.appendChild(err);
+  body = el("div");
+  wrap.appendChild(body);
+  root.appendChild(wrap);
+  updateAppliedUI();
+  renderBody();
+  try {
+    var done = sessionStorage.getItem(KEY + ":toast");
+    if (done){ sessionStorage.removeItem(KEY + ":toast"); toast(done); }
+  } catch(e){}
+})();
+</script>
+</body>
+</html>

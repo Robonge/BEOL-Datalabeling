@@ -4,7 +4,7 @@ import json
 import re
 
 from labelbot import prompts, util
-from labelbot.llm import CallFailed, SendBlocked
+from labelbot.llm import CallFailed
 from labelbot.store import add_failure
 
 ANSWERS = ("O", "X", "N/A")
@@ -86,9 +86,26 @@ def neighbor_titles(con, chunk):
     return by.get(chunk["seq"] - 1) or "(없음)", by.get(chunk["seq"] + 1) or "(없음)"
 
 
+def _blind(questions):
+    """대조 질문을 검증 질문과 같은 모양의 별칭 ID로 바꾸고 생성 질문을 ID 순으로 섞는다.
+
+    반환: (프롬프트에 보일 질문 목록, {보일 ID: 원래 ID}). 라벨러가 ID나 순서로 대조 질문을 가려내지 못하게 한다.
+    """
+    from labelbot.questions import GEN_PREFIX, alias_qid, is_control
+
+    back, shown = {}, []
+    for q in questions:
+        s = q._replace(qid=alias_qid(q.qid)) if is_control(q.qid) else q
+        back[s.qid] = q.qid
+        shown.append(s)
+    gen = sorted((q for q in shown if q.qid.startswith(GEN_PREFIX)), key=lambda q: q.qid)
+    return [q for q in shown if not q.qid.startswith(GEN_PREFIX)] + gen, back
+
+
 def label_chunk(ctx, chunk, cls_res, questions):
-    """성공하면 dict, 실패하면 None."""
+    """성공하면 dict(답의 키는 원래 질문 ID), 실패하면 None."""
     con = ctx.con
+    questions, back = _blind(questions)
     qids = [q.qid for q in questions]
     _, matches = ctx.syn.apply(chunk["text"])
     prev_t, next_t = neighbor_titles(con, chunk)
@@ -106,10 +123,11 @@ def label_chunk(ctx, chunk, cls_res, questions):
         "response_format": RESPONSE_FORMAT,
     }
     messages = prompts.render("label", values)
-    hint = {"task": "label", "qids": qids, "text": chunk["text"]}
+    hint = {"task": "label", "qids": qids, "text": chunk["text"],
+            "controls": [s for s, q in back.items() if s != q]}
     try:
         obj = ctx.chat.chat_json(messages, [chunk["file_id"]], _validator(qids), hint=hint)
-    except (CallFailed, SendBlocked) as e:
+    except CallFailed as e:
         ctx.fail("label", chunk["chunk_id"], e.reason_code)
         return None
     if set(obj["answers"]) - set(qids):
@@ -123,7 +141,7 @@ def label_chunk(ctx, chunk, cls_res, questions):
             conf = conf if 0 <= conf <= 1 else None
         except (TypeError, ValueError):
             conf = None
-        answers[q] = {"answer": a["answer"], "quote": str(a.get("quote") or "")[:1000], "confidence": conf}
+        answers[back[q]] = {"answer": a["answer"], "quote": str(a.get("quote") or "")[:1000], "confidence": conf}
     extracted = []
     for e in obj.get("extracted") or []:
         if not isinstance(e, dict):
@@ -151,12 +169,16 @@ def label_chunk(ctx, chunk, cls_res, questions):
 
 
 def store_result(ctx, chunk_id, res):
+    """대조 질문(Q-CTL-) 답은 kind='control'로 남겨 확정 라벨(kind='answer')에 섞지 않는다."""
+    from labelbot.questions import is_control
+
     con, base = ctx.con, ctx.label_base()
     for q, a in res["answers"].items():
         con.execute(
             "INSERT INTO labels(run_id, chunk_id, kind, key, value, status, evidence, confidence, sheet_hashes,"
             " prompt_version, model, created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-            (ctx.run_id, chunk_id, "answer", q, a["answer"], None, a["quote"], a["confidence"]) + base("label"),
+            (ctx.run_id, chunk_id, "control" if is_control(q) else "answer", q, a["answer"], None, a["quote"],
+             a["confidence"]) + base("label"),
         )
     for e in res["extracted"]:
         con.execute(

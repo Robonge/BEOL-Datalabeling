@@ -1,5 +1,5 @@
 """모듈 수준 상수 계약 동결: 사유 코드, 실패 단계, 표 목록, 허용 확장자, 작업 폴더 하위 폴더, 기본 설정,
-engrbot issue code 카탈로그. 실제로 모듈에 정의된 데이터만 읽는다.
+domain_engrbot issue code 카탈로그. 실제로 모듈에 정의된 데이터만 읽는다.
 """
 import importlib
 import unittest
@@ -43,10 +43,10 @@ CONSTANTS = [
     ("labelbot.feedback", "AXIS_KINDS"),
     ("labelbot.feedback", "ANSWER_KINDS"),
     ("labelbot.questions", "GEN_PREFIX"),
-    ("engrbot.adapters.labelbot_ws", "REQUIRED"),
-    ("engrbot.adapters.labelbot_ws", "LABEL_STAGE"),
-    ("engrbot.adapters.labelbot_ws", "RECORD_STAGES"),
-    ("engrbot.adapters.labelbot_ws", "SOURCE_FAIL_STAGES"),
+    ("domain_engrbot.adapters.labelbot_ws", "REQUIRED"),
+    ("domain_engrbot.adapters.labelbot_ws", "LABEL_STAGE"),
+    ("domain_engrbot.adapters.labelbot_ws", "RECORD_STAGES"),
+    ("domain_engrbot.adapters.labelbot_ws", "SOURCE_FAIL_STAGES"),
 ]
 
 
@@ -72,15 +72,15 @@ class ConstantsContract(unittest.TestCase):
         }
         _support.check(self, "constants", data)
 
-    def test_engrbot_issue_codes(self):
-        codes = importlib.import_module("engrbot.codes")
+    def test_domain_engrbot_issue_codes(self):
+        codes = importlib.import_module("domain_engrbot.codes")
         cat = codes.catalog()
         data = {
             code: {k: v for k, v in entry.items() if k != "desc"}
             for code, entry in cat.items()
         }
         data["__order__"] = list(cat)
-        _support.check(self, "engrbot_issue_codes", data)
+        _support.check(self, "domain_engrbot_issue_codes", data)
 
 
 if __name__ == "__main__":

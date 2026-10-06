@@ -35,7 +35,13 @@ def _parser():
         sp.add_argument("--run", help="실행 ID(기본: 최신)")
     ap = add("apply", "inbox/의 교정·대조 .json 반영")
     ap.add_argument("--kind", choices=("review", "compare"), help="이 종류의 파일만 반영(review: 검수, compare: 파싱 대조)")
-    sv = add("serve", "화면 서버(screens/ 제공, 검수·대조 JSON을 inbox/에 저장)")
+    add("taxonomy-diff", "마지막 실행 대비 taxonomy 축 변경(추가·삭제·종류/설정·값)")
+    au = add("axis-update", "taxonomy 축 변경분만 1차 분류로 다시 라벨링(이전 실행 이어받기, 입력 폴더를 읽지 않음)")
+    au.add_argument("--dry-run", action="store_true", help="대상·삭제 축과 건수(plan JSON)만 출력하고 실행을 만들지 않는다")
+    au.add_argument("--no-feedback", action="store_true", help="승인된 검수 피드백 규칙·사례를 이번 실행에 넣지 않는다")
+    ab = add("axis-board", "축 변경 현황판(screens/axis_update.html): 대상 축 카드와 슬라이드별 새 축 값")
+    ab.add_argument("--run", help="axis-update 실행 ID(기본: 최신 라벨 실행)")
+    sv = add("serve","화면 서버(screens/ 제공, 검수·대조 JSON을 inbox/에 저장)")
     sv.add_argument("--port", type=int, default=8770, help="포트(127.0.0.1 전용)")
     return p
 
@@ -56,7 +62,7 @@ def main(argv=None):
             return _WS_COMMANDS[args.command](ws, args)
         con = store.connect(ws.work_db)
         try:
-            run_id = getattr(args, "run", None) or store.latest_run(con)
+            run_id = getattr(args, "run", None) or _default_run(con)
             if args.command != "apply" and not run_id:
                 raise PipelineError("실행 기록이 없습니다. 먼저 run 또는 ingest를 실행하세요.")
             _RUN_COMMANDS[args.command](ws, con, run_id, args)
@@ -66,6 +72,14 @@ def main(argv=None):
     except PipelineError as e:
         print("[오류] %s" % e, file=sys.stderr)
         return 1
+
+
+def _default_run(con):
+    """기본 --run: 끝난 최신 실행. 더 최신의 미완료 실행을 건너뛰면 stderr에 사유 코드 한 줄을 낸다."""
+    run_id, newest = store.latest_run(con), store.latest_run(con, finished=False)
+    if run_id and newest and newest != run_id:
+        print("[run] LATEST_UNFINISHED_SKIPPED %s" % newest, file=sys.stderr)
+    return run_id
 
 
 # ---- 작업 폴더만 쓰는 명령: (ws, args) → 종료 코드 ----------------------------------
@@ -79,6 +93,31 @@ def _cmd_selfcheck(ws, args):
 
 def _cmd_probe(ws, args):
     return _probe(ws, args.input or ws.input_root)
+
+
+def _cmd_taxonomy_diff(ws, args):
+    from labelbot import taxdiff
+    from labelbot.pipeline import load_taxonomy, say
+
+    tax, _ = load_taxonomy(ws)
+    d, run_id = taxdiff.compare_workspace(ws, tax)
+    say(json.dumps(dict(d, run_id=run_id), ensure_ascii=False))
+    say(taxdiff.summary_line(d))
+    return 0
+
+
+def _cmd_axis_update(ws, args):
+    from labelbot.pipeline import run_axis_update, say
+
+    p, run_id, _ = run_axis_update(ws, use_feedback=not args.no_feedback, dry_run=args.dry_run)
+    if args.dry_run:
+        say(json.dumps({k: p[k] for k in ("code", "prev_run", "target", "removed", "values_added_only", "chunks",
+                                         "dropped_answers", "dropped_corrections")}, ensure_ascii=False))
+        return 0
+    if p["code"]:
+        say("[axis-update] 건너뜀 %s" % p["code"])
+        return 3
+    return 0
 
 
 def _cmd_serve(ws, args):
@@ -146,6 +185,19 @@ def _cmd_apply(ws, con, run_id, args):
             len(written), os.path.basename(os.path.dirname(rv_dir)), os.path.basename(rv_dir)))
 
 
+def _cmd_axis_board(ws, con, run_id, args):
+    from labelbot import axisboard
+    from labelbot.pipeline import PipelineError, load_taxonomy, say
+
+    run_id = args.run or store.latest_label_run(con)
+    tax, _ = load_taxonomy(ws)
+    try:
+        path, n_axes, n_slides = axisboard.build_board(ws, con, run_id, tax)
+    except axisboard.BoardError as e:
+        raise PipelineError("run_id=%s는 axis-update 실행이 아닙니다(%s). --run으로 axis-update 실행 ID를 주세요." % (run_id, e))
+    say("[axis-board] run_id=%s 대상 축 %d개, 슬라이드 %d개 → screens/axis_update.html" % (run_id, n_axes, n_slides))
+
+
 def _cmd_dashboard(ws, con, run_id, args):
     from labelbot import dashboard
     from labelbot.pipeline import load_taxonomy, say
@@ -198,9 +250,9 @@ def _cmd_push_slides(ws, con, run_id, args):
 
 
 _WS_COMMANDS = {"selfcheck": _cmd_selfcheck, "probe": _cmd_probe, "serve": _cmd_serve, "ingest": _cmd_ingest,
-                "run": _cmd_run}
+                "run": _cmd_run, "taxonomy-diff": _cmd_taxonomy_diff, "axis-update": _cmd_axis_update}
 _RUN_COMMANDS = {"compare": _cmd_compare, "review": _cmd_review, "apply": _cmd_apply, "dashboard": _cmd_dashboard,
-                 "report": _cmd_report, "embed": _cmd_embed, "push-vectors": _cmd_push_vectors,
+                 "report": _cmd_report, "axis-board": _cmd_axis_board, "embed": _cmd_embed, "push-vectors": _cmd_push_vectors,
                  "slide-images": _cmd_slide_images, "push-slides": _cmd_push_slides}
 
 

@@ -3,9 +3,11 @@
 vector_push_log로 멱등을 보장한다. 같은 대상 호스트에 같은 chunk·모델·text_hash·label_hash가 성공으로 있으면 보내지 않는다.
 파일명과 경로는 보내지 않는다. 적재 대상별 부분(URL, 헤더, 행 형식)은 SupabaseSink 하나에 모은다.
 """
+import json
+
 from labelbot import finals, store, util
 from labelbot.embed import run_chunks, unpack
-from labelbot.llm import CallFailed, SendBlocked, SupabaseSinkBase, check_send, host_hash, post_json, read_key
+from labelbot.llm import CallFailed, SupabaseSinkBase, host_hash, post_json, read_key
 
 
 class SupabaseSink(SupabaseSinkBase):
@@ -27,6 +29,46 @@ class SupabaseSink(SupabaseSinkBase):
         }
 
 
+def push_label_hash(d, doc_meta=None):
+    """vector_push_log의 label_hash. doc_meta가 바뀌면 다시 보내도록 함께 해시한다."""
+    lh = finals.label_hash(d)
+    return util.hash_obj([lh, doc_meta]) if doc_meta is not None else lh
+
+
+def load_doc_meta(con):
+    return {r[0]: json.loads(r[1]) for r in con.execute("SELECT file_id, doc_meta FROM files WHERE doc_meta IS NOT NULL")}
+
+
+def _pushable(con, run_id, labels):
+    """적재할 chunk ID. 분류·라벨 실패 chunk와 axis-update 부분 분류 미완 chunk(finals.incomplete)는 뺀다."""
+    lab_failed = {r[0] for r in con.execute("SELECT target_id FROM failures WHERE run_id=? AND stage='label'", (run_id,))}
+    bad = finals.incomplete(con, run_id, labels)
+    return {cid for cid, d in labels.items()
+            if d["chunk_type"] and not (cid in lab_failed and not d["answers"]) and cid not in bad}
+
+
+def unpushed(ws, con, run_id):
+    """적재 대상인데 지금 확정 라벨(label_hash)로 이 대상 호스트에 OK 기록이 없는 chunk 수. URL이 없으면 0.
+
+    임베딩이 아직 없는 chunk도 적재 전으로 센다. chunk는 file_locations가 아니라 그 실행의 라벨 행으로 고른다.
+    확정 라벨은 실행 전체로 한 번 읽고(IN 목록 없음), OK 기록도 한 번의 쿼리로 메모리에 올려 비교한다.
+    """
+    url = ws.supabase_url()
+    if not url:
+        return 0
+    target, model = host_hash(url), ws.config["embedding"]["model"]
+    rows = {r[0]: (r[1], r[2]) for r in con.execute(
+        "SELECT c.chunk_id, c.file_id, c.text_hash FROM labels l JOIN chunks c ON c.chunk_id=l.chunk_id"
+        " WHERE l.run_id=? AND l.kind='chunk_type'", (run_id,))}
+    labels = {cid: d for cid, d in finals.final_labels(con, run_id).items() if cid in rows}
+    doc_meta = load_doc_meta(con)
+    done = {tuple(r) for r in con.execute(
+        "SELECT chunk_id, text_hash, label_hash FROM vector_push_log WHERE model=? AND target_host_hash=?"
+        " AND result_code='OK'", (model, target))}
+    return sum(1 for cid in _pushable(con, run_id, labels)
+               if (cid, rows[cid][1], push_label_hash(labels[cid], doc_meta.get(rows[cid][0]))) not in done)
+
+
 def push(ws, con, run_id, sink=None, log=None):
     sb = ws.config["supabase"]
     if not sb.get("enabled"):
@@ -34,7 +76,6 @@ def push(ws, con, run_id, sink=None, log=None):
         return {"called": 0, "sent": 0, "skipped": 0, "blocked": 0}
     url = ws.supabase_url()
     model = ws.config["embedding"]["model"]
-    suffixes = ws.config["llm"].get("internal_host_suffixes")
     if sink is None:
         key = read_key(sb.get("key_env"))
         if not url or not key:
@@ -53,29 +94,25 @@ def push(ws, con, run_id, sink=None, log=None):
         print("[push-vectors] 차원이 다른 벡터가 섞여 있어 거부합니다.")
         return {"called": 0, "sent": 0, "skipped": 0, "blocked": 0, "reason": "MODEL_DIM_MIX"}
     labels = finals.final_labels(con, run_id, [e["chunk_id"] for e in emb])
-    lab_failed = {r[0] for r in con.execute("SELECT target_id FROM failures WHERE run_id=? AND stage='label'", (run_id,))}
+    doc_meta = load_doc_meta(con)
+    ok = _pushable(con, run_id, labels)
     todo, skipped, blocked = [], 0, 0
     for e in emb:
         c, d = chunks[e["chunk_id"]], labels.get(e["chunk_id"])
-        if not d or not d["chunk_type"] or (c["chunk_id"] in lab_failed and not d["answers"]):
-            skipped += 1  # 분류·라벨 실패 chunk는 적재하지 않는다
+        if c["chunk_id"] not in ok:
+            skipped += 1  # 분류·라벨 실패 chunk, 대상 축을 못 채운 axis-update chunk는 적재하지 않는다
             continue
-        lh = finals.label_hash(d)
+        lh = push_label_hash(d, doc_meta.get(c["file_id"]))
         done = con.execute(
             "SELECT 1 FROM vector_push_log WHERE chunk_id=? AND model=? AND text_hash=? AND label_hash=? "
             "AND target_host_hash=? AND result_code='OK'", (c["chunk_id"], model, e["text_hash"], lh, target)).fetchone()
         if done:
             skipped += 1
             continue
-        try:
-            check_send(url, [c["file_id"]], suffixes)
-        except SendBlocked as ex:
-            _log(con, c["chunk_id"], model, e["text_hash"], lh, target, ex.reason_code)
-            store.add_failure(con, run_id, "push", c["chunk_id"], ex.reason_code)
-            blocked += 1
-            continue
         payload = {"axes": {k: v["values"] for k, v in d["axes"].items()},
                    "answers": {k: v["answer"] for k, v in d["answers"].items()}}
+        if c["file_id"] in doc_meta:  # 파일 단위 Lot·WF·날짜·작성자를 chunk마다 복사
+            payload["doc_meta"] = doc_meta[c["file_id"]]
         todo.append((c, e, lh, SupabaseSink.row(c, model, unpack(e["vector"]), payload, run_id)))
     called = sent = 0
     size = int(sb.get("batch_size") or 100)

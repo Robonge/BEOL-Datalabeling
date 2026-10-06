@@ -117,6 +117,14 @@ class Taxonomy(object):
         ]
 
 
+def _join_text(a, b):
+    """같은 값 여러 행의 문장 합치기: 빈 칸·같은 문장(공백 무시)은 빼고 행 순서대로 줄바꿈으로 잇는다."""
+    a, b = a or "", b or ""
+    if not b.strip() or " ".join(b.split()) in [" ".join(x.split()) for x in a.split("\n")]:
+        return a
+    return (a.rstrip("\n") + "\n" + b.strip()) if a.strip() else b.strip()
+
+
 def parse_bytes(b):
     """taxonomy.xlsx bytes → Taxonomy. 오류가 하나라도 있으면 TaxonomyError."""
     try:
@@ -229,8 +237,18 @@ class _Parser(object):
             if norm_key(value) in RESERVED:
                 self.error("taxonomy", number, "RESERVED_VALUE", "예약어(해당 없음, unknown 및 변형)는 값으로 쓸 수 없다")
                 continue
-            if axis.value(value) is not None:
-                self.error("taxonomy", number, "DUPLICATE_VALUE", "같은 축 안에 중복 값이 있다")
+            old = axis.value(value)
+            if old is not None:
+                # 같은 값 행이 여럿이면 정의·포함 예·제외 예를 모두 모아 함께 쓴다(라벨러 LLM이 전부 참고한다).
+                # 상위값이 서로 다르게 적혀 있으면 계층이 모호하므로 오류다.
+                parent = c[2].strip() or None
+                if parent and old.parent and norm_key(parent) != norm_key(old.parent):
+                    self.error("taxonomy", number, "DUPLICATE_VALUE_PARENT_CONFLICT",
+                               "%d행과 같은 값인데 상위값이 다르다" % old.row)
+                    continue
+                axis.values[axis.values.index(old)] = old._replace(
+                    parent=old.parent or parent, definition=_join_text(old.definition, c[7]),
+                    include=_join_text(old.include, c[8]), exclude=_join_text(old.exclude, c[9]))
                 continue
             axis.values.append(Value(value, c[2].strip() or None, c[7], c[8], c[9], number))
 
@@ -247,15 +265,28 @@ class _Parser(object):
             axis.values = resolved
 
     def _axis_row(self, number, name, c, enabled):
+        old = self.tax.axis(name)
+        if old is not None:
+            # 같은 축 정의 행이 여럿이면 정의·포함 예·제외 예를 모두 모아 함께 쓴다(값 행과 같은 규칙).
+            # 축 속성(다중값·계층·중복 알림 제외·종류)을 서로 다르게 적었으면 어느 쪽인지 정할 수 없어 오류다.
+            attrs = ((c[3], "Y" if old.multi else "N"), (c[4], "Y" if old.hierarchical else "N"),
+                     (c[5], "Y" if old.dup_alert_exclude else "N"), (c[6], old.kind))
+            if any(new.strip() and new.strip().upper() != cur.upper() for new, cur in attrs):
+                self.error("taxonomy", number, "DUPLICATE_AXIS_ATTR_CONFLICT",
+                           "%d행과 같은 축인데 축 속성(다중값·계층·중복 알림 제외·종류)이 다르다" % old.row)
+                return
+            if enabled:
+                old.definition = _join_text(old.definition, c[7])
+                old.include = _join_text(old.include, c[8])
+                old.exclude = _join_text(old.exclude, c[9])
+                old.enabled = True
+            return
         multi = self._yn("taxonomy", number, c[3], "다중값", True)
         hier = self._yn("taxonomy", number, c[4], "계층", True)
         dup = self._yn("taxonomy", number, c[5], "중복 알림 제외", True)
         kind = c[6].strip()
         if kind not in KINDS:
             self.error("taxonomy", number, "AXIS_KIND_INVALID", "종류 열은 분류/상태여야 한다")
-        if self.tax.axis(name) is not None:
-            self.error("taxonomy", number, "DUPLICATE_AXIS", "같은 축의 정의 행이 둘 이상이다")
-            return
         self.tax.axes.append(
             Axis(name, kind, bool(multi), bool(hier), bool(dup), c[7], c[8], c[9], enabled=enabled, row=number)
         )

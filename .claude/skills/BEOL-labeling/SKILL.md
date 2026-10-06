@@ -8,8 +8,8 @@ description: BEOL 공정 문서(pptx·docx) 폴더를 labelbot 워크플로로 �
 labelbot 파이프라인(`plan.md` 워크플로)을 한 폴더에 돌린다. 사람 개입 지점 중 **불량 chunk 검수(H6) 앞에서 멈추고**, `/BEOL-labeling-feedback`이 검수 화면을 띄워 사람 검수를 기다린 뒤 반영·적재한다.
 
 ```
-[이 스킬] 준비 → (검수 피드백 승인 확인) → 사전 점검 → 수집·파싱 → 1~3차 분류·라벨링(승인된 피드백 규칙·사례 반영) → 불량 목록 → 화면 3개 만들기 → 대시보드 띄우기 → 멈춤(검수 대기)
-[BEOL-labeling-feedback] H2 대조 여부 질문 → 검수 화면 띄우기 → 사람 검수(검수 완료 버튼) → 반영 → Engr-bot 장부·라벨링 규칙 후보 → 화면·리포트 재생성 → 임베딩 → Supabase 적재
+[이 스킬] 준비 → (검수 피드백 반영 상태 확인) → 사전 점검 → 수집·파싱 → 1~3차 분류·라벨링(승인된 피드백 규칙·사례 반영) → 불량 목록 → 화면 3개 만들기 → 대시보드 띄우기 → 멈춤(검수 대기)
+[BEOL-labeling-feedback] H2 대조 여부 질문 → 검수 화면 띄우기 → 사람 검수(검수 완료 버튼) → 반영 → Domain-Engr-bot 장부·라벨링 규칙 후보 → 화면·리포트 재생성 → 임베딩 → Supabase 적재
 ```
 
 ## 사람 개입 지점을 이렇게 다룬다 (사용자 결정, 2026-10-04)
@@ -19,7 +19,7 @@ labelbot 파이프라인(`plan.md` 워크플로)을 한 폴더에 돌린다. 사
 | H2 파싱 대조 | 멈추지 않는다. `compare.html`은 만들기만 하고 띄우지 않는다. `/BEOL-labeling-feedback`이 시작할 때 이번에 할지 묻는다 | 대조는 선택이며 라벨링을 막지 않는다(plan.md "계속"). 화면을 여는 책임을 feedback 한 곳에 모은다 |
 | H5 분포 알림 | 요약에 보여 주고 진행 | 알림은 원인 점검용이며 라벨링을 막지 않는다 |
 | H3·H8 새 값·동의어 후보 | 건수와 리포트 위치만 알리고 **이번에 재실행하지 않는다** | 후보는 다음 실행으로 넘긴다. taxonomy 재검토 요청 리포트(`reports/taxonomy_revisit.md`)도 같은 방식으로 다음 실행에 넘긴다. 봇은 taxonomy.xlsx를 고치지 않는다 |
-| 검수 피드백 승인 | 1-2에서 승인 대기(규칙 후보·사례)가 있을 때만 `AskUserQuestion`으로 묻는다 | 사람 교정에서 나온 규칙·사례는 사람이 승인한 것만 1차 분류·3차 라벨링 프롬프트에 들어간다(사용자 결정, 2026-10-05). 봇이 대신 승인하지 않는다 |
+| 검수 피드백 승인 | 묻지 않는다. 1-2에서 승인분·대기분 건수만 알리고, 대기분은 `/BEOL-labeling-Domain-Engr-bot`으로 안내한다 | 사람 교정에서 나온 규칙·사례는 사람이 Domain-Engr-bot 질문 화면에서 확정한 것만 1차 분류·3차 라벨링 프롬프트에 들어간다(사용자 결정, 2026-10-05·2026-10-06). 확정 자리는 Domain-Engr-bot 한 곳이다 |
 | H6 불량 chunk 검수(재검토 요청 포함) | **이 앞에서 멈춘다.** 검수 화면은 `/BEOL-labeling-feedback`이 띄우고, 사람이 검수 화면의 **검수 완료**를 누르면 그 스킬이 반영·적재로 이어간다 | 사람 값이 최종 라벨이 되고, Supabase 적재는 검수 후에만 한다. 재검토 요청은 라벨을 바꾸지 않는다 |
 
 Supabase 적재는 이 스킬에서 하지 않는다. 검수 전 라벨이 사본에 올라가지 않게 하려는 결정이다.
@@ -37,9 +37,9 @@ Supabase 적재는 이 스킬에서 하지 않는다. 검수 전 라벨이 사�
 
 - 원본 파일을 Read 도구나 `cat`·`cp`로 열지 않는다. 사내 파일은 DRM이 걸려 있어 `labelbot.ingest.read_input` 한 곳에서만 연다는 것이 `CLAUDE.md`의 최우선 규칙이고, 사외에서도 같은 습관을 유지해야 사내 반입 때 깨지지 않는다.
 - 보고에는 건수, 실행 ID, 사유 코드만 쓴다. 본문과 파일명은 화면(HTML) 안에서만 본다.
-- 사외 호스트(OpenAI, Supabase)에는 더미 해시 목록(`tests/gold/dummy_hashes.jsonl`)에 있는 파일만 보낸다. 목록 밖 파일은 labelbot이 그 호출을 막고 `EXTERNAL_NON_DUMMY`를 남긴다. 이것은 정상 동작이므로 우회하지 말고 보고한다.
+- PoC에서는 사외·사내를 구분하지 않는다(2026-10-05 사용자 결정). 더미 해시 가드는 없고, 호스트를 판정할 수 없는 URL만 `HOST_UNCERTAIN`으로 막힌다.
 - `taxonomy.xlsx`와 `pipeline.json`의 모델·안전 설정을 마음대로 바꾸지 않는다.
-- 검수 피드백 승인은 사람 몫이다. 규칙·사례 후보와 승인은 Engr-bot이 맡는다(`python -m engrbot labeling-rules`). `approve`·`reject`는 사용자가 1-2에서 고른 대로만 부르고, `taxonomy/labeling_rules.json`을 손으로 고치지 않는다(사용자가 고친다). 승인 파일과 후보 리포트 `workspaces/_engrbot/ledger/labeling_candidates.md`에는 본문이 없어 위치를 링크해도 된다. 장부의 `golden.jsonl`·`judge_examples.jsonl`은 본문 인용이 있으므로 열지 않는다.
+- 검수 피드백의 확정(규칙·사례 승인과 문장 수정)은 `/BEOL-labeling-Domain-Engr-bot`(검수 결과로 엔지니어에게 질문해 도메인 지식을 규칙·taxonomy 제안으로 돌려주는 봇)의 질문 화면에서 사람이 한다. 이 스킬은 `status`로 건수만 보고, `approve`·`reject`·`apply`를 부르지 않으며, `taxonomy/labeling_rules.json`을 고치지 않는다. 승인 파일과 후보 리포트 `workspaces/_domain_engrbot/ledger/labeling_candidates.md`에는 본문이 없어 위치를 링크해도 된다. 장부의 `golden.jsonl`·`judge_examples.jsonl`은 본문 인용이 있으므로 열지 않는다.
 - 재검토 요청의 메모에는 사내 본문이 들어 있을 수 있다. `reports/taxonomy_revisit.md`·`.jsonl`을 Read·Grep·`cat`으로 열지 않고, `revisit_requests`는 `COUNT`와 `reason`별 `GROUP BY`만 조회하며(`SELECT *`, `.dump` 금지), inbox JSON과 `inputs/<sha256>.b64`를 열거나 디코딩하지 않고, 검수 탭을 `get_page_text`·`read_page`·스크린샷으로 읽지 않는다. 건수와 위치만 보고한다.
 
 ## 진행 현황 표시
@@ -107,37 +107,41 @@ python "<S>/init_workspace.py" --input "<IN>"
 
 중복을 빼고 나니 처리할 파일이 0개면(`file_counts` 합계 = `skipped`) 그 사실을 알리고 멈춘다.
 
-#### 1-2. 검수 피드백 승인 확인
+#### 1-2. 검수 피드백 반영 상태 확인 (승인하지 않는다)
 
 ```bash
-python -m engrbot labeling-rules status --workspace "<WS>"
+python -m domain_engrbot labeling-rules status --workspace "<WS>"
 ```
-출력 JSON의 `candidates`(승인 대기 규칙 후보, 그중 `candidates_conflict`는 상충), `examples_pending`(승인 대기 사례 후보), `rules.enabled`(이미 승인돼 켜진 규칙), `examples.enabled`(승인돼 켜진 사례)를 본다. 후보는 이전 검수에서 `/BEOL-labeling-feedback`이 Engr-bot 장부로 넘긴 사람 교정에서 나온다.
+출력 JSON의 `rules.enabled`(승인돼 켜진 규칙)·`examples.enabled`(승인돼 켜진 사례)가 이번 실행에 들어갈 피드백이고, `candidates`(승인 대기 규칙 후보, 그중 `candidates_conflict`는 상충)·`examples_pending`(승인 대기 사례 후보)은 아직 사람이 Domain-Engr-bot 질문 화면에서 확정하지 않은 것이다. 묻지 않고 한 줄로 알린 뒤 2단계로 간다.
 
-- `candidates`와 `examples_pending`이 모두 0이면 묻지 않고 2단계로 간다.
-- 하나라도 있으면 2단계로 가기 전에 `AskUserQuestion`으로 한 번 묻는다. 질문에는 건수와 후보 리포트 위치(`workspaces/_engrbot/ledger/labeling_candidates.md`)만 쓴다.
+- 형식: `검수 피드백: 승인 규칙 n·사례 n 반영 예정, 확정 대기 규칙 n(상충 n)·사례 n`.
+- 대기분이 있으면 "대기분은 이번 실행에 들어가지 않는다. 확정은 `/BEOL-labeling-Domain-Engr-bot`(도메인 질문)의 질문 화면에서 한다"를 덧붙인다.
+- 규칙·사례의 확정은 Domain-Engr-bot의 몫이다(사용자 결정, 2026-10-05. 2026-10-06부터 질문 화면에서 한다). 이 스킬은 `domain_engrbot labeling-rules approve`·`reject`·`apply`를 부르지 않고, 승인 여부를 `AskUserQuestion`으로 묻지도 않는다.
+- 사용자가 "이번엔 피드백 없이"라고 하면 3단계를 `python -m labelbot run --workspace "<WS>" --no-feedback`으로 돌린다.
 
-| 선택지 | 처리 |
-|---|---|
-| 상충 없는 후보·사례 전부 승인 | `python -m engrbot labeling-rules approve --workspace "<WS>" --all --examples all`. 상충 후보는 승인하지 않고 남는다(출력의 `skipped_conflict`). 승인한 규칙 수·사례 수를 보고한다 |
-| 이미 승인된 것만 반영 | 승인하지 않고 2단계로 간다. 대기분은 다음 실행에 다시 묻는다 |
-| 이번엔 피드백 없이 | 3단계를 `python -m labelbot run --workspace "<WS>" --no-feedback`으로 돌린다 |
+#### 1-3. taxonomy 변경 한 줄 보고
 
-규칙·사례를 골라 승인하거나 문장을 고치고 싶다고 하면, 리포트의 ID로 `engrbot labeling-rules approve --workspace "<WS>" --ids FR-…,EX-…`를 부르거나 `taxonomy/labeling_rules.json`을 사용자가 고친 뒤 진행한다.
+```bash
+python -m labelbot taxonomy-diff --workspace "<WS>"
+```
+출력의 JSON 한 줄(`added`·`removed`·`changed`·`values_added`)과 사람용 `[taxonomy] ...` 줄을 그대로 한 줄로 전한다. 묻지 않고 2단계로 간다. 첫 실행이면 `NO_PREVIOUS_RUN`이라 비교할 것이 없다고 알린다.
+
+- `added`가 있으면 "이번 실행부터 새 축이 라벨링된다. 이전 실행의 검수 화면에서는 새 축을 고칠 수 없다(다음 실행부터 라벨링되는 새 축으로만 보인다)"를 덧붙이고, 2단계 사전 점검의 `taxonomy_axes` WARN(정의 없음, 질문 없음)을 함께 보여 준다.
+- 축 이름과 건수만 전한다. 정의·질문 문장은 옮기지 않는다.
 
 ### 2. 사전 점검
 
 ```bash
 python -m labelbot selfcheck --workspace "<WS>" --probe-llm
 ```
-`결과: 전 항목 PASS`가 아니면 FAIL 항목과 사유 코드를 보고하고 멈춘다(키 누락, 모델명, 네트워크 등은 사람이 고쳐야 한다).
+`결과: 전 항목 PASS`가 아니면 FAIL 항목과 사유 코드를 보고하고 멈춘다(키 누락, 모델명, 네트워크 등은 사람이 고쳐야 한다). `taxonomy_axes`의 WARN(정의·판정 규칙 없는 축, 질문 적용 대상에 없는 새 축, 값 행이 없어 비활성인 축)은 실패가 아니므로 멈추지 않고 축 이름·건수만 보고한 채 3단계로 간다.
 
 ### 3. 파싱부터 라벨링까지
 
 ```bash
 python -m labelbot run --workspace "<WS>"
 ```
-`[feedback] …` 줄이 이번 실행에 넣은 승인 규칙 수·사례 풀·제외 사유(원래 작업 폴더가 없거나 본문이 바뀐 사례, 사외 가드)·유사도 방식을 알린다. 사례 본문은 승인 파일에 없고 원래 작업 폴더의 DB에서 읽기 전용으로 가져온다. 승인된 사례가 있고 임베딩을 쓸 수 있으면 분류 전에 이번 chunk를 한 번 임베딩한다(임베딩 호스트로 본문이 나가며 같은 더미 가드를 거친다. 저장된 벡터는 검수 뒤 임베딩 단계가 다시 쓰므로 호출이 늘지 않는다). LLM 호출은 chunk당 3회(1차 분류·2차 검증 질문 생성·3차 라벨링)이고 6개씩 병렬이라, 파일 10개(chunk 50개 안팎)면 약 4~7분 걸린다. 백그라운드로 실행하고, `Monitor`로 단계 줄을 감시해 milestone 3~6의 진행 현황을 갱신하면서 끝날 때까지 기다린다. `[run] 완료 run_id=...`가 나와야 끝난 것이고, 출력의 `run_id`를 `<RUN>`으로 쓴다.
+`[feedback] …` 줄이 이번 실행에 넣은 승인 규칙 수·사례 풀·제외 사유(원래 작업 폴더가 없거나 본문이 바뀐 사례)·유사도 방식을 알린다. 사례 본문은 승인 파일에 없고 원래 작업 폴더의 DB에서 읽기 전용으로 가져온다. 승인된 사례가 있고 임베딩을 쓸 수 있으면 분류 전에 이번 chunk를 한 번 임베딩한다(임베딩 호스트로 본문이 나간다. 저장된 벡터는 검수 뒤 임베딩 단계가 다시 쓰므로 호출이 늘지 않는다). LLM 호출은 chunk당 3회(1차 분류·2차 검증·대조 질문 생성·3차 라벨링)이고 6개씩 병렬이라, 파일 10개(chunk 50개 안팎)면 약 4~7분 걸린다. 백그라운드로 실행하고, `Monitor`로 단계 줄을 감시해 milestone 3~6의 진행 현황을 갱신하면서 끝날 때까지 기다린다. `[run] 완료 run_id=...`가 나와야 끝난 것이고, 출력의 `run_id`를 `<RUN>`으로 쓴다.
 
 끝나면 바로 처리 완료 파일 목록을 남긴다.
 ```bash
@@ -169,6 +173,7 @@ python "<S>/summary.py" --workspace "<WS>" --run <RUN>
 - 파일 N개(실패 M: 사유별), chunk N개, 분류·라벨 실패 N
 - 불량 chunk N개: 사유별 건수
 - Q-COM-001 답: O n / X n / N/A n
+- 대조 질문(Q-CTL-) 답: O n / X n / N/A n — summary의 `controls`. O는 1차 분류 누락이나 3차 과잉 판정 신호이며 `CONTROL_O`로 불량 목록에 오른다. 확정 라벨·적재에는 들어가지 않는다. `controls`가 비었으면 생략
 - 분포 알림(H5): 알림마다 한 줄씩 "조건: 값(기준)" — 원인 점검 대상(라벨링은 끝까지 돌았다). 없으면 "없음"
 - 추출 경고: `extract:*` 사유 코드별 건수(날짜·담당자 값을 저장하지 않은 건수. 라벨에는 영향 없음). 없으면 생략
 - 후보: 새 값 n, 동의어 n → 다음 실행으로 넘김(reports/candidates.md)
@@ -176,7 +181,7 @@ python "<S>/summary.py" --workspace "<WS>" --run <RUN>
 - 검수 피드백: 승인 규칙 분류 n·라벨 n, 사례 풀 n(사례를 받은 chunk n, 유사도 <방식>). summary의 `feedback`이 출처이며, `enabled=false`면 그 `reason`(꺼짐·승인된 것 없음)을 쓴다
 - Supabase: 아직 적재하지 않음(검수 후 BEOL-labeling-feedback에서 적재)
 ```
-`failures`에 `EXTERNAL_NON_DUMMY`가 있으면 "더미 해시 목록 밖 파일이라 사외 LLM 호출이 막혔다"고 따로 적는다.
+`failures`에 `HOST_UNCERTAIN`이 있으면 "호스트를 판정할 수 없는 URL이라 호출이 막혔다"고 따로 적는다.
 
 ### 6. 대시보드 띄우기
 
@@ -190,16 +195,29 @@ Chrome 열기 순서:
 
 열린 탭의 내용은 읽지 않는다(`get_page_text`·`read_page`·스크린샷 금지, 아래 "지켜야 할 것과 이유" 참고). 탭을 열기만 하고 건수와 URL만 보고한다.
 
-검수(`review.html`)·파싱 대조(`compare.html`) 탭은 열지 않는다. `/BEOL-labeling-feedback`이 대조 여부를 물은 뒤 연다. 화면 서버는 `labelbot serve`다(`init_workspace.py`가 launch.json에 등록). 떠 있는 서버는 그대로 두면 feedback이 다시 쓴다.
+검수(`review.html`)·파싱 대조(`compare.html`) 탭은 열지 않는다. 사람이 대시보드의 **검수 시작** 또는 **검수 + 파싱 대조** 버튼으로 연다(7단계). 화면 서버는 `labelbot serve`다(`init_workspace.py`가 launch.json에 등록). 떠 있는 서버는 그대로 두면 feedback이 다시 쓴다.
 
 `preview_start`가 "Port in use by another chat"으로 실패하면, 그 포트의 서버가 예전 `http.server`일 수 있다. 이 경우 대시보드는 보이지만 검수 화면의 inbox 자동 저장과 검수 완료 버튼은 동작하지 않으므로, 그 대화에서 서버를 끄거나 이 대화에서 다시 띄워 달라고 사용자에게 알린다. 앱 브라우저 패널에서 새 탭을 열 수 없으면(탭 수 한도 등) 이전 실행의 화면 탭(주소가 `localhost:<포트>/…`인 탭)을 대시보드로 navigate해서 다시 쓴다. 사용자의 다른 탭은 닫지 않는다. 패널과 Chrome 모두 쓸 수 없으면 URL을 알려 준다.
 
 ### 7. 검수 대기로 넘기기
 
-마지막에 이렇게 안내하고 끝낸다.
+검수는 대시보드의 버튼으로 시작한다(사용자 결정, 2026-10-06). 버튼을 누르면 화면 서버가 시작 신호 `<WS>\signals\review_start_<RUN>.json`(실행 ID, 시각, 파싱 대조 여부만)을 쓰고 검수 화면을 연다. 이 대화는 그 신호를 기다렸다가 깨어나 `/BEOL-labeling-feedback`을 이어서 시작한다.
 
+**7-1. 시작 대기 걸기.** 안내하기 전에 백그라운드로 시작한다.
+```bash
+python ".claude/skills/BEOL-labeling-feedback/scripts/wait_review_done.py" --workspace "<WS>" --run <RUN> --signal start
+```
+Bash `run_in_background: true`, `timeout: 7200000`으로 돌린다. 끝나면 이 대화가 다시 깨어난다. 짧은 주기로 상태를 다시 확인하지 않는다.
+
+**7-2. 안내하고 끝내기.** 아래 내용을 안내하고 턴을 끝낸다.
 1. 대시보드에서 결과를 훑어본다.
-2. `/BEOL-labeling-feedback`을 부른다(또는 "검수 시작"). 그 스킬이 파싱 대조도 할지 묻고, 검수 화면(원하면 대조 화면도)을 띄운다.
+2. 오른쪽 위 **검수 시작**을 누른다. 파싱 대조도 하려면 **검수 + 파싱 대조**를 누른다(대조 화면이 새 탭으로 함께 열린다). 누르면 이 대화가 검수 반영 절차(`/BEOL-labeling-feedback`)를 이어서 시작한다.
 3. 검수 화면에서 불량 chunk n개를 확인·교정하고, 다 끝나면 화면 상단의 **검수 완료**를 누른다. 교정할 것이 없어도 누르면 된다. 누르면 반영·임베딩·Supabase 적재까지 자동으로 이어진다.
+4. 이 대화를 닫았거나 버튼이 동작하지 않으면 채팅으로 "검수 시작"(또는 `/BEOL-labeling-feedback`)이라고 하면 된다.
 
 검수가 끝나기 전에는 Supabase에 올리지 않는다는 점을 한 줄로 덧붙인다.
+
+**7-3. 신호가 오면.** 백그라운드 명령의 출력 JSON을 본다.
+- `started: true` → "대시보드에서 검수를 시작했다(파싱 대조: 함/안 함)"를 한 줄로 알리고, Skill 도구로 `BEOL-labeling-feedback`을 부른다. 인자는 `대시보드 검수 시작 <WS> run=<RUN> compare=<true|false>`다. 이후 진행은 그 스킬을 따른다.
+- `code: WAIT_TIMEOUT` → 7-1을 다시 시작한다. 사용자에게 따로 알리지 않는다.
+- 신호가 오기 전에 사용자가 채팅으로 검수를 시작하면(예: "검수 시작", `/BEOL-labeling-feedback`) 대기 명령을 `TaskStop`으로 끄고 그 요청을 따른다.

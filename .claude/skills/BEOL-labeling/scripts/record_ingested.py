@@ -13,7 +13,7 @@ import sys
 
 CODE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 sys.path.insert(0, CODE_ROOT)
-from labelbot.store import connect_ro  # noqa: E402
+from labelbot.store import LABEL_COMMANDS, connect_ro, latest_run  # noqa: E402
 
 LIST_DIR = os.path.join(CODE_ROOT, "injested-file-list")
 
@@ -30,7 +30,7 @@ def main():
         return 2
     con = connect_ro(db)
     q = lambda sql, *p: con.execute(sql, p).fetchall()
-    run = a.run or (q("SELECT run_id FROM runs WHERE command='run' ORDER BY run_id DESC LIMIT 1") or [[None]])[0][0]
+    run = a.run or latest_run(con, LABEL_COMMANDS)
     if not run:
         print(json.dumps({"error": "NO_RUN"}))
         return 2

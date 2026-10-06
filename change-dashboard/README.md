@@ -1,6 +1,6 @@
 # change-dashboard: 세션 변경 대시보드
 
-이 저장소에서 일한 Claude 세션들(BEOL-Labeling & Feedback, Engr-bot, 리팩토링 세션 등)이 일정 기간 동안 무엇을 바꿨는지 한 화면에 모아 보여 준다. 기본 주기는 3시간이다.
+이 저장소에서 일한 Claude 세션들(BEOL-Labeling & Feedback, Domain-Engr-bot, 리팩토링 세션 등)이 일정 기간 동안 무엇을 바꿨는지 한 화면에 모아 보여 준다. 기본 주기는 3시간이다.
 
 - **초보자용 설명**: 세션마다 무엇을 했고 왜 했는지 쉬운 말로 적는다.
 - **S4·S5 관점**: 바뀐 파일을 `docs/project_intro.html`의 S4 팀 지도(역할)와 S5 workflow 단계 위에 표시한다.

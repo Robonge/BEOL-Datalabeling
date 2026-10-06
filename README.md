@@ -12,14 +12,15 @@
 | BEOL-labeling / BEOL-labeling-feedback | `labelbot/` + `.claude/skills/BEOL-labeling*` |
 | 검수 엔지니어 | `review.html`·`compare.html` 화면(`labelbot review`·`compare`) |
 | workspace | `workspaces/` (작업 폴더, 커밋 제외) |
-| Engr-bot (감시 agent) | `engrbot/` + `.claude/skills/labeling-Engr-bot` |
-| code-bot (감시 agent) | `codebot/` + `.claude/skills/labeling-codebot` |
+| Domain-Engr-bot (도메인 질문 agent) | `domain_engrbot/` + `.claude/skills/BEOL-labeling-Domain-Engr-bot`. 검수 결과로 엔지니어에게 질문해 확정한 도메인 지식을 규칙·taxonomy 제안으로 돌려준다 |
+| Code-Engr-bot (감시 agent) | `code_engrbot/` + `.claude/skills/BEOL-labeling-Code-Engr-bot` |
 
 ## 준비
 
 1. 키: 코드 폴더의 `.env.example`을 `.env`로 복사하고 `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`를 채운다(셸 환경변수가 있으면 그 값이 우선한다). `.env`는 커밋하지 않는다.
 2. 작업 폴더: 코드 폴더의 `workspaces/` 아래에 만든다(예: `workspaces/261004_BEOL_x`, 커밋 제외). 첫 실행 때 기본 `pipeline.json`이 생긴다.
 3. taxonomy: `taxonomy/taxonomy.xlsx`를 작업 폴더에 `taxonomy.xlsx`로 복사하거나, `pipeline.json`의 `taxonomy_path`로 가리킨다.
+   - 새 축 추가: 축 정의 행 D~G·H, 값 행, questions 행을 채우는 체크리스트는 `.claude/skills/BEOL-taxonomy-dashboard/SKILL.md`의 "새 축 체크리스트"에 있다. `python -m labelbot taxonomy-diff --workspace <작업 폴더>`로 지난 실행과의 차이를 본다. xlsx를 바꾼 뒤 테스트 자료를 다시 만드는 순서는 아래 "taxonomy를 바꾼 뒤"를 따른다.
 4. Supabase 표: `docs/supabase_schema.md`의 SQL을 실행한다.
 5. 의존성: 본체는 설치가 필요 없다(`requirements.txt`는 비어 있다). 사외 PoC SDK는 `requirements-poc.txt`.
 
@@ -39,39 +40,55 @@ python -m labelbot embed --workspace <작업 폴더>
 python -m labelbot push-vectors --workspace <작업 폴더>
 python -m labelbot slide-images --workspace <작업 폴더>
 python -m labelbot push-slides --workspace <작업 폴더>
+python -m labelbot axis-update --workspace <작업 폴더> [--dry-run]
+python -m labelbot axis-board --workspace <작업 폴더> [--run <실행 ID>]
 ```
 
 - `probe`: 파일 구조 통계만 낸다(본문 미출력). `ingest`: 수집·파싱·chunk까지만 한다. `dashboard`: 결과 대시보드 화면을 만든다. `serve`: 화면 서버(아래).
 - `run`: 수집 → 파싱·chunk → 1차 분류 → 2차 질문 매핑 → 3차 라벨링 → H5 알림 → 4차 불량 목록 → 후보 리포트 → 산출(`out/labeling.sqlite`, `SCHEMA.md`) → 기준선 리포트. `embed`·`push-vectors`는 따로 부른다.
 - 화면은 `python -m labelbot serve --workspace <작업 폴더> --port <포트>`로 띄운다. 검수·대조 화면에서 체크하면 `inbox/`에 `.json`이 바로 저장되고, `apply`로 반영한다(로컬 파일로 열었으면 **JSON 저장**으로 내려받아 `inbox/`에 넣는다).
 - 같은 입력으로 다시 돌리면 LLM 호출은 0회다(실패 chunk만 재시도).
-- `slide-images`: 검수 화면과 같은 슬라이드 근사 미리보기를 headless Edge/Chrome으로 JPG 캡처해 `slide_images/<sha256>.b64`에 둔다(`.jpg` 파일은 쓰지 않는다). `out/labeling.sqlite`의 `chunks.slide_image`에 기록한다. 브라우저 경로는 `render.browser_path`.
-- 검수 피드백 환류: 생산은 Engr-bot, 소비는 labelbot이다. `engrbot intake`가 작업 폴더 교정을 장부(`workspaces/_engrbot/ledger/`)로 모으고, `engrbot labeling-rules candidates`가 규칙 후보(축 값 혼동·과잉·누락, 질문 답 뒤집힘)와 few-shot 사례 후보를 `labeling_candidates.md`(본문 없음)로 쓴다. `approve`·`reject`(`--ids FR-…,EX-…`, `--all`, `--examples all`)로 사람이 고른 것만 `taxonomy/labeling_rules.json`(승인 시 생성)(본문 없음, git 추적)에 남는다(문장·enabled는 사람이 고칠 수 있다). 다음 `labelbot run`은 승인 규칙을 1차 분류·3차 라벨링 프롬프트에 "검수 피드백 지침"으로, 승인 사례를 비슷한 chunk의 1차 분류에 few-shot으로 넣는다. 사례 본문은 원래 작업 폴더의 `work.sqlite`에서 읽기 전용으로 가져온다(그 폴더가 없거나 본문이 바뀌었으면 빠진다. 같은 파일·같은 본문 제외, 사외 가드 통과 파일만). `run --no-feedback`이면 넣지 않는다.
+- `axis-update`·`axis-board`: taxonomy 축이 바뀐(추가·삭제·변경·값 추가·값 삭제) 작업 폴더에서 이전 라벨을 이어받고 바뀐 축만 1차 분류로 다시 라벨링한다(입력 폴더는 다시 읽지 않는다, `--dry-run`은 대상 축·건수만 출력). 이어서 `review`(대상 축만 편집, 나머지 축은 잠금)와 `axis-board`(축별 불량·처리 결과 카드와 슬라이드별 새 축 값 현황판 `screens/axis_update.html`, 기본 `--run`은 최신 라벨 실행이고 axis-update 실행이 아니면 오류)를 만든다. 절차는 `.claude/skills/BEOL-labeling-axis-update/SKILL.md`.
+- `slide-images`: 검수 화면과 같은 슬라이드 근사 미리보기를 headless Edge/Chrome으로 JPG 캡처해 `slide_images/<sha256>.b64`에 둔다(`.jpg` 파일은 쓰지 않는다). `out/labeling.sqlite`의 `chunks.slide_image`에 기록한다. 브라우저 경로는 `render.browser_path`. Edge가 포트를 열기 전에 바로 종료하면(`RENDERER_EXITED`, 기존 Edge 인스턴스·정책 때문일 수 있다) 다음 후보인 Chrome으로 자동 전환한다. 둘 다 실패하면 `render.browser_path`에 띄워지는 브라우저 경로를 지정하고, 포트 대기 초과는 `RENDERER_PORT_TIMEOUT`이다. 지정한 `render.browser_path`가 파일이 아니면 `RENDERER_MISSING`이다. 후보를 차례로 시도하므로 최대 대기는 후보 수 × 시작 대기 시간이다.
+- 검수 피드백 환류: 생산은 Domain-Engr-bot, 소비는 labelbot이다. `domain_engrbot intake`가 작업 폴더 교정을 장부(`workspaces/_domain_engrbot/ledger/`)로 모으고, `domain_engrbot labeling-rules candidates`가 규칙 후보(축 값 혼동·과잉·누락, 질문 답 뒤집힘)와 few-shot 사례 후보를 `labeling_candidates.md`(본문 없음)로 쓴다. 후보는 Domain-Engr-bot 도메인 질문의 재료가 되고, Domain-Engr-bot 질문 화면에서 엔지니어가 확정한 규칙·사례가 `taxonomy/labeling_rules.json`(승인 시 생성, 본문 없음. 지금은 git이 추적하지 않는다. `questions apply`는 바꾸기 전 본을 `workspaces/_domain_engrbot/questions/rules_history.jsonl`에 남긴다)에 남는다(문장·enabled는 사람이 고칠 수 있다. `labeling-rules approve`·`reject` 명령은 남아 있다). 다음 `labelbot run`은 승인 규칙을 1차 분류·3차 라벨링 프롬프트에 "검수 피드백 지침"으로, 승인 사례를 비슷한 chunk의 1차 분류에 few-shot으로 넣는다. 사례 본문은 원래 작업 폴더의 `work.sqlite`에서 읽기 전용으로 가져온다(그 폴더가 없거나 본문이 바뀌었으면 빠진다. 같은 파일·같은 본문 제외). `run --no-feedback`이면 넣지 않는다.
 - `push-slides`: `supabase.storage_enabled=true`이면 JPG를 Storage `BEOL-labeling` 버킷에 올리고 `beol_chunk_embeddings` 행의 `slide_image_*` 열을 채운다. `push-vectors` 다음에 부른다. 스키마는 `docs/supabase_schema.md`.
 
-## engrbot (도메인 검수)
+## domain_engrbot (도메인 질문)
+
+사람 검수 결과(교정·재검토 요청·검수 등록 동의어)와 누적 교정 장부를 읽고, LLM으로 엔지니어에게 물을 질문 10개 안팎을 만든다. 사람이 질문 화면에서 답하고 초안(규칙 문장·taxonomy 행)을 고쳐 확정한 것만 `taxonomy/labeling_rules.json`(다음 `labelbot run` 프롬프트)과 taxonomy 수정 보드(출처 S7 "엔지니어 답변")로 보낸다. 봇은 결정을 만들지 않고 taxonomy.xlsx를 쓰지 않는다(2026-10-06 사용자 결정). 설계는 `domain_engrbot/docs/plan-question-loop.md`.
 
 ```bash
-python -m engrbot run --workspace <작업 폴더>
-python -m engrbot intake --workspace <작업 폴더>
-python -m engrbot review|report|ledger|eval|golden|feedback|baseline|codes ...
-python -m engrbot labeling-rules candidates|status --workspace <작업 폴더>
-python -m engrbot labeling-rules approve --workspace <작업 폴더> --all --examples all
+python -m domain_engrbot workspaces                                         # 작업 폴더 목록(JSON): state + question_state(no_review·new·asked) + review_runs, 최상위 questions
+python -m domain_engrbot intake --workspace <작업 폴더>                      # 작업 폴더의 사람 교정 → 교정 장부(LLM 0회)
+python -m domain_engrbot questions generate --workspace <작업 폴더> [--force] [--max N]
+python -m domain_engrbot questions status --workspace <작업 폴더>             # 건수 JSON(열린 질문, inbox 답 파일)
+python -m domain_engrbot questions screen --workspace <작업 폴더>             # 질문 화면만 다시 만든다
+python -m domain_engrbot questions serve --workspace <작업 폴더> [--port N] [--no-draft] [--no-apply]   # 질문 화면 서버, 답변 완료 · 저장 → qa/inbox에 저장하고 바로 반영, 서버 종료
+python -m domain_engrbot questions apply --workspace <작업 폴더> [--answers <답 파일>]
+python -m domain_engrbot labeling-rules review|apply|status --workspace <작업 폴더>         # 승인된 규칙·사례 관리
+python -m domain_engrbot taxonomy-board [--workspace <작업 폴더>] [--open] [--reset]      # taxonomy 수정 보드(제안 통합·붙여넣기 행·반영 상태)
 ```
 
-- 하위 명령 전체는 `python -m engrbot --help`로 본다. skill(`labeling-Engr-bot`)은 `intake`·`run`·`review`·`report`·`eval`·`ledger`·`labeling-rules`를 쓴다.
-- 구조 게이트(L0~L3B, L6) 위에 도메인 규칙 층 L4와 중복 문서 일관성 층 L5를 켜서 라벨링 결과를 검수한다.
-- 작업물은 `engrbot/`와 `workspaces/_engrbot/`에 둔다.
+| 파일 (`workspaces/_domain_engrbot/questions/`) | 내용 |
+|---|---|
+| `questions.json` · `engr_questions.html` | 지금 열린 질문 묶음과 질문 화면(본문 있음) |
+| `answers.jsonl` · `taxonomy_proposals.jsonl` | 답 이력, 보드 출처 S7 입력(본문 있음) |
+| `asked.json` · `generate_log.jsonl` · `rules_history.jsonl` | 답함·묻지 않음 지문, 생성 이력, 승인 파일 이전 본 |
+| `<작업 폴더>/qa/inbox/engr_answers_<set_id>.json` | 질문 화면이 저장한 답 |
 
-## codebot (코드 검수)
+- 하위 명령 전체는 `python -m domain_engrbot --help`로 본다. skill(`BEOL-labeling-Domain-Engr-bot`)은 `workspaces`·`intake`·`questions`·`labeling-rules`·`taxonomy-board`·`ledger`를 쓴다. 새 규칙·사례 후보의 승인은 질문 화면에서 하고, 승인 화면(`workspaces/_domain_engrbot/ledger/labeling_review.html`)에는 승인된 규칙·사례 관리만 남는다. `BEOL-labeling`은 승인 파일을 읽기만 한다.
+- 예전 도메인 검수 명령(`run`·`review`·`report`·`serve`·`golden`·`feedback`·`eval`·`baseline`, L0~L6 검사)은 남아 있지만 skill은 쓰지 않는다.
+- 작업물은 `domain_engrbot/`와 `workspaces/_domain_engrbot/`에 둔다.
+
+## code_engrbot (코드 검수)
 
 ```bash
-python -m codebot review --root .
-python -m codebot rules
+python -m code_engrbot review --root .
+python -m code_engrbot rules
 ```
 
 - 읽기 전용이다. 저장소 코드와 workflow가 루트 `CLAUDE.md` 규칙(C1 DRM·쓰기, C2 stack, C3 단계 계약, C4 완료 위생)을 지키는지 정적으로 본다.
-- skill은 `labeling-codebot`이다.
+- skill은 `BEOL-labeling-Code-Engr-bot`이다.
 - 정책 파일(`--policy`)의 경로 glob은 대소문자를 구분하고, `*`는 `/`를 넘지 않는다(여러 폴더는 `**`).
 
 ## gpt-6-sol 설정 예
@@ -88,13 +105,22 @@ python -m codebot rules
 
 ```bash
 python -m unittest discover tests            # labelbot (+ tests/contracts 외부 계약)
-python -m unittest discover -s engrbot/tests -t .   # engrbot (golden 포함)
-python -m unittest discover -s codebot/tests -t .   # codebot
+python -m unittest discover -s domain_engrbot/tests -t .   # domain_engrbot (golden 포함)
+python -m unittest discover -s code_engrbot/tests -t .   # code_engrbot
 ```
 
 - 외부 계약 스냅샷(`tests/contracts/snapshots/`)을 의도해서 바꿀 때: `CONTRACT_UPDATE=1`을 붙여 다시 쓴다.
-- engrbot 실행 산출물 golden(`engrbot/tests/golden_outputs/`)을 의도해서 바꿀 때: `GOLDEN_UPDATE=1`을 붙여 다시 쓴다.
+- domain_engrbot 실행 산출물 golden(`domain_engrbot/tests/golden_outputs/`)을 의도해서 바꿀 때: `GOLDEN_UPDATE=1`을 붙여 다시 쓴다.
+
+
+### taxonomy를 바꾼 뒤
+
+1. `taxonomy/taxonomy.xlsx`를 수정한다.
+2. `python tests/tools/dump_taxonomy_fixture.py`로 `tests/fixtures/default_taxonomy_rows.jsonl`을 다시 만든다(`--check`는 최신인지 건수만 보고).
+3. `GOLDEN_UPDATE=1 python -m unittest tests.test_golden_run`으로 golden을 다시 쓴다.
+4. `python -m unittest discover -s tests -t .`로 전체를 확인한다.
+5. 외부 계약이 바뀌었으면 `CONTRACT_UPDATE=1`을 붙여 스냅샷을 다시 쓴다.
 
 ## 사외 전송 안전장치
 
-LLM·임베딩·Supabase 호출은 모두 `labelbot/llm.py`의 공용 함수를 거친다. 호스트가 `internal_host_suffixes`에 없으면 사외이고, 사외에는 파일 해시가 `tests/gold/dummy_hashes.jsonl`에 있는 chunk만 보낸다. 리다이렉트는 따라가지 않는다.
+LLM·임베딩·Supabase 호출은 모두 `labelbot/llm.py`의 공용 함수(`check_send`)를 거친다. PoC에서는 사외·사내를 구분하지 않는다(2026-10-05 사용자 결정). 더미 해시 대조는 없고, 호스트를 판정할 수 없는 URL(빈 값, IP 리터럴, http(s) 아님)만 `HOST_UNCERTAIN`으로 막는다. 사내 파일이 사외로 나가는 것을 막는 장치가 없으므로 PoC가 끝나면 되돌린다. 리다이렉트는 따라가지 않는다.

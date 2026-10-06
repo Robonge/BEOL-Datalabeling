@@ -1,10 +1,12 @@
 # 검수 교정 → 최초 라벨링 피드백 루프: 점검과 구현 보고 (2026-10-05)
 
+> 이력 문서다. 이후 구조가 바뀌었다: 교정 수집·후보는 Domain-Engr-bot(`domain_engrbot intake`, `domain_engrbot labeling-rules`)으로 옮겼고, 후보 승인은 `/BEOL-labeling-Domain-Engr-bot`의 질문 화면(`python -m domain_engrbot questions serve`)에서 하며, 승인 화면(`workspaces/_domain_engrbot/ledger/labeling_review.html`)은 승인분 관리만 한다(2026-10-06). `workspaces/_feedback/`, `labelbot feedback` 명령, `BEOL-labeling` 1-2의 승인 질문은 없어졌다. 현재 구조는 `plan.md` 4절 H9, `domain_engrbot/docs/plan-question-loop.md`, `.claude/skills/BEOL-labeling-Domain-Engr-bot/SKILL.md`를 본다.
+
 ## 1. 점검 결과: 루프가 없었다
 
 - 사람 교정은 그 실행 작업 폴더의 `work.sqlite` `corrections`에만 남고, 최종 라벨을 덮어쓸 때만 쓰였다.
 - `/BEOL-labeling`은 실행마다 새 작업 폴더를 만들므로, 교정이 다음 실행의 1차 분류(`prompts/classify.md`)·3차 라벨링(`prompts/label.md`)에 들어갈 길이 없었다.
-- 있던 것은 사람이 엑셀에 손으로 옮기는 경로뿐이었다(검수 등록 동의어 → synonyms 시트, taxonomy 재검토 요청 → taxonomy 시트). engrbot의 `feedback.py`는 engrbot 자체 결정 묶음이라 labelbot 프롬프트와 연결되지 않는다.
+- 있던 것은 사람이 엑셀에 손으로 옮기는 경로뿐이었다(검수 등록 동의어 → synonyms 시트, taxonomy 재검토 요청 → taxonomy 시트). domain_engrbot의 `feedback.py`는 domain_engrbot 자체 결정 묶음이라 labelbot 프롬프트와 연결되지 않는다.
 
 ## 2. 만든 것 (결정: 규칙 + 유사 사례 few-shot, 사람 승인 후 적용, 커밋 안 함)
 
@@ -35,7 +37,7 @@
 ## 4. 검증
 
 - 단위·mock 테스트(`tests/test_feedback.py`) 13개가 통과했다. 수집 멱등성, 재검수 제외, 후보 결정성, 승인·기각과 사람 편집 보존, 다음 실행 요청 본문에 규칙·사례가 들어가는지, `--no-feedback`, 미승인 상태, 같은 파일·가드 제외, 저장소 미생성, 퍼지를 확인했다.
-- 전체 테스트는 228개이고 실패는 3건이다. 3건 모두 `tests/test_slides.py`이며 기준선에서도 같은 실패였다(이번 변경과 무관). codebot은 critical 0건이고, major·minor는 모두 이번 변경 밖 파일이다.
+- 전체 테스트는 228개이고 실패는 3건이다. 3건 모두 `tests/test_slides.py`이며 기준선에서도 같은 실패였다(이번 변경과 무관). code_engrbot은 critical 0건이고, major·minor는 모두 이번 변경 밖 파일이다.
 - 실제 LLM 1회 실행(평가 작업 폴더 `workspaces/261004_BEOL_feedback-eval_20261005`, LLM 78회, Supabase 적재 없음):
   - 방법: 마지막 검수 실행(041826)을 holdout으로 두고, 나머지 4개 작업 폴더 교정으로 만든 규칙 18개(분류 17, 라벨 1)와 사례 15개를 **평가 전용 사본에서만** 승인해, 041826과 같은 파일 5개를 다시 라벨링했다.
   - 사례 15개는 모두 사외 전송 가드에 막혀 0개가 들어갔다. 원본 파일이 지금 `parshing test files`에 없고 더미 목록에도 없기 때문이며, 가드는 의도대로 동작했다. 따라서 이번 실측은 규칙 효과만 잰 것이다.
