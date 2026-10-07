@@ -1,9 +1,11 @@
 ---
 name: BEOL-labeling-rules-update
-description: Domain-Engr-bot이 taxonomy/labeling_rules.json의 라벨링 규칙을 추가·수정·끄기·기각해서, 이미 라벨링·검수를 마친 작업 폴더의 옛 라벨이 지금 규칙과 달라졌을 때, 바뀐 규칙이 닿는 범위만 LLM으로 다시 라벨링한다(축 규칙은 그 축 전체 chunk의 1차 분류만, 답 규칙은 그 질문의 O/X만 3차로). 사람이 교정하거나 확인한 값은 건드리지 않는다. 사람 검수 없이 바로 반영하고, 규칙별 카드와 값이 바뀐 슬라이드(이전 → 지금)를 보여 주는 현황판(rules_update.html)을 띄운 뒤 임베딩·Supabase 적재까지 이어 간다. BEOL-labeling-Code-Engr-bot이 규칙 점검에서 걸린 작업 폴더마다 묻지 않고 자동으로 부른다. 사용자가 "규칙 바뀐 것만 다시", "라벨링 규칙 반영", "rules update", "규칙 변경 재라벨링"이라고 하거나 /BEOL-labeling-rules-update를 부르면 이 스킬을 쓴다. 축 변경(taxonomy.json)은 BEOL-labeling-axis-update, 전체 재라벨링은 BEOL-labeling, 규칙 만들기·확정은 BEOL-labeling-Domain-Engr-bot이 맡는다.
+description: Domain-Engr-bot이 taxonomy/labeling_rules.json의 라벨링 규칙을 추가·수정·끄기·기각해서, 이미 라벨링·검수를 마친 작업 폴더의 옛 라벨이 지금 규칙과 달라졌을 때, 바뀐 규칙이 닿는 범위만 LLM으로 다시 라벨링한다(축 규칙은 그 축 전체 chunk의 1차 분류만, 답 규칙은 그 질문의 O/X만 3차로). 사람이 교정하거나 확인한 값은 건드리지 않는다. 사람 검수 없이 바로 반영하고, 규칙별 카드와 값이 바뀐 슬라이드(이전 → 지금)를 보여 주는 현황판(rules_update.html)을 띄운 뒤 임베딩·Supabase 적재까지 이어 간다. BEOL-labeling-Code-Engr-bot이 규칙 점검에서 걸린 작업 폴더마다 묻지 않고 자동으로 부른다. 사용자가 "규칙 바뀐 것만 다시", "라벨링 규칙 반영", "rules update", "규칙 변경 재라벨링"이라고 하거나 /BEOL-labeling-rules-update를 부르면 이 스킬을 쓴다. 축 변경분은 axis-update, 규칙 확정은 Domain-Engr-bot이 맡는다.
 ---
 
 # BEOL-labeling-rules-update: 바뀐 규칙이 닿는 범위만 다시 라벨링
+
+> 그룹: ② 품질 점검 · 재라벨링 · 상위: /BEOL-labeling-Code-Engr-bot · 하위: 없음 · 전체 지도: README.md "스킬 지도"
 
 같은 작업 폴더 안에 `rules-update` 실행을 하나 더 만든다. 이전 실행의 chunk·라벨·사람 교정을 이어받고, 바뀐 규칙이 닿는 범위만 LLM으로 다시 라벨링해 **사람 검수 없이 바로 반영**한다(사용자 결정, 2026-10-07. 계획 `.omc/plans/rules-update-plan.md`).
 
@@ -164,3 +166,7 @@ python -m labelbot push-slides --workspace "<WS>" --run <RUN>
 - 규칙 만들기·확정, 규칙 끄기·수정: BEOL-labeling-Domain-Engr-bot
 - 규칙 불일치 찾기: BEOL-labeling-Code-Engr-bot(이 스킬을 부른다)
 - taxonomy.json 수정: 사람(BEOL-taxonomy-dashboard의 보드, 또는 `taxonomy-editor`)
+
+## 관계
+
+- 축 변경(taxonomy.json)은 BEOL-labeling-axis-update, 전체 재라벨링은 BEOL-labeling, 규칙 만들기·확정은 BEOL-labeling-Domain-Engr-bot이 맡는다.

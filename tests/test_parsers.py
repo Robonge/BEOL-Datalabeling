@@ -19,7 +19,7 @@ from labelbot.pptx_parser import parse_pptx
 from labelbot.workspace import DEFAULT_CONFIG
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DUMMY_DIR = os.path.join(ROOT, "dummy pptx files")
+from tests._dummy import DUMMY_DIR  # noqa: E402  저장소 밖 더미 폴더(tests/_dummy.py)
 HASHES = os.path.join(ROOT, "tests", "gold", "dummy_hashes.jsonl")
 SAMPLE1, SAMPLE2, NEAR_DUP = "1b275ae9efc9", "f073be9c9ade", "c3860dd2e378"
 DISCLAIMER = "본 자료의 모든 데이터는 내부 테스트용 더미"

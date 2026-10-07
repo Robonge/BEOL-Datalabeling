@@ -5,6 +5,8 @@ description: BEOL 공정 문서(pptx·docx) 폴더를 labelbot 워크플로로 �
 
 # BEOL-labeling: 파싱 → 분류·라벨링 → 검수 대기
 
+> 그룹: ① 라벨링 파이프라인 · 상위: /BEOL-labeling-run-labeling · 하위: 없음 · 전체 지도: README.md "스킬 지도"
+
 labelbot 파이프라인(`plan.md` 워크플로)을 한 폴더에 돌린다. 사람 개입 지점 중 **불량 chunk 검수(H6) 앞에서 멈추고**, 사람이 검수 화면에서 **검수 완료**를 누르면 이 스킬이 완료 신호를 받아 `/BEOL-labeling-feedback`을 불러 반영·적재한다.
 
 ```

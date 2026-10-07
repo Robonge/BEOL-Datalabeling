@@ -239,17 +239,20 @@ class TaxonomyBoardTest(unittest.TestCase):
         doc = self.build()
         ov = self.item(doc, "tax.value.overlap|공정|cmp|식각")
         self.assertEqual([r["target"]["row"] for r in ov["rows"]], [3, 4])
-        self.assertTrue(all(r["editable"] == [7, 8, 9] for r in ov["rows"]))
+        self.assertTrue(all(r["editable"] == [2, 7, 8, 9, 10] for r in ov["rows"]))   # 축·값 이름은 잠근다
         self.assertEqual(sum(1 for c in ov["sources"] if c["src"] in ("S5", "S5F")), 1)  # 재검토 파일 중복은 뺀다
         na = self.item(doc, "tax.axis.new|장비")
-        self.assertEqual(na["rows"][0]["required"], [3, 4, 5, 6])
+        self.assertEqual((na["rows"][0]["required"], na["rows"][0]["editable"]), ([0], [0, 7, 8, 9]))
+        self.assertEqual(na["rows"][0]["cells"][3:7], ["Y", "Y", "N", "분류"])   # 새 축 기본값(보드에서는 고칠 수 없다)
+        self.assertEqual(na["rows"][0]["fixed"], [3, 4, 5])
         self.assertEqual(na["status"], "open")
         qn = [it for it in doc["items"] if it["kind"] == "q_new" and not it["rows"][0]["cells"][1]]
         self.assertEqual(len(qn), 1)
         self.assertEqual(qn[0]["rows"][0]["required"], [0, 1, 2, 3])
         self.assertEqual(qn[0]["context"]["memos"], ["두께를 묻는 질문"])
         qe = self.item(doc, "q.edit|Q1")
-        self.assertEqual((qe["rows"][0]["editable"], qe["rows"][0]["target"]["row"]), ([1], 2))
+        self.assertEqual((qe["rows"][0]["editable"], qe["rows"][0]["target"]["row"]), ([1, 2, 3], 2))
+        self.assertEqual(qe["rows"][0]["checks"], {"2": "target", "3": "int"})
 
     def test_synonym_conflict_and_term_merge(self):
         doc = self.build()
@@ -260,7 +263,9 @@ class TaxonomyBoardTest(unittest.TestCase):
         term = self.item(doc, "term|플라즈마")
         self.assertEqual({c["src"] for c in term["sources"]}, {"S2", "S3"})
         self.assertEqual([r["sheet"] for r in term["rows"]], ["synonyms", "taxonomy"])
-        self.assertEqual(term["rows"][0]["required"], [1])
+        self.assertEqual(term["rows"][0]["required"], [0, 1])
+        syn = self.item(doc, "syn|식각기|식각")["rows"][0]
+        self.assertEqual((syn["editable"], syn["required"]), ([0, 1, 2], [0, 1]))   # 동의어·표준어도 고친다
         self.assertEqual(self.item(doc, "tax.value.add|공정|증착")["group"], "taxonomy")
 
     def test_cells_are_raw_text(self):
@@ -399,7 +404,7 @@ class RoundOneFixTest(unittest.TestCase):
     def test_2_3_checks_and_valid_lists(self):
         doc = self.build()
         na = self.item(doc, "tax.axis.new|장비")["rows"][0]
-        self.assertEqual(na["checks"], {"3": "yn", "4": "yn", "5": "yn", "6": "kind"})
+        self.assertEqual(na["checks"], {"0": "axis_new"})
         qn = [it for it in doc["items"] if it["kind"] == "q_new"]
         self.assertTrue(all(it["rows"][0]["checks"] == {"0": "qid_new", "2": "target", "3": "int"} for it in qn))
         self.assertEqual(doc["question_ids"], ["Q1", "Q2"])
@@ -413,9 +418,10 @@ class RoundOneFixTest(unittest.TestCase):
     def test_parent_axis_checks_and_bulk_qid_dedup(self):
         doc = self.build()
         adds = [it for it in doc["items"] if it["kind"] == "value_add" and it["action"] == "add"]
-        self.assertTrue(adds and all(it["rows"][0]["checks"] == {"2": "parent"} for it in adds))
+        self.assertTrue(adds and all(it["rows"][0]["checks"] == {"0": "axis", "1": "value_new", "2": "parent"}
+                                     for it in adds))
         terms = [it for it in doc["items"] if it["kind"] == "term"]
-        self.assertTrue(all(it["rows"][1]["checks"] == {"0": "axis", "2": "parent"} for it in terms))
+        self.assertTrue(all(it["rows"][1]["checks"] == {"0": "axis", "1": "value_new", "2": "parent"} for it in terms))
         self.assertEqual(doc["axis_names"], ["공정", "상태"])
         self.assertTrue(all(isinstance(a, dict) for a in doc["axes"]))  # 축 카드 지표는 덮이지 않는다
         with open(tb.TEMPLATE_PATH, encoding="utf-8") as f:
@@ -506,7 +512,7 @@ class RoundOneFixTest(unittest.TestCase):
 
     def test_16_polite_tone(self):
         doc = self.build()
-        texts = [doc["notes"]["revisit_file"], tb.OTHER_WHERE, tb.ENGR_REJECT_HINT, tb.HIDE_HINT]
+        texts = [doc["notes"]["revisit_file"], tb.OTHER_WHERE, tb.HIDE_HINT]
         for it in doc["items"]:
             texts += [it["status_note"] or "", it["reject_hint"] or ""] + [r["label"] or "" for r in it["rows"]]
         plain = re.compile(r"(?<!니)다(\)|\.|$)")
@@ -679,13 +685,28 @@ class FinalizeTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             tb.record_decisions(self.out, {a["id"]: "maybe"})
 
-    def test_new_source_reopens_decided_item(self):
+    def test_new_source_reopens_applied_but_keeps_rejected(self):
         doc = self.build()
         it = next(i for i in doc["items"] if i["status"] == "open")
-        decisions = {it["id"]: {"decision": "rejected", "at": "t", "prints": _prints_minus_one(it)}}
+        applied = {it["id"]: {"decision": "applied", "at": "t", "prints": _prints_minus_one(it)}}
         items = [dict(it, status="open")]
-        self.assertEqual(tb.apply_decisions(items, decisions), {})
+        self.assertEqual(tb.apply_decisions(items, applied), {})
         self.assertEqual(items[0]["status"], "open")
+        # 기각은 같은 제안이 새 실행에서 다시 올라와도(새 출처 지문) 유지한다
+        rejected = {it["id"]: {"decision": "rejected", "at": "t", "prints": _prints_minus_one(it)}}
+        items = [dict(it, status="open")]
+        self.assertEqual(tb.apply_decisions(items, rejected), rejected)
+        self.assertEqual((items[0]["status"], items[0]["status_note"], items[0]["reopen"]),
+                         ("rejected", "보드에서 기각함", True))
+        # 지금 목록에 없는 항목(초기화·일부 작업 폴더): 기각은 남기고 반영함은 버린다
+        gone = {"0" * 16: {"decision": "rejected", "at": "t", "prints": []},
+                "1" * 16: {"decision": "applied", "at": "t", "prints": []}}
+        self.assertEqual(tb.apply_decisions([], gone), {"0" * 16: gone["0" * 16]})
+        # 기각 뒤 사람·엔지니어 출처가 새로 붙으면 기각은 유지하되 표시한다
+        human = dict(it, status="open", sources=list(it["sources"]) + [
+            dict(it["sources"][0], src="S7", ws="ws_new", run="RUN-NEW")])
+        self.assertTrue(tb.apply_decisions([human], {it["id"]: dict(rejected[it["id"]], prints=tb._prints(it))}))
+        self.assertEqual((human["status"], human.get("fresh_human")), ("rejected", True))
 
 
 def _prints_minus_one(it):
@@ -926,19 +947,52 @@ class ApplyTest(unittest.TestCase):
         self.assertEqual(body["version"], tb.hashlib.sha256(self.file_bytes()).hexdigest(), "저장은 그대로 남는다")
         self.assertFalse(os.path.exists(os.path.join(self.out, tb.DECISIONS)))
 
-    def test_reject_appends_rejected_row_only_for_values_synonyms_questions(self):
+    def test_reject_appends_rejected_row_for_every_kind(self):
         doc = self.build()
         add, ax = self.item(doc, "tax.value.add|공정|증착"), self.item(doc, "tax.axis.def|공정")
         out = self.item(doc, "out|OTHER|axis:공정")
         res = self.apply(doc, {add["id"]: "rejected", ax["id"]: "rejected", out["id"]: "rejected"})
-        self.assertEqual(res["written"], 1)
-        rej = self.file_doc()["rejected"][-1]
-        self.assertEqual(rej, {"종류": "값", "내용": "공정|증착", "기각일": "2026-10-05", "사유": "보드에서 기각",
-                               "출처": add["id"]})
+        self.assertEqual(res["written"], 3)
+        rows = self.file_doc()["rejected"][-3:]
+        self.assertEqual(rows[0], {"종류": "값", "내용": "공정|증착", "기각일": "2026-10-05", "사유": "보드에서 기각",
+                                   "출처": add["id"]})
+        self.assertEqual([(r["종류"], r["출처"]) for r in rows[1:]], [("축 정의", ax["id"]), ("기타", out["id"])])
         doc2 = self.build()
-        self.assertEqual(self.item(doc2, "tax.value.add|공정|증착")["status_note"], "rejected 목록에 있음")
-        self.assertEqual(self.item(doc2, "tax.axis.def|공정")["status_note"], "보드에서 기각함")
-        self.assertEqual(self.item(doc2, "out|OTHER|axis:공정")["status"], "rejected")
+        for key in ("tax.value.add|공정|증착", "tax.axis.def|공정", "out|OTHER|axis:공정"):
+            it = self.item(doc2, key)
+            self.assertEqual((it["status"], it["status_note"], it["reopen"]), ("rejected", "rejected 목록에 있음", True), key)
+
+    def test_rejected_match_ignores_spacing_and_case(self):
+        base = tax_doc()
+        self.write_tax(data=json.dumps(dict(base, rejected=(base.get("rejected") or []) + [
+            {"종류": "축 정의", "내용": " 공 정 ", "기각일": "", "사유": "", "출처": ""},
+            {"종류": "값", "내용": "공정 | 증 착", "기각일": "", "사유": "", "출처": ""}]), ensure_ascii=False).encode("utf-8"))
+        doc = self.build()
+        self.assertEqual(self.item(doc, "tax.axis.def|공정")["status_note"], "rejected 목록에 있음")
+        self.assertEqual(self.item(doc, "tax.value.add|공정|증착")["status_note"], "rejected 목록에 있음")
+        # 종류가 다르면 같은 내용이어도 다른 제안이다
+        self.assertNotEqual(self.item(doc, "out|OTHER|axis:공정")["status"], "rejected")
+        # 이미 같은 키 행이 있으면 다시 붙이지 않는다
+        out = self.item(doc, "out|OTHER|axis:공정")
+        new = tb.plan_changes(self.file_doc(), [dict(out, reject_row=["축 정의", "공정", "", ""])],
+                              {out["id"]: "rejected"}, {}, "2026-10-08")
+        self.assertEqual(len(new["rejected"]), len(self.file_doc()["rejected"]))
+
+    def test_reopen_removes_rejected_row_and_decision(self):
+        doc = self.build()
+        ax, add = self.item(doc, "tax.axis.def|공정"), self.item(doc, "tax.value.add|공정|증착")
+        self.refused("ITEM_NOT_APPLICABLE", doc, {ax["id"]: "reopen"})   # 기각되지 않은 항목은 풀 것이 없다
+        before = len(self.file_doc().get("rejected") or [])
+        self.apply(doc, {ax["id"]: "rejected", add["id"]: "rejected"})
+        doc2 = self.build()
+        self.apply(doc2, {self.item(doc2, "tax.axis.def|공정")["id"]: "reopen"})
+        rows = self.file_doc()["rejected"]
+        self.assertEqual(len(rows), before + 1, "푼 제안의 행만 지운다")
+        self.assertEqual(rows[-1]["내용"], "공정|증착")
+        doc3 = self.build()
+        self.assertEqual(self.item(doc3, "tax.axis.def|공정")["status"], "open")
+        self.assertNotIn(ax["id"], tb._json_file(os.path.join(self.out, tb.DECISIONS), tb._Bad()) or {})
+        self.assertEqual(self.item(doc3, "tax.value.add|공정|증착")["status"], "rejected")
 
     def test_decision_cancel(self):
         doc = self.build()
@@ -957,10 +1011,11 @@ class ApplyTest(unittest.TestCase):
     def test_server_trusts_only_editable_cells_and_refuses_bad_items(self):
         doc = self.build()
         add = self.item(doc, "tax.value.add|공정|증착")
-        res = self.apply(doc, {add["id"]: "applied"}, {add["id"]: {"rows": [["다른축", "증착X", "", "Y"] + [""] * 7]}},
+        # 새 행은 축·값 이름까지 고칠 수 있다. 숨긴 축 속성 칸(다중값 등)은 보내도 버린다
+        res = self.apply(doc, {add["id"]: "applied"}, {add["id"]: {"rows": [["공정", "증착X", "", "Y"] + [""] * 7]}},
                          preview=True)
         after = res["diff"][0]["after"]
-        self.assertEqual((after["축"], after["값"], after["다중값"]), ("공정", "증착", ""))
+        self.assertEqual((after["축"], after["값"], after["다중값"]), ("공정", "증착X", ""))
         blocked = self.item(doc, "tax.value.add|없는축|값")
         self.assertEqual(blocked["status"], "blocked")
         self.refused("ITEM_NOT_APPLICABLE", doc, {blocked["id"]: "applied"})
@@ -980,6 +1035,70 @@ class ApplyTest(unittest.TestCase):
         self.refused("EDIT_INVALID", doc, {add["id"]: "applied"}, {add["id"]: {"rows": [[1] * 11]}})
         # 용어의 값 행을 고르면 축이 필수다
         self.refused("ITEM_NOT_APPLICABLE", doc, {term["id"]: "applied"}, {term["id"]: {"choice": 1}})
+
+    def test_synonym_alias_and_canonical_are_editable(self):
+        doc = self.build()
+        syn = self.item(doc, "syn|씨 엠피|cmp")
+        res = self.apply(doc, {syn["id"]: "applied"}, {syn["id"]: {"rows": [["씨엠피 공정", "CMP", "고친 메모"]]}},
+                         preview=True)
+        after = [d["after"] for d in res["diff"] if d["sheet"] == "synonyms"][0]
+        self.assertEqual((after["동의어"], after["표준어"], after["메모"]), ("씨엠피 공정", "CMP", "고친 메모"))
+        self.refused("ITEM_NOT_APPLICABLE", doc, {syn["id"]: "applied"}, {syn["id"]: {"rows": [["씨 엠피", "", ""]]}})
+
+    def test_overwrite_locks_keys_but_edits_parent_and_use(self):
+        doc = self.build()
+        it = self.item(doc, "tax.value.overlap|공정|cmp|식각")
+        cells = ["다른축", "CMP2", "식각", "Y", "Y", "Y", "상태", "새 CMP 정의", "", "", "N"]
+        res = self.apply(doc, {it["id"]: "applied"}, {it["id"]: {"rows": [cells, None]}}, preview=True)
+        # 질문 Q2가 공정=CMP를 쓰므로 CMP를 끄면 저장 검증이 막는다(미리보기에 오류로 보인다)
+        self.assertEqual([i["code"] for i in res["issues"]], ["QUESTION_TARGET_INVALID"])
+        after = res["diff"][0]["after"]
+        self.assertEqual((after["축"], after["값"], after["상위값"], after["다중값"], after["종류"]),
+                         ("공정", "CMP", "식각", "", ""))
+        self.assertEqual((after["정의·판정 규칙"], after["사용 여부"]), ("새 CMP 정의", "N"))
+
+    def test_parent_and_use_follow_duplicate_value_rows(self):
+        self.write_tax(TAX_ROWS + [["공정", "CMP", "", "", "", "", "", "CMP 둘째 정의", "", "", ""]])   # 9행
+        doc = self.build()
+        it = self.item(doc, "tax.value.overlap|공정|cmp|식각")
+        over = it["rows"][0]
+        self.assertEqual(over["target"]["dups"], [9])
+        cells = list(over["cells"])
+        cells[2], cells[7] = "식각", "하나로 합친 정의"
+        res = self.apply(doc, {it["id"]: "applied"}, {it["id"]: {"rows": [cells, None]}}, preview=True)
+        self.assertEqual(res["issues"], [])
+        rows = {d["row"]: d["after"] for d in res["diff"] if d["sheet"] == "taxonomy"}
+        self.assertEqual((rows[3]["상위값"], rows[9]["상위값"]), ("식각", "식각"))
+        self.assertEqual(rows[9]["정의·판정 규칙"], "")
+
+    def test_new_label_and_axis_names_are_checked(self):
+        doc = self.build()
+        add, na = self.item(doc, "tax.value.add|공정|증착"), self.item(doc, "tax.axis.new|장비")
+        for bad in ("unknown", "cmp"):   # 예약어, 같은 축의 켜진 값
+            self.refused("ITEM_NOT_APPLICABLE", doc, {add["id"]: "applied"},
+                         {add["id"]: {"rows": [["공정", bad] + [""] * 9]}})
+        self.assertTrue(self.apply(doc, {add["id"]: "applied"}, {add["id"]: {"rows": [["공정", "옛값"] + [""] * 9]}},
+                                   preview=True)["ok"])   # 꺼진 값 이름은 새 행으로 다시 쓸 수 있다
+        self.refused("ITEM_NOT_APPLICABLE", doc, {na["id"]: "applied"}, {na["id"]: {"rows": [["공정"] + [""] * 10]}})
+
+    def test_new_axis_uses_fixed_defaults(self):
+        doc = self.build()
+        na = self.item(doc, "tax.axis.new|장비")
+        cells = ["장비군", "", "", "N", "N", "Y", "상태", "장비 정의", "", "", ""]
+        res = self.apply(doc, {na["id"]: "applied"}, {na["id"]: {"rows": [cells]}})
+        self.assertTrue(res["ok"])
+        row = self.file_doc()["taxonomy"][-1]
+        self.assertEqual([row[k] for k in ("축", "다중값", "계층", "중복 알림 제외", "종류", "정의·판정 규칙")],
+                         ["장비군", "Y", "Y", "N", "분류", "장비 정의"])
+
+    def test_question_target_and_priority_are_editable(self):
+        doc = self.build()
+        qe = self.item(doc, "q.edit|Q1")
+        res = self.apply(doc, {qe["id"]: "applied"}, {qe["id"]: {"rows": [["Q9", "결함이 있나요?", "공정=CMP", "3"]]}},
+                         preview=True)
+        after = res["diff"][0]["after"]
+        self.assertEqual((after["질문 ID"], after["문장"], after["적용 대상"], after["우선순위"]),
+                         ("Q1", "결함이 있나요?", "공정=CMP", "3"))
 
     def test_board_server_endpoints(self):
         import http.client

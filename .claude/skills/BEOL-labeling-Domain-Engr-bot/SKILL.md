@@ -1,9 +1,11 @@
 ---
 name: BEOL-labeling-Domain-Engr-bot
-description: 사람 검수 결과(BEOL-labeling-feedback이 반영한 교정·재검토 요청·검수 등록 동의어)와 누적 교정 장부를 읽고, LLM으로 엔지니어에게 물을 도메인 질문 10개 안팎을 만들어 질문 화면(서버)에 띄운다. 사람이 답하고 초안(규칙 문장·taxonomy 행)을 고쳐 확정한 것만 taxonomy/labeling_rules.json(다음 /BEOL-labeling 프롬프트)과 taxonomy 수정 보드(출처 S7 "엔지니어 답변")로 보낸다. 승인된 규칙·사례 관리(끄기·켜기·문장 수정·승인 취소, 갱신 대기 사례 승인)와 taxonomy 수정 보드(흩어진 taxonomy 수정 제안을 한 화면에 모으고, 사람이 고쳐 "최종 완료"하면 봇이 taxonomy.json에 쓴다)도 맡는다. 봇은 결정을 만들지 않고, taxonomy.json은 사람이 보드에서 확정한 것만 쓴다. 사용자가 "Domain-Engr-bot 돌려줘", "Engr-bot 돌려줘"(옛 이름), "도메인 질문", "엔지니어 질문", "질문 답변", "질문 답변 끝났어", "도메인 지식 반영", "승인 규칙 관리", "규칙 끄기", "taxonomy 수정", "taxonomy 보드", "taxonomy 반영 화면"이라고 하거나 /BEOL-labeling-Domain-Engr-bot을 부르면 이 스킬을 쓴다. 예전 표현("도메인 검수", "QA 검수 끝났어", "라벨링 규칙 검수", "교정 규칙 승인")으로 불러도 이 스킬이 맡되 새 절차(도메인 질문 또는 승인 규칙 관리)로 안내한다. 라벨링 실행은 BEOL-labeling, 사람 검수 반영과 적재는 BEOL-labeling-feedback, 저장소 코드 검수는 BEOL-labeling-Code-Engr-bot이 맡는다.
+description: 사람 검수 결과(BEOL-labeling-feedback이 반영한 교정·재검토 요청·검수 등록 동의어)와 누적 교정 장부를 읽고, LLM으로 엔지니어에게 물을 도메인 질문 10개 안팎을 만들어 질문 화면(서버)에 띄운다. 사람이 답하고 초안(규칙 문장·taxonomy 행)을 고쳐 확정한 것만 taxonomy/labeling_rules.json(다음 /BEOL-labeling 프롬프트)과 taxonomy 수정 보드(출처 S7 "엔지니어 답변")로 보낸다. 승인된 규칙·사례 관리(끄기·켜기·문장 수정·승인 취소, 갱신 대기 사례 승인)와 taxonomy 수정 보드(흩어진 taxonomy 수정 제안을 한 화면에 모으고, 사람이 고쳐 "최종 완료"하면 봇이 taxonomy.json에 쓴다)도 맡는다. 봇은 결정을 만들지 않고, taxonomy.json은 사람이 보드에서 확정한 것만 쓴다. 사용자가 "Domain-Engr-bot 돌려줘", "Engr-bot 돌려줘"(옛 이름), "도메인 질문", "엔지니어 질문", "질문 답변", "질문 답변 끝났어", "도메인 지식 반영", "승인 규칙 관리", "규칙 끄기", "taxonomy 수정", "taxonomy 보드", "taxonomy 반영 화면"이라고 하거나 /BEOL-labeling-Domain-Engr-bot을 부르면 이 스킬을 쓴다. 예전 표현("도메인 검수", "QA 검수 끝났어", "라벨링 규칙 검수", "교정 규칙 승인")으로 불러도 이 스킬이 맡되 새 절차(도메인 질문 또는 승인 규칙 관리)로 안내한다. 보드 화면만 띄울 때는 BEOL-taxonomy-dashboard를 쓴다.
 ---
 
 # BEOL-labeling-Domain-Engr-bot: 도메인 질문
+
+> 그룹: ② 품질 점검 · 재라벨링 · 상위: 없음 · 하위: /BEOL-taxonomy-dashboard · 전체 지도: README.md "스킬 지도"
 
 사람이 이미 검수한 chunk를 Domain-Engr-bot이 다시 도메인 검수하지 않는다(사용자 결정, 2026-10-06). Domain-Engr-bot은 **검수 결과를 읽고 엔지니어에게 질문해 도메인 지식을 얻는 봇**이다. 사람이 질문 화면에서 답하고 초안을 고쳐 확정한 것만 다음 라벨링 프롬프트와 taxonomy 수정 보드로 간다. 설계는 `domain_engrbot/docs/plan-question-loop.md`다.
 
@@ -333,3 +335,8 @@ taxonomy를 직접 보고 고치려면(축·값 트리, 칸 수정, 행 추가·
 - 라벨링 실행: BEOL-labeling
 - 사람 검수 반영과 Supabase 적재: BEOL-labeling-feedback
 - 저장소 코드와 workflow 검수: BEOL-labeling-Code-Engr-bot
+- `scripts/collect_qa_decisions.py` 실행: 예전 QA 흐름에서 남은 스크립트로, skill 스크립트 계약 스냅샷(`tests/contracts/snapshots/skill_scripts_help.json`)이 그 `--help`를 동결해 지우지 않고 두지만 이 스킬은 더 이상 부르지 않는다.
+
+## 관계
+
+- 라벨링 실행은 BEOL-labeling, 사람 검수 반영과 적재는 BEOL-labeling-feedback, 저장소 코드 검수는 BEOL-labeling-Code-Engr-bot이 맡는다.

@@ -12,7 +12,7 @@
   "selfcheck": 0
  },
  "failures": [
-  "classify AXIS_MISSING 4",
+  "classify AXIS_MISSING 3",
   "label QUESTION_MISSING 5"
  ],
  "files_after_all": [
@@ -74,28 +74,28 @@
    "model",
    "created_at"
   ],
-  "rows": 359
+  "rows": 377
  },
  "out_labeling_sqlite": {
   "aliases": {
-   "rows": 0,
-   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   "rows": 4,
+   "sha256": "12a90d55a61c239eb7472a0bccf8fa1d82175d5809ad783578d18b28c8780e92"
   },
   "answers": {
-   "rows": 35,
-   "sha256": "28d44c50c9bb9f0f162b1130912756a477662f2f33da7fbd6ea8ee9cc72926db"
+   "rows": 45,
+   "sha256": "4c95e8b2374bdd6c889343351b63d11b416e9d67f0af90b92fcea896fb2edd54"
   },
   "chunks": {
    "rows": 28,
-   "sha256": "7a07bda03e4201f607014940e22671bfbba253d52bd1f1f386ef5e6b6bdcaf5d"
+   "sha256": "06da0560c3337ab17c8c672e19fe0b374509d8ded60de4e46d3ad3ae92294cde"
   },
   "extracted_values": {
    "rows": 53,
    "sha256": "5af7270f3b2df320462d2a993aef934e563fc26faa75c99fdab5f516067aaf70"
   },
   "facet_labels": {
-   "rows": 318,
-   "sha256": "cbfba554c89b96772f91d9fd6b0f9e89b462ced522b2ac6c20fca49e9d5dba48"
+   "rows": 324,
+   "sha256": "e40cc9372aa28499556981ded8c23cead974f0c4b08e1a4d5f32ac6943ff8d46"
   },
   "facet_values": {
    "rows": 89,
@@ -111,11 +111,11 @@
   },
   "meta": {
    "rows": 7,
-   "sha256": "f86403705dd8b31803f0e0d0e47c57473f616415b551148e8d6b79121b94b14c"
+   "sha256": "9065176b425231df8e74ed02829dd8e200e043ce854e463cd856024010b8bcf5"
   },
   "questions": {
-   "rows": 17,
-   "sha256": "454679fe9187601ce9a9805c79c3269df8fc02da05a3d367357b572fa98de806"
+   "rows": 26,
+   "sha256": "4cec42f92f8a2dc47e3a1fc255bd7c7d9c970dca12054f24347e3ca7b2c35ede"
   }
  },
  "stdout": {
@@ -143,16 +143,16 @@
    "[report] taxonomy 재검토 요청 누적 0건 → reports/taxonomy_revisit.md"
   ],
   "review": [
-   "[review] run_id=<RUN> 불량 chunk 17개 → screens/review.html, reports/flagged_<RUN>.*"
+   "[review] run_id=<RUN> 불량 chunk 19개 → screens/review.html, reports/flagged_<RUN>.*"
   ],
   "run": [
    "[ingest] 파일 3개 (정상 3, 새로 파싱 3)",
    "[feedback] 승인된 규칙·사례 없음: 승인 규칙·사례를 넣지 않습니다.",
-   "[classify] chunk 28개 중 실패 4, 비내용 0",
-   "[question] 검증 질문 16개, 대조 질문 46개 생성(chunk 24개, 상한으로 검증하지 못한 대상 31개)",
-   "[label] 대상 24개 중 실패 5",
-   "[알림] DUP_LABEL_HIGH 값=0.4265 기준=0.4",
-   "[run] 완료 run_id=<RUN> LLM 호출 85회 (캐시 0회)"
+   "[classify] chunk 28개 중 실패 3, 비내용 0",
+   "[question] 검증 질문 25개, 대조 질문 42개 생성(chunk 25개, 상한으로 검증하지 못한 대상 55개)",
+   "[label] 대상 25개 중 실패 5",
+   "[알림] DUP_LABEL_HIGH 값=0.4237 기준=0.4",
+   "[run] 완료 run_id=<RUN> LLM 호출 86회 (캐시 0회)"
   ],
   "selfcheck": [
    "python                       PASS <PY>",

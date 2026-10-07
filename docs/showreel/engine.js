@@ -42,9 +42,30 @@ export const E = {
   outSine: (x) => Math.sin((x * Math.PI) / 2),
   inOutSine: (x) => -(Math.cos(Math.PI * x) - 1) / 2,
   outBack: (x, s = 1.70158) => { const c = s + 1; return 1 + c * Math.pow(x - 1, 3) + s * Math.pow(x - 1, 2); },
+  // asymmetric camera ease, cubic-bezier(0.35, 0, 0.15, 1): quick launch, velocity peak near u = 0.26
+  // (2.9x mean, below inOutCubic's 3x), and the back half of the time is a soft settle (the reference's
+  // truck profile). (0.5, 0, 0.1, 1) has the same shape but a spikier peak (3.7x, 2.5x the jerk).
+  swift: (x) => bezierEase(0.35, 0, 0.15, 1, x),
+  // truck ease, cubic-bezier(0.30, 0, 0.25, 1): same quick-launch / long-settle family as swift with a
+  // rounder launch, so velocity peaks at 2.36x mean (~95-104 px/frame over a 0.70 s truck) and the
+  // acceleration turns over without a cusp. Keeps the trucks well under the whip, the one violent move.
+  glide: (x) => bezierEase(0.30, 0, 0.25, 1, x),
+  // C2 rise ease, cubic-bezier(0.6, 0, 0.3, 1): a gentle launch out of the C1 cross-blend, single
+  // velocity hump, and the same long settle into the whip's wind-up as before
+  rise: (x) => bezierEase(0.6, 0, 0.3, 1, x),
   // critically-damped-ish spring settle (only for tiny objects)
   spring: (x, k = 9, z = 0.42) => 1 - Math.exp(-k * z * x) * Math.cos(k * Math.sqrt(1 - z * z) * x),
 };
+// CSS-style cubic-bezier: solve bx(s) = x by Newton (monotone in x for the curves used here), return by(s)
+function bezierEase(x1, y1, x2, y2, x) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const bx = (s) => 3 * (1 - s) * (1 - s) * s * x1 + 3 * (1 - s) * s * s * x2 + s * s * s;
+  const dbx = (s) => 3 * (1 - s) * (1 - s) * x1 + 6 * (1 - s) * s * (x2 - x1) + 3 * s * s * (1 - x2);
+  let s = x;
+  for (let i = 0; i < 8; i++) s = clamp(s - (bx(s) - x) / Math.max(dbx(s), 1e-4));
+  return 3 * (1 - s) * (1 - s) * s * y1 + 3 * (1 - s) * s * s * y2 + s * s * s;
+}
 export function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {
@@ -65,55 +86,77 @@ export { col };
 // ------------------------------------------------------------------ camera track (STORYBOARD §4)
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const K = {
-  c0a: V(-7.0, 1.30, 7.294), c0b: V(-7.0, 1.30, 7.195),
+  // cold open: 4% push toward PS plus a 0.08 lateral truck (+x) for parallax
+  c0a: V(-7.0, 1.30, 7.294), c0b: V(-6.92, 1.30, 7.162),
   A: V(-7.84, 1.78, 8.75), B: V(0.0, 10.2, 24.0), Bw: V(14.0, 10.2, 24.0),
   tB: V(0.0, -1.0, 0.0), tBw: V(14.0, -1.0, 0.0),
   C: V(S4, 2.05, 10.60), tC: V(S4, 1.85, 0),
 };
+const PIV2 = V(S2 - 0.3, 1.5, 0), PIV4 = V(S4 + 0.55, 1.5, 0);
 function orbit(pos, pivot, deg) {
   const a = (deg * Math.PI) / 180, dx = pos.x - pivot.x, dz = pos.z - pivot.z;
   return V(pivot.x + dx * Math.cos(a) + dz * Math.sin(a), pos.y, pivot.z - dx * Math.sin(a) + dz * Math.cos(a));
 }
+// orbit angle (deg) after tau seconds: angular velocity ramps 0 -> rate over the first 0.4 s
+const orbitDeg = (rate, tau) => rate * (tau < 0.4 ? (tau * tau) / 0.8 : tau - 0.2);
+// step-hold orbit: ORBIT_RATE deg/s about the pivot plus a slow push (radius shrinks by `push`
+// with inOutSine over [a, b]), so the holds breathe instead of locking off
+const ORBIT_RATE = 2.5;
+function holdOrbit(pos, pivot, t, a, b, push) {
+  const p = orbit(pos, pivot, orbitDeg(ORBIT_RATE, t - a));
+  return pivot.clone().lerp(p, 1 - push * E.inOutSine(seg(t, a, b)));
+}
+// truck: glide ease (fast launch, long soft settle); the crane bump rides the eased value so
+// its vertical velocity is zero at both ends. Trucks aim straight at the next framing's target.
 function truck(from, to, fromT, toT, u) {
-  const e = E.inOutCubic(u);
+  const e = E.glide(u);
   const p = from.clone().lerp(to, e);
-  p.y += 0.06 * Math.sin(Math.PI * u);
+  p.y += 0.06 * Math.sin(Math.PI * e);
   return { pos: p, target: fromT.clone().lerp(toT, e) };
 }
 export function cameraAt(t) {
-  if (t < 1.0) { const u = E.outSine(seg(t, 0, 1)); return { pos: K.c0a.clone().lerp(K.c0b, u), target: PS.clone() }; }
-  if (t < 1.5) { const u = E.inOutCubic(seg(t, 1, 1.5)); return { pos: K.c0b.clone().lerp(K.A, u), target: PS.clone() }; }
-  if (t < 2.45) { const u = E.inOutQuart(seg(t, 1.5, 2.45)); return { pos: K.A.clone().lerp(K.B, u), target: PS.clone().lerp(K.tB, u) }; }
-  if (t < 2.5) return { pos: K.B.clone(), target: K.tB.clone() };
-  if (t < 2.75) { const u = E.inCubic(seg(t, 2.5, 2.75)); return { pos: K.B.clone().lerp(K.Bw, u), target: K.tB.clone().lerp(K.tBw, u) }; }
-  if (t < 3.2) {
-    const u = E.outCubic(seg(t, 2.75, 3.2));
-    return { pos: V(S1 - 3.6, 3.62, 11).lerp(V(S1, 3.55, 11), u), target: V(S1 - 3.6, 1.65, 0).lerp(V(S1, 1.65, 0), u) };
+  // C0 0 -> 0.85: push with a mild ease-in, u = s(1+s)/2, so it exits at the speed C1 launches with
+  if (t < 0.85) { const s = seg(t, 0, 0.85), u = (s * (1 + s)) / 2; return { pos: K.c0a.clone().lerp(K.c0b, u), target: PS.clone() }; }
+  // C1 0.85 -> 1.50 (then holds K.A): the push carries a beat further in, reverses near 0.9 and becomes the pull-back
+  // C2 1.30 -> 2.38: rise to the overview, settling straight into the whip's wind-up (no hold)
+  // 1.30 -> 1.75: C1 cross-blends into C2, so the pull-back flows into the rise through the 1.50 shatter
+  // (never below ~5 px/frame, no dead hitch; peak acceleration half of the old butt join)
+  if (t < 2.38) {
+    const s1 = seg(t, 0.85, 1.5), u1 = E.inOutCubic(s1) - 0.03 * Math.sin(Math.PI * s1) * (1 - s1);
+    const c1 = K.c0b.clone().lerp(K.A, u1);
+    if (t < 1.30) return { pos: c1, target: PS.clone() };
+    const u2 = E.rise(seg(t, 1.30, 2.38));
+    const c2 = K.A.clone().lerp(K.B, u2), tg2 = PS.clone().lerp(K.tB, u2);
+    if (t >= 1.75) return { pos: c2, target: tg2 };
+    const b = E.inOutSine(seg(t, 1.30, 1.75));
+    return { pos: c1.lerp(c2, b), target: PS.clone().lerp(tg2, b) };
   }
-  if (t < 5.0) return { pos: V(S1, 3.55, lerp(11.0, 10.78, seg(t, 3.2, 5.0))), target: V(S1, 1.65, 0) };
-  if (t < 5.6) return truck(V(S1, 3.55, 10.78), V(S2, 3.55, 11), V(S1, 1.65, 0), V(S2, 1.65, 0), seg(t, 5.0, 5.6));
-  if (t < 7.5) {
-    const piv = V(S2 - 0.3, 1.5, 0);
-    const tg = V(S2, 1.65, 0).lerp(piv, E.inOutSine(seg(t, 5.6, 5.9)));
-    return { pos: orbit(V(S2, 3.55, 11), piv, 1.2 * (t - 5.6)), target: tg };
+  // C3 2.38 -> 2.75: whip with anticipation, u^3 (2.6u - 1.6) dips back (about -0.55 units, -40 px) before it accelerates
+  if (t < 2.75) {
+    const s = seg(t, 2.38, 2.75), u = s * s * s * (2.6 * s - 1.6);
+    return { pos: K.B.clone().lerp(K.Bw, u), target: K.tB.clone().lerp(K.tBw, u) };
   }
-  if (t < 8.1) {
-    const piv = V(S2 - 0.3, 1.5, 0);
-    return truck(orbit(V(S2, 3.55, 11), piv, 1.2 * 1.9), V(S3, 3.55, 11), piv, V(S3, 1.65, 0), seg(t, 7.5, 8.1));
+  // C4 2.75 -> 3.25: lands from further back at the whip's exit speed, settles before the 3.25 label
+  if (t < 3.25) {
+    const u = E.outQuint(seg(t, 2.75, 3.25));
+    return { pos: V(S1 - 6.4, 3.62, 11).lerp(V(S1, 3.55, 11), u), target: V(S1 - 6.4, 1.65, 0).lerp(V(S1, 1.65, 0), u) };
   }
-  if (t < 10.0) return { pos: V(S3, 3.55, lerp(11.0, 10.78, seg(t, 8.1, 10.0))), target: V(S3, 1.65, 0) };
-  if (t < 10.6) return truck(V(S3, 3.55, 10.78), V(S4, 3.55, 11), V(S3, 1.65, 0), V(S4, 1.65, 0), seg(t, 10.0, 10.6));
-  const piv4 = V(S4 + 0.55, 1.5, 0);
-  if (t < 12.5) {
-    const tg = V(S4, 1.65, 0).lerp(piv4, E.inOutSine(seg(t, 10.6, 10.9)));
-    return { pos: orbit(V(S4, 3.55, 11), piv4, 1.0 * (t - 10.6)), target: tg };
-  }
-  if (t < 13.2) {
-    const u = E.inOutCubic(seg(t, 12.5, 13.2));
-    return { pos: orbit(V(S4, 3.55, 11), piv4, 1.9).lerp(K.C, u), target: piv4.clone().lerp(K.tC, u) };
-  }
-  const u = E.outSine(seg(t, 13.2, 15.0));
-  return { pos: K.C.clone().lerp(K.tC, 0.03 * u), target: K.tC.clone() };
+  if (t < 4.90) return { pos: V(S1, 3.55, lerp(11.0, 10.78, seg(t, 3.25, 4.90))), target: V(S1, 1.65, 0) };
+  // trucks (0.70 s) start 0.10 s before each headline beat so they overlap the headline exit
+  if (t < 5.60) return truck(V(S1, 3.55, 10.78), V(S2, 3.55, 11), V(S1, 1.65, 0), PIV2, seg(t, 4.90, 5.60));
+  // C7 5.60 -> 7.40: orbit + 3% push about PIV2
+  if (t < 7.40) return { pos: holdOrbit(V(S2, 3.55, 11), PIV2, t, 5.60, 7.40, 0.03), target: PIV2.clone() };
+  if (t < 8.10) return truck(holdOrbit(V(S2, 3.55, 11), PIV2, 7.40, 5.60, 7.40, 0.03), V(S3, 3.55, 11), PIV2, V(S3, 1.65, 0), seg(t, 7.40, 8.10));
+  if (t < 9.90) return { pos: V(S3, 3.55, lerp(11.0, 10.78, seg(t, 8.10, 9.90))), target: V(S3, 1.65, 0) };
+  if (t < 10.60) return truck(V(S3, 3.55, 10.78), V(S4, 3.55, 11), V(S3, 1.65, 0), PIV4, seg(t, 9.90, 10.60));
+  // C11 10.60 -> 12.50: orbit + 3% push about PIV4 (the orbit keeps running under the C12 blend)
+  const orb4 = holdOrbit(V(S4, 3.55, 11), PIV4, t, 10.60, 12.5, 0.03);
+  if (t < 12.5) return { pos: orb4, target: PIV4.clone() };
+  // C12: blend off the still-running orbit, so velocity is continuous at 12.5
+  if (t < 13.2) { const u = E.inOutCubic(seg(t, 12.5, 13.2)); return { pos: orb4.lerp(K.C, u), target: PIV4.clone().lerp(K.tC, u) }; }
+  // C13: end-card push, 6% toward the card, starting from rest
+  const u = E.inOutSine(seg(t, 13.2, 15.0));
+  return { pos: K.C.clone().lerp(K.tC, 0.06 * u), target: K.tC.clone() };
 }
 
 // ------------------------------------------------------------------ shaders

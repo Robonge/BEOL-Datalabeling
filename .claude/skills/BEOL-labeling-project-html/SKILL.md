@@ -1,9 +1,11 @@
 ---
 name: BEOL-labeling-project-html
-description: 프로젝트 소개 발표 HTML(docs/project_intro.html, 슬라이드 00~10)을 가장 최근 작업 폴더의 실행 수치로 갱신해 내보낸다. 08 PILOT RESULT(id s7)(숫자 칸 · 의심 chunk 와플 · 분포 알림 반원 게이지 · labeling 교정 · 불량 chunk 5→0 그림)를 최신 실행 값으로 다시 그리고, 맨 마지막 Appendix(id sA)에 프로젝트 스킬 지도(그룹 · 상하위 계층)를 assets/skill_map.json과 .claude/skills/ 폴더로 다시 그린 뒤, 슬라이드 수 · 번호 · 외부 리소스를 검사한 뒤 날짜 붙은 사본(docs/snapshots/)을 남긴다. 같은 실행에서 사용자 흐름도 docs/user_flow.html도 검사 · 사본까지 함께 만든다. 최종 답변은 두 HTML 링크만 간결하게 낸다. 사용자가 "프로젝트 소개 HTML 뽑아줘", "project_intro 출력", "발표 HTML 최신화", "소개 슬라이드 수치 갱신", "파일럿 슬라이드 최신 결과로", "project html 내보내기", "user_flow 뽑아줘"라고 하거나 /BEOL-labeling-project-html을 부르면 이 스킬을 쓴다. 슬라이드 문구 · 레이아웃 수정은 docs/project_intro.html을 직접 고치고(이 스킬은 파일럿 슬라이드만 다시 그린다), 워크플로 HTML(docs/workflow.html)은 BEOL-labeling-workflow, 라벨링 실행은 BEOL-labeling이 맡는다.
+description: 프로젝트 소개 발표 HTML(docs/project_intro.html, 슬라이드 00~10)을 가장 최근 작업 폴더의 실행 수치로 갱신해 내보낸다. 08 PILOT RESULT(id s7)(숫자 칸 · 의심 chunk 와플 · 분포 알림 반원 게이지 · labeling 교정 · 불량 chunk 5→0 그림)를 최신 실행 값으로 다시 그리고, 맨 마지막 Appendix(id sA)에 프로젝트 스킬 지도(그룹 · 상하위 계층)를 assets/skill_map.json과 .claude/skills/ 폴더로 다시 그린 뒤, 슬라이드 수 · 번호 · 외부 리소스를 검사한 뒤 날짜 붙은 사본(docs/snapshots/)을 남긴다. 같은 실행에서 사용자 흐름도 docs/user_flow.html도 검사 · 사본까지 함께 만든다. 최종 답변은 두 HTML 링크만 간결하게 낸다. 사용자가 "프로젝트 소개 HTML 뽑아줘", "project_intro 출력", "발표 HTML 최신화", "소개 슬라이드 수치 갱신", "파일럿 슬라이드 최신 결과로", "project html 내보내기", "user_flow 뽑아줘"라고 하거나 /BEOL-labeling-project-html을 부르면 이 스킬을 쓴다.
 ---
 
 # BEOL-labeling-project-html: 프로젝트 소개 HTML 최신화 · 출력
+
+> 그룹: ③ 화면 · 발표 · 운영 리포트 · 상위: 없음 · 하위: 없음 · 전체 지도: README.md "스킬 지도"
 
 `docs/project_intro.html`이 원본이다. 이 스킬은 그 파일에서 **08 PILOT RESULT(id s7) 섹션**을 최신 실행 수치로 다시 그리고, **맨 마지막 Appendix(id sA) 스킬 지도**를 다시 만든다. 나머지 슬라이드(00~07, 09~10)의 문구 · 그림은 손대지 않는다. `scripts/build_project_html.py`가 수치 수집 · 07 렌더링 · 검사 · 저장을 한 번에 하고, LLM 호출은 0회다.
 
@@ -63,7 +65,7 @@ description: 프로젝트 소개 발표 HTML(docs/project_intro.html, 슬라이�
 
 ## Appendix · 스킬 지도(id sA)
 
-- 데이터: `assets/skill_map.json`. 그룹(제목 · 한 줄 설명 · 색) → 부모 스킬 → `children`(부르는 하위 스킬) → `role`(한 줄 기능). 지금 그룹은 ① 라벨링 파이프라인(run-labeling 아래 labeling · feedback) ② 품질 점검 · 재라벨링(Domain-Engr-bot 아래 taxonomy-dashboard, Code-Engr-bot 아래 rules-update · axis-update) ③ 문서 · 발표 · PM 관리(workflow · project-html · change-dashboard)다.
+- 데이터: `assets/skill_map.json`. 그룹(제목 · 한 줄 설명 · 색) → 부모 스킬 → `children`(부르는 하위 스킬) → `role`(한 줄 기능). 지금 그룹은 ① 라벨링 파이프라인(run-labeling 아래 labeling · feedback) ② 품질 점검 · 재라벨링(Domain-Engr-bot 아래 taxonomy-dashboard, Code-Engr-bot 아래 rules-update · axis-update) ③ 화면 · 발표 · 운영 리포트(workflow · project-html · change-dashboard · daily-report · RAG-html)다.
 - 스크립트는 `.claude/skills/*/SKILL.md` 폴더 목록과 지도를 맞춰 본다. 지도에 없는 스킬은 회색 "미분류" 그룹으로 붙이고 `checks.skills_unmapped`에, 지도에만 있고 폴더가 없는 스킬은 `checks.skills_missing`에 적는다. 둘 중 하나라도 비어 있지 않으면 사용자에게 알리고 `skill_map.json`을 고친 뒤 다시 돌린다.
 - 섹션은 항상 마지막 `</section>` 뒤에 새로 만들어 넣고(있던 sA는 지움), 내비게이션에 `A` 링크가 없으면 추가한다. CSS는 섹션 안 `<style>`에 있어 원본 CSS와 상관없다. 좁은 화면(900px 이하)에서는 이 슬라이드만 16:9 고정을 풀고 세로로 늘어나며, 세 그룹이 한 줄씩 쌓인다(휴대폰에서 읽기용).
 
@@ -103,3 +105,7 @@ python ".claude/skills/BEOL-labeling-project-html/scripts/build_project_html.py"
 ### 4. 전달
 
 위 "최종 출력 규칙"대로 `SendUserFile`로 두 파일을 보내고, 답변에는 두 링크만 쓴다.
+
+## 관계
+
+- 슬라이드 문구 · 레이아웃 수정은 docs/project_intro.html을 직접 고치고(이 스킬은 파일럿 슬라이드만 다시 그린다), 워크플로 HTML(docs/workflow.html)은 BEOL-labeling-workflow, 라벨링 실행은 BEOL-labeling이 맡는다.

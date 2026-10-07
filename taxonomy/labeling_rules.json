@@ -70,6 +70,101 @@
       "text_hash": "b0e776f0f733f927ccd11cd11e7390231fcace89ab4476ce8633d02ff9fc0473"
     },
     {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "confirmed": [
+        "Material",
+        "Patterning/scheme",
+        "REMSPC",
+        "결과",
+        "공정 모듈",
+        "물리 현상",
+        "의사결정 상태"
+      ],
+      "corrected": {
+        "Main step": {
+          "bot": [
+            "AASI",
+            "ASEI",
+            "ACI"
+          ],
+          "human": [
+            "해당 없음"
+          ]
+        },
+        "구조/레이어": {
+          "bot": [
+            "VA",
+            "V1"
+          ],
+          "human": [
+            "VA"
+          ]
+        },
+        "불량 모드": {
+          "bot": [
+            "Open",
+            "Short"
+          ],
+          "human": [
+            "Short"
+          ]
+        },
+        "제품·세대": {
+          "bot": [
+            "unknown"
+          ],
+          "human": [
+            "SF1.0"
+          ]
+        }
+      },
+      "enabled": true,
+      "example_id": "EX-235936d9918e",
+      "file_id": "018ef9ed39f0db4fb8a3ec3b8d86df063e33ee3d481039a929cf78f4dfa5a733",
+      "final_axes": {
+        "Main step": [
+          "해당 없음"
+        ],
+        "Material": [
+          "Metallization"
+        ],
+        "Patterning/scheme": [
+          "Ru subtractive"
+        ],
+        "REMSPC": [
+          "Process"
+        ],
+        "결과": [
+          "neutral",
+          "degraded"
+        ],
+        "공정 모듈": [
+          "Etch"
+        ],
+        "구조/레이어": [
+          "VA"
+        ],
+        "물리 현상": [
+          "metal bridge"
+        ],
+        "불량 모드": [
+          "Short"
+        ],
+        "의사결정 상태": [
+          "pending"
+        ],
+        "제품·세대": [
+          "SF1.0"
+        ]
+      },
+      "kind": "corrected",
+      "labeler_run_id": "20261007T105157-2b26",
+      "record_id": "018ef9ed39f0db4f:ppt/slides/slide2.xml",
+      "source_ws": "261004_BEOL_parshing-test-files_20261007-195113",
+      "text_hash": "6806d0817b47a8161d21fb1df523b95befd38395141647648aa8d0a86e328aa0"
+    },
+    {
       "approved_at": "2026-10-06T18:10:57Z",
       "approved_by": "screen",
       "confirmed": [],
@@ -129,6 +224,195 @@
       "record_id": "65f812b8d5c975a9:ppt/slides/slide3.xml",
       "source_ws": "261004_BEOL_parshing-test-files_20261007-025935",
       "text_hash": "6df8ad70d3c06bc7d5ec7029dfe199ed73f52d756144de4563f5a16d31145291"
+    },
+    {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "confirmed": [
+        "Material",
+        "Patterning/scheme",
+        "REMSPC",
+        "결과",
+        "공정 모듈",
+        "의사결정 상태",
+        "제품·세대"
+      ],
+      "corrected": {
+        "Main step": {
+          "bot": [
+            "unknown"
+          ],
+          "human": [
+            "AMI"
+          ]
+        },
+        "구조/레이어": {
+          "bot": [
+            "unknown"
+          ],
+          "human": [
+            "I1"
+          ]
+        },
+        "물리 현상": {
+          "bot": [
+            "unknown"
+          ],
+          "human": [
+            "해당 없음"
+          ]
+        },
+        "불량 모드": {
+          "bot": [
+            "unknown"
+          ],
+          "human": [
+            "해당 없음"
+          ]
+        }
+      },
+      "enabled": true,
+      "example_id": "EX-35b430d3cc19",
+      "file_id": "79fc84897816b7a677c65ea5605b87c4e01ea95ad6f3cdebb1e65b3395097b65",
+      "final_axes": {
+        "Main step": [
+          "AMI"
+        ],
+        "Material": [
+          "BM/Liner"
+        ],
+        "Patterning/scheme": [
+          "해당 없음"
+        ],
+        "REMSPC": [
+          "Process"
+        ],
+        "결과": [
+          "해당 없음"
+        ],
+        "공정 모듈": [
+          "Metal"
+        ],
+        "구조/레이어": [
+          "I1"
+        ],
+        "물리 현상": [
+          "해당 없음"
+        ],
+        "불량 모드": [
+          "해당 없음"
+        ],
+        "의사결정 상태": [
+          "해당 없음"
+        ],
+        "제품·세대": [
+          "SF1.0"
+        ]
+      },
+      "kind": "corrected",
+      "labeler_run_id": "20261007T105157-2b26",
+      "record_id": "79fc84897816b7a6:ppt/slides/slide1.xml",
+      "source_ws": "261004_BEOL_parshing-test-files_20261007-195113",
+      "text_hash": "97bda2c920de6b515e3ae964a22345230dcfeb8890ee09836e9041bf0fd31c44"
+    },
+    {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "confirmed": [
+        "Main step",
+        "Material",
+        "REMSPC",
+        "구조/레이어",
+        "물리 현상",
+        "제품·세대"
+      ],
+      "corrected": {
+        "Patterning/scheme": {
+          "bot": [
+            "해당 없음"
+          ],
+          "human": [
+            "Cu single damascene"
+          ]
+        },
+        "결과": {
+          "bot": [
+            "improved",
+            "degraded"
+          ],
+          "human": [
+            "해당 없음"
+          ]
+        },
+        "공정 모듈": {
+          "bot": [
+            "해당 없음"
+          ],
+          "human": [
+            "Metal"
+          ]
+        },
+        "불량 모드": {
+          "bot": [
+            "EM",
+            "Short"
+          ],
+          "human": [
+            "EM"
+          ]
+        },
+        "의사결정 상태": {
+          "bot": [
+            "pending"
+          ],
+          "human": [
+            "adopted"
+          ]
+        }
+      },
+      "enabled": true,
+      "example_id": "EX-388079c57940",
+      "file_id": "6234f202a3513ea93578fd55f748ace730de683cfb342264890da9be3db45578",
+      "final_axes": {
+        "Main step": [
+          "해당 없음"
+        ],
+        "Material": [
+          "Metallization"
+        ],
+        "Patterning/scheme": [
+          "Cu single damascene"
+        ],
+        "REMSPC": [
+          "Materials"
+        ],
+        "결과": [
+          "해당 없음"
+        ],
+        "공정 모듈": [
+          "Metal"
+        ],
+        "구조/레이어": [
+          "해당 없음"
+        ],
+        "물리 현상": [
+          "해당 없음"
+        ],
+        "불량 모드": [
+          "EM"
+        ],
+        "의사결정 상태": [
+          "adopted"
+        ],
+        "제품·세대": [
+          "해당 없음"
+        ]
+      },
+      "kind": "corrected",
+      "labeler_run_id": "20261007T163437-f0fe",
+      "record_id": "6234f202a3513ea9:ppt/slides/slide22.xml",
+      "source_ws": "261004_BEOL_parshing-test-files_20261008-013403",
+      "text_hash": "d0e8e4ab75e7ace883389cf393ad8b62021ebcc45e98d238aaad57a3d0cc6fb5"
     },
     {
       "approved_at": "2026-10-07T12:21:55Z",
@@ -469,6 +753,96 @@
       "text_hash": "af5185dccb2ae06b65051c3362b7d43076aecc8fe34ab8e78dc977871272c1ee"
     },
     {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "confirmed": [
+        "Main step",
+        "Material",
+        "Patterning/scheme",
+        "REMSPC",
+        "구조/레이어",
+        "물리 현상",
+        "불량 모드",
+        "제품·세대"
+      ],
+      "corrected": {
+        "결과": {
+          "bot": [
+            "improved",
+            "degraded"
+          ],
+          "human": [
+            "해당 없음"
+          ]
+        },
+        "공정 모듈": {
+          "bot": [
+            "Litho",
+            "Etch"
+          ],
+          "human": [
+            "Litho",
+            "Etch",
+            "CVD"
+          ]
+        },
+        "의사결정 상태": {
+          "bot": [
+            "pending"
+          ],
+          "human": [
+            "해당 없음"
+          ]
+        }
+      },
+      "enabled": true,
+      "example_id": "EX-52ef17edddda",
+      "file_id": "6234f202a3513ea93578fd55f748ace730de683cfb342264890da9be3db45578",
+      "final_axes": {
+        "Main step": [
+          "해당 없음"
+        ],
+        "Material": [
+          "Metallization"
+        ],
+        "Patterning/scheme": [
+          "unknown"
+        ],
+        "REMSPC": [
+          "Scheme",
+          "Controllability"
+        ],
+        "결과": [
+          "해당 없음"
+        ],
+        "공정 모듈": [
+          "Litho",
+          "Etch",
+          "CVD"
+        ],
+        "구조/레이어": [
+          "해당 없음"
+        ],
+        "물리 현상": [
+          "해당 없음"
+        ],
+        "불량 모드": [
+          "TDDB"
+        ],
+        "의사결정 상태": [
+          "해당 없음"
+        ],
+        "제품·세대": [
+          "해당 없음"
+        ]
+      },
+      "kind": "corrected",
+      "labeler_run_id": "20261007T163437-f0fe",
+      "record_id": "6234f202a3513ea9:ppt/slides/slide11.xml",
+      "source_ws": "261004_BEOL_parshing-test-files_20261008-013403",
+      "text_hash": "0f848e01ac91df78a171b0d29256b199084191c159b7bac33ccda7d18e9ae9a2"
+    },
+    {
       "approved_at": "2026-10-07T12:21:55Z",
       "approved_by": "screen",
       "confirmed": [
@@ -783,6 +1157,77 @@
       "record_id": "3e98672179a48f05:ppt/slides/slide1.xml",
       "source_ws": "261004_BEOL_parshing-test-files_20261007-195113",
       "text_hash": "b725d42d08d48313525b5464a8ea349327e7feff1cc6331a2a61328a6b26d705"
+    },
+    {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "confirmed": [
+        "Main step",
+        "Material",
+        "Patterning/scheme",
+        "REMSPC",
+        "결과",
+        "공정 모듈",
+        "물리 현상",
+        "불량 모드",
+        "의사결정 상태",
+        "제품·세대"
+      ],
+      "corrected": {
+        "구조/레이어": {
+          "bot": [
+            "V2"
+          ],
+          "human": [
+            "V1"
+          ]
+        }
+      },
+      "enabled": true,
+      "example_id": "EX-810ab9b63c1e",
+      "file_id": "92456f56b297f3200921d2570ac5e8a452f781e9f8c073c79686fd612c53c398",
+      "final_axes": {
+        "Main step": [
+          "해당 없음"
+        ],
+        "Material": [
+          "해당 없음"
+        ],
+        "Patterning/scheme": [
+          "Trench-first",
+          "SAV"
+        ],
+        "REMSPC": [
+          "Scheme"
+        ],
+        "결과": [
+          "degraded",
+          "neutral"
+        ],
+        "공정 모듈": [
+          "해당 없음"
+        ],
+        "구조/레이어": [
+          "V1"
+        ],
+        "물리 현상": [
+          "해당 없음"
+        ],
+        "불량 모드": [
+          "Open"
+        ],
+        "의사결정 상태": [
+          "pending"
+        ],
+        "제품·세대": [
+          "SF2X"
+        ]
+      },
+      "kind": "corrected",
+      "labeler_run_id": "20261007T042706-cad2",
+      "record_id": "92456f56b297f320:ppt/slides/slide3.xml",
+      "source_ws": "261004_BEOL_parshing-test-files_20261007-124653",
+      "text_hash": "7448e7f0af5b0335dfa0f6d71e2a76fb06c77ad70e7e75af0a65948775d6cf6a"
     },
     {
       "approved_at": "2026-10-07T12:21:55Z",
@@ -1176,6 +1621,86 @@
       "text_hash": "91495bc15e200983ab172257e3a5409833b0b4b507be4c6375cf67e512fefeac"
     },
     {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "confirmed": [
+        "Patterning/scheme",
+        "REMSPC",
+        "결과",
+        "공정 모듈",
+        "구조/레이어",
+        "물리 현상",
+        "불량 모드",
+        "의사결정 상태",
+        "제품·세대"
+      ],
+      "corrected": {
+        "Main step": {
+          "bot": [
+            "AMI",
+            "ACI"
+          ],
+          "human": [
+            "ACI"
+          ]
+        },
+        "Material": {
+          "bot": [
+            "unknown"
+          ],
+          "human": [
+            "Metallization"
+          ]
+        }
+      },
+      "enabled": true,
+      "example_id": "EX-b2cb9cd4e3c9",
+      "file_id": "620bf0c713cb458bfefa90c334048da8f4a95b01a31335c0248e4b3af9c87b75",
+      "final_axes": {
+        "Main step": [
+          "ACI"
+        ],
+        "Material": [
+          "Metallization"
+        ],
+        "Patterning/scheme": [
+          "Ru subtractive"
+        ],
+        "REMSPC": [
+          "Process"
+        ],
+        "결과": [
+          "neutral",
+          "degraded"
+        ],
+        "공정 모듈": [
+          "Etch"
+        ],
+        "구조/레이어": [
+          "M2",
+          "V1"
+        ],
+        "물리 현상": [
+          "해당 없음"
+        ],
+        "불량 모드": [
+          "Open",
+          "Short"
+        ],
+        "의사결정 상태": [
+          "pending"
+        ],
+        "제품·세대": [
+          "SF0.7"
+        ]
+      },
+      "kind": "corrected",
+      "labeler_run_id": "20261007T105157-2b26",
+      "record_id": "620bf0c713cb458b:ppt/slides/slide1.xml",
+      "source_ws": "261004_BEOL_parshing-test-files_20261007-195113",
+      "text_hash": "f7051fd59ed6c673902ab88b44ff021cb71ffdf038d15f69592020b308f065db"
+    },
+    {
       "approved_at": "2026-10-05T23:59:21Z",
       "approved_by": "screen",
       "confirmed": [],
@@ -1440,6 +1965,24 @@
   "rejected_examples": [],
   "rules": [
     {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "count": 3,
+      "edited_at": "2026-10-07T16:58:11Z",
+      "edited_by": "screen",
+      "enabled": true,
+      "evidence_count": 1,
+      "evidence_mix": {
+        "typed": 1
+      },
+      "from": "",
+      "kind": "ADD",
+      "rule_id": "FR-027b01ae4e",
+      "target": "공정 모듈",
+      "text": "구조 개발 평가의 담당 조직이 CVD팀으로 확인되면 증착 조건이 별도로 명시되지 않아도 CVD를 붙인다.",
+      "to": "CVD"
+    },
+    {
       "approved_at": "2026-10-05T23:59:21Z",
       "approved_by": "screen",
       "count": 4,
@@ -1620,6 +2163,24 @@
       "to": ""
     },
     {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "count": 3,
+      "edited_at": "2026-10-07T16:58:11Z",
+      "edited_by": "screen",
+      "enabled": true,
+      "evidence_count": 1,
+      "evidence_mix": {
+        "typed": 1
+      },
+      "from": "",
+      "kind": "ADD",
+      "rule_id": "FR-e7e0fd966e",
+      "target": "공정 모듈",
+      "text": "금속 배선의 전기 특성이나 EM 불량이 평가·분석의 중심이면 금속 형성 조건의 변경이 없어도 Metal을 붙인다. 금속 배선이 배경으로만 언급되면 붙이지 않는다.",
+      "to": "Metal"
+    },
+    {
       "approved_at": "2026-10-07T12:21:55Z",
       "approved_by": "screen",
       "count": 3,
@@ -1636,6 +2197,24 @@
       "target": "Main step",
       "text": "여러 step 수치가 함께 있어도 평가결과에서 변동이나 원인을 중심으로 해석한 step만 붙인다. 수치만 병기된 step은 붙이지 않는다.",
       "to": ""
+    },
+    {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "count": 3,
+      "edited_at": "2026-10-07T16:58:11Z",
+      "edited_by": "screen",
+      "enabled": true,
+      "evidence_count": 1,
+      "evidence_mix": {
+        "chunk_same": 1
+      },
+      "from": "",
+      "kind": "ADD",
+      "rule_id": "FR-fbb5ae4e5a",
+      "target": "Material",
+      "text": "금속 식각 결과가 평가 대상이면 hardmask만 변경돼도 금속 평가 재료에 해당하는 Metallization을 붙인다. SiN hardmask를 BM/Liner로 추정해 붙이지 않는다.",
+      "to": "Metallization"
     },
     {
       "approved_at": "2026-10-07T04:15:22Z",
@@ -1668,6 +2247,22 @@
       "to": ""
     },
     {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "count": 3,
+      "enabled": true,
+      "from": "",
+      "kind": "MANUAL",
+      "origin": "llm",
+      "question_id": "EQ-b7cd488d02",
+      "rule_id": "QR-1819ddba39",
+      "set_id": "QS-20261007T165458-3392",
+      "stage": "classify",
+      "target": "Main step",
+      "text": "AMI와 ACI가 엇갈리면 현재 chunk에서 실제 수행하거나 분석한 검사 단계를 우선한다. 다른 슬라이드의 평가 목적만으로 명시된 측정 단계를 대체하지 않는다.",
+      "to": ""
+    },
+    {
       "approved_at": "2026-10-05T23:59:21Z",
       "approved_by": "screen",
       "count": 1,
@@ -1683,6 +2278,22 @@
       "to": ""
     },
     {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "count": 2,
+      "enabled": true,
+      "from": "",
+      "kind": "MANUAL",
+      "origin": "llm",
+      "question_id": "EQ-d657884c3e",
+      "rule_id": "QR-5aca2bbf54",
+      "set_id": "QS-20261007T165458-3392",
+      "stage": "classify",
+      "target": "구조/레이어",
+      "text": "같은 문서에서 현재 수율·저항 평가의 대상 비아층이 하나로 확인되면 현재 chunk에 층 번호가 반복되지 않아도 해당 비아층을 붙인다. 서로 다른 층이 섞이면 평가 대상과 연결된 층만 붙인다.",
+      "to": ""
+    },
+    {
       "approved_at": "2026-10-06T18:10:57Z",
       "approved_by": "screen",
       "count": 2,
@@ -1695,6 +2306,22 @@
       "set_id": "QS-20261006T180627-623e",
       "target": "제품·세대",
       "text": "명시된 평가 대상 코드와 약칭에서 추론한 제품·세대 값이 다르면 명시된 코드를 우선한다. 약칭만을 근거로 다른 값을 추가하지 않는다.",
+      "to": ""
+    },
+    {
+      "approved_at": "2026-10-07T16:58:11Z",
+      "approved_by": "screen",
+      "count": 4,
+      "enabled": true,
+      "from": "",
+      "kind": "MANUAL",
+      "origin": "llm",
+      "question_id": "EQ-043289f759",
+      "rule_id": "QR-76bbdacd76",
+      "set_id": "QS-20261007T165458-3392",
+      "stage": "classify",
+      "target": "결과",
+      "text": "조건별 결과가 엇갈려도 평가 전체의 최종 결론이 호환 가능이면 neutral만 붙인다. 전체 결론이 없을 때에만 조건별 명시된 결과를 함께 붙인다.",
       "to": ""
     },
     {

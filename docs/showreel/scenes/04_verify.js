@@ -9,7 +9,14 @@ const T = 5.0, TN = 7.5;
 const Q0 = new THREE.Vector3(S2 - 3.4, 0.9, 3.4), Q1 = new THREE.Vector3(S2 + 1.3, 2.4, -1.8);
 const LP = Q0.distanceTo(Q1), DIR = Q1.clone().sub(Q0).normalize();
 const SHEET_W = 1.7, SHEET_H = 2.9, SHEET_Y = 1.45, SHEET_GAP = 1.15;
-const SHEET_U = [0, 1, 2, 3].map((j) => 0.40 + (j * SHEET_GAP) / LP), S_LAST = SHEET_U[3] * LP, V = 3.05, GAP = 0.72, CHIP_S = 0.88, DOCK_S = 1.0, T_LEAVE0 = 6.25;
+const SHEET_U = [0, 1, 2, 3].map((j) => 0.40 + (j * SHEET_GAP) / LP), S_LAST = SHEET_U[3] * LP, CHIP_S = 0.88, DOCK_S = 1.0;
+// Index conveyor: the whole queue advances one GAP per step (MOVE s, swift ease: zero-velocity launch, long
+// settle), then dwells, so every chip is still and readable for part of each STEP. GAP = SHEET_GAP, so at each
+// dwell four chips sit exactly in the four sheets and the queue never bunches. Chip 0 rests in the last sheet
+// through the truck-in; chip i leaves the glass at the start of step i: 5.46 + 0.32 i (FLAG chips launch
+// 0.04 s earlier; 0/2/3 seat at 5.72, 6.36, 6.68 and tick 0.10 s later, so 3 / 3 holds 0.52 s before the
+// description fades at 7.30; the outQuint creep ends at 5.94, 6.58, 6.90).
+const GAP = SHEET_GAP, TA = 5.46, STEP = 0.32, MOVE = 0.22, FLAG_LEAD = 0.04, FLAG_SQUASH = 0.14, FLAG_FLY = 0.52, FLAG_SEAT = 0.30;
 const CHIPS = [
   ['decision', 'pending', 'flag'], ['module', 'SAUP', 'pass'], ['tem_ref', 'none', 'flag'], ['open_risk', 'TDDB', 'flag'],
   ['lot_id', 'RDM8EA.62', 'pass'], ['module', 'TiN spacer', 'pass'], ['decision', 'adopted', ''], ['tem_ref', 'APM-26-6524', ''],
@@ -19,16 +26,20 @@ const CHIPS = [
 const PANEL = new THREE.Vector3(S2 + 3.25, 1.55, 0.4), PANEL_YAW = (-18 * Math.PI) / 180, PW = 2.5, PH = 2.2, PPU = 340;
 const SLOT_Y = [0.30, -0.20, -0.70], SLOT_H = 0.42, BOX = 0.22, DOCK_L = -PW / 2 + 0.15;
 const TITLE_BAND = PH / 2 - 0.45; // nothing docks or flies above this line inside the panel
-const ROW0 = new THREE.Vector3(S2 + 1.2, 3.3, -1.9), ROW_DX = 0.155, ROW_DY = 0.17, ROW_S = 1.5;
+const ROW0 = new THREE.Vector3(S2 + 1.2, 3.3, -1.9), ROW_DX = 0.155, ROW_DY = 0.17, ROW_S = 1.5, ROW_SETTLE = 0.40, ROW_ALPHA = 0.7;
+// the outgoing set (embedding rows, review panel) clears before LEARN's words rise at 7.75
+const OUT0 = 7.50, OUT1 = 7.72, ROWS_OUT1 = 7.66; // the rows sit highest, right where LEARN's headline lands
 // the queue emerges at Q0 (lower left); behind it chips are faded out, and never dip under the floor
 const pathPt = (s) => { const p = Q0.clone().addScaledVector(DIR, s); p.y = Math.max(p.y, 0.2); return p; };
-function travelled(t) { const tau = t - 5.40; if (tau <= 0) return 0; if (tau < 0.15) return (V * tau * tau) / 0.30; return V * (tau - 0.075); }
-const S0 = S_LAST - travelled(T_LEAVE0); // chip 0 leaves the last sheet at T_LEAVE0
-const leaveT = (i) => T_LEAVE0 + (GAP * i) / V;
-// handoff: chips start wider apart (no dense pile while the camera trucks in), settling to GAP well before T_LEAVE0
-const gapAt = (t) => lerp(GAP * 1.375, GAP, E.inOutCubic(seg(t, 5.6, 6.0)));
-// handoff: the whole rig starts 1.35 units left so the glass stack stays inside the frame mid-truck, then eases to rest
-const rigX = (t) => -1.35 * (1 - E.inOutSine(seg(t, 5.15, 5.85)));
+// steps completed (fractional while moving); pure in t
+function steps(t) {
+  if (t <= TA) return 0;
+  const k = Math.floor((t - TA) / STEP), f = (t - TA - k * STEP) / MOVE;
+  return k + E.swift(Math.min(1, f));
+}
+const leaveT = (i) => TA + STEP * i;
+// handoff: the rig is world-locked (no rig offset). The camera truck alone carries the glass stack into frame,
+// so the sheets ride the floor grid with no skate and are already at rest when the truck lands at 5.60.
 let st = {};
 
 // Glass sheet: faint face with a vertical alpha gradient (top 1.6x, bottom 0.4x) + bright 1 px edges.
@@ -102,15 +113,23 @@ export default {
     const chips = CHIPS.map(([k, v, o], i) => {
       const states = o === 'pass' ? ['queue', 'pass'] : ['queue'];
       const c = makeChip(k, v, states); root.add(c.group);
+      // PASS plane is wider (badge): align its left edge with the queue plane so key and value never shift
+      if (c.planes.pass) c.planes.pass.position.x = (c.planes.pass.geometry.parameters.width - c.planes.queue.geometry.parameters.width) / 2;
       let dock = null;
-      let ds = DOCK_S, dh = 0;
+      let ds = DOCK_S, dh = 0, vAlign = 0;
       if (o === 'flag') {
         dock = makeChip('', v, ['flag']); root.add(dock.group); dock.set('flag', 0, 0);
         // dock as large as the slot allows: chip left edge at DOCK_L, a gap before the slot's key label
-        const ti = SLOT_KEYS.indexOf(k), kw = keyWidth(SLOT_KEYS[ti]);
-        ds = Math.min(DOCK_S, (KEY_R - kw - 0.08 - DOCK_L) / dock.width); dh = chipCanvas('', v, 'flag').h;
+        const ti = SLOT_KEYS.indexOf(k), kw = keyWidth(SLOT_KEYS[ti]), cc = chipCanvas('', v, 'flag');
+        ds = Math.min(DOCK_S, (KEY_R - kw - 0.08 - DOCK_L) / dock.width); dh = cc.h;
+        // value-word match: the value text sits kw/2 right of centre on the keyed chip and bw/2 left of centre
+        // on the value chip, so offsetting the value chip by (kw + bw) / 2 keeps the word still through the swap
+        const m = makeCanvas(8, 8).getContext('2d');
+        m.font = `600 44px ${FONT.mono}`; const kpx = m.measureText(k + '  ').width;
+        m.font = `700 32px ${FONT.mono}`; m.letterSpacing = '5px'; const bpx = m.measureText('FLAG').width + 38;
+        vAlign = (kpx + bpx) / 2 / (cc.canvas.width / cc.w);
       }
-      return { c, dock, ds, dh, o, i };
+      return { c, dock, ds, dh, vAlign, o, i };
     });
     // embedding rows (3 PASS chips -> 3 rows of 8 cubes)
     const emb = makeVoxels(24, 0.075); root.add(emb);
@@ -148,59 +167,74 @@ export default {
     const title = new TitleBlock(tdom, { eyebrow: 'STEP 02', words: [{ text: 'Self-check' }], desc: 'Doubts go to an engineer.', T, Tn: TN });
     const counter = new Counter(tdom);
     ctx.scene.add(root);
-    st = { root, sheets, chips, emb, embData, panel, pface, ptex, slotHot, wl, title, counter, yaw };
+    st = { root, sheets, chips, emb, embData, panel, back, edge, pface, pdecal, ptex, slotHot, wl, title, counter, yaw };
     return { root, dom: [wdom, tdom] };
   },
   update(ctx, t) {
     const s = st, cam = ctx.camera.position;
-    s.root.position.x = rigX(t);
+    s.root.position.x = 0;
     s.root.updateMatrixWorld(true);
     s.slotHot.forEach((m) => { m.material.opacity = 0; });
-    const D = travelled(t);
-    const hot = s.sheets.map(() => 0), bobAt = (sc) => {
-      let b = 0; for (const sh of s.sheets) { const d = sc - sh.s; if (d > -0.13 && d < 0.13) b = Math.max(b, Math.sin(Math.PI * (d + 0.13) / 0.26)); } return 0.03 * b;
-    };
+    const D = GAP * steps(t);
+    const hot = s.sheets.map(() => 0);
+    // outgoing fade (inQuad) for everything that would otherwise sweep through LEARN's title band
+    const out = 1 - E.inQuad(seg(t, OUT0, OUT1)), outRows = 1 - E.inQuad(seg(t, OUT0, ROWS_OUT1));
+    // after 6.10 the queue tail in front of the glass steps back (60% opacity, ~50% border) so the peel leads
+    const dimT = E.inOutSine(seg(t, 6.10, 6.35)), S_FOCUS = s.sheets[0].s;
     const flagOrder = { 0: 0, 2: 1, 3: 2 }, passOrder = { 1: 0, 4: 1, 5: 2 };
     let ticks = 0;
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3();
     const embProg = [0, 0, 0], embFrom = [null, null, null];
-    s.chips.forEach(({ c, dock, ds, dh, o, i }) => {
-      const sPos = S0 - gapAt(t) * i + D;
+    s.chips.forEach(({ c, dock, ds, dh, vAlign, o, i }) => {
+      const sPos = S_LAST - GAP * i + D;
       const tl = leaveT(i);
-      s.sheets.forEach((sh, j) => {
-        const d = sPos - sh.s;
-        const h = d < 0 ? smooth01((d + 0.33) / 0.33) : 1 - clamp((d - 0.15) / 0.88);
-        hot[j] = Math.max(hot[j], clamp(h));
-      });
+      if (t < tl || !o) s.sheets.forEach((sh, j) => { hot[j] = Math.max(hot[j], 1 - smooth01((Math.abs(sPos - sh.s) - 0.08) / 0.5)); });
       const g = c.group;
       const billboard = (grp) => { grp.rotation.set(0, Math.atan2(cam.x - grp.position.x, cam.z - grp.position.z), 0); };
-      if (t < tl || !o) {
-        // queued / travelling
-        g.position.copy(pathPt(sPos)); g.position.y += bobAt(sPos); billboard(g);
+      setOrder(g, o === 'pass' && t >= tl ? -1 : 1); // queued chips draw over the glass edges; a dissolving PASS chip draws behind
+      const dim = dimT * (1 - smooth01((sPos - (S_FOCUS - 1.0)) / 0.75));
+      for (const k of Object.keys(c.planes)) c.planes[k].material.color.setScalar(1 - 0.17 * dim);
+      if (t < (o === 'flag' ? tl - FLAG_LEAD : tl) || !o) {
+        // queued / stepping
+        g.position.copy(pathPt(sPos)); billboard(g);
         g.scale.setScalar(CHIP_S);
         const fadeOut = o ? 1 : 1 - seg(sPos, S_LAST + 0.1, S_LAST + 0.5);
         const fadeIn = E.outQuad(seg(sPos, -0.45, 0.15));
-        c.set('queue', fadeOut * fadeIn, 0);
-        g.visible = fadeOut * fadeIn > 0.001;
+        const op = fadeOut * fadeIn * (1 - 0.4 * dim);
+        // a PASS chip shows its verdict while it settles into the last sheet (0.12 s cross-fade)
+        const kp = o === 'pass' ? smooth01(seg(t, tl - STEP + 0.10, tl - STEP + 0.22)) : 0;
+        mixChip(c, 'queue', 'pass', kp, op);
+        g.visible = op > 0.001;
         if (dock) { dock.group.visible = false; dock.set('flag', 0, 0); }
         return;
       }
       if (o === 'pass') {
-        const k = seg(t, tl, tl + 0.15);
-        const sp = Math.min(sPos, S_LAST + 0.3);
+        // leaves along the path, fading out over 0.08 s; the cubes spawn as it vanishes
+        const sp = S_LAST + 0.3 * E.swift(seg(t, tl, tl + MOVE));
         g.position.copy(pathPt(sp)); billboard(g); g.scale.setScalar(CHIP_S);
-        const tDis = tl + 0.3 / V;
-        const op = 1 - seg(t, tDis, tDis + 0.1);
-        c.set(k < 0.5 ? 'queue' : 'pass', op, 0); g.visible = op > 0.001;
+        const tDis = tl + 0.08;
+        const op = 1 - seg(t, tl, tDis);
+        c.set('pass', op, 0); g.visible = op > 0.001;
         const row = passOrder[i];
-        embProg[row] = seg(t, tDis, tDis + 0.30);
-        embFrom[row] = pathPt(S_LAST + 0.3);
+        embProg[row] = seg(t, tDis, tDis + ROW_SETTLE);
+        embFrom[row] = pathPt(S_LAST + 0.25);
         return;
       }
-      // FLAG: flip (keyed chip -> value chip with FLAG badge), then fly in panel space and dock.
-      const ti = flagOrder[i], tDock = tl + 0.45;
-      const kf = seg(t, tl, tl + 0.18), flipX = Math.max(0.02, Math.abs(Math.cos(Math.PI * kf)));
-      const u = E.inOutCubic(seg(t, tl, tDock));
+      // FLAG: squash-swap (keyed chip -> value chip with FLAG badge) while it flies in panel space and docks.
+      // it launches 0.04 s before the queue steps (peel, then advance), so it is clear of the last sheet by
+      // the time the next chip settles there. The squash never goes below 55% width; the 0.06 s cross-fade is
+      // centred on it. The 0.52 s outQuint flight launches fast and settles softly into the slot (it may
+      // overlap the next index move: the peel is the hero, the conveyor is secondary)
+      const ti = flagOrder[i], tGo = tl - FLAG_LEAD, tDock = tGo + FLAG_FLY;
+      const kf = seg(t, tGo, tGo + FLAG_SQUASH), flipX = 1 - 0.45 * Math.sin(Math.PI * kf);
+      const xk = smooth01(seg(t, tGo + FLAG_SQUASH / 2 - 0.03, tGo + FLAG_SQUASH / 2 + 0.03));
+      const u = E.outQuint(seg(t, tGo, tDock));
+      // the chip reads as seated once it is ~1% from the slot, creeping ~1 px per frame (outQuint, s ~ 0.58):
+      // the slot flashes, then ticks 0.10 s later; the remaining creep is the soft settle
+      const tSeat = tGo + FLAG_SEAT;
+      // after the swap the value chip glides from the value-matched offset back to centre while it flies
+      const vOff = vAlign * (1 - E.inOutSine(seg(t, tGo + FLAG_SQUASH / 2, tGo + FLAG_SQUASH + 0.14)));
+      dock.planes.flag.position.x = vOff; dock.glow.position.x = vOff;
       const L = s.panel.worldToLocal(pathPt(S_LAST));
       const cw = dock.width, chH = dh;
       const P3 = new THREE.Vector3(DOCK_L + (cw * ds) / 2, SLOT_Y[ti], 0.03);
@@ -213,40 +247,42 @@ export default {
       const over = smooth01((p.x + cw * scl / 2 - (-PW / 2 - 0.2)) / 0.4);
       p.y = Math.min(p.y, TITLE_BAND - (chH * scl) / 2 + (1 - over) * 3);
       const wp = s.panel.localToWorld(p.clone());
-      g.visible = kf < 0.5; dock.group.visible = kf >= 0.5;
+      setOrder(g, 4); // the peeling chip is the hero: it draws over the queue (e.g. 'lot_id RDM8EA.62') it passes
       const yawB = Math.atan2(cam.x - wp.x, cam.z - wp.z);
       for (const grp of [g, dock.group]) {
         grp.position.copy(wp);
         grp.rotation.set(0, lerp(yawB, PANEL_YAW, u), 0);
         grp.scale.set(scl * flipX, scl, scl);
       }
-      c.set('queue', 1, 0);
-      const glow = kf < 0.5 ? 0 : 1 - 0.55 * seg(t, tDock, tDock + 0.5);
-      dock.set('flag', 1, glow);
-      if (t >= tDock + 0.10) ticks = Math.max(ticks, ti + 1);
-      s.slotHot[ti].material.opacity = t >= tDock ? 0.16 * (1 - seg(t, tDock, tDock + 0.4)) : 0;
+      c.set('queue', 1 - xk, 0); g.visible = xk < 0.999;
+      // the value chip carries the full FLAG emissive (x1.6 bloom) through the flight and 0.15 s past the dock
+      const glow = xk * (1 - 0.55 * seg(t, tDock + 0.15, tDock + 0.65));
+      dock.set('flag', out * xk, glow); dock.group.visible = xk > 0.001;
+      if (t >= tSeat + 0.10) ticks = Math.max(ticks, ti + 1);
+      s.slotHot[ti].material.opacity = t >= tSeat ? 0.16 * (1 - seg(t, tSeat, tSeat + 0.4)) * out : 0;
     });
-    // one shared hot level for the whole stack while the conveyor runs; each sheet varies by at most 0.15
-    const hotAll = Math.max(...hot);
-    s.sheets.forEach((sh, j) => sh.g.setHot(clamp(0.85 * hotAll + 0.15 * hot[j])));
+    // the stack stays warm; each sheet pulses to full hot while a chip dwells in it (the index rhythm)
+    s.sheets.forEach((sh, j) => sh.g.setHot(clamp(0.72 + 0.28 * hot[j])));
     s.pface.material.map = s.ptex[ticks];
+    s.back.material.opacity = 0.86 * out; s.edge.material.opacity = 0.14 * out; s.pface.material.opacity = out;
+    s.pdecal.material.opacity = 0.26 * out; s.panel.visible = s.pdecal.visible = out > 0.001;
     // embedding rows
     const eAl = s.emb.geometry.getAttribute('aAlpha');
     s.embData.forEach((e, idx) => {
       const pr = embProg[e.row], from = embFrom[e.row];
       const target = ROW0.clone().add(new THREE.Vector3(e.k * ROW_DX, -e.row * ROW_DY, 0));
       if (!from || pr <= 0) { eAl.setX(idx, 0); s.emb.setMatrixAt(idx, m4.makeScale(0, 0, 0)); return; }
-      const u = E.outQuint(clamp((pr - e.d) / (1 - e.d)));
+      // per-cube stagger e.d; each cube grows from 0 with a small overshoot and fades in over its first quarter
+      const ul = clamp((pr - e.d) / (1 - e.d)), u = E.outQuint(ul);
       const start = from.clone().add(new THREE.Vector3((e.k - 3.5) * 0.11, 0, 0));
       p.copy(start).lerp(target, u);
-      q.setFromAxisAngle(e.ax, (1 - u) * 1.2); sc.setScalar(ROW_S * lerp(0.5, 1, u));
-      s.emb.setMatrixAt(idx, m4.compose(p, q, sc)); eAl.setX(idx, 1);
+      q.setFromAxisAngle(e.ax, (1 - u) * 1.2); sc.setScalar(ROW_S * lerp(0, 1, E.outBack(ul, 1.3)));
+      s.emb.setMatrixAt(idx, m4.compose(p, q, sc)); eAl.setX(idx, ROW_ALPHA * outRows * E.outQuad(clamp(ul / 0.25)));
     });
     s.emb.instanceMatrix.needsUpdate = true; eAl.needsUpdate = true;
     s.emb.material.uniforms.camPos.value.copy(cam);
     // world label above the middle of the sheet stack
     const top = pathPt((SHEET_U[1] + SHEET_U[2]) * 0.5 * LP); top.y = SHEET_Y + SHEET_H / 2 + 0.38;
-    top.x += s.root.position.x;
     const pr = ctx.project(top);
     s.wl.set(pr.x, pr.y, t >= 5.75 ? lerp(0.4, 1, E.outQuint(seg(t, 5.75, 6.05))) * (1 - seg(t, 7.45, 7.6)) : 0, pr.visible);
     s.title.update(t);
@@ -254,3 +290,11 @@ export default {
   },
 };
 function smooth01(x) { const u = clamp(x); return u * u * (3 - 2 * u); }
+// cross-fade two border states of one chip (both planes drawn; b may be missing, then a is shown)
+function mixChip(c, a, b, k, op) {
+  const pb = c.planes[b];
+  if (!pb || k <= 0) { c.set(a, op, 0); return; }
+  if (k >= 1) { c.set(b, op, 0); return; }
+  c.set(a, op * (1 - k), 0);
+  pb.visible = op * k > 0.001; pb.material.opacity = op * k;
+}

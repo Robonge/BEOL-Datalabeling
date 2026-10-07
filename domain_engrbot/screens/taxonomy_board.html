@@ -203,11 +203,13 @@ section{margin-bottom:22px}
 .tw{overflow-x:auto;max-width:100%;margin-top:6px;border-radius:var(--radius-sm);border:1px solid var(--bg-grid)}
 table.sheet{border-collapse:collapse;font-size:12px;min-width:100%;background:var(--surface)}
 table.sheet.n11{min-width:1040px}
+table.sheet.n7{min-width:820px}
+.fixedline{font-size:11.5px;font-weight:700;color:var(--text-body);margin-top:4px}
+.fixednote{font-size:11px;color:var(--text-muted);margin-top:2px}
 table.sheet th,table.sheet td{border-right:1px solid var(--bg-grid);border-bottom:1px solid var(--bg-grid);padding:4px 7px;text-align:left;vertical-align:top}
 table.sheet tr>*:last-child{border-right:0}
 table.sheet tbody tr:last-child td{border-bottom:0}
 table.sheet th{background:var(--surface-sunk);white-space:nowrap;font-weight:700;font-size:11px;color:var(--text-body)}
-table.sheet th .L{font-family:var(--mono);color:var(--text-muted);margin-right:4px;font-weight:400}
 table.sheet th.edh{color:var(--warning-text)}
 table.sheet th.chgh{color:var(--success)}
 table.sheet td{min-width:56px;max-width:300px;white-space:pre-wrap;word-break:break-word}
@@ -372,7 +374,13 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   if (!DATA){ root.textContent = "데이터가 없습니다. python -m domain_engrbot taxonomy-board 로 다시 만드세요."; return; }
 
   var COLS = DATA.columns;
-  var LETTERS = "ABCDEFGHIJK";
+  // 보드 화면 이름(JSON 키는 그대로)과 숨김 열(축 속성: 다중값·계층·중복 알림 제외·종류). 숨긴 칸은 편집기에서 고친다
+  var CLAB = DATA.column_labels || {}, CHELP = DATA.column_help || {}, HIDE = DATA.hidden_columns || {};
+  function colName(sheet, ci){ var n = (COLS[sheet] || [])[ci] || ""; return (CLAB[sheet] || {})[n] || n; }
+  function colHelp(sheet, ci){ return (CHELP[sheet] || {})[(COLS[sheet] || [])[ci] || ""] || ""; }
+  function hiddenCol(sheet, ci){ return (HIDE[sheet] || []).indexOf(ci) >= 0; }
+  var RESERVED = ["해당없음", "unknown", "n/a", "na"];
+  var EDITOR_CMD = "python -m domain_engrbot taxonomy-editor --open";
   var ST = {open:"미반영", done:"반영됨", rejected:"기각됨", blocked:"먼저 할 일", unknown:"확인 불가"};
   var ST_ORDER = ["open", "blocked", "done", "rejected", "unknown"];
   // 상태 점 색(소면적): 도넛·범례·칩 점에만 쓴다
@@ -380,7 +388,7 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   var ST_CHIP = {open:"#4A5FA8", blocked:"#C99A3B", done:"#3B8A6E", rejected:"#9DAABF", unknown:"#A8BDD4"};
   var SRC = [["S1", "Domain-Engr-bot 승인"], ["S2", "Domain-Engr-bot 제안"], ["S3", "Domain-Engr-bot L6"], ["S4", "labelbot 후보"],
              ["S5", "재검토 요청"], ["S6", "교정 장부"], ["S7", "엔지니어 답변"]];
-  var ACT = {add:"추가", overwrite:"덮어쓰기", disable:"끄기", new_axis:"새 축", edit:"문장 수정", term:"용어 후보",
+  var ACT = {add:"추가", overwrite:"덮어쓰기", disable:"끄기", new_axis:"새 분류 기준", edit:"문장 수정", term:"용어 후보",
              outside:"taxonomy 밖"};
   var GROUP = {taxonomy:"taxonomy 시트", synonyms:"synonyms 시트", questions:"questions 시트", term:"용어 후보",
                outside:"taxonomy 밖"};
@@ -388,7 +396,7 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   var KEY = "taxonomy_board:v1";
   var store = loadStore();
   var ui = {status: DATA.taxonomy.readable ? "open" : "all", sheet: "all", action: "all", q: "", showHidden: false};
-  var ACTION_FILTER = [["all", "전체"], ["add", "추가"], ["edit", "문장 수정"], ["disable", "끄기"], ["new_axis", "새 축"],
+  var ACTION_FILTER = [["all", "전체"], ["add", "추가"], ["edit", "문장 수정"], ["disable", "끄기"], ["new_axis", "새 분류 기준"],
                        ["overwrite", "덮어쓰기 전체"]];
   var QIDS = Object.create(null);
   (DATA.question_ids || []).forEach(function(q){ QIDS[q] = 1; });
@@ -538,6 +546,14 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     m[it.id] = null;
     commit(payload(m), "확정 취소");
   }
+  // 기각 해제: rejected 목록의 같은 제안 행과 보드 기각 확정을 지운다. 다음 보드부터 다시 미반영으로 올라온다
+  function reopen(it){
+    if (!SERVED){ toast("기각 해제는 보드 서버에서 됩니다: python -m domain_engrbot taxonomy-board --serve"); return; }
+    if (!window.confirm("'" + it.title + "'의 기각을 풀까요?\ntaxonomy.json의 rejected 목록에서 이 제안 행을 지우고(이력이 남습니다) 다시 미반영으로 올립니다.")) return;
+    var m = {};
+    m[it.id] = "reopen";
+    commit(payload(m), "기각 해제");
+  }
 
   // ---- 미리보기 대화상자 ----
   var modal = document.getElementById("modal"), mbox = document.getElementById("mbox"), lastFocus = null;
@@ -577,11 +593,12 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   function cellList(d){
     var ul = el("ul", "dcells"), cols = d.sheet === "rejected" ? COLS.rejected : (COLS[d.sheet] || []);
     cols.forEach(function(name, ci){
+      if (hiddenCol(d.sheet, ci)) return;
       var a = d.before ? String(d.before[name] || "") : "", b = d.after ? String(d.after[name] || "") : "";
       if (d.op === "edit" && a === b) return;
       if (d.op !== "edit" && !(d.op === "add" ? b : a)) return;
       var li = el("li");
-      li.appendChild(el("span", "k", (d.sheet === "rejected" ? "" : LETTERS.charAt(ci) + " ") + name));
+      li.appendChild(el("span", "k", d.sheet === "rejected" ? name : colName(d.sheet, ci)));
       var v = el("span", "v");
       if (d.op === "edit"){
         v.appendChild(el("del", null, show(a)));
@@ -697,13 +714,20 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
       if (r.required.indexOf(ci) >= 0 && !v){ out.push({ci: ci, why: "필수 칸입니다"}); return; }
       if (!rule || !v) return;
       if (rule === "yn" && !/^[YN]$/i.test(v)) out.push({ci: ci, why: "Y 또는 N이어야 합니다"});
+      else if (rule === "yn_blank" && !/^[YN]$/i.test(v)) out.push({ci: ci, why: "빈칸, Y 또는 N이어야 합니다"});
+      else if (rule === "axis_new" && (DATA.axis_names || []).some(function(a){ return norm(a) === norm(v); }))
+        out.push({ci: ci, why: "이미 있는 분류 기준입니다"});
+      else if (rule === "value_new" && RESERVED.indexOf(norm(v)) >= 0) out.push({ci: ci, why: "예약어는 라벨로 쓸 수 없습니다"});
+      else if (rule === "value_new" && (DATA.targets || []).some(function(t){
+        return t[0] === String(cellVal(it, ri, 0)).trim() && t[1] === norm(v); }))
+        out.push({ci: ci, why: "같은 분류 기준에 이미 켜진 라벨입니다"});
       else if (rule === "kind" && v !== "분류" && v !== "상태") out.push({ci: ci, why: "분류 또는 상태여야 합니다"});
       else if (rule === "int" && !/^[+-]?\d+$/.test(v)) out.push({ci: ci, why: "정수여야 합니다"});
-      else if (rule === "target" && !validTarget(v)) out.push({ci: ci, why: "공통 또는 taxonomy에 있는 켜진 축=값이어야 합니다"});
+      else if (rule === "target" && !validTarget(v)) out.push({ci: ci, why: "공통 또는 taxonomy에 있는 켜진 분류 기준=라벨이어야 합니다"});
       else if (rule === "qid_new" && QIDS[v]) out.push({ci: ci, why: "이미 있는 질문 ID입니다"});
-      else if (rule === "axis" && (DATA.axis_names || []).indexOf(v) < 0) out.push({ci: ci, why: "taxonomy에 있는 켜진 축 이름과 똑같아야 합니다"});
+      else if (rule === "axis" && (DATA.axis_names || []).indexOf(v) < 0) out.push({ci: ci, why: "taxonomy에 있는 켜진 분류 기준 이름과 똑같아야 합니다"});
       else if (rule === "parent" && !validParent(String(cellVal(it, ri, 0)).trim(), v, String(cellVal(it, ri, 1))))
-        out.push({ci: ci, why: "같은 축에 있는 켜진 값이어야 합니다(자기 자신은 안 됩니다)"});
+        out.push({ci: ci, why: "같은 분류 기준에 있는 켜진 라벨이어야 합니다(자기 자신은 안 됩니다)"});
     });
     return out;
   }
@@ -726,9 +750,9 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     var wrote = false, why = null;
     chosenRows(it).forEach(function(ri){
       if (why) return;
-      var r = it.rows[ri], cols = COLS[r.sheet] || [], bad = problems(it, ri);
+      var r = it.rows[ri], bad = problems(it, ri);
       if (bad.length){
-        why = "칸을 확인하세요: " + bad.map(function(p){ return LETTERS.charAt(p.ci) + " " + cols[p.ci] + "(" + p.why + ")"; }).join(", ");
+        why = "칸을 확인하세요: " + bad.map(function(p){ return colName(r.sheet, p.ci) + "(" + p.why + ")"; }).join(", ");
         return;
       }
       var cells = rowCells(it, ri);
@@ -982,8 +1006,9 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
       lg.appendChild(s);
     });
     d.appendChild(lg);
-    d.appendChild(el("p", null, "기각한 새 값·동의어·질문은 taxonomy.json의 rejected 목록에 남아 다시 올라오지 않습니다. 나머지 항목은 기각 결정만 남깁니다. " +
-      "봇은 정의 문장을 지어내지 않고, 사람이 고친 편집 칸만 씁니다. 반영은 보드 서버(--serve)에서만 됩니다. 직접 고칠 때는 python -m domain_engrbot taxonomy-editor 를 씁니다. " +
+    d.appendChild(el("p", null, "기각한 제안은 taxonomy.json의 rejected 목록에 남아, 새 실행에서 같은 제안이 다시 올라와도(띄어쓰기·대소문자 차이 포함) 검토를 묻지 않습니다. " +
+      "기각된 카드의 '기각 해제'로 풀 수 있습니다. 원래 문장이 없는 새 질문만 기각 결정만 남깁니다. " +
+      "봇은 정의 문장을 지어내지 않고, 사람이 고친 편집 칸만 씁니다. 반영은 보드 서버(--serve)에서만 됩니다. 제안이 없는 행과 숨긴 설정(다중값·계층·중복 알림 제외·종류)은 편집기(" + EDITOR_CMD + ")에서 고칩니다. " +
       "이 화면은 용어·메모(본문 표현)를 담으므로 작업 폴더 밖으로 내지 않습니다. 편집 내용·표시·숨김은 '최종 완료' 전까지 이 브라우저에만 저장됩니다."));
     if (DATA.notes && DATA.notes.revisit_file) d.appendChild(el("p", null, DATA.notes.revisit_file));
     n.appendChild(d);
@@ -1037,7 +1062,8 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   function markRow(tr, it, ri){
     var bad = {};
     problems(it, ri).forEach(function(p){ bad[p.ci] = p.why; });
-    Array.prototype.forEach.call(tr.children, function(td, ci){
+    Array.prototype.forEach.call(tr.children, function(td){
+      var ci = +td.getAttribute("data-ci");
       td.classList.toggle("req", has(bad, ci));
       if (has(bad, ci)) td.title = bad[ci];
       else td.removeAttribute("title");
@@ -1052,7 +1078,8 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   function rowBlock(it, r, ri){
     var pickOne = it.pick === "one", on = !pickOne || choiceOf(it) === ri;
     var b = el("div", "rowb" + (on ? "" : " off")), top = el("div", "rowtop");
-    var cols = COLS[r.sheet] || [];
+    var cols = COLS[r.sheet] || [], shown = cols.map(function(_, ci){ return ci; })
+      .filter(function(ci){ return !hiddenCol(r.sheet, ci); });
     if (pickOne && markable(it)){
       var lab = el("label", "pick"), rb = el("input");
       rb.type = "radio";
@@ -1076,30 +1103,37 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     (r.changes || []).forEach(function(c){ changed[c.col] = 1; });
     if ((r.changes || []).length){
       b.appendChild(el("div", "chgline", "바뀌는 칸: " + r.changes.map(function(c){
-        return LETTERS.charAt(c.col) + " " + cols[c.col] + " " + show(c.from) + " → " + show(c.to);
+        return colName(r.sheet, c.col) + " " + show(c.from) + " → " + show(c.to);
       }).join(", ")));
     } else if (r.target.mode === "overwrite" && r.editable.length){
       b.appendChild(el("div", "chgline", "고칠 칸: " + r.editable.map(function(ci){
-        return LETTERS.charAt(ci) + " " + cols[ci];
+        return colName(r.sheet, ci);
       }).join(", ") + " (나머지 칸은 지금 행 그대로)"));
     }
-    var tw = el("div", "tw"), t = el("table", "sheet n" + cols.length);
+    if (r.fixed && r.fixed.length){   // 새 분류 기준: 축 속성은 기본값으로만 만든다(보드에서 고칠 수 없다)
+      b.appendChild(el("div", "fixedline", "기본 설정(새 분류 기준만, 보드에서는 고칠 수 없음): " + r.fixed.map(function(ci){
+        return cols[ci] + " " + r.cells[ci];
+      }).join(" · ")));
+      b.appendChild(el("div", "fixednote", "상태 축이나 다른 설정이 필요하면 편집기(" + EDITOR_CMD + ")에서 만듭니다."));
+    }
+    var tw = el("div", "tw"), t = el("table", "sheet n" + shown.length);
     var thead = el("thead"), trh = el("tr");
-    cols.forEach(function(name, ci){
-      var th = el("th", changed[ci] ? "chgh" : (r.editable.indexOf(ci) >= 0 ? "edh" : ""));
-      th.appendChild(el("span", "L", LETTERS.charAt(ci)));
-      th.appendChild(document.createTextNode(name));
+    shown.forEach(function(ci){
+      var th = el("th", changed[ci] ? "chgh" : (r.editable.indexOf(ci) >= 0 ? "edh" : ""), colName(r.sheet, ci));
+      var help = colHelp(r.sheet, ci);
+      if (help) th.title = help;
       trh.appendChild(th);
     });
     thead.appendChild(trh);
     t.appendChild(thead);
     var tb = el("tbody"), tr = el("tr");
-    r.cells.forEach(function(_, ci){
+    shown.forEach(function(ci){
       var td = el("td", changed[ci] ? "chg" : null, cellVal(it, ri, ci));
+      td.setAttribute("data-ci", ci);
       if (r.editable.indexOf(ci) >= 0){
         td.className = "ed";
         editable(td);
-        td.setAttribute("aria-label", LETTERS.charAt(ci) + " " + (cols[ci] || "") + " 편집");
+        td.setAttribute("aria-label", colName(r.sheet, ci) + " 편집");
         td.addEventListener("input", function(){ setEdit(it, ri, ci, td.textContent); markRow(tr, it, ri); refreshApply(it); });
         td.addEventListener("keydown", function(ev){ if (ev.key === "Enter"){ ev.preventDefault(); td.blur(); } });
       }
@@ -1250,8 +1284,8 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   };
 
   function card(it, i){
-    var m = markOf(it);
-    var folded = m && !expanded[it.id];
+    var m = markOf(it), rej = it.status === "rejected";
+    var folded = (m || rej) && !expanded[it.id];
     var c = el("div", "card cardin s-" + it.status + (store.hidden[it.id] ? " hid" : "") + (m ? " marked " + MARK[m.kind].cls : "") +
                (folded ? " folded" : ""));
     c.id = "it-" + it.id;
@@ -1261,13 +1295,14 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     if (m) h.appendChild(el("span", "badge st st-" + MARK[m.kind].cls, MARK[m.kind].badge + " " + stamp(m.at)));
     else h.appendChild(el("span", "badge st st-" + it.status, ST[it.status] || it.status));
     if (it.conflict) h.appendChild(el("span", "badge warn", "상충"));
+    if (rej && it.fresh_human) h.appendChild(el("span", "badge warn", "새 사람 출처"));
     h.appendChild(el("span", "title", it.title));
-    if (it.human && !m){
+    if (it.human && !m && !rej){
       h.appendChild(el("span", "sp"));
       h.appendChild(button("btn sm ghost", "확정 취소", function(){ undoDecision(it); },
         "보드에서 확정한 " + (it.human.decision === "applied" ? "반영함" : "기각함") + " 기록을 지우고 다시 판정합니다(쓴 내용은 그대로)"));
     }
-    if (m){
+    if (m || rej){
       h.appendChild(el("span", "sp"));
       h.appendChild(button("btn sm ghost", folded ? "펼치기" : "접기", function(){
         expanded[it.id] = folded;
@@ -1275,11 +1310,13 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
         renderBody();
         window.scrollTo(0, keep);
       }));
-      h.appendChild(cancelButton(m, it));
+      if (m) h.appendChild(cancelButton(m, it));
+      else if (it.reopen) h.appendChild(button("btn sm ghost", "기각 해제", function(){ reopen(it); },
+        "rejected 목록에서 이 제안을 지우고 다시 미반영으로 올립니다"));
     }
     c.appendChild(h);
     if (folded){
-      c.appendChild(el("div", "sub", FOLD_NOTE[m.kind]));
+      c.appendChild(el("div", "sub", m ? FOLD_NOTE[m.kind] : (it.status_note || "기각됨") + " · 같은 제안이 다시 올라와도 검토를 묻지 않습니다"));
       return c;
     }
     if (it.status_note) c.appendChild(el("div", "sub", it.status_note));
@@ -1335,7 +1372,7 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     var t = el("div");
     var line = el("div");
     line.appendChild(el("span", "nm", ax.name));
-    line.appendChild(el("span", "sub", "  " + n + "건" + (ax.row ? " · 축 정의 " + ax.row + "행" : " · taxonomy에 없는 축") +
+    line.appendChild(el("span", "sub", "  " + n + "건" + (ax.row ? " · 분류 기준 정의 " + ax.row + "행" : " · taxonomy에 없는 분류 기준") +
       (ax.off ? " · 꺼진 축" : "")));
     t.appendChild(line);
     (ax.metrics || []).forEach(function(m){
@@ -1364,14 +1401,18 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
 
   function renderBody(){
     body.innerHTML = "";
-    var shown = DATA.items.filter(visible), k = 0;
+    var shown = DATA.items.filter(visible), k = 0, rejAll = [];
+    if (ui.status === "all"){   // 전체 보기: 기각된 항목은 맨 아래 접힌 구역에 모은다
+      rejAll = shown.filter(function(it){ return it.status === "rejected"; });
+      shown = shown.filter(function(it){ return it.status !== "rejected"; });
+    }
     function add(s, it){ s.appendChild(card(it, k++)); }
     var tax = shown.filter(function(it){ return it.group === "taxonomy"; });
     if (tax.length){
       var s = section(body, "taxonomy", tax.length), done = {};
       var na = tax.filter(function(it){ return it.kind === "new_axis"; });
       if (na.length){
-        s.appendChild(axisHead({name: "새 축", row: null, metrics: []}, na.length));
+        s.appendChild(axisHead({name: "새 분류 기준", row: null, metrics: []}, na.length));
         na.forEach(function(it){ add(s, it); done[it.id] = 1; });
       }
       DATA.axes.forEach(function(ax){
@@ -1391,11 +1432,22 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     var out = shown.filter(function(it){ return it.group === "outside"; });
     if (out.length){
       var d = el("details", "sec");
+      d.open = !!ui.outOpen;
+      d.addEventListener("toggle", function(){ ui.outOpen = d.open; });
       d.appendChild(el("summary", null, "taxonomy 밖 " + out.length + "건 (프롬프트·검수 정책 등, 목록만)"));
       out.forEach(function(it){ add(d, it); });
       body.appendChild(d);
     }
-    if (!shown.length){
+    if (rejAll.length){
+      var rd = el("details", "sec"), fresh = rejAll.filter(function(it){ return it.fresh_human; }).length;
+      rd.open = !!ui.rejOpen;
+      rd.addEventListener("toggle", function(){ ui.rejOpen = rd.open; });
+      rd.appendChild(el("summary", null, "기각 " + rejAll.length + "건" + (fresh ? " · 새 사람 출처 " + fresh + "건" : "") +
+        " (다시 올라와도 검토를 묻지 않습니다. 보드에서 기각한 항목은 카드의 '기각 해제'로 풉니다)"));
+      rejAll.forEach(function(it){ add(rd, it); });
+      body.appendChild(rd);
+    }
+    if (!shown.length && !rejAll.length){
       var e = el("div", "empty");
       e.appendChild(el("b", null, DATA.items.length ? "조건에 맞는 항목이 없습니다" : "수정 제안이 없습니다"));
       e.appendChild(document.createTextNode(DATA.items.length ? "상태·시트·동작 필터를 바꿔 보세요." : "다음 실행에서 새 제안이 올라오면 여기에 나타납니다."));

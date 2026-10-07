@@ -81,8 +81,19 @@ def _strict_synonyms(groups, tax):
     return out
 
 
+REJECTED_KIND = {"new_value": "값", "synonym": "동의어", "question": "질문"}   # 후보 종류 → rejected 종류
+
+
 def _rejected(tax):
-    return {util.nfkc(r[1]).strip().lower() for r in tax.rejected if len(r) > 1 and r[1]}
+    from labelbot.taxonomy import rejected_key
+
+    return {rejected_key(r.kind, r.content) for r in tax.rejected if r.content}
+
+
+def _is_rejected(rej, kind, content):
+    from labelbot.taxonomy import rejected_key
+
+    return kind in REJECTED_KIND and rejected_key(REJECTED_KIND[kind], content) in rej
 
 
 def grouped(con, tax, run_id):
@@ -97,7 +108,7 @@ def grouped(con, tax, run_id):
     groups = {}
     for r in rows:
         key = (r["kind"], r["content"], r["source"])
-        if util.nfkc(r["content"]).strip().lower() in rej:
+        if _is_rejected(rej, r["kind"], r["content"]):
             continue
         if r["kind"] == "synonym" and util.nfkc(r["content"].split("|", 1)[0]).lower() in have_syn:
             continue

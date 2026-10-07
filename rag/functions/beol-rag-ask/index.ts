@@ -22,7 +22,8 @@ import {
 
 const OPENAI_BASE = "https://api.openai.com/v1";
 const DEFAULT_CHAT_MODEL = "gpt-6-sol";
-const DEFAULT_MAX_COMPLETION_TOKENS = 1500;
+// 추론형 모델은 이 한도에 추론 토큰까지 포함한다. 너무 낮으면 본문 없이 끝난다(LLM_TRUNCATED).
+const DEFAULT_MAX_COMPLETION_TOKENS = 6000;
 const DEFAULT_SIGN_TTL = 3600;
 const REWRITE_MAX_COMPLETION_TOKENS = 400;
 
@@ -38,7 +39,7 @@ const TIMEOUT_SIGN_MS = 15000;
 const TIMEOUT_SIBLINGS_MS = 10000;
 const TIMEOUT_ANSWER_MS = 45000;
 
-type Ctx = { code: string; k: number; n_evidence: number };
+type Ctx = { code: string; k: number; n_evidence: number; finish: string | null };
 
 class StepError extends Error {
   code: string;
@@ -361,7 +362,9 @@ async function handle(req: Request, ctx: Ctx, deadline: number): Promise<Respons
       maxTokens,
       stepTimeout(deadline, TIMEOUT_ANSWER_MS, "LLM_FAILED"),
     );
-    if (!answer.text.trim()) return fail(ctx, 502, "LLM_EMPTY");
+    ctx.finish = answer.finish_reason;
+    // 한도를 다 써서 본문이 비면 빈 답과 구분한다.
+    if (!answer.text.trim()) return fail(ctx, 502, answer.finish_reason === "length" ? "LLM_TRUNCATED" : "LLM_EMPTY");
     if (answer.finish_reason === "length") warnings.push("TRUNCATED");
     const fixed = finalizeAnswer(answer.text, evidence.length);
 
@@ -381,13 +384,13 @@ async function handle(req: Request, ctx: Ctx, deadline: number): Promise<Respons
 
 Deno.serve(async (req: Request) => {
   const started = Date.now();
-  const ctx: Ctx = { code: "INTERNAL", k: 0, n_evidence: 0 };
+  const ctx: Ctx = { code: "INTERNAL", k: 0, n_evidence: 0, finish: null };
   let res: Response;
   try {
     res = await handle(req, ctx, started + TOTAL_BUDGET_MS);
   } catch {
     res = fail(ctx, 500, "INTERNAL");
   }
-  console.log(JSON.stringify({ code: ctx.code, ms: Date.now() - started, k: ctx.k, n_evidence: ctx.n_evidence }));
+  console.log(JSON.stringify({ code: ctx.code, ms: Date.now() - started, k: ctx.k, n_evidence: ctx.n_evidence, finish: ctx.finish }));
   return res;
 });

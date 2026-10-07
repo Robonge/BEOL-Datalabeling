@@ -1,9 +1,11 @@
 ---
 name: BEOL-labeling-change-dashboard
-description: 이 저장소에서 일한 Claude 세션들(BEOL-labeling, Domain-Engr-bot, Code-Engr-bot, 리팩토링 fork 등)이 정해진 기간(기본 3시간) 동안 무엇을 바꿨는지 초보자도 이해할 수 있게 정리하고, docs/project_intro.html의 S4 팀 지도·S5 workflow 위에 표시하는 변경 대시보드(change-dashboard/index.html)를 만든다. S4 노드를 누르면 그 bot·skill의 변경이 나온다. 사용자가 "변경 대시보드", "change dashboard 갱신", "세션별 변경 정리", "3시간 동안 뭐 바뀌었어", "대시보드 다시 만들어줘"라고 하거나 /BEOL-labeling-change-dashboard를 부르면, 또는 3시간 주기 예약 작업이 돌면 이 스킬을 쓴다. 코드 검수는 BEOL-labeling-Code-Engr-bot, 워크플로 소개 HTML은 BEOL-labeling-workflow가 맡는다.
+description: 이 저장소에서 일한 Claude 세션들(BEOL-labeling, Domain-Engr-bot, Code-Engr-bot, 리팩토링 fork 등)이 정해진 기간(기본 3시간) 동안 무엇을 바꿨는지 초보자도 이해할 수 있게 정리하고, docs/project_intro.html의 S4 팀 지도·S5 workflow 위에 표시하는 변경 대시보드(change-dashboard/index.html)를 만든다. S4 노드를 누르면 그 bot·skill의 변경이 나온다. 사용자가 "변경 대시보드", "change dashboard 갱신", "세션별 변경 정리", "3시간 동안 뭐 바뀌었어", "대시보드 다시 만들어줘"라고 하거나 /BEOL-labeling-change-dashboard를 부르면, 또는 3시간 주기 예약 작업이 돌면 이 스킬을 쓴다.
 ---
 
 # BEOL-labeling-change-dashboard: 세션 변경 대시보드
+
+> 그룹: ③ 화면 · 발표 · 운영 리포트 · 상위: 없음 · 하위: 없음 · 전체 지도: README.md "스킬 지도"
 
 세션별로 일정 기간 동안 바뀐 것을 한 화면에 모은다. 사실 수집과 화면 생성은 스크립트가 하고, 초보자용 설명은 Claude가 쓴다.
 
@@ -95,3 +97,7 @@ PYTHONIOENCODING=utf-8 python change-dashboard/render.py
 - 도메인 질문(검수 결과 → 엔지니어 답 → 규칙·taxonomy 제안): BEOL-labeling-Domain-Engr-bot
 - 워크플로 소개 HTML(`docs/workflow.html`) 생성: BEOL-labeling-workflow
 - 라벨링 실행, 검수 반영과 적재: BEOL-labeling, BEOL-labeling-feedback
+
+## 관계
+
+- 코드 검수는 BEOL-labeling-Code-Engr-bot, 워크플로 소개 HTML은 BEOL-labeling-workflow가 맡는다.

@@ -1,9 +1,14 @@
 ---
 name: BEOL-labeling-Code-Engr-bot
-description: 저장소 코드와 workflow가 프로젝트 규칙(루트 CLAUDE.md), 기술 stack, 단계 사이 계약을 지키는지 code review 형태로 검수한다. 읽기 전용이며 코드를 고치지 않는다. code_engrbot review를 돌려 review ID·판정·건수를 전하고, review.md의 critical·major 이슈를 path:line, 규칙 ID, 수정 제안으로 요약한다. 이어서 작업 폴더의 최신 실행이 지금 taxonomy.json의 축과 다른지(축 추가·삭제·종류 변경) 점검하고, 걸린 작업 폴더는 묻지 않고 BEOL-labeling-axis-update로 바뀐 축만 자동 재라벨링한다. 같은 방식으로 라벨링 규칙(taxonomy/labeling_rules.json)이 바뀌어 옛 실행과 달라진 작업 폴더도 찾아 BEOL-labeling-rules-update로 바뀐 규칙 범위만 자동 재라벨링한다. 사용자가 "코드 검수", "Code-Engr-bot 돌려줘", "codebot 돌려줘"·"code-bot 돌려줘"(옛 이름), "workflow 검수", "코드 리뷰 봇", "축 점검", "taxonomy 축 바뀐 실행 찾아줘", "새 축으로 재라벨링", "규칙 점검", "규칙 바뀐 실행 찾아줘"라고 하거나 /BEOL-labeling-Code-Engr-bot을 부르면 이 스킬을 쓴다. 검수 결과로 엔지니어에게 도메인 질문을 하는 일은 BEOL-labeling-Domain-Engr-bot, 라벨링 실행은 BEOL-labeling, 축 변경분 재라벨링은 BEOL-labeling-axis-update, 규칙 변경분 재라벨링은 BEOL-labeling-rules-update, 사람 검수 반영과 적재는 BEOL-labeling-feedback이 맡는다.
+description: 저장소 코드와 workflow가 프로젝트 규칙(루트 CLAUDE.md), 기술 stack, 단계 사이 계약을 지키는지 code review 형태로 검수한다. 읽기 전용이며 코드를 고치지 않는다. code_engrbot review를 돌려 review ID·판정·건수를 전하고, review.md의 critical·major 이슈를 path:line, 규칙 ID, 수정 제안으로 요약한다. 이어서 작업 폴더의 최신 실행이 지금 taxonomy.json의 축과 다른지(축 추가·삭제·종류 변경) 점검하고, 걸린 작업 폴더는 묻지 않고 BEOL-labeling-axis-update로 바뀐 축만 자동 재라벨링한다. 같은 방식으로 라벨링 규칙(taxonomy/labeling_rules.json)이 바뀌어 옛 실행과 달라진 작업 폴더도 찾아 BEOL-labeling-rules-update로 바뀐 규칙 범위만 자동 재라벨링한다. 사용자가 "코드 검수", "Code-Engr-bot 돌려줘", "codebot 돌려줘"·"code-bot 돌려줘"(옛 이름), "workflow 검수", "코드 리뷰 봇", "축 점검", "taxonomy 축 바뀐 실행 찾아줘", "새 축으로 재라벨링", "규칙 점검", "규칙 바뀐 실행 찾아줘"라고 하거나 /BEOL-labeling-Code-Engr-bot을 부르면 이 스킬을 쓴다. 재라벨링 실행은 axis-update·rules-update가 맡는다.
 ---
 
 # BEOL-labeling-Code-Engr-bot: 코드 검수
+
+> 그룹: ② 품질 점검 · 재라벨링 · 상위: 없음 · 하위: /BEOL-labeling-rules-update, /BEOL-labeling-axis-update · 전체 지도: README.md "스킬 지도"
+
+> **간소화 지침(2026-10-08~, 루트 `CLAUDE.md`의 "임시 지침: 코드 검수 간소화"가 우선)**: 작업 끝에 한 번, `--paths`로 바뀐 파일만 검수하고, critical만 고치며, 보고는 판정 · 건수 · critical 한 줄씩만 쓴다. 축 · 규칙 점검 자동 호출은 그대로 한다.
+
 
 저장소 코드와 workflow를 정적 분석으로 검수한다. 소스를 import하거나 실행하지 않고 텍스트와 AST로만 읽는다. 결과는 `code_engrbot/out/<review ID>/`에 쓴다. 라벨 내용의 도메인 판단은 하지 않는다(검수 결과로 엔지니어에게 질문해 도메인 지식을 규칙·taxonomy 제안으로 돌려주는 일은 BEOL-labeling-Domain-Engr-bot).
 
@@ -169,3 +174,7 @@ taxonomy.json에 축이 더해지거나 빠지거나 종류·값이 바뀌면, �
 - taxonomy 축·라벨링 규칙 비교 로직: `labelbot taxonomy-diff`·`labelbot rules-diff`(이 skill은 부르고 결과를 표로 옮긴다)
 - 사람 검수 반영과 Supabase 적재: BEOL-labeling-feedback
 - LLM 코드 리뷰, 실행 흔적 연결, `eval`
+
+## 관계
+
+- 검수 결과로 엔지니어에게 도메인 질문을 하는 일은 BEOL-labeling-Domain-Engr-bot, 라벨링 실행은 BEOL-labeling, 축 변경분 재라벨링은 BEOL-labeling-axis-update, 규칙 변경분 재라벨링은 BEOL-labeling-rules-update, 사람 검수 반영과 적재는 BEOL-labeling-feedback이 맡는다.

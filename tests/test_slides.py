@@ -14,7 +14,7 @@ import urllib.request
 from labelbot import cdp, export, llm, pipeline, review, slideimg, slidepush, store, util
 from labelbot.workspace import CODE_ROOT, Workspace
 
-DUMMY_DIR = os.path.join(CODE_ROOT, "dummy pptx files")
+from tests._dummy import DUMMY_DIR  # noqa: E402  저장소 밖 더미 폴더(tests/_dummy.py)
 TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json")
 
 

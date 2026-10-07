@@ -1,4 +1,4 @@
-// 01_hook: "This started as one slide." (exits down at 1.50) Full-bleed engineer slide, parser sweep, then a pull-back
+// 01_hook: "This started as one slide." (drops out 1.38 -> 1.62, clear before the overview card) Full-bleed engineer slide, parser sweep, then a pull-back
 // (the slide shrinks to ~40% of the frame and lifts clear of the headline band) while it pixelates
 // to the 48x27 cell grid. At release only a checkerboard half of the cells takes flight, drifting
 // outward and back into the room while shrinking and fading; the other half dissolves in place.
@@ -148,11 +148,13 @@ export default {
       s.vox.instanceMatrix.needsUpdate = true; aA.needsUpdate = true;
     }
     // overlay
-    // hand-off on the shatter beat (1.50): the words drop back into their masks (gone by 1.76) before the
-    // overview headline rises at 1.75, so only one headline reads at a time
-    s.scrim.style.opacity = (1 - seg(t, 1.55, 1.85)).toFixed(3);
-    s.scrim.style.display = t < 1.85 ? '' : 'none';
-    s.eyebrow.set(1 - seg(t, 1.45, 1.58));
-    s.line.set(t, { riseAt: 0, riseDur: 0.33, stagger: 0.03, from: 12, ease: E.outQuint, exitAt: 1.50, exitDur: 0.18, exitStagger: 0.02, exitTo: 112 });
+    // hand-off: the eyebrow fades 1.36 -> 1.46, the words drop into their masks from 1.38 (inCubic, so they
+    // ease off the hold instead of sitting still like inQuint) and the last one is gone by 1.62. Settled
+    // read 0.33 -> 1.38. "Everything in between." rises from 1.62 (02_overview), so the two headlines never
+    // share a frame and the bottom-left band is empty while the SLIDE ring flares.
+    s.scrim.style.opacity = (1 - seg(t, 1.45, 1.75)).toFixed(3);
+    s.scrim.style.display = t < 1.75 ? '' : 'none';
+    s.eyebrow.set(1 - seg(t, 1.36, 1.46));
+    s.line.set(t, { riseAt: 0, riseDur: 0.33, stagger: 0.03, from: 12, ease: E.outQuint, exitAt: 1.38, exitDur: 0.16, exitStagger: 0.02, exitTo: 112, exitEase: E.inCubic });
   },
 };

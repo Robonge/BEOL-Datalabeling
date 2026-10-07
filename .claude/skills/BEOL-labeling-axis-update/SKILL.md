@@ -1,9 +1,11 @@
 ---
 name: BEOL-labeling-axis-update
-description: taxonomy.json의 축이 추가·삭제·변경(값 추가·삭제 포함)됐을 때, 이미 라벨링·검수를 마친 작업 폴더에서 이전 라벨은 그대로 두고 바뀐 축만 1차 분류로 다시 라벨링한다. 삭제된 축은 라벨에서 뺀다. 사람 검수는 바뀐 축에 불량이 있는 chunk만 받고, 결과는 축별 카드와 슬라이드별 이미지·새 축 라벨만 보여 주는 현황판(axis_update.html)으로 띄운 뒤 검수 대기에서 멈춘다. 검수 완료 뒤에는 반영·임베딩·Supabase 적재까지 이어 간다. BEOL-labeling-Code-Engr-bot이 축 점검에서 걸린 작업 폴더마다 묻지 않고 자동으로 부른다. 사용자가 "축 변경분만 라벨링", "새 축만 라벨링", "axis update", "축 추가 재라벨링", "taxonomy 바뀐 축만 다시"라고 하거나 /BEOL-labeling-axis-update를 부르면 이 스킬을 쓴다. 전체 재라벨링(새 파일, 2·3차 질문까지)은 BEOL-labeling, 일반 검수 반영은 BEOL-labeling-feedback이 맡는다.
+description: taxonomy.json의 축이 추가·삭제·변경(값 추가·삭제 포함)됐을 때, 이미 라벨링·검수를 마친 작업 폴더에서 이전 라벨은 그대로 두고 바뀐 축만 1차 분류로 다시 라벨링한다. 삭제된 축은 라벨에서 뺀다. 사람 검수는 바뀐 축에 불량이 있는 chunk만 받고, 결과는 축별 카드와 슬라이드별 이미지·새 축 라벨만 보여 주는 현황판(axis_update.html)으로 띄운 뒤 검수 대기에서 멈춘다. 검수 완료 뒤에는 반영·임베딩·Supabase 적재까지 이어 간다. BEOL-labeling-Code-Engr-bot이 축 점검에서 걸린 작업 폴더마다 묻지 않고 자동으로 부른다. 사용자가 "축 변경분만 라벨링", "새 축만 라벨링", "axis update", "축 추가 재라벨링", "taxonomy 바뀐 축만 다시"라고 하거나 /BEOL-labeling-axis-update를 부르면 이 스킬을 쓴다. 전체 재라벨링은 BEOL-labeling, 규칙 변경분은 rules-update가 맡는다.
 ---
 
 # BEOL-labeling-axis-update: 바뀐 축만 다시 라벨링
+
+> 그룹: ② 품질 점검 · 재라벨링 · 상위: /BEOL-labeling-Code-Engr-bot · 하위: 없음 · 전체 지도: README.md "스킬 지도"
 
 같은 작업 폴더 안에 `axis-update` 실행을 하나 더 만든다. 이전 실행의 chunk·라벨·사람 교정을 이어받고, 바뀐 축만 1차 분류를 다시 돌린다(사용자 결정, 2026-10-06. 계획 `.omc/plans/axis-update-plan.md`).
 
@@ -153,3 +155,7 @@ BEOL-labeling-feedback 4단계와 같다(`embed` → `slide-images` → `push-ve
 - 축 불일치 찾기: BEOL-labeling-Code-Engr-bot(이 스킬을 부른다)
 - 도메인 질문과 규칙 확정: BEOL-labeling-Domain-Engr-bot
 - taxonomy.json 수정: 사람(BEOL-taxonomy-dashboard의 보드, 또는 `taxonomy-editor`)
+
+## 관계
+
+- 전체 재라벨링(새 파일, 2·3차 질문까지)은 BEOL-labeling, 일반 검수 반영은 BEOL-labeling-feedback이 맡는다.

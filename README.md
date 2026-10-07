@@ -15,6 +15,54 @@
 | Domain-Engr-bot (도메인 질문 agent) | `domain_engrbot/` + `.claude/skills/BEOL-labeling-Domain-Engr-bot`. 검수 결과로 엔지니어에게 질문해 확정한 도메인 지식을 규칙·taxonomy 제안으로 돌려준다 |
 | Code-Engr-bot (감시 agent) | `code_engrbot/` + `.claude/skills/BEOL-labeling-Code-Engr-bot` |
 
+## 스킬 지도
+
+스킬은 13개이고 `.claude/skills/<이름>/SKILL.md`에 평평하게 둔다(그룹 폴더를 따로 만들지 않는다). 그룹·상하위 관계의 원본은 `.claude/skills/BEOL-labeling-project-html/assets/skill_map.json`이고, 발표 HTML의 Appendix(스킬 지도)도 이 파일로 그린다. 각 `SKILL.md` 제목 아래 `> 그룹:` 줄에 같은 관계를 적었다.
+
+| 그룹 | 스킬 | 한 줄 역할 | 부르는 시점 |
+|---|---|---|---|
+| ① 라벨링 파이프라인 | `/BEOL-labeling-run-labeling` | 입력 → 라벨링 → 검수 → 적재를 한 번에 잇는다 | 새 자료를 처음부터 적재까지 돌릴 때 |
+| | └ `/BEOL-labeling` | 파싱 → 분류 → 라벨링 뒤 검수 화면을 띄우고 멈춘다 | 라벨링 단계만 돌릴 때 |
+| | └ `/BEOL-labeling-feedback` | 검수 교정 반영 → 임베딩 → Supabase 적재 | 검수 화면에서 "검수 완료"를 누른 뒤 |
+| ② 품질 점검 · 재라벨링 | `/BEOL-labeling-Domain-Engr-bot` | 검수 결과로 엔지니어에게 질문하고, 확정한 답을 규칙·taxonomy 제안으로 보낸다 | 적재가 끝난 뒤 사람이 시작한다 |
+| | └ `/BEOL-taxonomy-dashboard` | 흩어진 taxonomy 수정 제안을 모아 확정분을 taxonomy.json에 반영한다 | taxonomy를 고칠 때 |
+| | `/BEOL-labeling-Code-Engr-bot` | 코드 검수(읽기 전용)와 축·규칙 변경 감지 | 코드를 고친 뒤, taxonomy·규칙을 바꾼 뒤 |
+| | └ `/BEOL-labeling-rules-update` | 라벨링 규칙이 바뀐 범위만 다시 라벨링한다(검수 없음) | Code-Engr-bot이 규칙 변경을 찾으면 자동 |
+| | └ `/BEOL-labeling-axis-update` | taxonomy 축이 바뀐 부분만 다시 라벨링한다 | Code-Engr-bot이 축 변경을 찾으면 자동 |
+| ③ 화면 · 발표 · 운영 리포트 | `/BEOL-labeling-workflow` | 단계별 workflow HTML(`docs/workflow.html`)을 다시 만든다 | 워크플로 소개를 최신 수치로 바꿀 때 |
+| | `/BEOL-labeling-project-html` | 발표 HTML의 파일럿 슬라이드·스킬 지도를 갱신한다 | 새 실행 뒤, 발표 전 |
+| | `/BEOL-labeling-change-dashboard` | 세션별 변경 내역 대시보드를 만든다 | 3시간 주기 예약 작업, PM 점검 때 |
+| | `/BEOL-labeling-daily-report` | 밤 자동 실행 결과를 아침 할 일 리포트 HTML로 만든다 | 아침에 밤사이 결과를 볼 때 |
+| | `/BEOL-labeling-RAG-html` | RAG 대화 화면을 띄우고 답변 서버 함수를 배포한다 | RAG 화면을 열거나 답변 프롬프트를 바꿨을 때 |
+
+- ①의 적재가 끝나면 ②를 시작한다. 품질 점검 스킬은 run-labeling이 자동으로 부르지 않는다.
+- 새 스킬을 만들면 `skill_map.json`에 넣는다. 빠지면 발표 HTML에서 '미분류'로 보인다.
+
+## 저장소 구조
+
+| 경로 | 내용 |
+|---|---|
+| `labelbot/` | 라벨링 본체(수집·파싱·분류·라벨링·검수 화면·임베딩·적재) |
+| `domain_engrbot/` | Domain-Engr-bot 본체(도메인 질문·승인 규칙 관리·taxonomy 보드·편집기). 아래 "domain_engrbot (도메인 질문)" 절 |
+| `code_engrbot/` | Code-Engr-bot 본체(코드 검수). 결과 `code_engrbot/out/`은 커밋 제외 |
+| `tests/` | labelbot 테스트와 외부 계약(`tests/contracts/`). 더미 폴더 위치는 `tests/_dummy.py`가 정한다 |
+| `prompts/` | labelbot 프롬프트. 코드가 이 경로를 읽으므로 옮기지 않는다 |
+| `taxonomy/` | `taxonomy.json`(원본)과 `labeling_rules.json`(승인 규칙) |
+| `injested-file-list/` | 수집 이력. 옮기지 않는다 |
+| `rag/` | RAG 대화 화면(`beol_rag.html`)과 Edge Function(`functions/beol-rag-ask/`) |
+| `change-dashboard/` | 세션 변경 대시보드. 생성물은 커밋 제외 |
+| `docs/` | 발표·문서(`project_intro.html`, `workflow.html`, `supabase_schema.md` 등). 정리 작업에서는 손대지 않는다 |
+| `workspaces/` | 작업 폴더(사내 자료 b64·DB 포함, 커밋 제외) |
+| `parshing test files/` | `/BEOL-labeling` 기본 입력 폴더 |
+| `dummy pprx files_2nd revised/` | 더미 자료 2차 수정본 |
+| `CLAUDE.md` · `PRD.md` · `plan.md` | 최우선 규칙 · 설계 · 구현 단계 |
+| `DESIGN.md` · `design.md.md` · `PRODUCT.md` | RAG 화면 디자인 · HTML 화면 디자인 토큰 · 제품 맥락(디자인 도구용) |
+| `nightly_run.py` · `daily_report.py` | 두 봇을 사람 없이 돌려 아침 할 일을 남김 · 그 결과를 아침 리포트 HTML로 |
+| `.claude/` | `skills/`(13개 스킬)와 `launch.json`(미리보기 서버 목록) |
+| `.omc/` · `.impeccable/` · `.superdesign/` | 도구 작업 폴더. `.omc/`는 커밋 제외(`.omc/skills/`만 커밋) |
+
+- 2026-10-08 정리에서 참조 없는 잔여물(목업, 지난 도구 산출물, 오래된 검수 결과 등)을 저장소 옆 `../261004 BEOL AX day2 _archive_20261008/`로 옮겼다. 옮긴 파일과 원래 경로는 그 폴더의 `MANIFEST.jsonl`에 있다.
+
 ## 준비
 
 1. 키: 코드 폴더의 `.env.example`을 `.env`로 복사하고 `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`를 채운다(셸 환경변수가 있으면 그 값이 우선한다). `.env`는 커밋하지 않는다.
@@ -120,7 +168,11 @@ python -m code_engrbot rules
 python -m unittest discover tests            # labelbot (+ tests/contracts 외부 계약)
 python -m unittest discover -s domain_engrbot/tests -t .   # domain_engrbot (golden 포함)
 python -m unittest discover -s code_engrbot/tests -t .   # code_engrbot
+python -m pytest -q -p no:cacheprovider                    # 전체를 pytest로(캐시 폴더를 만들지 않는다)
 ```
+
+- 더미 pptx 입력은 저장소 밖 `<저장소>/../dummy pptx files`에 고정한다(2026-10-08 이동, 더 옮기지 않는다). 경로는 `tests/_dummy.py` 한 곳에서 정하고, 파일별 gold sha는 `tests/gold/dummy_hashes.jsonl`에 있다.
+- 더미 폴더가 없으면 테스트를 건너뛰지 않고 `DUMMY_DIR_NOT_FOUND` 오류로 멈춘다(skip은 핵심 파이프라인 커버리지를 숨긴다).
 
 - 외부 계약 스냅샷(`tests/contracts/snapshots/`)을 의도해서 바꿀 때: `CONTRACT_UPDATE=1`을 붙여 다시 쓴다.
 - domain_engrbot 실행 산출물 golden(`domain_engrbot/tests/golden_outputs/`)을 의도해서 바꿀 때: `GOLDEN_UPDATE=1`을 붙여 다시 쓴다.

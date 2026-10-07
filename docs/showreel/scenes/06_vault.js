@@ -17,15 +17,24 @@ const YAW = -0.42;
 // toward the camera for the rest (so a raised camera in the engine and this tilt never double up)
 const VIEW_ELEV = 0.44, MAX_PITCH = 0.30;
 // screen boxes the noise cloud must stay out of (title block, counter box), px at 1920x1080
-const KEEP_OUT = [[90, 90, 760, 400], [1330, 820, 1830, 950], [790, 215, 1050, 285]];
+// (the VECTOR DB label's box sits under the block, see VDB_DY)
+const KEEP_OUT = [[90, 90, 760, 400], [1330, 820, 1830, 950], [830, 870, 1010, 900]];
 // the noise cloud floats: its center rises LIFT world units during 10.0-10.9 (no flat bottom on the floor)
 const LIFT = 0.35;
 const liftAt = (t) => LIFT * E.inOutSine(seg(t, 10.0, 10.9));
 // feed stream: NSTREAM outliers start on a ribbon running to screen (1500, 250) and fly in from 10.3; the
-// near end lands by 10.6, the far end leaves at 10.85 and lands by 11.22 so the 10.95 key frame still shows the feed
+// near end lands by 10.55, the far end leaves at 10.70 and lands by 10.97, just before stream cubes start to resolve
 const NSTREAM = 60, STREAM_PX = [1500, 250];
-// resolve clock: 0 -> 1.35 (max delay 1.0 + 0.35 ramp) over 10.5-11.85, slow start so 10.95 still reads as a cloud
-const ssAt = (t) => 1.35 * E.inOutSine(seg(t, 10.5, 11.85));
+// resolve clock: 0 -> 1.35 (max delay 1.0 + 0.35 ramp) over 10.5-11.35, so the block stands early and the hero
+// labels get ~0.75 s fully readable before the close
+const ssAt = (t) => 1.35 * E.inOutSine(seg(t, 10.5, 11.35));
+// hero beat: cubes pulse and links draw 11.20-11.45 (staggered), labels resolve 11.30-11.55, all out at 12.30-12.45
+const HERO_T0 = 11.20, HERO_STAG = 0.04;
+// hero label backing pill padding (px); VECTOR DB sits under the block like LLM and AGENT under their orbs
+// (out of the title band): its cap band is centred VDB_DY px below the floor point under the block centre
+const PILL_PX = 6, PILL_PY = 3, VDB_DY = 98;
+// noise drift: velocity eases out from 10.0 and reaches zero at 11.5, under the resolve (no freeze at 10.5)
+const driftAt = (t) => 0.9 * E.outSine(seg(t, 10.0, 11.5));
 // false-color ramp for the slide on the block (sRGB): slate teal -> mauve -> terracotta -> orange -> peach
 const RAMP = [[0.00, '#26363C'], [0.20, '#3F5C60'], [0.40, '#7C6A68'], [0.60, '#B9735A'], [0.78, '#DC8452'], [0.92, '#F2C29E'], [1.00, '#F8DDC6']];
 let st = {};
@@ -134,7 +143,7 @@ export default {
       const w = 0.06 + 0.16 * s;
       const start = E0.clone().lerp(W, s).addScaledVector(side, (r() - 0.5) * 2 * w).addScaledVector(lift3, (r() - 0.5) * 1.2 * w);
       v.stream = { s, start };
-      v.d = Math.max(v.d, 0.78); // resolve starts ~11.24, after the far end has landed
+      v.d = Math.max(v.d, 0.86); // resolve starts ~11.0, after the far end has landed (10.97)
     });
     const stream = data.filter((v) => v.stream);
     HEROES.forEach((h, k) => { const idx = h.iz * NX * NY + (NY - 1) * NX + h.ix; data[idx].hero = k; data[idx].d = 0.12 + 0.03 * k; });
@@ -171,8 +180,14 @@ export default {
     });
     // overlay
     const wdom = el('div', 'scene-vault-world layer', ctx.layers.world);
-    const wl = new WorldLabel(wdom, 'VECTOR DB', { size: 24 });
-    const hl = HEROES.map((h) => el('div', 'herolabel', wdom, h.label));
+    const wl = new WorldLabel(wdom, 'VECTOR DB', { size: 17, tracking: 0.32 });
+    // hero labels sit on bright cube tops and bloomed links: each gets a dark backing pill (6 x 3 px; the
+    // right pad drops the 0.22em trailing tracking so the text reads centered in the pill)
+    const hl = HEROES.map((h) => {
+      const d = el('div', 'herolabel', wdom, h.label);
+      Object.assign(d.style, { background: 'rgba(20,21,25,0.72)', borderRadius: '4px', padding: `${PILL_PY}px ${(PILL_PX - 0.22 * 15).toFixed(1)}px ${PILL_PY}px ${PILL_PX}px` });
+      return d;
+    });
     const tdom = el('div', 'scene-vault-title layer', ctx.layers.titles);
     const title = new TitleBlock(tdom, { eyebrow: 'STEP 04', words: [{ text: 'Knowledge' }, { text: 'Vault' }], desc: 'Chunks become searchable.', T, Tn: TN });
     const counter = new Counter(tdom, { variant: 'B' });
@@ -188,17 +203,17 @@ export default {
     const s = st, m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), q0 = new THREE.Quaternion(), qI = new THREE.Quaternion(), qBu = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3();
     const cA = s.vox.geometry.getAttribute('aColor'), eA = s.vox.geometry.getAttribute('aEmis'), aA = s.vox.geometry.getAttribute('aAlpha');
     const ss = ssAt(t);
-    const drift = Math.min(t, 10.5) - 10.0;
+    const drift = driftAt(t);
     // stream cube position before the resolve (fly-in from the ribbon, far ones arrive last)
-    const flyF = (v, tt) => E.inOutCubic(seg(tt, 10.3 + 0.55 * v.stream.s, 10.6 + 0.62 * v.stream.s));
+    const flyF = (v, tt) => E.inOutCubic(seg(tt, 10.3 + 0.40 * v.stream.s, 10.55 + 0.42 * v.stream.s));
     const noisePos = (v, tt, out) => {
-      out.copy(v.nz).addScaledVector(v.vel, Math.min(tt, 10.5) - 10.0); out.y += liftAt(tt);
+      out.copy(v.nz).addScaledVector(v.vel, driftAt(tt)); out.y += liftAt(tt);
       if (v.stream) out.lerp(v.stream.start, 1 - flyF(v, tt));
       return out;
     };
     const pPrev = new THREE.Vector3();
     const relayout = t >= 12.5;
-    const heroOn = E.outQuad(seg(t, 11.45, 11.6)) * (1 - seg(t, 12.45, 12.6));
+    const heroOn = E.outQuad(seg(t, HERO_T0, HERO_T0 + 0.15)) * (1 - seg(t, 12.45, 12.6));
     let P = 0;
     const c = new THREE.Color();
     s.data.forEach((v, i) => {
@@ -211,7 +226,7 @@ export default {
       if (v.stream) scale *= lerp(0.55, 1, flyF(v, t));
       c.copy(v.nc).lerp(v.rc, u);
       if (v.hero >= 0) {
-        const k = v.hero, hp = seg(t, 11.45 + 0.05 * k, 11.75 + 0.05 * k);
+        const k = v.hero, hp = seg(t, HERO_T0 + HERO_STAG * k, HERO_T0 + 0.25 + HERO_STAG * k);
         scale *= 1 + 0.15 * Math.sin(Math.PI * hp);
         emis = 0.6 * heroOn;
       }
@@ -245,27 +260,29 @@ export default {
     s.decal.material.opacity = 0.30 * (1 - seg(t, 12.5, 12.8));
     // hero outlines + links
     s.outlines.forEach((l, k) => {
-      const v = s.data[s.heroIdx[k]], hp = seg(t, 11.45 + 0.05 * k, 11.75 + 0.05 * k);
+      const v = s.data[s.heroIdx[k]], hp = seg(t, HERO_T0 + HERO_STAG * k, HERO_T0 + 0.25 + HERO_STAG * k);
       l.position.copy(v.res); l.quaternion.copy(s.qB); l.scale.setScalar(1 + 0.15 * Math.sin(Math.PI * hp));
       l.material.opacity = heroOn; l.visible = heroOn > 0.001 && !relayout;
     });
     s.links.forEach((m, k) => {
-      const u = E.outQuad(seg(t, 11.45 + 0.05 * k, 11.65 + 0.05 * k));
+      const u = E.outQuad(seg(t, HERO_T0 + HERO_STAG * k, HERO_T0 + 0.20 + HERO_STAG * k));
       const cnt = m.geometry.index.count;
       m.geometry.setDrawRange(0, Math.floor((cnt * u) / 6) * 6);
       m.visible = u > 0 && heroOn > 0.001; m.material.opacity = heroOn;
     });
     // labels
-    const top = BC.clone().add(new THREE.Vector3(0, HALF.y, 0).applyQuaternion(s.qB)); top.y += 0.78;
-    const tp = ctx.project(top);
-    s.wl.set(tp.x, tp.y, t >= 10.75 ? lerp(0.4, 1, E.outQuint(seg(t, 10.75, 11.05))) * (1 - seg(t, 12.3, 12.45)) : 0, tp.visible);
+    const tp = ctx.project(new THREE.Vector3(BC.x, 0, BC.z));
+    // fade in from 0 (no opacity floor) and settle 6 px upward into place
+    const wu = E.outQuad(seg(t, 10.75, 10.97));
+    s.wl.set(tp.x, tp.y + VDB_DY + 6 * (1 - wu), wu * (1 - seg(t, 12.3, 12.45)), tp.visible);
     s.hl.forEach((d, k) => {
       const v = s.data[s.heroIdx[k]];
       const hp = ctx.project(v.res.clone().add(s.upB));
-      const o = E.outQuad(seg(t, 11.55 + 0.05 * k, 11.85 + 0.05 * k)) * (1 - seg(t, 12.30, 12.45));
+      const hu = E.outQuad(seg(t, HERO_T0 + 0.10 + 0.03 * k, HERO_T0 + 0.35));
+      const o = hu * (1 - seg(t, 12.30, 12.45));
       d.style.display = o > 0.001 && hp.visible ? '' : 'none';
       d.style.opacity = o.toFixed(3);
-      d.style.transform = `translate(${Math.round(hp.x + 10)}px, ${Math.round(hp.y - 74)}px)`;
+      d.style.transform = `translate(${Math.round(hp.x + 10 - PILL_PX)}px, ${Math.round(hp.y - 74 - PILL_PY + 6 * (1 - hu))}px)`;
     });
     s.title.update(t);
     const nn = Math.round(73 * P);

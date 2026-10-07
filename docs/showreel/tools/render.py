@@ -258,6 +258,7 @@ class CDP:
                 log("  [page] " + prefix + e)
         n = len(seen)
         self.errors.clear()
+        PAGE_ERRORS[0] += n
         return n
 
     def close(self):
@@ -573,7 +574,7 @@ def start_ffmpeg(args, ff, enc, in_rate, n_sub):
     cmd += ["-vf", ",".join(vf), "-r", fmt_num(args.fps)] + encoder_args(enc, args.quality, args.fps) + COLOR_TAGS
     cmd += ["-map", "0:v:0"]
     if args.audio:
-        cmd += ["-map", "1:a:0", "-c:a", "aac", "-b:a", "320k", "-ar", "48000", "-shortest"]
+        cmd += ["-map", "1:a:0", "-c:a", "aac", "-b:a", args.audio_bitrate, "-ar", "48000", "-shortest"]
     cmd += ["-movflags", "+faststart", args.mp4]
     log("ffmpeg: " + " ".join('"%s"' % c if " " in c else c for c in cmd))
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
@@ -750,7 +751,8 @@ def main(argv=None):
     ap.add_argument("--compare", help="REF:T,... reference image (or video.mp4@sec) vs our frame at T")
     ap.add_argument("--compare-out", help="folder for comparison sheets (default: next to --frames-dir or tmp-dir)")
     ap.add_argument("--mp4", help="encode H.264 1080p mp4 (frames piped to ffmpeg)")
-    ap.add_argument("--audio", help="wav/aac to mux (AAC 320k, -shortest)")
+    ap.add_argument("--audio", help="wav/aac to mux (AAC, -shortest)")
+    ap.add_argument("--audio-bitrate", default="256k", help="AAC bitrate for --audio (default 256k)")
     ap.add_argument("--subframes", type=int, default=1, help="motion blur: N subframes averaged per output frame")
     ap.add_argument("--shutter", type=float, default=0.5, help="shutter as fraction of a frame (0.5 = 180 deg), centred on t")
     ap.add_argument("--workers", type=int, default=1, help="parallel headless browsers")
@@ -808,6 +810,8 @@ def main(argv=None):
 
         if args.mp4:
             render_mp4(args, pool, duration)
+            for _, _, c, _ in pool.workers:
+                c.flush_errors()
 
         if args.frames_dir or args.contact or pairs:
             out_dir = args.frames_dir
@@ -854,14 +858,15 @@ def main(argv=None):
                     raise RenderError("seek(t) is not deterministic (%d frames differ)" % bad)
 
             for _, _, c, _ in pool.workers:
-                page_errors += c.flush_errors()
+                c.flush_errors()
             pool.close()
             pool = None
             if args.contact:
                 contact_sheet(args, saved[:n_main])
             if pairs:
                 compare_sheets(args, ffmpeg_exe(args), pairs, {t: p for t, p in saved})
-        log("total %.1fs%s" % (time.monotonic() - t0, "" if not page_errors else " | %d page errors" % page_errors))
+        page_errors = PAGE_ERRORS[0]
+        log("total %.1fs | page errors: %d" % (time.monotonic() - t0, page_errors))
         return 0
     finally:
         if pool:
@@ -879,6 +884,7 @@ def main(argv=None):
 
 
 _last = [0.0]
+PAGE_ERRORS = [0]  # every [page] error/warning line flushed by any worker, in any mode
 
 
 def progress(done, total, t1, every=2.0):

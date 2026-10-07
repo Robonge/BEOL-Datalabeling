@@ -10,7 +10,7 @@
 {"sheet": "taxonomy", "row": 10, "cells": ["구조/레이어", "M3", "", "", "", "", "", "해당 번호 금속층"]}
 {"sheet": "taxonomy", "row": 11, "cells": ["구조/레이어", "X3", "M3", "", "", "", "", "X3는 M3 layer의 cut 공정 중 하나"]}
 {"sheet": "taxonomy", "row": 12, "cells": ["구조/레이어", "M4", "", "", "", "", "", "해당 번호 금속층", "F4,F5,F6,F7,F8"]}
-{"sheet": "taxonomy", "row": 13, "cells": ["구조/레이어", "Fx", "", "", "", "", "", "32~70 nm 피치 수준에서 intermediate interconnect 역할을 하는 레이어를 가리킨다.", "F4처럼 F가 붙은 레이어가 해당 피치와 역할을 충족하는 경우"]}
+{"sheet": "taxonomy", "row": 13, "cells": ["구조/레이어", "Fx", "", "", "", "", "", "32~70 nm 피치 수준에서 intermediate interconnect 역할을 하는 레이어를 가리킨다.", "F4처럼 F가 붙은 레이어가 해당 피치와 역할을 충족하는 경우", "M1"]}
 {"sheet": "taxonomy", "row": 14, "cells": ["구조/레이어", "Dx", "", "", "", "", "", "해당 번호 금속층", "D5,D6,D7,D8~D15"]}
 {"sheet": "taxonomy", "row": 15, "cells": ["구조/레이어", "Dx", "", "", "", "", "", "해당 번호 금속층"]}
 {"sheet": "taxonomy", "row": 16, "cells": ["구조/레이어", "VA", "", "", "", "", "", "해당 번호 비아층"]}
@@ -105,4 +105,32 @@
 {"sheet": "questions", "row": 1, "cells": ["질문 ID", "문장", "적용 대상", "우선순위"]}
 {"sheet": "questions", "row": 2, "cells": ["Q-COM-001", "이 chunk가 BEOL interconnect 공정에 관련한 내용이 맞는가?", "공통", "1"]}
 {"sheet": "synonyms", "row": 1, "cells": ["동의어", "표준어", "메모"]}
+{"sheet": "synonyms", "row": 2, "cells": ["bottom low-k PID(C-H 결합 손실)", "low-k plasma damage", "후보"]}
+{"sheet": "synonyms", "row": 3, "cells": ["비아 바닥 보이드", "Void", "후보"]}
+{"sheet": "synonyms", "row": 4, "cells": ["DD", "Dual damascene", "후보"]}
+{"sheet": "synonyms", "row": 5, "cells": ["두께", "thickness", "후보"]}
 {"sheet": "rejected", "row": 1, "cells": ["종류", "내용", "기각일", "사유", "출처"]}
+{"sheet": "rejected", "row": 2, "cells": ["값", "물리 현상|line 단면적 손실", "2026-10-08", "보드에서 기각", "13d815e174de2bb8"]}
+{"sheet": "rejected", "row": 3, "cells": ["값", "물리 현상|micro-trenching", "2026-10-08", "보드에서 기각", "96eef3fd01c3f3de"]}
+{"sheet": "rejected", "row": 4, "cells": ["값", "물리 현상|하드마스크 산화(팽창)", "2026-10-08", "보드에서 기각", "548a3a4f01c7cb40"]}
+{"sheet": "rejected", "row": 5, "cells": ["동의어", "Co liner|BM/Liner", "2026-10-08", "보드에서 기각", "7c1e38421e6911ed"]}
+{"sheet": "rejected", "row": 6, "cells": ["동의어", "HDLK|IMD", "2026-10-08", "보드에서 기각", "3bb47745e957eb9a"]}
+{"sheet": "rejected", "row": 7, "cells": ["동의어", "High-bias ME|Etch", "2026-10-08", "보드에서 기각", "9d722b358047ad73"]}
+{"sheet": "rejected", "row": 8, "cells": ["동의어", "Low-k fill|IMD", "2026-10-08", "보드에서 기각", "55c974a93e617ca5"]}
+{"sheet": "rejected", "row": 9, "cells": ["동의어", "pSiCOH|IMD", "2026-10-08", "보드에서 기각", "4759d8d5ac83ceb9"]}
+{"sheet": "rejected", "row": 10, "cells": ["동의어", "Ru etch|Ru subtractive", "2026-10-08", "보드에서 기각", "ca23a850a9e47670"]}
+{"sheet": "rejected", "row": 11, "cells": ["동의어", "Thermal ALE|Etch", "2026-10-08", "보드에서 기각", "021c786a4de194ef"]}
+{"sheet": "rejected", "row": 12, "cells": ["동의어", "ULK-B|IMD", "2026-10-08", "보드에서 기각", "5ea67a9e9625424a"]}
+{"sheet": "rejected", "row": 13, "cells": ["동의어", "유의차 없음|neutral", "2026-10-08", "보드에서 기각", "3b8326fcafccee16"]}
+{"sheet": "rejected", "row": 14, "cells": ["값", "물리 현상|via bottom TaN 성장", "2026-10-07", "보드에서 기각", "2d6381a014bd4f54"]}
+{"sheet": "rejected", "row": 15, "cells": ["축 정의", "결과", "2026-10-07", "보드에서 기각", "7e063c0090766dbb"]}
+{"sheet": "rejected", "row": 16, "cells": ["용어", "O2", "2026-10-07", "보드에서 기각", "2bb1e5fc7ca4eec8"]}
+{"sheet": "rejected", "row": 17, "cells": ["용어", "residue", "2026-10-07", "보드에서 기각", "a260d341671e696c"]}
+{"sheet": "rejected", "row": 18, "cells": ["용어", "Ru", "2026-10-07", "보드에서 기각", "9a6bb6b012154ec9"]}
+{"sheet": "rejected", "row": 19, "cells": ["용어", "TEM", "2026-10-07", "보드에서 기각", "4393534dccfb5107"]}
+{"sheet": "rejected", "row": 20, "cells": ["용어", "trench/via", "2026-10-07", "보드에서 기각", "8a2e377ed8c9a8c1"]}
+{"sheet": "rejected", "row": 21, "cells": ["용어", "Wet", "2026-10-07", "보드에서 기각", "b7581aaed58aaf81"]}
+{"sheet": "rejected", "row": 22, "cells": ["용어", "X-SEM", "2026-10-07", "보드에서 기각", "32544fbee1b8d4bd"]}
+{"sheet": "rejected", "row": 23, "cells": ["용어", "대상", "2026-10-07", "보드에서 기각", "96b80608248d0b25"]}
+{"sheet": "rejected", "row": 24, "cells": ["용어", "유의차", "2026-10-07", "보드에서 기각", "4cc8c79cd368feb3"]}
+{"sheet": "rejected", "row": 25, "cells": ["용어", "확인", "2026-10-07", "보드에서 기각", "abc3ed8ae148925a"]}

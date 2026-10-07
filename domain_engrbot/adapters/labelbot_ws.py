@@ -510,6 +510,8 @@ def load_units_only(ws_root, file_ids=None):
 
 TAXONOMY_RESERVED = lb_taxonomy.RESERVED
 norm_key = lb_taxonomy.norm_key    # NFKC, 소문자, 공백 제거
+rejected_key = lb_taxonomy.rejected_key   # rejected 대조 키 (종류, 칸마다 norm_key)
+REJECTED_KINDS = tuple(lb_taxonomy.REJECTED_KINDS)
 nfkc = lb_util.nfkc
 
 

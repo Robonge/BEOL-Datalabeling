@@ -33,13 +33,18 @@ function orbitMat(color) {
     transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
   });
 }
-// comet angle on the orbit (0 = engineer, PI = agent side); Q over the far arc, A back over the near arc
+// Q/A loop beats: Q leg leaves the agent, lands in the engineer panel; A leg leaves the panel, lands at the agent;
+// RULE flares the agent and births the new ring
+const QS = 7.95, QE = 8.30, AS = 8.42, AE = 8.78, RULE = 8.80;
+// comet angle on the orbit (0 = engineer, PI = agent side); Q over the far arc, A back over the near arc.
+// Q accelerates from rest and hits the panel at speed; A is fired out of the panel and settles into the agent.
+// The speed jumps at both ends happen inside the panel, where head and trail are gated.
 function phiAt(t) {
-  if (t < 8.0) { const d = Math.min(8.0 - t, 0.8); return Math.PI - 0.55 * d * d; }
-  if (t < 8.45) return Math.PI + Math.PI * E.inOutCubic(seg(t, 8.0, 8.45));
-  if (t < 8.5) return 2 * Math.PI;
-  if (t < 8.95) return 2 * Math.PI + Math.PI * E.inOutCubic(seg(t, 8.5, 8.95));
-  const tau = t - 8.95;
+  if (t < QS) { const d = Math.min(QS - t, 0.8); return Math.PI - 0.55 * d * d; }
+  if (t < QE) { const u = seg(t, QS, QE); return Math.PI + Math.PI * u * u; }
+  if (t < AS) return 2 * Math.PI;
+  if (t < AE) return 2 * Math.PI + Math.PI * E.outCubic(seg(t, AS, AE));
+  const tau = t - AE;
   return 3 * Math.PI + (tau < 0.5 ? 1.2 * tau * tau : 1.2 * (tau - 0.25));
 }
 
@@ -148,20 +153,20 @@ export default {
   update(ctx, t) {
     const s = st, cam = ctx.camera.position;
     s.root.updateMatrixWorld(true);
-    // RULE: agent flare + rule-ring birth at 9.00
-    const flare = t >= 9.0 ? 1 - E.outQuad(seg(t, 9.0, 9.35)) : 0;
+    // RULE: agent flare + rule-ring birth as the answer lands
+    const flare = t >= RULE ? 1 - E.outQuad(seg(t, RULE, RULE + 0.35)) : 0;
     s.agent.update(t, 1 + flare * 0.9);
     // orbit draws on from the agent side while the camera trucks in
     const draw = E.outCubic(seg(t, 7.62, 8.05));
     const n = Math.floor((draw * s.ringCount) / 3) * 3;
     s.ringGeo.setDrawRange(0, n); s.ring.visible = n > 0;
     s.ringMat.uniforms.color.value.copy(col('#E8893A')).multiplyScalar(1.1 * (1 + 0.6 * flare));
-    const rb = E.outQuint(seg(t, 9.0, 9.6));
+    const rb = E.outQuint(seg(t, RULE, RULE + 0.6));
     s.ring2.scale.setScalar(lerp(1.0, 1.12, rb)); s.ring2Mat.uniforms.opacity.value = 0.6 * rb; s.ring2.visible = rb > 0;
     s.ring2Mat.uniforms.color.value.copy(col('#FF6A1A')).multiplyScalar(1.1 * (1 + 0.8 * flare));
     // comet
     const onOrbit = (phi, out = new THREE.Vector3()) => s.ringG.localToWorld(out.set(OA * Math.cos(phi), 0, OB * Math.sin(phi)));
-    const cOn = E.outCubic(seg(t, 7.85, 8.05));
+    const cOn = E.outCubic(seg(t, 7.78, QS));
     const ph = phiAt(t);
     onOrbit(ph, s.comet.position);
     s.comet.visible = cOn > 0.001;
@@ -171,23 +176,27 @@ export default {
     const hd = lerp(0.55, 1, E.inOutSine(clamp((Math.sin(ph) + 0.3) / 0.6)));   // dimmer on the far arc
     s.halo.material.opacity = 0.9 * hv * hd * (1 + 0.4 * flare);
     s.head.scale.setScalar(Math.max(hv, 0.001)); s.head.visible = hv > 0.01;
-    const tm = s.trail.material.uniforms, speed = Math.abs(ph - phiAt(t - 0.05)) / 0.05 / TAU; // loops per second
+    // tail = the arc the head covered in the last 75 ms, so it retracts into the panel when the head stops there
+    const tm = s.trail.material.uniforms, swept = Math.abs(ph - phiAt(t - 0.075)) / TAU;
     tm.head.value = ((((ph - Math.PI) / TAU) % 1) + 1) % 1;
-    tm.len.value = clamp(0.035 + speed * 0.075, 0.035, 0.30);
+    tm.len.value = clamp(0.035 + swept, 0.035, 0.30);
     tm.amt.value = cOn; s.trail.visible = cOn > 0.001;
-    // key tags ride just above the comet head
+    // key tags ride just above the comet head and dissolve as it nears the engineer panel
+    const chipGate = (from) => E.inOutSine(clamp((dEng - from) / 0.3));
     const place = (chip, op) => {
       const g = chip.group; g.position.copy(s.comet.position).add(new THREE.Vector3(0, 0.24, 0));
       g.rotation.set(0, Math.atan2(cam.x - g.position.x, cam.z - g.position.z), 0); g.scale.setScalar(0.74);
       chip.set('queue', op); g.visible = op > 0.001;
     };
-    place(s.qChip, t < 8.0 ? 0 : E.outCubic(seg(t, 8.0, 8.1)) * (1 - seg(t, 8.22, 8.30)));   // gone before the head enters the panel
-    place(s.aChip, t < 8.66 ? 0 : E.outCubic(seg(t, 8.66, 8.76)) * (1 - seg(t, 8.9, 9.0)));
-    // engineer node: lights as Q lands, types 8.47 -> 8.66, then ANSWERED
-    const hot = seg(t, 8.36, 8.45) * (1 - seg(t, 8.7, 9.1));
+    // Q hits the panel at speed, so its tag starts dissolving ~5 frames early instead of popping off in 2
+    place(s.qChip, t < QS || t >= QE ? 0 : E.outCubic(seg(t, QS, QS + 0.1)) * (1 - E.inQuad(seg(t, 8.17, 8.27))) * chipGate(0.42));
+    // A is fired out of the panel; its tag waits until the head clears the panel's corner
+    place(s.aChip, t < AS ? 0 : E.outCubic(seg(t, AS + 0.01, AS + 0.09)) * chipGate(0.62) * (1 - seg(t, 8.64, 8.72)));
+    // engineer node: lights as Q hits, types 8.30 -> 8.44, then ANSWERED as A is fired back
+    const hot = seg(t, QE - 0.05, QE) * (1 - seg(t, 8.55, 8.95));
     s.ehalo.material.opacity = 0.55 * hot;
-    const state = t < 8.47 ? 0 : t < 8.66 ? 1 : 2;
-    const dots = state === 1 ? Math.floor((t - 8.47) / 0.065) % 3 : -1;
+    const state = t < QE ? 0 : t < 8.44 ? 1 : 2;
+    const dots = state === 1 ? Math.floor((t - QE) / 0.05) % 3 : -1;
     const hq = Math.round(hot * 12) / 12;                           // quantised so the canvas redraws only on visible steps
     const key = `${state}|${dots}|${hq}`;
     if (key !== s.lastKey) {
@@ -198,13 +207,14 @@ export default {
     // card
     s.card.place(cardQuad(ctx, CARD_C, -4, CARD_W, CARD_H), 1);
     const [r0, r1, r2] = s.rows;
-    r0.key.style.visibility = t >= 7.85 ? 'visible' : 'hidden';
-    r1.key.style.visibility = t >= 8.42 ? 'visible' : 'hidden';
-    r2.key.style.visibility = t >= 9.0 ? 'visible' : 'hidden';
-    streamTokens(r0.toks, [7.85, 7.95, 8.05, 8.15], t);
-    streamTokens(r1.toks, [8.44, 8.52, 8.60], t);
-    streamTokens(r2.toks, [9.10, 9.20, 9.30, 9.40, 9.50], t);
-    r2.toks[4].classList.toggle('hot', t >= 9.5 && t < 9.62);
+    // Q streams once the card has settled (C8 ends 8.05); RULE gets ~0.55 s settled before the description exit
+    r0.key.style.visibility = t >= 8.07 ? 'visible' : 'hidden';
+    r1.key.style.visibility = t >= 8.43 ? 'visible' : 'hidden';
+    r2.key.style.visibility = t >= RULE ? 'visible' : 'hidden';
+    streamTokens(r0.toks, [8.10, 8.18, 8.26, 8.34], t);
+    streamTokens(r1.toks, [8.45, 8.53, 8.61], t);
+    streamTokens(r2.toks, [8.85, 8.93, 9.01, 9.09, 9.17], t);
+    r2.toks[4].classList.toggle('hot', t >= 9.17 && t < 9.25);
     // world label under the orb
     const a = ctx.project(ORB);
     const wo = t >= 7.9 ? lerp(0.4, 1, E.outQuint(seg(t, 7.9, 8.2))) * (1 - seg(t, 9.95, 10.1)) : 0;

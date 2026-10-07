@@ -1,9 +1,11 @@
 ---
 name: BEOL-labeling-run-labeling
-description: BEOL 라벨링 파이프라인(입력 폴더 → BEOL-labeling 파싱·분류·라벨링·검수 대기 → 사람 검수 완료 → BEOL-labeling-feedback 반영·장부·임베딩·Supabase 적재)을 한 번에 이어서 돌리는 트리거 스킬. 사람 손이 필요한 곳(검수 완료)에서만 멈추고, 적재가 끝나면 품질 점검 단계(도메인 질문 /BEOL-labeling-Domain-Engr-bot, taxonomy 보드, 축·규칙 점검 /BEOL-labeling-Code-Engr-bot)를 한 줄로 안내하고 끝낸다. 품질 점검 스킬은 자동으로 부르지 않는다. 사용자가 "라벨링 끝까지 돌려줘", "라벨링부터 적재까지", "flow대로 라벨링 실행", "run-labeling", "run-all"(옛 이름), "전체 라벨링 실행"이라고 하거나 /BEOL-labeling-run-labeling을 부르면 이 스킬을 쓴다. 한 단계만 원하면 BEOL-labeling 또는 BEOL-labeling-feedback, 도메인 질문은 BEOL-labeling-Domain-Engr-bot, taxonomy 보드는 BEOL-taxonomy-dashboard, 축·규칙 변경 재라벨링은 BEOL-labeling-Code-Engr-bot이 맡는다.
+description: BEOL 라벨링 파이프라인(입력 폴더 → BEOL-labeling 파싱·분류·라벨링·검수 대기 → 사람 검수 완료 → BEOL-labeling-feedback 반영·장부·임베딩·Supabase 적재)을 한 번에 이어서 돌리는 트리거 스킬. 사람 손이 필요한 곳(검수 완료)에서만 멈추고, 적재가 끝나면 품질 점검 단계(도메인 질문 /BEOL-labeling-Domain-Engr-bot, taxonomy 보드, 축·규칙 점검 /BEOL-labeling-Code-Engr-bot)를 한 줄로 안내하고 끝낸다. 품질 점검 스킬은 자동으로 부르지 않는다. 사용자가 "라벨링 끝까지 돌려줘", "라벨링부터 적재까지", "flow대로 라벨링 실행", "run-labeling", "run-all"(옛 이름), "전체 라벨링 실행"이라고 하거나 /BEOL-labeling-run-labeling을 부르면 이 스킬을 쓴다. 한 단계만이면 BEOL-labeling 또는 BEOL-labeling-feedback을 쓴다.
 ---
 
 # BEOL-labeling-run-labeling: 입력 → 라벨링 → 검수 → 반영 · 적재
+
+> 그룹: ① 라벨링 파이프라인 · 상위: 없음 · 하위: /BEOL-labeling, /BEOL-labeling-feedback · 전체 지도: README.md "스킬 지도"
 
 라벨링 파이프라인의 단계 스킬을 **순서대로 부르는 지휘자**다(2026-10-07 `BEOL-labeling-run-all`에서 이름과 범위를 바꿈). 새 로직은 없고, 각 단계의 절차·규칙·"지켜야 할 것"은 해당 스킬 `SKILL.md`를 그대로 따른다(충돌하면 루트 `CLAUDE.md` → 단계 스킬 → 이 파일 순).
 
@@ -58,3 +60,7 @@ description: BEOL 라벨링 파이프라인(입력 폴더 → BEOL-labeling 파�
 - Domain-Engr-bot · taxonomy 보드 · Code-Engr-bot을 자동으로 부르지 않는다(품질 점검 루프, 사용자 결정 2026-10-07).
 - `taxonomy/taxonomy.json`을 직접 고치지 않는다. taxonomy는 사람이 taxonomy 보드·편집기에서 고친다.
 - 사내 파일을 경로로 열지 않는다. 열기는 `labelbot.ingest.read_input` 한 곳이다(루트 `CLAUDE.md` DRM 규칙).
+
+## 관계
+
+- 한 단계만 원하면 BEOL-labeling 또는 BEOL-labeling-feedback, 도메인 질문은 BEOL-labeling-Domain-Engr-bot, taxonomy 보드는 BEOL-taxonomy-dashboard, 축·규칙 변경 재라벨링은 BEOL-labeling-Code-Engr-bot이 맡는다.

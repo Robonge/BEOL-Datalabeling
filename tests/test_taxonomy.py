@@ -286,6 +286,14 @@ class SheetStructureTest(Helpers):
         del s["rejected"]
         self.assertEqual(parse(s).rejected, [])
 
+    def test_rejected_kinds_and_key(self):
+        s = base_sheets()
+        s["rejected"] = [REJ] + [[k, "x", "", ""] for k in taxonomy.REJECTED_KINDS]
+        self.assertEqual(len(parse(s).rejected), len(taxonomy.REJECTED_KINDS))
+        s["rejected"] = [REJ, ["모름", "x", "", ""]]
+        self.assertRejected(s, "REJECTED_KIND_INVALID", "rejected", 2)
+        self.assertEqual(taxonomy.rejected_key(" 값 ", "물리 현상 | Line 단면적"), ("값", "물리현상|line단면적"))
+
     def test_only_three_sheets_hashed(self):
         self.assertEqual(sorted(parse(base_sheets()).sheet_hashes), sorted(H))
 

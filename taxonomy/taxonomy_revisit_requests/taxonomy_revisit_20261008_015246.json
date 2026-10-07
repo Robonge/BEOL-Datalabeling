@@ -1,0 +1,64 @@
+{
+  "kind": "taxonomy_revisit",
+  "review_run_id": "20261007T163437-f0fe",
+  "generated_at": "2026-10-07T16:52:46Z",
+  "sheet": "taxonomy",
+  "columns": [
+    "축",
+    "값",
+    "상위값",
+    "다중값",
+    "계층",
+    "중복 알림 제외",
+    "종류",
+    "정의·판정 규칙",
+    "포함 예",
+    "제외 예",
+    "사용 여부"
+  ],
+  "paste_rows": [
+    [
+      "Patterning/scheme",
+      "FAV",
+      "SAV",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  ],
+  "paste_requests": [
+    [
+      1
+    ]
+  ],
+  "check_rows": [],
+  "requests": [
+    {
+      "review_run_id": "20261007T163437-f0fe",
+      "chunk_id": "6234f202a3513ea9:ppt/slides/slide11.xml",
+      "file_id": "6234f202a3513ea93578fd55f748ace730de683cfb342264890da9be3db45578",
+      "target": "axis",
+      "key": "Patterning/scheme",
+      "reason": "NO_FIT_VALUE",
+      "proposed": {
+        "value": "FAV",
+        "parent": "SAV"
+      },
+      "related_values": [],
+      "memo": "Fully aligned via에 대한 내용은 scheme 평가로 본다. 동의어 FSAV도 추가한다.",
+      "bot_value": [
+        "unknown"
+      ],
+      "human_value": null,
+      "file_sha256": "e888c8fdd968dfdbde6d6b82a51f20c7aef00e8d40b74fac8d5915ce0fa043ae",
+      "applied_at": "2026-10-07T16:52:46Z",
+      "no": 1,
+      "block": "paste"
+    }
+  ]
+}

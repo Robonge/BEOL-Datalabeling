@@ -22,3 +22,12 @@ open(path,"rb") → b64encode → <sha256>.b64 저장 → b64decode → io.Bytes
 - 허용 형식은 `.b64`(원본과 이미지), `.sqlite`, `.json`, `.jsonl`, `.html`, `.md`, `.log`다. 표·이력 데이터는 `.jsonl`로 쓴다(예: `synonyms_log.jsonl`).
 - 로그에는 파일 ID와 사유 코드만 남긴다. base64, 본문, 파일명은 넣지 않는다.
 
+
+## 임시 지침: 코드 검수 간소화 (2026-10-08~, 사용자가 해제할 때까지)
+
+taxonomy, Domain-Engr-bot(`domain_engrbot/`), labeling(`labelbot/`·`taxonomy/`·`.claude/skills/BEOL-*`) 관련 수정을 하는 모든 세션은 Code-Engr-bot 검수를 **최대한 간략히** 한다.
+
+- 검수는 작업을 끝낼 때 **한 번만** 돌린다: `python -m code_engrbot review --root . --paths <이번에 바꾼 파일>`. 수정 중간마다, 사소한 고침마다 다시 돌리지 않는다.
+- critical만 고친다. major·minor는 한 줄로 보고하고 고치지 않는다(사용자가 시킬 때만 고친다). 고친 뒤 재검수는 critical이 있었을 때 한 번만 한다.
+- architect·code-reviewer·security-reviewer 같은 별도 검토 에이전트를 이 목적으로 따로 띄우지 않는다. 검수 결과 보고도 판정 · 건수 · critical 한 줄씩만 쓴다.
+- 이 지침은 속도를 위한 임시 완화다. 루트 CLAUDE.md의 DRM · 쓰기 규칙과 사내 반입 관련 검사는 줄이지 않는다.

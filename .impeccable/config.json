@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "radial-halo",
+        "value": "*",
+        "files": [
+          "rag/beol_rag.html"
+        ],
+        "createdAt": "2026-10-07T15:56:30.948Z",
+        "reason": "User confirmed: 2026-10-08 chose mockup A copying the Gemini reference's navy radial glow"
+      }
+    ]
+  }
+}

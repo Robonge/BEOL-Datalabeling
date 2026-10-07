@@ -33,7 +33,9 @@ HISTORY_NAME = "taxonomy_history.jsonl"
 
 KINDS = ("분류", "상태")
 COMMON_TARGET = "공통"
-REJECTED_KINDS = ("값", "동의어", "질문")
+# rejected 종류. 값·동의어·질문은 labelbot 후보도 거르고, 나머지는 taxonomy 보드가 같은 제안을 다시 올리지 않게 쓴다.
+# 내용은 "|"로 나눈 대상(예: 값 "축|값", 겹침 "축|값|값", 축 정의 "축", 질문 수정 "질문 ID", 용어 "용어")이다.
+REJECTED_KINDS = ("값", "동의어", "질문", "값 끄기", "값 정의", "겹침", "축 정의", "질문 수정", "새 축", "용어", "기타")
 RESERVED = ("해당없음", "unknown", "n/a", "na")
 _SPACE = re.compile(r"\s+")
 
@@ -46,6 +48,11 @@ Rejected = collections.namedtuple("Rejected", "kind content date reason row")
 def norm_key(s):
     """같은 값 판정용: NFKC, 소문자, 공백 제거."""
     return _SPACE.sub("", util.nfkc(s)).lower()
+
+
+def rejected_key(kind, content):
+    """rejected 대조 키: (종류, "|"로 나눈 칸마다 norm_key). 띄어쓰기·대소문자·전각 차이는 같은 제안으로 본다."""
+    return ((kind or "").strip(), "|".join(norm_key(p) for p in (content or "").split("|")))
 
 
 def sheet_hash(rows):
@@ -399,7 +406,7 @@ class _Parser(object):
         for number, c in rows or []:
             kind = c[0].strip()
             if kind not in REJECTED_KINDS:
-                self.error("rejected", number, "REJECTED_KIND_INVALID", "종류는 값/동의어/질문이어야 한다")
+                self.error("rejected", number, "REJECTED_KIND_INVALID", "종류는 %s 중 하나여야 한다" % "/".join(REJECTED_KINDS))
             self.tax.rejected.append(Rejected(kind, c[1], c[2].strip(), c[3], number))
 
 

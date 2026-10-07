@@ -22,7 +22,7 @@ from labelbot.mock import MockChatTransport
 from labelbot.workspace import CODE_ROOT
 from tests.test_pipeline import responder
 
-DUMMY_DIR = os.path.join(CODE_ROOT, "dummy pptx files")
+from tests._dummy import DUMMY_DIR  # noqa: E402  저장소 밖 더미 폴더(tests/_dummy.py)
 TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json")
 GOLDEN_DIR = os.path.join(CODE_ROOT, "tests", "golden_run")
 N_FILES = 3

@@ -105,6 +105,13 @@
       "domain_engrbot/adapters/labelbot_ws.py"
     ]
   },
+  "labelbot.taxonomy.REJECTED_KINDS": {
+    "kind": "constant",
+    "type": "tuple",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
   "labelbot.taxonomy.RESERVED": {
     "kind": "constant",
     "type": "tuple",
@@ -171,6 +178,13 @@
   "labelbot.taxonomy.parse_bytes": {
     "kind": "function",
     "signature": "(b)",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.rejected_key": {
+    "kind": "function",
+    "signature": "(kind, content)",
     "used_in": [
       "domain_engrbot/adapters/labelbot_ws.py"
     ]

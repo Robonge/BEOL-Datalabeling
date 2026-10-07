@@ -31,3 +31,6 @@ change-dashboard/index.html
 # taxonomy.json 저장 부산물(이력은 저장마다 문서 전체를 담아 커지므로 로컬에만 둔다)
 taxonomy/taxonomy_history.jsonl
 taxonomy/.taxonomy.json.*
+
+# pytest 캐시(테스트는 -p no:cacheprovider로 돌린다)
+.pytest_cache/

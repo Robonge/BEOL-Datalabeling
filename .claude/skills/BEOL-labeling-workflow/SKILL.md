@@ -1,9 +1,11 @@
 ---
 name: BEOL-labeling-workflow
-description: BEOL 라벨링 워크플로(입력 → 준비·수집·파싱 → 1~3차 분류·검증 질문·라벨링 → 불량 목록 → 사람 검수 → 피드백 반영 → Domain-Engr-bot 장부·규칙 후보 → 임베딩·Supabase 적재 → Domain-Engr-bot 도메인 질문 생성 → 엔지니어 답변·초안 확정 → 규칙·taxonomy 제안 반영 → taxonomy 보드·편집기(taxonomy.json)·도메인 규칙 수정 → 다음 실행)를 단계별 산출물·예시 화면이 있는 HTML 한 장(docs/workflow.html)으로 다시 만든다. 위쪽에 docs/project_intro.html의 S4 팀 지도를 넣어 단계마다 맡은 agent를 강조한다. 최신 실행의 건수·알림·답 분포와 Domain-Engr-bot의 장부·승인 규칙·도메인 질문 건수를 채워 넣는다. 사용자가 "워크플로 HTML 다시 만들어줘", "workflow 시각화", "workflow.html 갱신", "단계별 화면 정리", "BEOL 워크플로 보여줘", "Domain-Engr-bot까지 포함한 workflow"라고 하거나 /BEOL-labeling-workflow를 부르면 이 스킬을 쓴다. 파싱·라벨링 실행은 BEOL-labeling, 사람 검수 진행과 반영·적재는 BEOL-labeling-feedback, 검수 결과로 엔지니어에게 질문해 도메인 지식을 규칙·taxonomy 제안으로 돌려주는 일은 BEOL-labeling-Domain-Engr-bot이 맡는다.
+description: BEOL 라벨링 워크플로(입력 → 준비·수집·파싱 → 1~3차 분류·검증 질문·라벨링 → 불량 목록 → 사람 검수 → 피드백 반영 → Domain-Engr-bot 장부·규칙 후보 → 임베딩·Supabase 적재 → Domain-Engr-bot 도메인 질문 생성 → 엔지니어 답변·초안 확정 → 규칙·taxonomy 제안 반영 → taxonomy 보드·편집기(taxonomy.json)·도메인 규칙 수정 → 다음 실행)를 단계별 산출물·예시 화면이 있는 HTML 한 장(docs/workflow.html)으로 다시 만든다. 위쪽에 docs/project_intro.html의 S4 팀 지도를 넣어 단계마다 맡은 agent를 강조한다. 최신 실행의 건수·알림·답 분포와 Domain-Engr-bot의 장부·승인 규칙·도메인 질문 건수를 채워 넣는다. 사용자가 "워크플로 HTML 다시 만들어줘", "workflow 시각화", "workflow.html 갱신", "단계별 화면 정리", "BEOL 워크플로 보여줘", "Domain-Engr-bot까지 포함한 workflow"라고 하거나 /BEOL-labeling-workflow를 부르면 이 스킬을 쓴다.
 ---
 
 # BEOL-labeling-workflow: 워크플로 HTML 다시 만들기
+
+> 그룹: ③ 화면 · 발표 · 운영 리포트 · 상위: 없음 · 하위: 없음 · 전체 지도: README.md "스킬 지도"
 
 `docs/workflow.html`을 만든다. 화면 구조(S4 팀 지도, 16단계, 스킬 범위 구역 4개, 예시 화면, 인터랙션)는 템플릿 `assets/workflow_template.html`에 있다. `scripts/build_workflow.py`가 최신 실행의 수치와 Domain-Engr-bot 건수를 채우고, `docs/project_intro.html`에서 S4 그림을 가져와 넣는다. LLM 호출은 0회다.
 
@@ -73,3 +75,7 @@ taxonomy가 바뀌면(축 추가 등) workflow.html도 다시 만든다. 1차 �
 ### 4. 보고
 
 생성 경로(링크), 기준 실행 ID와 작업 폴더, 채운 주요 수치(파일·chunk·검증 질문·불량·알림), Domain-Engr-bot 수치(장부 사례·근거 있음, 대기 후보, 켜진/승인 규칙·사례, 질문 set_id·열린 질문·답함·taxonomy 제안 수), 확인 결과를 짧게 쓴다. 승인분이 있는데 켜진 것이 0이거나, 장부 사례가 있는데 근거 있는 교정이 0이면 한 줄로 짚는다(화면에도 경고 배지가 뜬다). 팀에 공유할 것 같으면 Artifact로 게시할 수 있다고 한 줄로 제안한다(파일 자체는 사내 반입용으로 그대로 둔다).
+
+## 관계
+
+- 파싱·라벨링 실행은 BEOL-labeling, 사람 검수 진행과 반영·적재는 BEOL-labeling-feedback, 검수 결과로 엔지니어에게 질문해 도메인 지식을 규칙·taxonomy 제안으로 돌려주는 일은 BEOL-labeling-Domain-Engr-bot이 맡는다.

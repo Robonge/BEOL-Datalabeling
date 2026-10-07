@@ -646,7 +646,7 @@ the title sits above. This is the payoff: the same slide, now understood. It end
 | Element | Spec | Position | Timing |
 |---|---|---|---|
 | Final title | "Slide → **knowledge.**", Display 650, 86 px (cap 62), -0.02em; "Slide" and "→" white, "knowledge." `#FF6A1A`; 3 spans, each in its own mask | centered on x = 960, cap-top 133 | rises **12.75** (0.45 s outExpo, 0.05 s stagger) → settled **13.30** |
-| End slate | "BEOL AX", Display 700, 46 px, -0.01em, white; 2 spans in masks | centered on x = 960, cap-top 846 (the slide settles at S 1.02, x 455–1465, y 238–805, so the slate has its own band) | rises **13.50** (0.45 s outExpo, 0.06 s stagger) → settled ≈ 13.80 |
+| End slate | "BEOL AX", Display 700, **230 px**, -0.035em, white; 2 spans in masks — the hero of the end card | centered on x = 960, cap-top 600 (the slide settles small at S 0.46, Y_END 0.78, x ≈ 728–1192, y ≈ 262–522, under the title; chips sit 36 px off its projected edges, spread to a minimum pitch; credit cap-top 850) | rises **13.50** (0.45 s outExpo, 0.06 s stagger) → settled ≈ 13.80 |
 | Credit | Cascadia Mono 400 16 px +0.04em: "synthetic example  ·  " at white 55%, "Motion design — Claude" at 66% | centered on x = 960, cap-top 910 | 13.62 → 13.92 outQuint, 8 px rise |
 | Rail | all stops orange | section 5 | 13.00 → 13.40 |
 | Counter | none | — | — |

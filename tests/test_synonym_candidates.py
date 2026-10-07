@@ -56,6 +56,14 @@ class GroupedFilterTest(unittest.TestCase):
             self.add("비아원|M1", c)
         self.assertEqual(self.contents(), ["메탈원|M1"])
 
+    def test_rejected_list_matches_by_kind_and_normalized_text(self):
+        for c in ("c1", "c2"):
+            self.add("메탈원|M1", c)
+            self.add("비아원|V1", c)
+        self.tax.rejected = [taxonomy.Rejected("동의어", " 메탈 원 | m1 ", "", "", 2),   # 띄어쓰기·대소문자 차이
+                             taxonomy.Rejected("값", "비아원|V1", "", "", 3)]            # 종류가 다르면 거르지 않는다
+        self.assertEqual(self.contents(), ["비아원|V1"])
+
     def test_review_registered_kept(self):
         self.add("메탈 라인|배선", "c1", source="review")
         self.assertEqual(self.contents(), ["메탈 라인|배선"])

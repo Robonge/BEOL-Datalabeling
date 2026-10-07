@@ -57,14 +57,15 @@ export class MaskedLine {
       if (i < words.length - 1) this.root.appendChild(document.createTextNode(' '));
     });
   }
-  // o: { riseAt, riseDur, stagger, ease, from (% below), exitAt, exitDur, exitStagger, exitTo (-112 up, 112 down) }
+  // o: { riseAt, riseDur, stagger, ease, from (% below), exitAt, exitDur, exitStagger, exitEase (default inQuint), exitTo (-112 up, 112 down) }
   set(t, o) {
     let any = false;
     this.inner.forEach((span, i) => {
       const r = (o.ease || E.outExpo)(seg(t, o.riseAt + i * o.stagger, o.riseAt + i * o.stagger + o.riseDur));
       let y = lerp(o.from ?? 110, 0, r);
       if (o.exitAt != null) {
-        const q = E.inQuint(seg(t, o.exitAt + i * (o.exitStagger ?? 0.04), o.exitAt + i * (o.exitStagger ?? 0.04) + (o.exitDur ?? 0.22)));
+        const x0 = o.exitAt + i * (o.exitStagger ?? 0.04);
+        const q = (o.exitEase || E.inQuint)(seg(t, x0, x0 + (o.exitDur ?? 0.22)));
         y = lerp(y, o.exitTo ?? -112, q);
       }
       const hidden = y >= 109.9 || y <= -111.9;
@@ -109,13 +110,17 @@ export class TitleBlock {
     const vis = t >= T + 0.15 && t <= Tn + 0.4;
     this.root.style.display = vis ? '' : 'none';
     if (!vis) return;
-    const eIn = seg(t, T + 0.20, T + 0.40), eOut = 1 - seg(t, Tn - 0.05, Tn + 0.10);
+    // The headline leaves as one unit just ahead of the camera truck (launch Tn-0.05): every word
+    // starts within 0.015 s of the first (Tn-0.12, 0.18 s inCubic), so no lone word is left over the
+    // next stage; a 3-word line is fully masked by Tn+0.09, before the incoming 3D enters at ~Tn+0.12.
+    // Eyebrow and underline fade over the same window (Tn-0.12 -> Tn+0.03). Settled hold stays >= 1.6 s.
+    const eIn = seg(t, T + 0.20, T + 0.40), eOut = 1 - seg(t, Tn - 0.12, Tn + 0.03);
     this.eyebrow.set(eIn * eOut);
-    this.line.set(t, { riseAt: T + 0.25, riseDur: 0.45, stagger: 0.05, from: 110, exitAt: Tn - 0.05, exitDur: 0.22, exitStagger: 0.04 });
+    this.line.set(t, { riseAt: T + 0.25, riseDur: 0.45, stagger: 0.05, from: 110, exitAt: Tn - 0.12, exitDur: 0.18, exitStagger: 0.015, exitEase: E.inCubic });
     const u = E.outExpo(seg(t, T + 0.50, T + 0.85));
     this.rule.style.transform = `scaleX(${u.toFixed(4)})`;
     this.rule.style.opacity = (eOut).toFixed(3);
-    const d = E.outQuint(seg(t, T + 0.50, T + 0.80)), dOut = 1 - seg(t, Tn - 0.20, Tn - 0.05);
+    const d = E.outQuint(seg(t, T + 0.50, T + 0.80)), dOut = 1 - seg(t, Tn - 0.30, Tn - 0.14);
     this.desc.style.opacity = (d * dOut).toFixed(3);
     this.desc.style.transform = `translate(0, ${(8 * (1 - d)).toFixed(2)}px)`;
   }
@@ -159,30 +164,53 @@ export class Rail {
     else fillX = lerp(STOPS[k], STOPS[k + 1], 0.88 * clamp((t - (cur.T + 0.30)) / 2.20));
     this.fill.style.width = px(Math.max(0, fillX - STOPS[0]));
     const fin = (i) => E.outQuad(seg(t, finale + i * 0.05, finale + i * 0.05 + 0.2));
+    // Hand-off at a step boundary T (overlapping, so some stop is always lit on the downbeat):
+    //  - outgoing stop: T -> T+0.20 outQuad, 15 -> 11 px, orange -> white (dot and label), ring and glow -> 0;
+    //  - incoming stop: from T+0.15, grows 11 -> 15 px outBack(1.4) over 0.25 s, dot colour 0.10 s,
+    //    label 0.20 s, ring and glow 0.30 s.
+    // Each stop's state is a pure function of t and the T of its own step and of the step after it.
     for (let i = 0; i < 5; i++) {
       const dot = this.dots[i], ring = this.rings[i], lab = this.labels[i];
-      let size = 11, color = '#6A6D74', lc = '#BFC2C9', ringOp = 0, glow = 0;
-      if (i < k) { color = '#FFFFFF'; lc = '#FFFFFF'; }
-      if (i === k) {
-        const g = E.outBack(seg(t, cur.T + 0.30, cur.T + 0.55), 1.4);
-        size = lerp(11, 15, g); color = mixHex('#6A6D74', '#FF6A1A', seg(t, cur.T + 0.30, cur.T + 0.40));
-        lc = mixHex('#BFC2C9', '#FF6A1A', seg(t, cur.T + 0.30, cur.T + 0.50));
-        ringOp = 0.35 * seg(t, cur.T + 0.30, cur.T + 0.60); glow = seg(t, cur.T + 0.30, cur.T + 0.60);
+      let size = 11, color = RGB_FUTURE, lc = RGB_FUTURE_LAB, ringOp = 0, glow = 0;
+      const j = steps.findIndex((s) => s.k === i);
+      if (j < 0) {
+        // never an active step (SLIDE): passed once the first step is on
+        if (i < steps[0].k) { color = RGB_WHITE; lc = RGB_WHITE; }
+      } else {
+        const Ti = steps[j].T + 0.15;
+        const g = E.outBack(seg(t, Ti, Ti + 0.25), 1.4);
+        size = lerp(11, 15, g);
+        color = mixRGB(RGB_FUTURE, RGB_ORANGE, seg(t, Ti, Ti + 0.10));
+        lc = mixRGB(RGB_FUTURE_LAB, RGB_ORANGE, seg(t, Ti, Ti + 0.20));
+        ringOp = 0.35 * seg(t, Ti, Ti + 0.30); glow = seg(t, Ti, Ti + 0.30);
+        const nx = steps[j + 1];
+        if (nx) {
+          const o = E.outQuad(seg(t, nx.T, nx.T + 0.20));
+          if (o > 0) {
+            size = lerp(size, 11, o);
+            color = mixRGB(color, RGB_WHITE, o); lc = mixRGB(lc, RGB_WHITE, o);
+            ringOp *= 1 - o; glow *= 1 - o;
+          }
+        }
       }
       const f = fin(i);
       if (f > 0) {
-        color = mixHex(color, '#FF6A1A', f); lc = mixHex(lc, '#FF6A1A', f);
+        color = mixRGB(color, RGB_ORANGE, f); lc = mixRGB(lc, RGB_ORANGE, f);
         if (i === 4) { ringOp *= 1 - f; glow *= 1 - f; size = lerp(size, 11, f); }
       }
       dot.style.width = dot.style.height = px(size);
-      dot.style.background = color;
-      dot.style.boxShadow = glow > 0 ? `0 0 18px 4px rgba(255,106,26,${(0.45 * glow).toFixed(3)})` : 'none';
+      dot.style.background = rgbCSS(color);
+      dot.style.boxShadow = glow > 0.001 ? `0 0 18px 4px rgba(255,106,26,${(0.45 * glow).toFixed(3)})` : 'none';
       ring.style.opacity = ringOp.toFixed(3);
-      lab.style.color = lc;
+      lab.style.color = rgbCSS(lc);
     }
     this.fill.style.background = '#FF6A1A';
   }
 }
+const hexRGB = (h) => { const p = parseInt(h.slice(1), 16); return [p >> 16, (p >> 8) & 255, p & 255]; };
+const RGB_FUTURE = hexRGB('#6A6D74'), RGB_FUTURE_LAB = hexRGB('#BFC2C9'), RGB_WHITE = hexRGB('#FFFFFF'), RGB_ORANGE = hexRGB('#FF6A1A');
+const mixRGB = (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+const rgbCSS = (c) => `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
 export function mixHex(a, b, u) {
   const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
   const r = Math.round(lerp(pa >> 16, pb >> 16, u)), g = Math.round(lerp((pa >> 8) & 255, (pb >> 8) & 255, u)), bl = Math.round(lerp(pa & 255, pb & 255, u));

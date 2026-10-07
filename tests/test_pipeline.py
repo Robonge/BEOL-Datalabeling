@@ -14,7 +14,7 @@ from labelbot.ingest import read_input
 from labelbot.mock import MockChatTransport, MockEmbedTransport
 from labelbot.workspace import CODE_ROOT, Workspace, WorkspaceError
 
-DUMMY_DIR = os.path.join(CODE_ROOT, "dummy pptx files")
+from tests._dummy import DUMMY_DIR  # noqa: E402  저장소 밖 더미 폴더(tests/_dummy.py)
 TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json")
 
 
@@ -90,7 +90,7 @@ class PipelineTest(unittest.TestCase):
             with open(self.ws.path("reports", "flagged_%s.%s" % (self.run_id, ext)), encoding="utf-8") as f:
                 body = f.read()
             self.assertNotIn(".pptx", body)
-            self.assertNotIn("dummy pptx files", body)
+            self.assertNotIn(os.path.basename(DUMMY_DIR), body)
         n = self.con.execute("SELECT COUNT(*) FROM flagged_chunks WHERE run_id=?", (self.run_id,)).fetchone()[0]
         with open(self.ws.path("reports", "flagged_%s.jsonl" % self.run_id), encoding="utf-8") as f:
             self.assertEqual(n, sum(1 for _ in f))
@@ -192,7 +192,7 @@ class PipelineTest(unittest.TestCase):
         with open(self.ws.path("logs", "labelbot.log"), encoding="utf-8") as f:
             body = f.read()
         self.assertNotIn(".pptx", body)
-        self.assertNotIn("dummy pptx files", body)
+        self.assertNotIn(os.path.basename(DUMMY_DIR), body)
 
     def test_embed_and_push_idempotent(self):
         from labelbot import embed, vectorpush

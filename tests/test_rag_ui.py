@@ -319,16 +319,19 @@ class RagLibRunTest(unittest.TestCase):
         self.assertEqual(self.res["q_only_cite"]["cited"], [1])
 
     def test_confirm_question_toggle_and_rate(self):
-        self.assertIn("물어본다", self.res["confirm_on"])
-        self.assertIn("근거 번호를 붙이지 마라", self.res["confirm_on"])
-        self.assertIn("확인 질문", self.res["confirm_off"])
-        self.assertNotIn("물어본다", self.res["confirm_off"])
+        # 문구는 사용자가 고쳐 쓰므로 뜻만 본다: 켜면 확인 질문을 하되 번호 없이, 끄면 하지 않는다
+        on, off = self.res["confirm_on"], self.res["confirm_off"]
+        self.assertNotEqual(on, off)
+        self.assertIn("확인 질문", on)
+        self.assertIn("근거 번호", on)
+        self.assertIn("확인 질문", off)
+        self.assertRegex(off, r"확인 질문[^\n]*(않|마라|말라)")
         self.assertEqual(self.res["confirm_rate"], 0.3)
 
     def test_prompt_asks_for_html_table(self):
         p = self.res["confirm_off"]
         self.assertIn('<table class="border-collapse border">', p)
-        for tag in ("<thead>", "<tbody>", "<tr>", "<th>", "<td>"):
+        for tag in ("<thead>", "<tbody>", "<tr>", "<th", "<td"):
             self.assertIn(tag, p)
 
     def test_attach_siblings_order_and_numbering(self):
@@ -383,6 +386,28 @@ class RagOldNameTest(unittest.TestCase):
 
     def test_readme_rag_section_has_no_old_name(self):
         self.assertIsNone(OLD_BOT.search(readme_rag_section()))
+
+
+class PageRenumberTest(unittest.TestCase):
+    """화면의 renumber(): 인용된 슬라이드가 1번부터, 그다음 후보, 마지막에 같은 파일 슬라이드."""
+
+    def test_cited_first_then_candidates_then_siblings(self):
+        if not NODE:
+            raise AssertionError("node가 없다")
+        m = re.search(r"  function renumber\(.*?\n  }\n", read(PAGE), re.S)
+        self.assertIsNotNone(m)
+        js = m.group(0) + """
+const ev = [{n:1,kind:"hit"},{n:2,kind:"hit"},{n:3,kind:"hit"},{n:4,kind:"sibling",sibling_of:1},{n:5,kind:"sibling",sibling_of:3}];
+const r = renumber("A[3] B[5] C[1] D[9]", ev, [1, 3, 5]);
+console.log(JSON.stringify({answer: r.answer, cited: r.cited, order: r.evidence.map(e => [e.n, e.kind, e.sibling_of || 0])}));
+"""
+        out = subprocess.run([NODE, "-e", js], capture_output=True, text=True, encoding="utf-8", timeout=30)
+        self.assertEqual(out.returncode, 0, out.stderr[-500:])
+        res = json.loads(out.stdout.strip().splitlines()[-1])
+        self.assertEqual(res["answer"], "A[1] B[2] C[3] D[9]")
+        self.assertEqual(res["cited"], [1, 2, 3])
+        # 옛 3→1, 5→2, 1→3, 2→4(후보), 4→5(같은 파일, 옛 1번 곧 새 3번의 형제)
+        self.assertEqual(res["order"], [[1, "hit", 0], [2, "sibling", 1], [3, "hit", 0], [4, "hit", 0], [5, "sibling", 3]])
 
 
 if __name__ == "__main__":
