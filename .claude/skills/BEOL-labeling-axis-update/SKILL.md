@@ -1,6 +1,6 @@
 ---
 name: BEOL-labeling-axis-update
-description: taxonomy.xlsx의 축이 추가·삭제·변경(값 추가·삭제 포함)됐을 때, 이미 라벨링·검수를 마친 작업 폴더에서 이전 라벨은 그대로 두고 바뀐 축만 1차 분류로 다시 라벨링한다. 삭제된 축은 라벨에서 뺀다. 사람 검수는 바뀐 축에 불량이 있는 chunk만 받고, 결과는 축별 카드와 슬라이드별 이미지·새 축 라벨만 보여 주는 현황판(axis_update.html)으로 띄운 뒤 검수 대기에서 멈춘다. 검수 완료 뒤에는 반영·임베딩·Supabase 적재까지 이어 간다. BEOL-labeling-Code-Engr-bot이 축 점검에서 걸린 작업 폴더마다 묻지 않고 자동으로 부른다. 사용자가 "축 변경분만 라벨링", "새 축만 라벨링", "axis update", "축 추가 재라벨링", "taxonomy 바뀐 축만 다시"라고 하거나 /BEOL-labeling-axis-update를 부르면 이 스킬을 쓴다. 전체 재라벨링(새 파일, 2·3차 질문까지)은 BEOL-labeling, 일반 검수 반영은 BEOL-labeling-feedback이 맡는다.
+description: taxonomy.json의 축이 추가·삭제·변경(값 추가·삭제 포함)됐을 때, 이미 라벨링·검수를 마친 작업 폴더에서 이전 라벨은 그대로 두고 바뀐 축만 1차 분류로 다시 라벨링한다. 삭제된 축은 라벨에서 뺀다. 사람 검수는 바뀐 축에 불량이 있는 chunk만 받고, 결과는 축별 카드와 슬라이드별 이미지·새 축 라벨만 보여 주는 현황판(axis_update.html)으로 띄운 뒤 검수 대기에서 멈춘다. 검수 완료 뒤에는 반영·임베딩·Supabase 적재까지 이어 간다. BEOL-labeling-Code-Engr-bot이 축 점검에서 걸린 작업 폴더마다 묻지 않고 자동으로 부른다. 사용자가 "축 변경분만 라벨링", "새 축만 라벨링", "axis update", "축 추가 재라벨링", "taxonomy 바뀐 축만 다시"라고 하거나 /BEOL-labeling-axis-update를 부르면 이 스킬을 쓴다. 전체 재라벨링(새 파일, 2·3차 질문까지)은 BEOL-labeling, 일반 검수 반영은 BEOL-labeling-feedback이 맡는다.
 ---
 
 # BEOL-labeling-axis-update: 바뀐 축만 다시 라벨링
@@ -8,7 +8,7 @@ description: taxonomy.xlsx의 축이 추가·삭제·변경(값 추가·삭제 �
 같은 작업 폴더 안에 `axis-update` 실행을 하나 더 만든다. 이전 실행의 chunk·라벨·사람 교정을 이어받고, 바뀐 축만 1차 분류를 다시 돌린다(사용자 결정, 2026-10-06. 계획 `.omc/plans/axis-update-plan.md`).
 
 ```
-대상 확인(dry-run) → 사전 점검 → 바뀐 축 1차 분류 → 화면(슬라이드 이미지·검수·현황판) → 현황판 띄우기 → 검수 대기
+대상 확인(dry-run) → 사전 점검 → 바뀐 축 1차 분류 → 화면(슬라이드 이미지·검수·현황판) → 현황판 띄우기 → 검수 완료 대기
 → [검수 완료] 반영 → Domain-Engr-bot 장부·규칙 후보 → 현황판 갱신 → 임베딩 → Supabase 적재
 ```
 
@@ -36,8 +36,8 @@ taxonomy-diff는 축 정의 문장(H열) 변경을 감지하지 않는다. 정�
 
 ## 지켜야 할 것
 
-- 원본 파일, 작업 폴더 데이터(`*.b64`, inbox JSON, `work.sqlite` 본문), `taxonomy.xlsx`를 Read·`cat`으로 열지 않는다(루트 `CLAUDE.md`). 보고에는 건수·실행 ID·축 이름·사유 코드만 쓴다.
-- `taxonomy.xlsx`와 `pipeline.json`의 모델·안전 설정을 고치지 않는다.
+- 원본 파일, 작업 폴더 데이터(`*.b64`, inbox JSON, `work.sqlite` 본문), `taxonomy.json`을 Read·`cat`으로 열지 않는다(루트 `CLAUDE.md`). 보고에는 건수·실행 ID·축 이름·사유 코드만 쓴다.
+- `taxonomy.json`과 `pipeline.json`의 모델·안전 설정을 고치지 않는다.
 - 검수하는 동안 검수·현황판 탭을 읽거나 클릭하지 않는다(`get_page_text`·`read_page`·스크린샷 금지). 완료 신호만 기다린다.
 - 같은 작업 폴더에서 `/BEOL-labeling`·`/BEOL-labeling-feedback`과 동시에 돌리지 않는다. 열린 검수가 있으면 `REVIEW_IN_PROGRESS`로 건너뛴다.
 
@@ -49,7 +49,7 @@ taxonomy-diff는 축 정의 문장(H열) 변경을 감지하지 않는다. 정�
 | `NO_AXIS_CHANGE` | 지금 taxonomy와 축이 같다 | 할 일 없음 |
 | `PREV_NOT_REVIEWED` | 기준 실행의 사람 검수가 끝나지 않았다 | 먼저 `/BEOL-labeling-feedback`으로 검수를 마친다 |
 | `REVIEW_IN_PROGRESS` | 기준 실행의 검수가 열려 있다(시작 신호만 있고 완료 신호가 없다) | 검수 완료 뒤 다시 |
-| `PREV_PUSH_PENDING` | supabase를 쓰는데 기준 실행의 확정 라벨이 아직 다 적재되지 않았다(axis-update 뒤에는 기준 실행을 적재할 수 없다) | 기준 작업 폴더에서 `/BEOL-labeling-feedback` 6단계(`embed` → `push-vectors`)를 다시 실행한다. Supabase를 쓰지 않으면 `pipeline.json`의 `supabase.enabled=false`. 그 뒤 다시 |
+| `PREV_PUSH_PENDING` | supabase를 쓰는데 기준 실행의 확정 라벨이 아직 다 적재되지 않았다(axis-update 뒤에는 기준 실행을 적재할 수 없다) | 기준 작업 폴더에서 `/BEOL-labeling-feedback` 4단계(`embed` → `push-vectors`)를 다시 실행한다. Supabase를 쓰지 않으면 `pipeline.json`의 `supabase.enabled=false`. 그 뒤 다시 |
 | `AXIS_UPDATE_LOCKED` | 같은 작업 폴더에서 다른 axis-update가 돌고 있다(`logs/axis_update.lock.json`, 6시간 넘은 잠금은 무시) | 그 실행이 끝난 뒤 다시. 실행 중인 axis-update가 없으면 `logs/axis_update.lock.json`을 지우거나, 오래된 잠금 기준 시간(6시간)이 지나기를 기다린다 |
 | `AXIS_UPDATE_LOCK_LOST` | 실행 중에 잠금을 잃었다(다른 실행이 남은 잠금으로 보고 넘겨받음). 이번 실행은 끝나지 않은 채 멈춘다 | 다른 axis-update가 끝난 뒤 다시. 다시 돌리면 같은 기준에서 멱등 복사로 덮어쓴다 |
 
@@ -63,13 +63,13 @@ taxonomy-diff는 축 정의 문장(H열) 변경을 감지하지 않는다. 정�
 | 2 | 사전 점검 | `결과: 전 항목 PASS` | 20% |
 | 3 | 바뀐 축 라벨링 | `[axis-update] 완료 run_id=…` | 60% |
 | 4 | 현황판 띄우기 | 탭 열기 끝(또는 URL 안내) | 70% |
-| 5 | 사람 검수 | 완료 신호 `done: true` | 80% |
+| 5 | 검수 완료 대기 | 완료 신호 `done: true` | 80% |
 | 6 | 반영·현황판 갱신 | `[apply] …`와 `axis-board` 끝 | 90% |
 | 7 | 임베딩·적재 | `[push-vectors] …`·`[push-slides] …` | 100% |
 
 - `✅` 완료, `▶️` 진행 중, `⬜` 대기, `❌` 실패, `⏭️` 건너뜀. 1단계에서 건너뜀 사유 코드가 나오면 1단계를 `⏭️ — <코드>`로 두고 나머지는 그대로 둔 채 끝낸다(실패가 아니다).
 - 3단계 줄 끝에 `대상 축 n · 삭제 축 n · chunk n · LLM n회`, 7단계 줄 끝에 Supabase 전송 행 수를 붙인다.
-- 사람 검수 대기 중에는 5번을 `▶️ … — 검수 완료 버튼 대기`로 둔다.
+- 검수 완료 대기 중에는 5번을 `▶️ … — 검수 완료 버튼 대기`로 둔다.
 
 ## 절차
 
@@ -94,7 +94,7 @@ python -m labelbot selfcheck --workspace "<WS>" --probe-llm
 ```bash
 python -m labelbot axis-update --workspace "<WS>"
 ```
-백그라운드로 돌리고 `Monitor`로 `^\[axis-update\]|^\[오류\]|Traceback` 줄을 본다. `[axis-update] 완료 run_id=...`의 실행 ID를 `<RUN>`으로 쓴다. 종료 코드 3과 `[axis-update] 건너뜀 <코드>`는 1단계와 같은 건너뜀이다. 0·3이 아닌 종료 코드나 `[오류]`는 그 줄을 보고하고 멈춘다.
+백그라운드로 돌리고 `Monitor`로 `^\[axis-update\]|^\[오류\]|Traceback` 줄을 본다. `[axis-update] 완료 run_id=...`의 실행 ID를 `<RUN>`으로 쓴다. 종료 코드 3과 `[axis-update] 건너뜀 <코드>`는 1단계와 같은 건너뜀이고, 4는 잠금을 잃은 것(`AXIS_UPDATE_LOCK_LOST`)이다. `--dry-run`도 사유 코드가 있으면 3이다. 0·3·4가 아닌 종료 코드나 `[오류]`는 그 줄을 보고하고 멈춘다.
 
 ### 4. 화면 만들고 현황판 띄우기 (LLM 호출 0회)
 
@@ -106,23 +106,23 @@ python -m labelbot axis-board --workspace "<WS>" --run <RUN>
 - `slide-images` 실패는 멈추지 않는다. 사유 코드만 보고한다. 이미지가 없는 슬라이드는 현황판에서 근사 미리보기로 보인다.
 - 화면 서버를 띄우고(`preview_start` name=`<launch_name>`) 사용자의 Chrome에서 `http://localhost:<port>/axis_update.html`을 연다. 여는 방법과 탭 재사용 규칙은 BEOL-labeling 6단계와 같다. 열린 탭 내용은 읽지 않는다.
 
-### 5. 검수 대기
+### 5. 검수 완료 대기
 
-현황판의 **검수 시작** 버튼을 누르면 화면 서버가 시작 신호를 쓰고 검수 화면을 연다. 안내하기 전에 시작 대기를 백그라운드로 건다.
+현황판의 **검수 시작** 버튼은 검수 화면만 연다(화면 서버는 시작 신호도 쓰지만 이 스킬은 기다리지 않는다). 안내하기 전에 완료 대기를 백그라운드로 건다.
 ```bash
-python ".claude/skills/BEOL-labeling-feedback/scripts/wait_review_done.py" --workspace "<WS>" --run <RUN> --signal start
+python ".claude/skills/BEOL-labeling-feedback/scripts/wait_review_done.py" --workspace "<WS>" --run <RUN>
 ```
 Bash `run_in_background: true`, `timeout: 7200000`. 그다음 아래를 안내하고 턴을 끝낸다.
 1. 현황판에서 축별 불량·슬라이드별 새 라벨을 훑어본다. 이미지를 누르면 크게 보인다.
-2. **검수 시작**을 누르고, 검수 화면에서 불량 chunk n개의 대상 축만 확인·교정한다. 다른 축은 잠겨 있다.
-3. 다 끝나면 검수 화면 상단의 **검수 완료**를 누른다. 교정할 것이 없어도 누른다.
+2. **검수 시작**을 누르고, 검수 화면에서 불량 chunk n개의 대상 축만 확인·교정한다. 강조된 라벨부터 확인하고, 확신도 높은 라벨은 접혀 있다. 다른 축은 잠겨 있다.
+3. 다 끝나면 검수 화면 상단의 **검수 완료**를 누른다. 교정할 것이 없어도 누른다. 누르면 화면이 잠기고 반영·적재가 이어진다.
 4. 검수가 끝나기 전에는 Supabase에 올리지 않는다.
 
-시작 신호(`started: true`)가 오면 완료 대기를 건다(`--after-start`, 같은 백그라운드 설정). `code: WAIT_TIMEOUT`이면 같은 대기를 다시 건다.
+`code: WAIT_TIMEOUT`이면 같은 대기를 다시 건다.
 
 ### 6. 반영과 현황판 갱신
 
-완료 신호(`done: true`)가 오면 `counts` 건수만 한 줄로 알리고, BEOL-labeling-feedback의 3·4·4-1·4-2단계를 그대로 한다(`collect_inbox.py` → `labelbot apply --kind review` → `domain_engrbot intake` → `domain_engrbot labeling-rules candidates`). `apply` 출력의 `AXIS_NOT_TARGET`(대상이 아닌 축·질문 교정이라 건너뜀) 건수를 보고에 적는다.
+완료 신호(`done: true`)가 오면 `counts` 건수만 한 줄로 알리고, BEOL-labeling-feedback의 1·2·2-1·2-2단계를 그대로 한다(`collect_inbox.py` → `labelbot apply --kind review` → `domain_engrbot intake` → `domain_engrbot labeling-rules candidates`). `apply` 출력의 `AXIS_NOT_TARGET`(대상이 아닌 축·질문 교정이라 건너뜀) 건수를 보고에 적는다.
 
 ```bash
 python -m labelbot review --workspace "<WS>" --run <RUN>
@@ -133,7 +133,7 @@ python -m labelbot report --workspace "<WS>" --run <RUN>
 
 ### 7. 임베딩과 적재
 
-BEOL-labeling-feedback 6단계와 같다(`embed` → `slide-images` → `push-vectors` → `push-slides`, 모두 `--run <RUN>`). 라벨 JSON이 바뀐 chunk(새 축 추가, 삭제 축 제거)만 다시 전송된다. 끝나면 `axis-board`를 한 번 더 만들어 적재 건수를 채우고, 현황판 탭을 새로고침한다.
+BEOL-labeling-feedback 4단계와 같다(`embed` → `slide-images` → `push-vectors` → `push-slides`, 모두 `--run <RUN>`). 라벨 JSON이 바뀐 chunk(새 축 추가, 삭제 축 제거)만 다시 전송된다. 끝나면 `axis-board`를 한 번 더 만들어 적재 건수를 채우고, 현황판 탭을 새로고침한다.
 
 ### 8. 보고
 
@@ -152,4 +152,4 @@ BEOL-labeling-feedback 6단계와 같다(`embed` → `slide-images` → `push-ve
 - 새 파일·바뀐 파일 처리, 2·3차 질문 재실행: BEOL-labeling(전체 실행)
 - 축 불일치 찾기: BEOL-labeling-Code-Engr-bot(이 스킬을 부른다)
 - 도메인 질문과 규칙 확정: BEOL-labeling-Domain-Engr-bot
-- taxonomy.xlsx 수정: 사람(BEOL-taxonomy-dashboard 참고)
+- taxonomy.json 수정: 사람(BEOL-taxonomy-dashboard의 보드, 또는 `taxonomy-editor`)

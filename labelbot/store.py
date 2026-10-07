@@ -177,8 +177,9 @@ def meta_set(con, key, value):
     con.execute("INSERT OR REPLACE INTO meta(key, value) VALUES(?, ?)", (key, value))
 
 
-# 라벨이 남는 실행 종류. axis-update는 이전 실행의 라벨을 이어받아 바뀐 축만 다시 분류한 실행이다.
-LABEL_COMMANDS = ("run", "axis-update")
+# 라벨이 남는 실행 종류. axis-update는 이전 실행의 라벨을 이어받아 바뀐 축만 다시 분류한 실행,
+# rules-update는 이전 실행의 라벨을 이어받아 바뀐 라벨링 규칙이 닿는 축·답만 다시 라벨한 실행이다.
+LABEL_COMMANDS = ("run", "axis-update", "rules-update")
 
 
 def _latest(con, commands, finished_only):
@@ -194,7 +195,7 @@ def latest_run(con, commands=LABEL_COMMANDS + ("ingest",), finished=True):
 
 
 def latest_label_run(con, finished=False):
-    """최신 라벨 실행(run·axis-update). finished=True면 끝난 실행만 본다."""
+    """최신 라벨 실행(run·axis-update·rules-update). finished=True면 끝난 실행만 본다."""
     return _latest(con, LABEL_COMMANDS, finished)
 
 

@@ -74,13 +74,11 @@ def file_context(ctx, file_id):
         "SELECT rel_path FROM file_locations WHERE file_id=? ORDER BY first_seen_run, rel_path LIMIT 1", (file_id,)
     ).fetchone()
     titles = [r[0] for r in con.execute("SELECT title FROM chunks WHERE file_id=? ORDER BY seq", (file_id,))]
-    memo = ctx.file_memos.get(file_id, "")
     return {
         "file_name": f["file_name"] if f else "",
         "rel_path": loc[0] if loc else "",
         "doc_title": (f["title"] if f else "") or "",
         "slide_titles": " / ".join(t for t in titles if t) or "(없음)",
-        "file_memo": memo or "(없음)",
     }
 
 

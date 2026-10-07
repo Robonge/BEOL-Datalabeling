@@ -51,7 +51,9 @@ def answer(q, *drafts, option_id="A"):
             "free_text": "", "confirmed": list(drafts)}
 
 
-def rule(text, stage="classify", target="", pattern_id=None, origin="llm"):
+def rule(text, stage="classify", target=None, pattern_id=None, origin="llm"):
+    if target is None:   # 범위 기본값: 1차는 축 이름, 3차는 축=값
+        target = LAYER if stage == "classify" else LAYER + "=값"
     d = {"type": "rule", "stage": stage, "target": target, "text": text, "origin": origin}
     if pattern_id:
         d["pattern_id"] = pattern_id
@@ -140,20 +142,21 @@ class QuestionAnswersTest(unittest.TestCase):
         q = make_question(QTEXT)
         save_questions(self.qd, [q])
         write_answers(self.paths.inbox, [answer(q, rule("분류 규칙 문장이다.", target=LAYER, origin="edited"),
-                                              rule("라벨 규칙 문장이다.", stage="label", target=LAYER, origin="human"),
-                                              rule("대상 없는 분류 규칙이다.", origin="bogus"))])
+                                              rule("라벨 규칙 문장이다.", stage="label", target=LAYER + "=값", origin="human"),
+                                              rule("기본 범위 분류 규칙이다.", origin="bogus"))])
         res = self.apply()
         self.assertEqual((res["answered"], res["rules"], res["remaining"]), (1, 3, 0))
         self.assertEqual(res["enabled_rules"], {"classify": 2, "label": 1})
         self.assertEqual((res["cap"], res["notes"], res["invalid"], res["not_open"]), (30, [], [], []))
         fp = q["fingerprint"]
         got = {r["text"]: r for r in self.doc()["rules"]}
-        cl, lb, plain = got["분류 규칙 문장이다."], got["라벨 규칙 문장이다."], got["대상 없는 분류 규칙이다."]
+        cl, lb, plain = got["분류 규칙 문장이다."], got["라벨 규칙 문장이다."], got["기본 범위 분류 규칙이다."]
         self.assertEqual(cl["rule_id"], answers.manual_rule_id(fp, "classify", LAYER, "분류 규칙 문장이다."))
         self.assertTrue(cl["rule_id"].startswith("QR-") and len(cl["rule_id"]) == 13)
         self.assertEqual((cl["kind"], cl["target"], cl["origin"]), ("MANUAL", LAYER, "edited"))
-        self.assertEqual((lb["target"], lb["origin"]), ("label", "human"))
-        self.assertEqual((plain["target"], plain["origin"]), ("classify", "llm"))
+        self.assertEqual((lb["target"], lb["origin"], lb["stage"]), (LAYER + "=값", "human", "label"))
+        self.assertEqual((plain["target"], plain["origin"], plain["stage"]), (LAYER, "llm", "classify"))
+        self.assertEqual(cl["stage"], "classify")
         for r in (cl, lb, plain):
             self.assertTrue(lr.valid_rule(r))
             self.assertEqual((r["from"], r["to"], r["count"], r["enabled"]), ("", "", 2, True))
@@ -613,6 +616,55 @@ class QuestionAnswersTest(unittest.TestCase):
         self.assertEqual(after, before)
         self.assertFalse(os.path.exists(os.path.join(self.d, ledger.LOCK_NAME)))
         self.screen.assert_not_called()
+
+
+    # ---- 규칙 범위(RULE_SCOPE_MISSING) -------------------------------------------
+
+    def test_scope_missing_rejected_and_counted(self):
+        """범위 없는 rule 초안은 규칙을 만들지 않고 RULE_SCOPE_MISSING으로 세어 보고한다. 범위 있는 초안만 규칙이 된다."""
+        q = make_question(QTEXT)
+        save_questions(self.qd, [q])
+        write_answers(self.paths.inbox, [answer(q, rule("범위 없는 분류 규칙이다.", target=""),
+                                              rule("범위 없는 라벨 규칙이다.", stage="label", target=""),
+                                              rule("축만 쓴 라벨 규칙이다.", stage="label", target=LAYER),
+                                              rule("범위 있는 라벨 규칙이다.", stage="label", target="Q-007"),
+                                              rule("범위 있는 분류 규칙이다."))])
+        res = self.apply()
+        self.assertEqual(res["rule_scope_missing"], 3)
+        self.assertEqual([i["code"] for i in res["invalid"]], ["RULE_SCOPE_MISSING"] * 3)
+        self.assertEqual(res["rules"], 2)
+        texts = {r["text"]: r for r in self.doc()["rules"]}
+        self.assertEqual(set(texts), {"범위 있는 라벨 규칙이다.", "범위 있는 분류 규칙이다."})
+        self.assertEqual((texts["범위 있는 라벨 규칙이다."]["stage"], texts["범위 있는 라벨 규칙이다."]["target"]),
+                         ("label", "Q-007"))
+        self.assertEqual((texts["범위 있는 분류 규칙이다."]["stage"], texts["범위 있는 분류 규칙이다."]["target"]),
+                         ("classify", LAYER))
+
+    def test_scope_only_missing_is_invalid_answer(self):
+        """범위 없는 rule만 있으면 확정 초안이 없는 답이라 질문은 열린 채 규칙이 없다."""
+        q = make_question(QTEXT)
+        save_questions(self.qd, [q])
+        write_answers(self.paths.inbox, [answer(q, rule("범위 없는 규칙이다.", target=""))])
+        res = self.apply()
+        self.assertEqual((res["answered"], res["rules"], res["rule_scope_missing"]), (0, 0, 1))
+        self.assertIn({"question_id": q["question_id"], "code": "NO_CONFIRMED_DRAFT"}, res["invalid"])
+
+    def test_check_draft_scope(self):
+        """check_draft: require_scope일 때만 거부. 축 이름은 axes 안이어야 하고, label은 축=값(축이 axes 안) 또는 Q-… ID다."""
+        cd = qmodel.check_draft
+        ok = lambda st, t, axes=["축A"]: cd(rule("문장이다.", stage=st, target=t), axes, True)
+        self.assertEqual(ok("classify", "축A")[0]["target"], "축A")
+        self.assertEqual(ok("classify", "없는축")[1], "RULE_SCOPE_MISSING")
+        self.assertEqual(ok("classify", "")[1], "RULE_SCOPE_MISSING")
+        self.assertEqual(ok("label", "축A=값1")[0]["target"], "축A=값1")
+        self.assertEqual(ok("label", "없는축=값1")[1], "RULE_SCOPE_MISSING")
+        self.assertEqual(ok("label", "축A")[1], "RULE_SCOPE_MISSING")
+        self.assertEqual(ok("label", "축A=")[1], "RULE_SCOPE_MISSING")
+        self.assertEqual(ok("label", "Q-GEN-0123456789")[0]["target"], "Q-GEN-0123456789")
+        self.assertEqual(ok("label", "label")[1], "RULE_SCOPE_MISSING")
+        # 화면·LLM 초안(require_scope 꺼짐)은 범위를 비운 채 통과한다(사람이 채운다)
+        got, code = cd(rule("문장이다.", target=""), ["축A"])
+        self.assertEqual((got["target"], code), ("", None))
 
 
 if __name__ == "__main__":

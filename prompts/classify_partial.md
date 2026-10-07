@@ -13,7 +13,6 @@
 - 처음 본 상대 경로: {{rel_path}}
 - 문서 제목: {{doc_title}}
 - 슬라이드 제목 목록: {{slide_titles}}
-- 파일 메모: {{file_memo}}
 
 ## 일치한 동의어 (본문 표현 → 표준어)
 {{synonym_matches}}

@@ -1,6 +1,6 @@
 """새 축 E2E 회귀: taxonomy에 축 하나를 더하면 분류~내보내기·벡터 적재·검수·결과 화면·diff·selfcheck까지 따라간다.
 
-합성 taxonomy(메모리 xlsx, 실제 taxonomy.xlsx는 열지 않는다)에 새 축 "평가 조건"(값 POR, Split)과 그 질문 행을 더하고
+합성 taxonomy(임시 폴더의 taxonomy.json, 저장소 taxonomy.json은 열지 않는다)에 새 축 "평가 조건"(값 POR, Split)과 그 질문 행을 더하고
 mock LLM으로 run_all을 한 번 돌린다. 값 이름은 더미 본문에 실제로 나오는 낱말이라 mock 분류가 새 축 값을 붙인다.
 """
 import contextlib
@@ -47,7 +47,7 @@ class NewAxisFlowTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dir = tempfile.mkdtemp(prefix="labelbot_ws_")
-        cls.tax_path = os.path.join(cls.dir, "tax_fixture.xlsx")
+        cls.tax_path = os.path.join(cls.dir, "taxonomy.json")
         with open(cls.tax_path, "wb") as f:
             f.write(build(sheets_with_new_axis()))
         cfg = {"taxonomy_path": cls.tax_path, "input_root": DUMMY_DIR,

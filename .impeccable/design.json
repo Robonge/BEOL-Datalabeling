@@ -1,0 +1,631 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-07T13:06:17+00:00",
+  "title": "Design System: BEOL Slide RAG",
+  "extensions": {
+    "colorMeta": {
+      "shell": {
+        "role": "primary",
+        "displayName": "슬레이트 셸",
+        "canonical": "#3A4048",
+        "tonalRamp": [
+          "#070B12",
+          "#20262D",
+          "#3C434B",
+          "#5B626A",
+          "#7C838C",
+          "#9FA6AF",
+          "#C2CAD4",
+          "#E8EFF9"
+        ]
+      },
+      "shell-2": {
+        "role": "primary",
+        "displayName": "셸 2",
+        "canonical": "#454C55",
+        "tonalRamp": [
+          "#060C12",
+          "#1F262E",
+          "#3C434B",
+          "#5B626B",
+          "#7B838D",
+          "#9EA6B0",
+          "#C2CAD5",
+          "#E7EFFA"
+        ]
+      },
+      "shell-3": {
+        "role": "primary",
+        "displayName": "셸 3",
+        "canonical": "#515963",
+        "tonalRamp": [
+          "#060C13",
+          "#1F262E",
+          "#3B434C",
+          "#5A626C",
+          "#7B838E",
+          "#9DA6B1",
+          "#C1CAD6",
+          "#E6F0FC"
+        ]
+      },
+      "shell-line": {
+        "role": "primary",
+        "displayName": "셸 선",
+        "canonical": "#58606A",
+        "tonalRamp": [
+          "#060C13",
+          "#1F262E",
+          "#3B434C",
+          "#5A626C",
+          "#7B838E",
+          "#9DA6B1",
+          "#C1CAD6",
+          "#E6EFFB"
+        ]
+      },
+      "shell-text": {
+        "role": "neutral",
+        "displayName": "셸 글자",
+        "canonical": "#F2EFEA",
+        "tonalRamp": [
+          "#0D0B08",
+          "#272521",
+          "#44423E",
+          "#63615D",
+          "#85827D",
+          "#A7A5A0",
+          "#CCC9C4",
+          "#F1EEE9"
+        ]
+      },
+      "shell-muted": {
+        "role": "neutral",
+        "displayName": "흐린 셸 글자",
+        "canonical": "#C4C9D0",
+        "tonalRamp": [
+          "#080B10",
+          "#22252B",
+          "#3E4248",
+          "#5D6268",
+          "#7E8389",
+          "#A1A5AC",
+          "#C5CAD1",
+          "#EAEFF6"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "회벽색 작업면",
+        "canonical": "#EBEBE8",
+        "tonalRamp": [
+          "#0B0B09",
+          "#252523",
+          "#424240",
+          "#61615F",
+          "#828280",
+          "#A5A5A2",
+          "#C9C9C6",
+          "#EFEFEC"
+        ]
+      },
+      "tray": {
+        "role": "neutral",
+        "displayName": "트레이 회색",
+        "canonical": "#F3F3F1",
+        "tonalRamp": [
+          "#0B0B0A",
+          "#252524",
+          "#424240",
+          "#616160",
+          "#828281",
+          "#A5A5A3",
+          "#C9C9C7",
+          "#EEEEEC"
+        ]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "시트 흰색",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "선",
+        "canonical": "#D4D5D4",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#242524",
+          "#414241",
+          "#616161",
+          "#828282",
+          "#A4A5A4",
+          "#C8C9C8",
+          "#EEEFEE"
+        ]
+      },
+      "line-2": {
+        "role": "neutral",
+        "displayName": "조용한 선",
+        "canonical": "#E3E3E1",
+        "tonalRamp": [
+          "#0B0B0A",
+          "#252524",
+          "#424240",
+          "#616160",
+          "#828281",
+          "#A5A5A3",
+          "#C9C9C7",
+          "#EEEEEC"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "먹",
+        "canonical": "#1E2227",
+        "tonalRamp": [
+          "#080B10",
+          "#21252A",
+          "#3E4248",
+          "#5D6268",
+          "#7E8389",
+          "#A0A6AC",
+          "#C4CAD0",
+          "#E9EFF6"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "보조 먹",
+        "canonical": "#4B5159",
+        "tonalRamp": [
+          "#070B12",
+          "#20252D",
+          "#3D434A",
+          "#5C626A",
+          "#7C838C",
+          "#9FA6AF",
+          "#C3CAD3",
+          "#E8EFF9"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "흐린 먹",
+        "canonical": "#626972",
+        "tonalRamp": [
+          "#070C12",
+          "#20262D",
+          "#3C434B",
+          "#5B626B",
+          "#7C838C",
+          "#9EA6B0",
+          "#C2CAD4",
+          "#E7EFFA"
+        ]
+      },
+      "action": {
+        "role": "primary",
+        "displayName": "진행 동작 먹색",
+        "canonical": "#2C3238",
+        "tonalRamp": [
+          "#070C11",
+          "#20262B",
+          "#3C4349",
+          "#5B6269",
+          "#7C838A",
+          "#9FA6AD",
+          "#C2CAD2",
+          "#E8EFF7"
+        ]
+      },
+      "action-hover": {
+        "role": "primary",
+        "displayName": "진행 동작 hover",
+        "canonical": "#3A4048",
+        "tonalRamp": [
+          "#070B12",
+          "#20262D",
+          "#3C434B",
+          "#5B626A",
+          "#7C838C",
+          "#9FA6AF",
+          "#C2CAD4",
+          "#E8EFF9"
+        ]
+      },
+      "stamp": {
+        "role": "secondary",
+        "displayName": "주홍 도장",
+        "canonical": "#D2452B",
+        "tonalRamp": [
+          "#1D0100",
+          "#4A0800",
+          "#7C1400",
+          "#B12202",
+          "#D94C32",
+          "#FE755B",
+          "#FDB4A5",
+          "#FFE9E4"
+        ]
+      },
+      "stamp-ink": {
+        "role": "secondary",
+        "displayName": "주홍 먹",
+        "canonical": "#B4361F",
+        "tonalRamp": [
+          "#1E0100",
+          "#490A02",
+          "#7A1805",
+          "#AB2D16",
+          "#D3533B",
+          "#FB785E",
+          "#FEB4A4",
+          "#FFE9E4"
+        ]
+      },
+      "stamp-soft": {
+        "role": "secondary",
+        "displayName": "옅은 주홍",
+        "canonical": "rgba(210,69,43,.09)",
+        "tonalRamp": [
+          "#1D0100",
+          "#4A0800",
+          "#7C1400",
+          "#B12202",
+          "#D94C32",
+          "#FE755B",
+          "#FDB4A5",
+          "#FFE9E4"
+        ]
+      },
+      "tag": {
+        "role": "tertiary",
+        "displayName": "모래색 꼬리표",
+        "canonical": "#E6D6B8",
+        "tonalRamp": [
+          "#120A00",
+          "#2F2309",
+          "#4D4026",
+          "#6D5F45",
+          "#8F8065",
+          "#B2A386",
+          "#D7C7AA",
+          "#FDEDCE"
+        ]
+      },
+      "tag-ink": {
+        "role": "tertiary",
+        "displayName": "꼬리표 먹",
+        "canonical": "#2A2318",
+        "tonalRamp": [
+          "#100A03",
+          "#2B2419",
+          "#484135",
+          "#686053",
+          "#8A8174",
+          "#ADA496",
+          "#D1C8BA",
+          "#F7EDDE"
+        ]
+      },
+      "hold": {
+        "role": "tertiary",
+        "displayName": "호박색 HOLD",
+        "canonical": "#EBA33A",
+        "tonalRamp": [
+          "#130900",
+          "#362000",
+          "#5B3A06",
+          "#855600",
+          "#B17302",
+          "#DB9426",
+          "#FDBB63",
+          "#FFEBD4"
+        ]
+      },
+      "hold-soft": {
+        "role": "tertiary",
+        "displayName": "옅은 호박",
+        "canonical": "#FBE8C4",
+        "tonalRamp": [
+          "#110A00",
+          "#312202",
+          "#4F4020",
+          "#6F5F3F",
+          "#91805F",
+          "#B5A381",
+          "#D9C7A4",
+          "#FEECCA"
+        ]
+      },
+      "hold-ink": {
+        "role": "tertiary",
+        "displayName": "호박 먹",
+        "canonical": "#2A1A00",
+        "tonalRamp": [
+          "#130900",
+          "#322205",
+          "#503F23",
+          "#715E42",
+          "#937F62",
+          "#B6A283",
+          "#DBC6A6",
+          "#FFECD0"
+        ]
+      },
+      "hero-cream": {
+        "role": "neutral",
+        "displayName": "히어로 크림(히어로 전용)",
+        "canonical": "#F3EBDD",
+        "tonalRamp": [
+          "#0F0A03",
+          "#2A241A",
+          "#484136",
+          "#676054",
+          "#898175",
+          "#ACA497",
+          "#D0C8BB",
+          "#F5EDDF"
+        ]
+      },
+      "hero-ink": {
+        "role": "neutral",
+        "displayName": "히어로 먹(히어로 전용)",
+        "canonical": "#1D1A1A",
+        "tonalRamp": [
+          "#0D0A0A",
+          "#272424",
+          "#444141",
+          "#646060",
+          "#858181",
+          "#A8A4A4",
+          "#CCC8C8",
+          "#F2EDED"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "brand": {
+        "displayName": "Brand",
+        "purpose": "위 막대의 브랜드 글자만. 히어로 세리프."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "시트의 질문, 첫 화면 안내 제목."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "근거 팝업의 슬라이드 제목."
+      },
+      "answer": {
+        "displayName": "Answer",
+        "purpose": "답 본문, 최대 46em."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "기본 글자와 안내 문단."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "필터·칩·평가 버튼, 트레이 머리, 명판."
+      },
+      "value": {
+        "displayName": "Value",
+        "purpose": "STEP 번호, Lot/WF, 날짜, 점수, 건수."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "고정폭 대문자 필드 이름. 값과 짝을 이룬다."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sheet-rest",
+        "value": "0 1px 2px rgba(20,22,26,.05), 0 8px 24px rgba(20,22,26,.06)",
+        "purpose": "진행 시트."
+      },
+      {
+        "name": "dock",
+        "value": "0 6px 18px rgba(20,22,26,.08)",
+        "purpose": "아래 고정 입력창."
+      },
+      {
+        "name": "dock-focus",
+        "value": "0 0 0 3px rgba(44,50,56,.16), 0 6px 18px rgba(20,22,26,.08)",
+        "purpose": "입력창 안 포커스."
+      },
+      {
+        "name": "slide-edge",
+        "value": "0 0 0 1px var(--line), 0 2px 6px rgba(20,22,26,.08)",
+        "purpose": "근거 썸네일 외곽."
+      },
+      {
+        "name": "slide-hot",
+        "value": "0 0 0 2px var(--stamp), 0 6px 16px rgba(20,22,26,.14)",
+        "purpose": "도장이 짚은 근거 썸네일."
+      },
+      {
+        "name": "stamp-tab",
+        "value": "0 2px 6px rgba(20,22,26,.15)",
+        "purpose": "썸네일 모서리의 번호 도장."
+      },
+      {
+        "name": "popover",
+        "value": "0 18px 44px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.12)",
+        "purpose": "필터 드롭다운."
+      },
+      {
+        "name": "modal",
+        "value": "0 30px 80px rgba(0,0,0,.4)",
+        "purpose": "근거 팝업."
+      }
+    ],
+    "motion": [
+      {
+        "name": "stamp-press",
+        "value": "press .46s cubic-bezier(.16,1,.3,1) both; delay calc(var(--i) * 90ms)",
+        "purpose": "새 답의 도장이 1.7배에서 눌려 내려앉는다. 동작 줄이기에서는 끈다."
+      },
+      {
+        "name": "state",
+        "value": ".15s",
+        "purpose": "도장 채움, 썸네일 링, 본문 펼침 아이콘 회전."
+      },
+      {
+        "name": "hero",
+        "value": ".2s",
+        "purpose": "히어로 버튼 hover(히어로 전용)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "900px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "전송 버튼",
+      "kind": "button",
+      "refersTo": "button-send",
+      "description": "작업면 위의 유일한 주된 동작. 입력창 오른쪽.",
+      "html": "<button class=\"ds-send\" type=\"button\">전송<svg class=\"ds-ico\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M3 8h10M8.5 3.5 13 8l-4.5 4.5\"/></svg></button>",
+      "css": ".ds-ico{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.ds-send{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border:0;border-radius:10px;background:var(--action);color:#fff;font-family:var(--font,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif);font-size:14px;font-weight:700;cursor:pointer}.ds-send:hover{background:var(--action-hover)}.ds-send:focus-visible{outline:2px solid var(--action);outline-offset:2px}.ds-send:disabled{opacity:.55;cursor:not-allowed}"
+    },
+    {
+      "name": "평가 버튼",
+      "kind": "button",
+      "refersTo": "feedback-button",
+      "description": "SIGN-OFF 줄의 좋아요·아쉬워요. 선택되면 먹색으로 채워진다.",
+      "html": "<div class=\"ds-fb\"><span class=\"ds-fn\">SIGN-OFF</span><button class=\"ds-fbb ds-on\" type=\"button\"><svg class=\"ds-ico\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M5 7v7H2.5V7H5z\"/><path d=\"M5 7l3-5a2 2 0 0 1 2 2v2.5h3.2a1.3 1.3 0 0 1 1.3 1.5l-.9 5A1.3 1.3 0 0 1 12.3 14H5\"/></svg>도움이 됐어요</button><button class=\"ds-fbb\" type=\"button\"><span style=\"display:inline-flex;transform:rotate(180deg)\"><svg class=\"ds-ico\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M5 7v7H2.5V7H5z\"/><path d=\"M5 7l3-5a2 2 0 0 1 2 2v2.5h3.2a1.3 1.3 0 0 1 1.3 1.5l-.9 5A1.3 1.3 0 0 1 12.3 14H5\"/></svg></span>아쉬워요</button></div>",
+      "css": ".ds-ico{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.ds-fn{font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}.ds-fb{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line-2)}.ds-fbb{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--sheet);color:var(--ink-2);font-family:var(--font,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif);font-size:12.5px;cursor:pointer}.ds-fbb .ds-ico{width:14px;height:14px}.ds-fbb:hover{border-color:var(--ink-3);color:var(--ink)}.ds-fbb:focus-visible{outline:2px solid var(--action);outline-offset:2px}.ds-fbb.ds-on{background:var(--ink);border-color:var(--ink);color:#fff}"
+    },
+    {
+      "name": "질문 입력창",
+      "kind": "input",
+      "refersTo": "question-input",
+      "description": "읽기 열 폭에 맞춘 아래 고정 입력창. 다음 STEP 번호를 왼쪽에 단다.",
+      "html": "<div class=\"ds-in\"><span class=\"ds-fn ds-nstep\">STEP<b>02</b></span><textarea rows=\"1\" placeholder=\"질문을 입력하세요 (Enter 전송, Shift+Enter 줄바꿈)\" aria-label=\"질문\"></textarea><button class=\"ds-send\" type=\"button\">전송<svg class=\"ds-ico\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M3 8h10M8.5 3.5 13 8l-4.5 4.5\"/></svg></button></div>",
+      "css": ".ds-ico{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.ds-fn{font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}.ds-in{display:flex;align-items:flex-end;gap:10px;max-width:940px;padding:7px 7px 7px 14px;border:1px solid var(--line);border-radius:14px;background:var(--sheet);box-shadow:0 6px 18px rgba(20,22,26,.08)}.ds-in:focus-within{border-color:var(--action);box-shadow:0 0 0 3px rgba(44,50,56,.16),0 6px 18px rgba(20,22,26,.08)}.ds-nstep{align-self:center;padding-right:10px;border-right:1px solid var(--line-2);white-space:nowrap}.ds-nstep b{margin-left:4px;font:700 12px var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);color:var(--ink)}.ds-in textarea{flex:1;min-height:40px;max-height:140px;padding:9px 0;border:0;background:transparent;resize:none;font-family:var(--font,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif);font-size:14px;line-height:1.5;color:var(--ink)}.ds-in textarea:focus-visible{outline:none}.ds-in textarea::placeholder{color:var(--ink-3);opacity:1}.ds-send{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border:0;border-radius:10px;background:var(--action);color:#fff;font-family:var(--font,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif);font-weight:700;cursor:pointer}.ds-send:hover{background:var(--action-hover)}"
+    },
+    {
+      "name": "위 막대와 필터 버튼",
+      "kind": "nav",
+      "refersTo": "filter-button",
+      "description": "슬레이트 위 막대. 브랜드, 알약형 필터 드롭다운, 모래색 선택 수, SLIDES 건수.",
+      "html": "<header class=\"ds-bar\"><div class=\"ds-brand\"><span class=\"ds-mk\" aria-hidden=\"true\">B</span>BEOL Slide RAG</div><button class=\"ds-fbtn\" type=\"button\" aria-expanded=\"false\">공정 모듈<span class=\"ds-n\">2</span><svg class=\"ds-ico\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M4 6l4 4 4-4\"/></svg></button><button class=\"ds-fbtn\" type=\"button\" aria-expanded=\"true\">구조/레이어<svg class=\"ds-ico\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M4 6l4 4 4-4\"/></svg></button><span class=\"ds-count\"><span class=\"ds-fn\">SLIDES</span><b>70</b></span></header>",
+      "css": ".ds-ico{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.ds-fn{font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}.ds-bar{display:flex;align-items:center;gap:6px;min-height:60px;padding:10px 18px 10px 22px;background:var(--shell);color:var(--shell-text);font-family:var(--font,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif);font-size:14px}.ds-brand{display:flex;align-items:center;gap:10px;margin-right:12px;white-space:nowrap;font-family:var(--hero-serif,'Sitka Banner',Didot,'Bodoni 72','Bodoni MT',Georgia,serif);font-size:19px;line-height:1}.ds-mk{display:grid;place-items:center;width:28px;height:28px;border:1px solid rgba(242,239,234,.7);border-radius:50%;font-size:14px}.ds-fbtn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 10px 0 13px;border:1px solid var(--shell-line);border-radius:999px;background:var(--shell-2);color:var(--shell-text);font:inherit;font-size:13px;white-space:nowrap;cursor:pointer}.ds-fbtn .ds-ico{width:14px;height:14px;opacity:.85}.ds-fbtn:hover{background:var(--shell-3)}.ds-fbtn:focus-visible{outline:2px solid var(--tag);outline-offset:2px}.ds-fbtn[aria-expanded=\"true\"]{background:var(--sheet);border-color:var(--sheet);color:var(--ink)}.ds-n{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--tag);color:var(--tag-ink);font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace)}.ds-count{display:inline-flex;align-items:baseline;gap:6px;margin-left:auto;color:var(--shell-muted)}.ds-count .ds-fn{color:var(--shell-muted)}.ds-count b{font:700 13px var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);color:var(--shell-text)}"
+    },
+    {
+      "name": "STEP 레일",
+      "kind": "nav",
+      "refersTo": "filter-button",
+      "description": "슬레이트 왼쪽 레일의 질문 이력. 현재 STEP 번호만 모래색 꼬리표.",
+      "html": "<nav class=\"ds-rail\"><h2 class=\"ds-fn\">STEP</h2><button class=\"ds-stepbtn ds-cur\" type=\"button\"><span class=\"ds-sn\">01</span><span class=\"ds-sq\">M2 RSBM TaN ALD cycle window 평가 결과 어때?</span><span class=\"ds-ss\">근거 5 · 인용 4</span></button><button class=\"ds-stepbtn\" type=\"button\"><span class=\"ds-sn\">02</span><span class=\"ds-sq\">같은 lot의 split 조건은?</span><span class=\"ds-ss\">찾는 중…</span></button></nav>",
+      "css": ".ds-fn{font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}.ds-rail{width:248px;padding:6px 10px 16px 14px;background:var(--shell);color:var(--shell-text);font-family:var(--font,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif);}.ds-rail h2{margin:10px 6px 12px;color:var(--shell-muted)}.ds-stepbtn{display:grid;grid-template-columns:30px minmax(0,1fr);gap:2px 9px;width:100%;padding:8px;border:0;border-radius:10px;background:none;text-align:left;color:var(--shell-text);font:inherit;cursor:pointer}.ds-stepbtn:hover{background:var(--shell-2)}.ds-stepbtn:focus-visible{outline:2px solid var(--tag);outline-offset:2px}.ds-sn{grid-row:span 2;display:grid;place-items:center;height:22px;border-radius:6px;background:var(--shell-2);color:var(--shell-muted);font:700 12px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace)}.ds-cur .ds-sn{background:var(--tag);color:var(--tag-ink)}.ds-sq{font-size:13px;line-height:1.45;word-break:keep-all}.ds-ss{font-size:11.5px;color:var(--shell-muted)}"
+    },
+    {
+      "name": "범위 칩",
+      "kind": "chip",
+      "refersTo": "scope-chip",
+      "description": "작업면 위의 선택된 범위. 모래색 꼬리표, 누르면 빠진다.",
+      "html": "<div class=\"ds-scope\"><span class=\"ds-fn\">SCOPE</span><button class=\"ds-chipx\" type=\"button\"><i>공정 모듈</i>Etch<svg class=\"ds-ico\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M4 4l8 8M12 4l-8 8\"/></svg></button><button class=\"ds-chipx\" type=\"button\"><i>결과 값</i>A0<svg class=\"ds-ico\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M4 4l8 8M12 4l-8 8\"/></svg></button></div>",
+      "css": ".ds-ico{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.ds-fn{font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}.ds-scope{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:12px;background:var(--ground)}.ds-scope .ds-fn{margin-right:4px;color:var(--ink-2)}.ds-chipx{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 7px 0 10px;border:0;border-radius:999px;background:var(--tag);color:var(--tag-ink);font-family:var(--font,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif);font-size:12px;cursor:pointer}.ds-chipx i{font-style:normal;opacity:.72}.ds-chipx .ds-ico{width:12px;height:12px}.ds-chipx:focus-visible{outline:2px solid var(--action);outline-offset:2px}"
+    },
+    {
+      "name": "진행 시트",
+      "kind": "card",
+      "refersTo": "step-sheet",
+      "description": "STEP 하나. 진행표 줄, 질문, 주홍 도장이 박힌 답.",
+      "html": "<article class=\"ds-sheet\"><div class=\"ds-strip\"><div><span class=\"ds-fn\">STEP</span><span class=\"ds-v\">01</span></div><div><span class=\"ds-fn\">TIME</span><span class=\"ds-v\">21:58</span></div><div><span class=\"ds-fn\">SCOPE</span><span class=\"ds-v ds-ko\">Etch, Metal</span></div><div><span class=\"ds-fn\">EVIDENCE</span><span class=\"ds-v\">5 / 3</span></div></div><h3 class=\"ds-qh\">M2 RSBM TaN ALD cycle window 평가 결과 어때?</h3><p class=\"ds-ans\">100cy 대비 45cy에서 Rc가 POR 수준이다.<button class=\"ds-stamp\" type=\"button\" style=\"--r:-3deg\">1</button> edge 편차가 커서 pending이다.<button class=\"ds-stamp ds-hot\" type=\"button\" style=\"--r:2deg\">3</button></p></article>",
+      "css": ".ds-fn{font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}.ds-sheet{max-width:940px;padding:16px 22px;border:1px solid var(--line-2);border-radius:var(--radius,10px);background:var(--sheet);color:var(--ink);box-shadow:0 1px 2px rgba(20,22,26,.05),0 8px 24px rgba(20,22,26,.06);font-family:var(--font,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif);font-size:14px;line-height:1.6}.ds-strip{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;margin:-2px -4px 14px;border:1px solid var(--line-2);border-radius:6px;background:var(--tray)}.ds-strip>div{display:flex;align-items:baseline;gap:8px;min-width:0;padding:7px 10px;border-left:1px solid var(--line-2)}.ds-strip>div:first-child{border-left:0}.ds-v{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font:12.5px var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);color:var(--ink)}.ds-v.ds-ko{font-family:inherit}.ds-qh{margin:0 0 4px;font-size:17px;line-height:1.5;font-weight:700;letter-spacing:-0.02em;word-break:keep-all}.ds-ans{margin:10px 0 0;max-width:46em;font-size:15.5px;line-height:1.85;word-break:keep-all}.ds-stamp{position:relative;top:-1px;display:inline-grid;place-items:center;width:22px;height:22px;margin:0 2px;padding:0;border:2px solid var(--stamp);border-radius:50%;background:var(--stamp-soft);color:var(--stamp-ink);font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);vertical-align:middle;transform:rotate(var(--r,0deg));transition:background .15s,color .15s;cursor:pointer}.ds-stamp:hover,.ds-stamp.ds-hot{background:var(--stamp);color:#fff}.ds-stamp:focus-visible{outline:2px solid var(--action);outline-offset:2px}"
+    },
+    {
+      "name": "근거 첨부 장",
+      "kind": "custom",
+      "refersTo": "evidence-tray",
+      "description": "회색 트레이 위 흰 16:9 슬라이드, 번호 도장, 명판, 관련도 막대. 짚힌 칸만 주홍 테두리.",
+      "html": "<div class=\"ds-tray\"><div class=\"ds-tray-h\"><span class=\"ds-fn\">EVIDENCE</span><b>5</b><span class=\"ds-fn\">CITED</span><b>3</b></div><div class=\"ds-atts\"><button class=\"ds-att\" type=\"button\"><span class=\"ds-th\">슬라이드</span><span class=\"ds-cs\" style=\"--r:-3deg\">1</span><span class=\"ds-pt\"><span class=\"ds-no\">01</span>RDT6C.67 ET results</span><span class=\"ds-pm\">LOT-A041 · WF 4, 7</span><span class=\"ds-rel\"><span class=\"ds-trk\"><i style=\"width:71%\"></i></span><em>0.71</em></span></button><button class=\"ds-att ds-hot\" type=\"button\"><span class=\"ds-th\">슬라이드</span><span class=\"ds-cs\" style=\"--r:2deg\">3</span><span class=\"ds-pt\"><span class=\"ds-no\">03</span>M2 ASEI CD wafer map</span><span class=\"ds-pm\">LOT-A043 · WF 4, 7</span><span class=\"ds-rel\"><span class=\"ds-trk\"><i style=\"width:62%\"></i></span><em>0.62</em></span></button></div></div>",
+      "css": ".ds-fn{font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}.ds-tray{padding:12px 12px 14px;border-radius:12px;background:var(--tray);color:var(--ink);font-family:var(--font,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif);}.ds-tray-h{display:flex;align-items:baseline;gap:6px 10px;margin:0 2px 12px;font-size:12.5px;color:var(--ink-2)}.ds-tray-h b{margin-right:4px;font:700 12.5px var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);color:var(--ink)}.ds-atts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}.ds-att{position:relative;display:flex;flex-direction:column;gap:6px;min-width:0;padding:0;border:0;background:none;text-align:left;color:var(--ink);font:inherit;cursor:pointer}.ds-th{display:flex;align-items:center;justify-content:center;aspect-ratio:16/9;border-radius:6px;background:#fff;box-shadow:0 0 0 1px var(--line),0 2px 6px rgba(20,22,26,.08);font-size:11.5px;color:var(--ink-3);transition:box-shadow .15s}.ds-att:hover .ds-th,.ds-att.ds-hot .ds-th{box-shadow:0 0 0 2px var(--stamp),0 6px 16px rgba(20,22,26,.14)}.ds-att:focus-visible{outline:2px solid var(--action);outline-offset:4px}.ds-cs{position:absolute;top:-9px;right:-7px;display:grid;place-items:center;width:26px;height:26px;border:2px solid var(--stamp);border-radius:50%;background:#fff;color:var(--stamp-ink);font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);transform:rotate(var(--r,0deg));box-shadow:0 2px 6px rgba(20,22,26,.15)}.ds-att.ds-hot .ds-cs{background:var(--stamp);color:#fff}.ds-pt{font-size:12.5px;font-weight:700}.ds-no{margin-right:6px;font:700 11px var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);color:var(--ink-3)}.ds-pm{font:11.5px var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);color:var(--ink-3)}.ds-rel{display:flex;align-items:center;gap:8px}.ds-trk{flex:1;height:3px;border-radius:2px;background:var(--line)}.ds-trk i{display:block;height:100%;border-radius:2px;background:var(--ink-2)}.ds-rel em{font:normal 11px var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);color:var(--ink-3)}"
+    },
+    {
+      "name": "HOLD 띠",
+      "kind": "custom",
+      "refersTo": "hold-banner",
+      "description": "답을 받지 못한 STEP. 호박색은 여기에만.",
+      "html": "<div class=\"ds-hold\"><span class=\"ds-ht\">HOLD</span><span>답을 받지 못했습니다(TIMEOUT)</span><button class=\"ds-retry\" type=\"button\"><svg class=\"ds-ico\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M3 8a5 5 0 1 0 1.5-3.6\"/><path d=\"M3 2.5V5h2.5\"/></svg>다시 시도</button></div>",
+      "css": ".ds-ico{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.ds-hold{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:8px;background:var(--hold-soft);color:var(--hold-ink);font-family:var(--font,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif);font-size:13.5px}.ds-ht{display:inline-grid;place-items:center;height:22px;padding:0 8px;border-radius:4px;background:var(--hold);font:700 11px/1 var(--mono,Consolas,'D2Coding','SF Mono',Menlo,monospace);letter-spacing:.08em}.ds-retry{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--hold-ink);border-radius:6px;background:var(--sheet);color:var(--hold-ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}.ds-retry:focus-visible{outline:2px solid var(--action);outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "로트 진행표(런카드)",
+    "overview": "답은 채팅 말풍선이 아니라 공정 로트의 진행표처럼 STEP 번호로 쌓인다. 슬레이트 셸이 위 막대와 왼쪽 STEP 레일을 L자로 감싸고, 그 안쪽의 밝은 회벽색 작업면 위에 흰 진행 시트가 한 장씩 놓인다. 시트마다 맨 위에 칸을 나눈 진행표 줄(STEP | TIME | SCOPE | EVIDENCE)이 있고, 답의 문장에 찍힌 주홍 도장이 아래 회색 트레이의 흰 근거 슬라이드로 이어진다. 근거 슬라이드는 흰 바탕 16:9 캡처라서, 작업면은 그 흰 그림이 가장 밝은 물건이 되도록 한 단계 어둡게 깔린다.\n\n밀도는 사무실 데스크톱에서 오래 읽는 작업 화면의 밀도다. 본문은 한국어 시스템 고딕, STEP·Lot·WF·건수·점수 같은 값은 고정폭, 필드 이름은 고정폭 대문자다. 색은 셸의 청회색과 작업면의 무채색이 거의 전부이고, 색이 있는 세 가지(주홍, 모래색, 호박색)는 각각 한 가지 의미만 맡는다. 색이 보이면 그 의미가 있는 것이다.\n\n히어로(Casa Lunara 사진, \"Back End of Line / Ask the Slides\", 세리프와 스크립트 서체)는 사용 허락을 받은 비상업 데모용 고정 요소다. 셸의 슬레이트(#3A4048)는 히어로 벽의 청회색에서, 주홍은 히어로의 노을빛에서 왔다. 히어로 세리프는 대화 화면에서 브랜드 글자에만 쓴다. 확정된 거부: 카본 남색 셸, 갈색·검정에 노을 주황을 얹은 다크 테마, BEOL AX 인디고, 회색 말풍선 채팅 배치.",
+    "keyCharacteristics": [
+      "슬레이트 L자 셸(위 막대 60px + STEP 레일 248px)과 왼쪽 위 모서리만 둥근 회벽색 작업면.",
+      "940px 읽기 열 안에 흰 진행 시트가 STEP 순서로 쌓인다.",
+      "시트 맨 위 진행표 줄: 고정폭 대문자 필드 이름과 값.",
+      "주홍 원형 도장이 문장 끝에서 근거 번호를 찍고, 짚으면 그 슬라이드만 주홍 테두리로 응답한다.",
+      "근거 슬라이드는 회색 트레이 위 5칸 고정 그리드의 흰 첨부 장(명판, 관련도 막대).",
+      "시스템 폰트만, 외부 자원 없음."
+    ],
+    "rules": [
+      {
+        "name": "The One Meaning Rule",
+        "body": "주홍은 도장(출처 번호와 도장↔슬라이드 연결)에만, 모래색은 꼬리표(현재 STEP, 선택된 범위, 선택 수)에만, 호박색은 HOLD에만 쓴다. 빌드에서 모래색은 셸 위 포커스 링과 글자 선택 바탕에도 쓰이는데, 둘 다 셸 위 가독성을 위한 예외이고 새 용도를 늘리는 근거가 아니다.",
+        "section": "colors"
+      },
+      {
+        "name": "The White Is For Evidence Rule",
+        "body": "가장 밝은 흰색은 시트와 근거 슬라이드 몫이다. 작업면 바탕은 회벽색으로 두고, 흰색을 넓은 바탕으로 깔지 않는다.",
+        "section": "colors"
+      },
+      {
+        "name": "The Field Pair Rule",
+        "body": "고정폭 대문자 라벨은 진행표의 필드 이름이다. 반드시 바로 옆이나 같은 줄의 값(또는 그 필드가 담는 목록)과 짝을 이룬다. 제목 위에 홀로 얹는 장식 꼬리말로 쓰지 않는다.",
+        "section": "typography"
+      },
+      {
+        "name": "The Keep-All Rule",
+        "body": "한국어 질문·답·안내는 `word-break: keep-all`과 `overflow-wrap: anywhere`로 어절 단위로 끊는다.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tonal First Rule",
+        "body": "층을 나눌 때 먼저 바탕색 단계(셸 → 회벽 → 트레이 → 흰 시트)로 나눈다. 그림자는 그 위에 얹는 보조이고, 진한 그림자는 화면 위에 뜬 것에만 준다.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** 대화 화면의 바탕을 슬레이트 셸(#3A4048)과 회벽색 작업면(#EBEBE8)으로 두고, 흰색은 시트와 근거 슬라이드에 남긴다.",
+      "**Do** 주홍(#D2452B)은 도장에만, 모래색(#E6D6B8)은 꼬리표(현재 STEP·선택된 범위·선택 수)에만, 호박색(#EBA33A)은 HOLD에만 쓴다.",
+      "**Do** 새 답 화면에도 시트 맨 위 진행표 줄(STEP | TIME | SCOPE | EVIDENCE)을 둔다.",
+      "**Do** 값(STEP·Lot·WF·건수·점수·날짜)은 고정폭, 필드 이름은 고정폭 대문자 11px 700 0.08em으로 쓰고 값과 짝을 짓는다.",
+      "**Do** 시스템 폰트 스택만 쓴다. 로컬 폰트 파일은 저장소 `assets/`에 생긴 뒤 경로로 직접 연결한다.",
+      "**Do** 아이콘은 16px 인라인 SVG(stroke 1.7, currentColor, 둥근 끝)로 넣는다.",
+      "**Do** 근거 칸 위치를 고정하고, 관련도는 정확한 길이의 막대와 고정폭 점수로 보여 준다.",
+      "**Do** 움직임은 `prefers-reduced-motion: no-preference`일 때만 재생한다."
+    ],
+    "donts": [
+      "**Don't** 카본 남색 셸(#1F2B57)을 쓰지 않는다. 히어로와 어울리지 않아 사용자가 거절했다.",
+      "**Don't** 갈색·검정 바탕에 노을 주황을 얹은 다크 테마를 쓰지 않는다.",
+      "**Don't** BEOL AX 인디고를 이 화면에 가져오지 않는다. BEOL AX `design.md.md`는 다른 화면의 규칙이다.",
+      "**Don't** 회색 바탕에 말풍선만 이어지는 채팅 배치를 쓰지 않는다.",
+      "**Don't** CDN, 외부 웹 폰트, 외부 이미지·URL을 어떤 코드 조각에도 넣지 않는다.",
+      "**Don't** 주홍·모래색·호박색을 장식이나 강조색으로 돌려쓰지 않는다.",
+      "**Don't** 히어로 세리프와 스크립트 서체를 브랜드 글자 밖의 대화 화면 제목이나 본문에 쓰지 않는다.",
+      "**Don't** 고정폭 대문자 라벨을 값 없이 제목 위에 홀로 얹는 꼬리말로 쓰지 않는다."
+    ]
+  }
+}

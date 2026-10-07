@@ -318,6 +318,10 @@
       "timeout": 30,
       "width_px": 1280
     },
+    "rules_update": {
+      "max_change_ratio": 0.3,
+      "min_relabels": 10
+    },
     "supabase": {
       "batch_size": 100,
       "ca_file": null,

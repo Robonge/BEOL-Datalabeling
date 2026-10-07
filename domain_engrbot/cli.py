@@ -105,14 +105,21 @@ def _parser():
                     help="serve: '답변 완료 · 저장' 때 저장만 하고 반영하지 않는다(기본: 저장하자마자 반영하고 서버를 닫는다)")
     qs.add_argument("--answers", help="apply: 답 파일(기본: qa/inbox의 engr_answers_*.json 중 가장 최근 것)")
 
-    tb = sub.add_parser("taxonomy-board", help="taxonomy 수정 보드: 흩어진 taxonomy.xlsx 수정 제안을 한 화면에(LLM 0회)")
+    tb = sub.add_parser("taxonomy-board",
+                        help="taxonomy 수정 보드: 흩어진 수정 제안을 한 화면에 모으고, 고른 것만 taxonomy.json에 반영(LLM 0회)")
     tb.add_argument("--workspace", action="append", help="작업 폴더(여러 번 가능, 기본: workspaces/ 아래 전부)")
-    tb.add_argument("--taxonomy", help="taxonomy.xlsx 경로(기본: 저장소 taxonomy/taxonomy.xlsx, 읽기만 한다)")
+    tb.add_argument("--taxonomy", help="taxonomy.json 경로(기본: 저장소 taxonomy/taxonomy.json)")
     tb.add_argument("--out-dir", help="출력 폴더(기본: workspaces/_domain_engrbot/taxonomy_board)")
-    tb.add_argument("--open", action="store_true", help="Windows: 화면은 왼쪽 절반, taxonomy.xlsx는 오른쪽 절반에 띄운다")
+    tb.add_argument("--open", action="store_true", help="보드를 브라우저로 연다(--serve면 서버 주소)")
     tb.add_argument("--reset", action="store_true", help="지금 항목을 모두 초기화(화면에서 뺀다). 새로 올라오는 제안만 다시 보인다")
     tb.add_argument("--serve", action="store_true",
-                    help="보드 서버(127.0.0.1)로 연다. 화면의 '최종 완료'가 반영함·기각함을 확정하고 시트를 다시 읽는다")
+                    help="보드 서버(127.0.0.1)로 연다. 화면의 '최종 완료'가 변경 미리보기를 보여 주고 확인하면 taxonomy.json에 쓴다")
+
+    te = sub.add_parser("taxonomy-editor",
+                        help="taxonomy 편집기: taxonomy.json(taxonomy·questions·synonyms)을 보고 고친다(127.0.0.1, LLM 0회)")
+    te.add_argument("--taxonomy", help="taxonomy.json 경로(기본: 저장소 taxonomy/taxonomy.json)")
+    te.add_argument("--port", type=int, help="포트(기본 8796, 쓰고 있으면 빈 포트)")
+    te.add_argument("--open", action="store_true", help="브라우저로 편집기를 연다")
 
     c = sub.add_parser("codes", help="issue code 카탈로그를 .md로 낸다")
     c.add_argument("--out", help="출력 .md 경로(기본: domain_engrbot/docs/issue_codes.md)")
@@ -245,6 +252,10 @@ def main(argv=None):
             from domain_engrbot import taxonomy_board
 
             return taxonomy_board.main_cli(args, say)
+        if args.cmd == "taxonomy-editor":
+            from domain_engrbot import taxonomy_editor
+
+            return taxonomy_editor.main_cli(args, say)
         paths = io.QaPaths(args.workspace)
         if args.cmd in commands:
             return commands[args.cmd](args, paths)

@@ -15,7 +15,7 @@ from labelbot import cdp, export, llm, pipeline, review, slideimg, slidepush, st
 from labelbot.workspace import CODE_ROOT, Workspace
 
 DUMMY_DIR = os.path.join(CODE_ROOT, "dummy pptx files")
-TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.xlsx")
+TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json")
 
 
 def fake_jpeg(w=1280, h=720, salt=b""):

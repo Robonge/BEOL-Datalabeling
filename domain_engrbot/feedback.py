@@ -6,7 +6,7 @@
 - proposals: 승인된 규칙 제안. TERM은 고른 용도(새 값·동의어)에 맞춰 대상 시트 열 순서의 탭 구분 행을 만든다.
 - 기각한 제안은 rejected_proposals에 적고 qa/feedback_rejected.jsonl에 중복 없이 덧붙인다(다음 실행부터 올리지 않는다).
 - 보류, 판단 불가는 넣지 않는다. 파일명과 경로는 넣지 않는다. 같은 결정 파일이면 feedback.json이 같다.
-- 검수봇은 taxonomy.xlsx, prompts/, work.sqlite를 쓰지 않는다. 반영은 사람이 한다.
+- 검수봇은 taxonomy.json, prompts/, work.sqlite를 쓰지 않는다. taxonomy 반영은 사람이 taxonomy 보드에서 확정한다.
 """
 from domain_engrbot import golden, io, normalize, proposals, queue
 
@@ -226,7 +226,7 @@ def render_md(fb):
              "- 검수봇은 taxonomy 시트, labelbot 프롬프트, 작업 DB를 고치지 않는다. 아래 순서대로 사람이 반영한다.", ""]
     props = fb["proposals"]
 
-    lines += ["## 1. 시트별 붙여넣기 행", ""]
+    lines += ["## 1. 시트별 반영할 행(taxonomy 보드·편집기에서 taxonomy.json에 반영)", ""]
     any_row = False
     for sheet, cols in (("taxonomy", TAXONOMY_COLUMNS), ("synonyms", SYNONYM_COLUMNS)):
         rows = [p for p in props if p["kind"] == "TERM" and p.get("sheet") == sheet]

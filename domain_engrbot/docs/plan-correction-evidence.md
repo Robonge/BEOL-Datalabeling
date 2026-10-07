@@ -70,6 +70,20 @@
 - 보안 지적 반영: 결정 파일은 화면 digest와 같아야 반영(`DECISIONS_STALE`), 화면에 있던 ID만 결정 가능(`DECISIONS_ID_NOT_ON_SCREEN`),
   결정 파일 1MB 상한, `RecursionError` 처리, 규칙 문장의 `{{`·`}}`·제어 문자 거부, 스킬은 결정 파일을 고른 뒤 사용자에게 확인.
 
+### 3.7 대조 답 교정과 직접 입력 근거 (2026-10-07 추가)
+
+- labelbot 검수 화면에서 대조 질문(`Q-CTL-`) 답을 고칠 수 있다. corrections 행은 `target_kind='control'`, `target_key`=대조 질문 qid,
+  `human_value`·`bot_value`는 답 JSON 문자열("O"/"X"/"N/A"/"판단 불가")이다. 확정 라벨에는 영향이 없다(품질 신호).
+- 근거 `source`에 `typed`(검수자가 직접 입력한, 본문에 없는 근거)가 더해졌다. `chunk_id`·`slide_no`는 null이고, 장부 위치 종류도 `typed`다
+  (규칙 문장 "근거 위치"와 화면에는 "직접 입력"으로 보인다).
+- 장부(`ledger.py`): 대조 교정은 `cases.jsonl`에 field `control:<qid>` 사례로 남고, 대조 대상 (축, 값)은 adapter가 `ctl_questions`를
+  조인해 `ctl_axis`·`ctl_value`에 둔다. 근거·이유는 다른 교정처럼 `evidence.jsonl`에 간다. 골든·`records.jsonl`(final_axes)·judge 예시·
+  L4 후보·라벨링 규칙 패턴에는 넣지 않는다(대조 교정만 있는 레코드는 레코드 행을 만들지 않는다). `ctl_questions`에 없는 qid는
+  `SKIP_CONTROL_UNRESOLVED`로 센다.
+- 도메인 질문(`questions.py`, `prompts/engr_questions.md`): 대조 사례는 `cases`에 `control: {axis, value}`와 함께 근거 자료로 들어간다.
+  사람 O는 1차 분류 누락, 봇 O→사람 X는 과잉 판정 신호로 읽고 그 축·값의 정의·판정 기준을 묻는 근거로 쓴다.
+  질문 화면은 "대조 질문 · qid (축=값)"으로 보여 준다.
+
 ## 4. 작업 패키지
 
 | WP | 내용 | 소유 |

@@ -40,14 +40,14 @@ def _outcome(d, status, edits, changes):
 
 def _pushed(con, pop, labels, model):
     """확정 라벨(사람 교정 반영) 그대로 Supabase에 올라간 chunk 수. push-vectors와 같은 label_hash로 본다."""
-    from labelbot.vectorpush import load_doc_meta, push_label_hash
+    from labelbot.vectorpush import load_doc_meta, load_file_names, push_label_hash
 
-    doc_meta, n = load_doc_meta(con), 0
+    doc_meta, names, n = load_doc_meta(con), load_file_names(con), 0
     for c in pop:
         d, row = labels.get(c), con.execute("SELECT file_id, text_hash FROM chunks WHERE chunk_id=?", (c,)).fetchone()
         if not d or not d["chunk_type"] or not row:
             continue
-        lh = push_label_hash(d, doc_meta.get(row["file_id"]))
+        lh = push_label_hash(d, doc_meta.get(row["file_id"]), names.get(row["file_id"]))
         n += bool(con.execute("SELECT 1 FROM vector_push_log WHERE chunk_id=? AND model=? AND text_hash=? AND label_hash=?"
                               " AND result_code='OK'", (c, model, row["text_hash"], lh)).fetchone())
     return n

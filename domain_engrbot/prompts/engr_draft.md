@@ -17,8 +17,8 @@ user 메시지는 JSON 하나다.
 
 # 초안
 
-- 라벨링 규칙: `{"type": "rule", "stage": "classify|label", "target": "<축 이름 또는 빈칸>", "text": "<규칙 문장>", "pattern_ref": "<FR-… 또는 생략>"}`
-  - `stage`: 축 값 판단(1차 분류)은 classify, 승인 질문의 O/X 답 판단(3차 라벨링)은 label. `target`은 `axes` 안의 이름만 쓴다.
+- 라벨링 규칙: `{"type": "rule", "stage": "classify|label", "target": "<대상 범위>", "text": "<규칙 문장>", "pattern_ref": "<FR-… 또는 생략>"}`
+  - `stage`: 축 값 판단(1차 분류)은 classify, 승인 질문의 O/X 답 판단(3차 라벨링)은 label. `target`은 반드시 쓴다(비면 반영 때 거부된다): classify는 `axes` 안의 축 이름, label은 `축=값`(축은 `axes` 안의 이름) 또는 승인 질문 ID(`Q-…`).
   - `text`는 300자 이내의 일반 지침이다. "~이면 ~로 둔다"처럼 조건과 행동을 쓰고, 파일명·사람 이름·문서 번호를 넣지 않는다.
     `{{`·`}}`를 쓰지 않는다.
   - 답이 `question.patterns`의 패턴을 다듬은 것이면 `pattern_ref`에 그 ID를 넣는다.

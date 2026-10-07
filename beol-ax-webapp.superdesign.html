@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<!-- redesign: layout direction from Superdesign draft "BEOL AX Keynote Layout" (236b0615-1dac-4f54-87f9-9a7cc19328f6), applied locally to the working app · design system: BEOL AX design.md.md · single-file · no external CDN -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BEOL AX — 온톨로지 기반 지식망 (Keynote Layout)</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4; --primary-mid:#4A6BAF;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --surface:#FFFFFF;
+  --dot:#A8BDD4; --line:#7A9CC0;
+  --text-strong:#1E2D4A; --text-muted:#9DAABF; --text-footer:#B0BCCC;
+  --danger:#C25450; --warning:#C99A3B; --success:#3B8A6E; --info:#4A6BAF;
+  --radius-sm:8px; --radius-md:12px;
+  --ease-elastic:cubic-bezier(0.34,1.56,0.64,1);
+  --grad-main:linear-gradient(148deg,#4A5FA8 0%,#354690 100%);
+  --grad-soft:linear-gradient(148deg,#6B82C4 0%,#4A6BAF 100%);
+  --mono:'JetBrains Mono','Fira Code','Cascadia Mono',Consolas,'SF Mono',Menlo,monospace;
+  --text-body:rgba(30,45,74,.72);
+  --g-l1:#A8BDD4; --g-l2:#7A9CC0; --g-l3:#4A5FA8; --g-l4:#354690;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg-base)}
+body{
+  font-family:'Apple SD Gothic Neo','Pretendard','Noto Sans KR','Inter',sans-serif;
+  color:var(--text-strong); letter-spacing:-0.02em; -webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--bg-grid) 0.4px,transparent 0.4px),linear-gradient(90deg,var(--bg-grid) 0.4px,transparent 0.4px);
+  background-size:48px 48px; position:relative; min-height:100vh;
+}
+#fx{position:fixed;inset:0;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:1360px;margin:0 auto;padding:56px 40px 96px}
+h1{font-size:34px;font-weight:700;letter-spacing:-0.055em;margin:6px 0 8px}
+.lede{font-size:15px;color:var(--text-muted);letter-spacing:-0.02em;max-width:760px;line-height:1.6}
+.mono{font-family:var(--mono);letter-spacing:-0.02em}
+
+
+.fig{margin-bottom:26px;border-radius:var(--radius-md);scroll-margin-top:24px}
+.fighead{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:18px;flex-wrap:wrap}
+.fighead h2{font-size:20px;font-weight:700;letter-spacing:-0.048em}
+.fighead p{font-size:13px;color:var(--text-muted);margin-top:4px;letter-spacing:-0.02em}
+.tag{font-family:var(--mono);font-size:10px;color:var(--primary);background:rgba(107,130,196,.14);
+  border-radius:6px;padding:3px 9px;letter-spacing:-0.02em;white-space:nowrap}
+.board{background:rgba(255,255,255,.42);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:26px}
+
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border-radius:999px;
+  padding:4px 11px;font-size:10px;font-weight:700;letter-spacing:-0.02em;border:1px solid;white-space:nowrap}
+.badge i{width:6px;height:6px;border-radius:50%;display:block;background:currentColor}
+.b-danger{color:var(--danger);border-color:var(--danger)}
+.b-warn{color:var(--warning);border-color:var(--warning)}
+.b-ok{color:var(--success);border-color:var(--success)}
+.b-info{color:var(--primary);border-color:var(--primary)}
+.b-muted{color:var(--text-muted);border-color:var(--bg-grid)}
+.node{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-sm);
+  padding:10px 14px;box-shadow:0 2px 8px rgba(53,70,144,.06);transition:all .28s var(--ease-elastic);
+  font-size:13px;letter-spacing:-0.02em;display:inline-flex;align-items:center;gap:8px}
+.node:hover,.node.active{transform:translateY(-4px) scale(1.02);border-color:var(--primary);
+  box-shadow:0 8px 20px rgba(53,70,144,.16)}
+.node .sdot{width:8px;height:8px;border-radius:50%;flex:none}
+.pill{display:inline-block;height:20px;line-height:18px;padding:0 8px;border-radius:10px;background:var(--bg-base);
+  border:.8px solid var(--bg-grid);font-size:10px;letter-spacing:-0.02em;color:var(--text-strong);white-space:nowrap}
+.btn{background:var(--grad-main);color:#fff;border:0;border-radius:999px;padding:8px 16px;font:inherit;font-size:11px;
+  font-weight:700;letter-spacing:-0.02em;cursor:pointer;transition:all .28s var(--ease-elastic)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(53,70,144,.26)}
+.btn.ghost{background:var(--surface);color:var(--primary);border:1px solid var(--bg-grid)}
+.sectionlabel{font-size:11px;font-weight:700;letter-spacing:-0.02em;color:var(--text-muted);text-transform:uppercase;margin:0 0 14px}
+
+/* FIG 0 (intro) */
+.hook{text-align:center;padding:6px 0 22px}
+.hook-q{font-size:30px;font-weight:700;letter-spacing:-0.055em;min-height:44px;line-height:1.3}
+.hook-a{font-size:15px;color:var(--text-muted);min-height:24px;margin-top:8px;letter-spacing:-0.02em}
+.caret{display:inline-block;width:2px;height:1em;background:var(--primary);vertical-align:-0.12em;margin-left:2px;animation:caret .9s steps(1) infinite}
+@keyframes caret{50%{opacity:0}}
+.f0-split{opacity:0}
+.f0-split.in{animation:riseIn .5s var(--ease-elastic) both}
+@keyframes riseIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.chatwin{height:302px;margin:12px 0 10px;padding:14px;display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.5);
+  border:1px solid var(--bg-grid);border-radius:var(--radius-sm);overflow:hidden}
+.bub{max-width:84%;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.55;letter-spacing:-0.02em;opacity:0}
+.bub.in{animation:riseIn .35s var(--ease-elastic) both}
+.bub .who{display:block;font-family:var(--mono);font-size:9px;opacity:.7;margin-bottom:3px;letter-spacing:-0.02em}
+.bub.user{align-self:flex-end;background:var(--grad-main);color:#fff;border-bottom-right-radius:4px}
+.bub.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--bg-grid);border-bottom-left-radius:4px}
+.bub.typing{padding:10px 14px}
+.bub.typing.gone{display:none}
+.bub.end{align-self:center;background:transparent;border:1px dashed var(--bg-grid);color:var(--text-muted);font-family:var(--mono);font-size:10px;
+  border-radius:999px;padding:4px 12px;margin-top:auto}
+.loopfit{margin:12px 0 10px;overflow:hidden}
+.loop{position:relative;width:520px;height:300px;transform-origin:top left}
+.loop svg{position:absolute;inset:0;overflow:visible}
+.arc{fill:none;stroke:var(--line);stroke-width:1.5;opacity:.45;transition:stroke .3s,opacity .3s}
+.arc.on{stroke:var(--primary);stroke-width:2;opacity:1;stroke-dasharray:4 8;animation:flow 1.4s linear infinite}
+.lnode{position:absolute;transform:translate(-50%,-50%);background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-sm);
+  padding:7px 12px 8px;text-align:center;box-shadow:0 2px 8px rgba(53,70,144,.06);opacity:.35;white-space:nowrap;
+  transition:opacity .3s,border-color .3s,box-shadow .3s}
+.lnode.on{opacity:1;border-color:var(--primary);box-shadow:0 8px 20px rgba(53,70,144,.16)}
+.lnode i{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--grad-main);color:#fff;font-style:normal;
+  font-family:var(--mono);font-size:9px;font-weight:700;margin-right:6px;vertical-align:1px}
+.lnode b{font-size:12.5px;letter-spacing:-0.048em}
+.lnode span{display:block;font-family:var(--mono);font-size:9.5px;color:var(--text-muted);margin-top:3px;letter-spacing:-0.02em}
+.core{position:absolute;left:260px;top:150px;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;background:var(--grad-main);color:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;box-shadow:0 12px 28px -6px rgba(53,70,144,.4)}
+.core b{font-size:12px;letter-spacing:-0.048em}
+.core span{font-size:8.5px;opacity:.85;line-height:1.35;margin-top:3px;letter-spacing:-0.02em}
+.core.pulse{animation:corepulse 2.4s ease-in-out infinite}
+@keyframes corepulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.05)}}
+.fn{margin-top:16px;padding-top:12px;border-top:1px dashed var(--bg-grid);font-size:10.5px;color:var(--text-muted);line-height:1.65;letter-spacing:-0.015em;
+  opacity:0}
+.fn.in{animation:riseIn .5s ease both}
+.fn b{color:var(--text-strong);font-weight:700}
+.f0ctl{display:flex;justify-content:flex-end;margin-top:12px}
+
+/* FIG 1 */
+.f1-query{display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--primary-soft);
+  border-radius:999px;padding:6px 8px;box-shadow:0 2px 8px rgba(53,70,144,.06);width:max-content;margin:0 auto 26px}
+.f1-query .q{width:30px;height:30px;border-radius:50%;background:var(--grad-main);color:#fff;display:grid;place-items:center;
+  font-family:var(--mono);font-size:12px;font-weight:700}
+.f1-query input{border:0;outline:0;background:transparent;font:inherit;font-size:14px;letter-spacing:-0.02em;
+  color:var(--text-strong);width:290px}
+.f1-split{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:stretch}
+.pane{border-radius:var(--radius-md);padding:18px;position:relative;display:flex;flex-direction:column}
+.pane-l{background:rgba(200,212,228,.22);border:1px dashed var(--bg-grid)}
+.pane-r{background:rgba(107,130,196,.07);border:1px solid rgba(74,95,168,.35)}
+.phead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.phead h3{font-size:15px;font-weight:700;letter-spacing:-0.048em}
+.phead .ph-sub{font-size:10.5px;color:var(--text-muted)}
+.stage{position:relative;height:302px;margin:12px 0 10px}
+.chunks{position:absolute;inset:0}
+.chunk{position:absolute;width:266px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-sm);
+  padding:10px 12px;box-shadow:0 2px 8px rgba(53,70,144,.06);transition:all .3s var(--ease-elastic);opacity:0}
+.chunk.in{opacity:1}
+.chunk:hover{transform:translateY(-4px) rotate(0deg)!important;box-shadow:0 8px 20px rgba(53,70,144,.16);z-index:2}
+.chunk .m{font-family:var(--mono);font-size:10px;color:var(--text-muted)}
+.chunk .t{font-size:12.5px;line-height:1.5;margin:5px 0}
+.chunk .s{font-family:var(--mono);font-size:9.5px;color:var(--text-footer)}
+.cut{position:absolute;color:var(--danger);font-size:15px;font-weight:700;opacity:0;transition:opacity .3s}
+.cut.in{opacity:1}
+.brk{position:absolute;border-top:1.5px dashed var(--dot);width:44px;opacity:0;transition:opacity .3s}
+.brk.in{opacity:1}
+.f1leg{position:absolute;left:8px;bottom:7px;display:flex;gap:9px;flex-wrap:wrap;pointer-events:none;max-width:94%;
+  background:rgba(237,241,247,.94);border:1px solid rgba(200,212,228,.8);border-radius:999px;padding:4px 11px}
+.f1leg span{display:inline-flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);letter-spacing:-0.02em}
+.f1leg i{width:6px;height:6px;border-radius:50%;flex:none}
+.stagefoot{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.snote{font-size:10.5px;color:var(--text-muted);letter-spacing:-0.015em}
+.flowrow{display:flex;align-items:center;gap:8px;margin-top:11px}
+.fa{flex:none;width:18px;text-align:center;font-size:14px;color:var(--primary);line-height:1}
+.inject{flex:1;display:flex;align-items:center;gap:8px;background:transparent;border:1px dashed var(--bg-grid);border-radius:999px;
+  padding:5px 12px;font-size:11px;letter-spacing:-0.02em;color:var(--text-muted);transition:all .3s var(--ease-elastic)}
+.inject.on{border-style:solid;border-color:var(--primary);color:var(--text-strong);background:var(--surface);box-shadow:0 2px 8px rgba(53,70,144,.08)}
+.inject .st{font-family:var(--mono);font-size:9px;color:var(--primary);border:1px solid rgba(74,95,168,.3);border-radius:5px;padding:1px 5px;flex:none}
+.llmcard{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-sm);
+  padding:9px 12px;margin-top:8px;box-shadow:0 2px 8px rgba(53,70,144,.06);transition:all .3s var(--ease-elastic)}
+.llmcard.think{border-color:var(--primary);box-shadow:0 8px 20px rgba(53,70,144,.16);transform:translateY(-2px)}
+.llmico{width:32px;height:32px;border-radius:9px;background:var(--grad-main);color:#fff;display:grid;place-items:center;
+  font-family:var(--mono);font-size:9px;font-weight:700;flex:none}
+.llmt{font-size:12px;font-weight:700;letter-spacing:-0.048em}
+.llms{font-size:10px;color:var(--text-muted);margin-top:2px;display:flex;align-items:center;gap:6px;font-family:var(--mono);letter-spacing:-0.02em}
+.dots{display:inline-flex;gap:3px}
+.dots i{width:3.5px;height:3.5px;border-radius:50%;background:var(--primary);animation:blink 1.1s infinite}
+.dots i:nth-child(2){animation-delay:.18s}.dots i:nth-child(3){animation-delay:.36s}
+@keyframes blink{0%,60%,100%{opacity:.22}30%{opacity:1}}
+.answer{margin-top:8px;border-radius:var(--radius-sm);border:1px solid var(--bg-grid);background:var(--surface);
+  padding:14px;box-shadow:0 2px 8px rgba(53,70,144,.06);display:none}
+.answer.on{display:block;animation:ansIn .42s var(--ease-elastic) both}
+@keyframes ansIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.answer.ok{border-color:rgba(59,138,110,.45)}
+.answer.bad{border-color:rgba(194,84,80,.4)}
+.atitle{font-size:9.5px;font-weight:700;letter-spacing:-0.02em;color:var(--text-muted);text-transform:uppercase;margin-bottom:7px}
+.answer p{font-size:12.5px;line-height:1.62;letter-spacing:-0.02em}
+.answer p em{font-style:normal;font-weight:700;color:var(--primary)}
+.flaws{margin-top:9px;display:flex;flex-direction:column;gap:4px}
+.flaws span{font-size:10.5px;color:var(--danger);letter-spacing:-0.015em;display:flex;gap:6px;align-items:flex-start;line-height:1.45}
+.flaws span::before{content:'✕';font-size:9px;margin-top:2px;flex:none}
+.apath{margin-top:9px;font-size:9.5px;color:var(--text-muted);font-family:var(--mono);line-height:1.75;letter-spacing:-0.02em}
+.apath b{color:var(--primary);font-weight:400}
+.ev{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.ev span{font-family:var(--mono);font-size:9px;border-radius:999px;padding:3px 8px;border:1px solid rgba(59,138,110,.5);color:var(--success);
+  display:inline-flex;align-items:center;gap:5px}
+.ev span i{width:5px;height:5px;border-radius:50%;background:currentColor;display:block}
+
+/* GRAPH VIEW (shared by Fig 2 / Fig 3) */
+.gv-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.legend{display:flex;gap:8px;flex-wrap:wrap}
+.lg{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:999px;
+  padding:5px 12px 5px 8px;font-size:11.5px;letter-spacing:-0.02em;cursor:pointer;transition:all .28s var(--ease-elastic);color:var(--text-strong)}
+.lg:hover{transform:translateY(-2px);border-color:var(--primary);box-shadow:0 6px 16px rgba(53,70,144,.14)}
+.lg.on{border-color:var(--primary);background:rgba(107,130,196,.12)}
+.lg.off{opacity:.4}
+.lg i{width:10px;height:10px;border-radius:50%;display:block;box-shadow:0 0 0 2px var(--bg-base)}
+.lg b{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--text-muted)}
+.gv-stat{font-family:var(--mono);font-size:10.5px;color:var(--text-muted);margin-left:auto;white-space:nowrap}
+.gv-search{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:999px;padding:5px 12px}
+.gv-search input{border:0;outline:0;background:transparent;font:inherit;font-size:12px;letter-spacing:-0.02em;width:150px;color:var(--text-strong)}
+.gv-search input::placeholder{color:var(--text-muted)}
+.gv-wrap{position:relative;border-radius:var(--radius-md);border:1px solid var(--bg-grid);background:rgba(237,241,247,.7);overflow:hidden}
+.gv-wrap canvas{display:block;width:100%;height:100%;cursor:grab}
+.gv-wrap canvas.dragging{cursor:grabbing}
+.gv-wrap canvas.pointer{cursor:pointer}
+.gv-hint{position:absolute;left:14px;bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text-muted);pointer-events:none;letter-spacing:-0.02em}
+.gv-reset{position:absolute;right:12px;top:12px}
+.gv-tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--bg-grid);border-radius:8px;padding:8px 11px;
+  box-shadow:0 8px 20px rgba(53,70,144,.16);font-size:12px;letter-spacing:-0.02em;opacity:0;transition:opacity .2s;max-width:260px;z-index:2}
+.gv-tip.on{opacity:1}
+.gv-tip .k{font-family:var(--mono);font-size:10px;color:var(--text-muted);display:block;margin-bottom:3px}
+.gv-tip .rel{font-size:10.5px;color:var(--text-muted);margin-top:6px;line-height:1.5}
+.gv-tip .rel em{font-style:normal;font-family:var(--mono);color:var(--primary)}
+
+/* FIG 3 layout */
+.f3-grid{display:grid;grid-template-columns:1fr 292px;gap:18px;align-items:stretch}
+.f3-side{display:flex;flex-direction:column;gap:12px}
+.f3-toggle{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:12px;padding:4px;box-shadow:0 2px 8px rgba(53,70,144,.06)}
+.f3-toggle button{border:0;background:transparent;border-radius:9px;padding:9px 12px;font:inherit;font-size:11.5px;text-align:left;
+  font-weight:700;letter-spacing:-0.02em;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:9px;
+  transition:all .28s var(--ease-elastic)}
+.f3-toggle button.on{background:var(--grad-main);color:#fff}
+.f3-toggle i{width:7px;height:7px;border-radius:50%;display:block;flex:none}
+.ministep{background:var(--surface);border:1px solid var(--bg-grid);border-radius:12px;padding:12px 12px 10px;box-shadow:0 2px 8px rgba(53,70,144,.06);flex:1}
+.ministep h5{font-size:10.5px;font-weight:700;color:var(--text-muted);letter-spacing:-0.02em;text-transform:uppercase;margin-bottom:8px}
+.ms{display:flex;gap:10px;padding:8px 6px;border-radius:8px;cursor:pointer;opacity:.35;transition:all .3s var(--ease-elastic);position:relative}
+.ms.on{opacity:1}
+.ms.cur{background:rgba(107,130,196,.12)}
+.ms:hover{opacity:1;transform:translateX(2px)}
+.ms .no{width:22px;height:22px;border-radius:50%;background:var(--grad-main);color:#fff;display:grid;place-items:center;
+  font-family:var(--mono);font-size:10px;font-weight:700;flex:none;margin-top:1px}
+.ms .t{font-size:12px;font-weight:700;letter-spacing:-0.048em}
+.ms .d{font-size:10.5px;color:var(--text-muted);margin-top:2px;line-height:1.45;letter-spacing:-0.015em}
+.ms + .ms::before{content:'';position:absolute;left:16px;top:-8px;height:8px;border-left:1.2px dashed var(--line)}
+.guide{margin-top:18px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-md);
+  padding:18px 20px;box-shadow:0 2px 8px rgba(53,70,144,.06);display:none}
+.guide.open{display:block;animation:ansIn .34s var(--ease-elastic) both}
+.guide h4{font-size:14px;font-weight:700;letter-spacing:-0.048em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.guide ul{margin:12px 0 0 0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:8px 20px}
+.guide li{font-size:12.5px;letter-spacing:-0.02em;color:var(--text-strong);display:flex;gap:8px;line-height:1.5}
+.guide li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--primary);flex:none;margin-top:7px}
+
+/* FIG 4 */
+.pipe{position:relative;display:grid;grid-template-columns:minmax(300px,0.9fr) 150px minmax(360px,1.3fr);gap:0;align-items:center}
+.pipe svg.wires{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0}
+.lanes{display:flex;flex-direction:column;gap:12px;position:relative;z-index:1}
+.lane{background:rgba(255,255,255,.55);border:1px solid var(--bg-grid);border-radius:12px;padding:12px 14px}
+.lane .lh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.lane .lt{font-size:12px;font-weight:700;letter-spacing:-0.048em}
+.lane .lm{font-family:var(--mono);font-size:9.5px;color:var(--text-muted)}
+.srcs{display:flex;flex-direction:column;gap:6px}
+.src{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:8px;padding:7px 10px;
+  font-size:12px;letter-spacing:-0.02em;cursor:default;transition:all .28s var(--ease-elastic);position:relative}
+.src:hover,.src.hi{transform:translateX(3px);border-color:var(--primary);box-shadow:0 6px 16px rgba(53,70,144,.14)}
+.src svg{flex:none}
+.src .nm{flex:1}
+.src .st{font-family:var(--mono);font-size:9px;font-weight:700;border-radius:999px;padding:2px 7px;border:1px solid;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.src .st i{width:5px;height:5px;border-radius:50%;background:currentColor;display:block}
+.st-done{color:var(--success);border-color:var(--success)}
+.st-beta{color:var(--success);border-color:var(--success);border-style:dashed}
+.st-prog{color:var(--warning);border-color:var(--warning)}
+.st-plan{color:var(--text-muted);border-color:var(--bg-grid)}
+.hubcol{display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+.hub{width:118px;height:118px;border-radius:50%;background:var(--grad-main);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:0 12px 28px -6px rgba(53,70,144,.4);text-align:center;transition:all .28s var(--ease-elastic);position:relative}
+.hub.pulse{transform:scale(1.06)}
+.hub .n{font-family:var(--mono);font-size:9px;opacity:.75}
+.hub .t{font-size:14px;font-weight:700;letter-spacing:-0.048em;margin-top:2px}
+.hub .d{font-size:9.5px;opacity:.8;margin-top:4px;padding:0 10px;line-height:1.35;min-height:26px}
+.hub::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:1px dashed rgba(74,95,168,.4);animation:spin 24s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.steps{display:flex;align-items:stretch;position:relative;z-index:1}
+.fstep{flex:1;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:14px 14px;
+  box-shadow:0 2px 8px rgba(53,70,144,.06);transition:all .28s var(--ease-elastic);min-width:0}
+.fstep:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 8px 20px rgba(53,70,144,.16)}
+.fstep .n{font-family:var(--mono);font-size:10px;color:var(--primary)}
+.fstep .t{font-size:13.5px;font-weight:700;letter-spacing:-0.048em;margin-top:5px}
+.fstep .d{font-size:10.5px;color:var(--text-muted);margin-top:6px;letter-spacing:-0.015em;line-height:1.5}
+.arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;gap:5px;width:96px;flex:none}
+.arrow .cap{background:var(--bg-base);border:.8px solid var(--bg-grid);border-radius:10px;padding:2px 7px;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:-0.02em;white-space:nowrap}
+.arrow svg{overflow:visible}
+.wire{fill:none;stroke:var(--line);stroke-width:1.2;stroke-linecap:round;opacity:.55;transition:all .3s}
+.wire.hi{stroke:var(--primary);stroke-width:2;opacity:1}
+.wire.flow{stroke-dasharray:3 9;animation:flow 1.6s linear infinite;opacity:.9}
+@keyframes flow{to{stroke-dashoffset:-24}}
+.stlegend{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0}
+.mile{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:14px}
+.mcard{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:20px;
+  box-shadow:0 2px 8px rgba(53,70,144,.06);transition:all .28s var(--ease-elastic)}
+.mcard:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(53,70,144,.16);border-color:var(--primary)}
+.mcard .no{font-family:var(--mono);font-size:10px;color:var(--text-muted)}
+.mcard h4{font-size:14px;font-weight:700;letter-spacing:-0.048em;margin:6px 0 10px;line-height:1.4}
+.gauge{height:6px;border-radius:999px;background:var(--bg-base);overflow:hidden;margin:14px 0 8px}
+.gauge span{display:block;height:100%;border-radius:999px;background:var(--grad-main);width:0;transition:width 1.1s var(--ease-elastic)}
+.mcard .mm{font-family:var(--mono);font-size:10px;color:var(--text-muted)}
+.mcard .srcref{font-size:10.5px;color:var(--text-muted);margin-top:8px;letter-spacing:-0.015em}
+.mcard .srcref b{color:var(--primary);font-weight:700}
+footer{margin-top:56px;font-size:11px;color:var(--text-footer);letter-spacing:-0.015em;text-align:center}
+@media(max-width:1100px){.f1-split{grid-template-columns:1fr}.mile{grid-template-columns:1fr}.f3-grid{grid-template-columns:1fr}
+ .pipe{grid-template-columns:1fr}.pipe svg.wires{display:none}.hubcol{padding:16px 0}.steps{flex-wrap:wrap}.arrow{width:100%;flex-direction:row;padding:8px 0}
+ .guide ul{grid-template-columns:1fr}}
+@media(max-width:640px){.wrap{padding:32px 16px 64px}.f1-query input{width:170px}}
+
+/* ================= APP SHELL ================= */
+html{scroll-behavior:smooth}
+body{word-break:keep-all;overflow-wrap:break-word}
+.wrap{padding-top:104px}
+.appnav{position:fixed;left:0;right:0;top:0;z-index:20;height:56px;display:flex;align-items:center;gap:22px;padding:0 40px;
+  background:rgba(237,241,247,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--bg-grid)}
+.appnav .brand{font-size:14px;font-weight:700;letter-spacing:-0.055em;color:var(--text-strong);text-decoration:none;display:flex;align-items:center;gap:9px;white-space:nowrap}
+.appnav .brand i{width:18px;height:18px;border-radius:6px;background:var(--grad-main);display:block;box-shadow:0 4px 10px rgba(53,70,144,.28)}
+.appnav .brand span{font-weight:400;color:var(--text-muted);font-size:11px;letter-spacing:-0.02em}
+.navlinks{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;text-decoration:none;font-size:12px;letter-spacing:-0.02em;
+  color:var(--text-body);white-space:nowrap;border:1px solid transparent;transition:all .28s var(--ease-elastic)}
+.navlinks a b{font-family:var(--mono);font-size:9.5px;font-weight:400;color:var(--primary)}
+.navlinks a:hover{color:var(--text-strong);transform:translateY(-2px);border-color:var(--bg-grid);background:var(--surface)}
+.navlinks a.on{color:#fff;background:var(--grad-main);font-weight:700;box-shadow:0 6px 16px rgba(53,70,144,.22)}
+.navlinks a.on b{color:rgba(255,255,255,.75)}
+.navprog{position:absolute;left:0;bottom:-1px;height:2px;width:0;background:var(--grad-main);transition:width .12s linear}
+.keyhint{font-family:var(--mono);font-size:9.5px;color:var(--text-body);white-space:nowrap}
+
+.chap{padding:64px 0 28px;scroll-margin-top:64px}
+.chap:first-of-type{padding-top:8px}
+.chap-head{max-width:820px;margin-bottom:34px}
+.chap-no{font-family:var(--mono);font-size:11px;color:var(--primary);letter-spacing:-0.02em;display:flex;align-items:center;gap:10px}
+.chap-no::after{content:'';flex:none;width:44px;border-top:1.2px solid var(--line)}
+.chap-head h2{font-size:32px;font-weight:700;letter-spacing:-0.055em;line-height:1.28;margin:12px 0 12px}
+.chap-head p{font-size:15px;line-height:1.7;color:var(--text-body);letter-spacing:-0.02em}
+.chap-head p b{color:var(--text-strong);font-weight:700}
+.sub-h{font-size:19px;font-weight:700;letter-spacing:-0.048em;margin:44px 0 6px}
+.sub-p{font-size:13.5px;line-height:1.7;color:var(--text-body);max-width:820px;margin-bottom:18px}
+.sub-p b{color:var(--text-strong);font-weight:700}
+.rv{opacity:0;transform:translateY(18px);transition:opacity .32s ease,transform .32s var(--ease-elastic)}
+.rv.in{opacity:1;transform:none}
+.fig{margin-top:30px;scroll-margin-top:72px}
+.f1-split>*,.f3-grid>*,.pipe>*,.two>*,.hitl>*,.hero>*,.steps>*{min-width:0}
+#s0 .chap-head{margin-bottom:6px}
+#f0{margin-top:18px}
+#f0 .fighead{display:none}
+
+/* HERO */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding:30px 0 10px}
+.hero h1{font-size:50px;line-height:1.16;letter-spacing:-0.055em;margin:14px 0 18px}
+.hero h1 em{font-style:normal;background:var(--grad-main);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .lede{font-size:16px;max-width:560px;color:var(--text-body)}
+.hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.hero-cta .btn{font-size:12.5px;padding:11px 20px;text-decoration:none;display:inline-block}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:34px}
+.hstat{background:rgba(255,255,255,.55);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:14px 14px 12px;transition:all .28s var(--ease-elastic)}
+.hstat:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 8px 20px rgba(53,70,144,.14)}
+.hstat b{display:block;font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-0.04em;color:var(--primary-deep)}
+.hstat span{font-size:11px;color:var(--text-body);letter-spacing:-0.02em}
+.shift{background:rgba(255,255,255,.42);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:22px;position:relative}
+.shift-row{display:grid;grid-template-columns:1fr 34px 1fr;gap:10px;align-items:stretch}
+.shift-col{border-radius:var(--radius-sm);padding:14px;min-height:250px;position:relative}
+.shift-col.from{background:rgba(200,212,228,.22);border:1px dashed var(--bg-grid)}
+.shift-col.to{background:rgba(107,130,196,.07);border:1px solid rgba(74,95,168,.35)}
+.shift-col h3{font-size:12px;font-weight:700;letter-spacing:-0.048em;margin-bottom:3px}
+.shift-col small{font-family:var(--mono);font-size:9.5px;color:var(--text-muted);display:block;margin-bottom:12px}
+.shift-arrow{display:grid;place-items:center;color:var(--primary);font-size:18px}
+.frag{background:var(--surface);border:1px solid var(--bg-grid);border-radius:6px;padding:6px 9px;font-size:10.5px;line-height:1.45;color:var(--text-body);
+  margin-bottom:8px;box-shadow:0 2px 8px rgba(53,70,144,.06);transition:all .28s var(--ease-elastic)}
+.frag:nth-child(odd){transform:rotate(-1.6deg)}.frag:nth-child(even){transform:rotate(1.4deg);margin-left:10px}
+.frag:hover{transform:translateY(-3px) rotate(0)}
+.frag mark{background:rgba(194,84,80,.14);color:var(--danger);padding:0 2px;border-radius:3px}
+.mini-chain{display:flex;flex-direction:column;align-items:flex-start;gap:0}
+.mini-chain .node{font-size:11.5px;padding:6px 10px}
+.mini-chain .lk{display:flex;align-items:center;gap:6px;margin:2px 0 2px 14px;height:15px;border-left:1.5px solid var(--line);padding-left:10px}
+.mini-chain .lk .pill{font-size:9px;height:16px;line-height:14px;color:var(--primary)}
+
+/* LIMIT CARDS */
+.limits{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.lim{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:20px;box-shadow:0 2px 8px rgba(53,70,144,.06);
+  transition:all .28s var(--ease-elastic);display:flex;flex-direction:column;gap:10px}
+.lim:hover{transform:translateY(-5px);border-color:var(--primary);box-shadow:0 12px 26px rgba(53,70,144,.16)}
+.lim .n{font-family:var(--mono);font-size:10px;color:var(--primary)}
+.lim h3{font-size:15px;font-weight:700;letter-spacing:-0.048em;line-height:1.35}
+.lim p{font-size:12.5px;line-height:1.65;color:var(--text-body)}
+.lim .q{font-size:11px;line-height:1.55;border-left:2px solid var(--bg-grid);padding-left:9px;color:var(--text-body);margin-top:auto}
+.lim.key{background:var(--grad-main);border-color:transparent;color:#fff;box-shadow:0 12px 28px -6px rgba(53,70,144,.4)}
+.lim.key .n,.lim.key p{color:rgba(255,255,255,.82)}
+.lim.key .q{border-color:rgba(255,255,255,.4);color:rgba(255,255,255,.92)}
+.lim.key .flag{align-self:flex-start;font-family:var(--mono);font-size:9px;border:1px solid rgba(255,255,255,.55);border-radius:999px;padding:2px 8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.panel{background:rgba(255,255,255,.55);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:20px}
+.panel h3{font-size:14px;font-weight:700;letter-spacing:-0.048em;margin-bottom:8px}
+.panel p{font-size:12.5px;line-height:1.7;color:var(--text-body)}
+.quotes{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.quotes span{font-size:11.5px;line-height:1.6;color:var(--text-body);border-left:2px solid var(--bg-grid);padding-left:10px}
+.quotes span mark{background:rgba(194,84,80,.14);color:var(--danger);padding:0 2px;border-radius:3px}
+.quotes small{font-family:var(--mono);font-size:9.5px;color:var(--text-muted)}
+.causes{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.cause{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cause .node{font-size:11.5px;padding:6px 10px}
+.cause .ar{color:var(--line);font-size:12px}
+
+/* TRIPLE EXPLORER */
+.tabs{display:inline-flex;gap:4px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:999px;padding:4px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(53,70,144,.06)}
+.tabs button{border:0;background:transparent;border-radius:999px;padding:7px 14px;font:inherit;font-size:11.5px;font-weight:700;letter-spacing:-0.02em;
+  color:var(--text-body);cursor:pointer;transition:all .28s var(--ease-elastic)}
+.tabs button:hover{color:var(--text-strong)}
+.tabs button.on{background:var(--grad-main);color:#fff}
+.chain{display:flex;align-items:center;flex-wrap:wrap;gap:8px 4px;margin-top:22px;min-height:96px}
+.chain .node{opacity:0;transform:translateY(10px);cursor:default}
+.chain .node.in{opacity:1;transform:none}
+.chain .node.in:hover{transform:translateY(-4px) scale(1.02)}
+.chain .edge{display:inline-flex;align-items:center;gap:4px;opacity:0;transition:opacity .3s}
+.chain .edge.in{opacity:1}
+.chain .edge svg{flex:none}
+.chain .brk2{flex-basis:100%;height:0}
+.chain-note{margin-top:16px;padding-top:14px;border-top:1px dashed var(--bg-grid);font-size:12.5px;line-height:1.7;color:var(--text-body);min-height:44px}
+.chain-note b{color:var(--text-strong);font-weight:700}
+.callout{display:flex;gap:14px;align-items:flex-start;background:var(--grad-main);color:#fff;border-radius:var(--radius-md);padding:20px 22px;margin-top:18px;
+  box-shadow:0 12px 28px -8px rgba(53,70,144,.35)}
+.callout .ic{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.16);display:grid;place-items:center;flex:none;font-family:var(--mono);font-size:11px;font-weight:700}
+.callout h3{font-size:15px;font-weight:700;letter-spacing:-0.048em;margin-bottom:4px}
+.callout p{font-size:12.5px;line-height:1.65;color:rgba(255,255,255,.86)}
+
+/* WORKFLOW STEPS */
+.wsteps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.wstep{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:18px;box-shadow:0 2px 8px rgba(53,70,144,.06);
+  transition:all .28s var(--ease-elastic);cursor:pointer;text-align:left;font:inherit;color:inherit;letter-spacing:inherit}
+.wstep:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 8px 20px rgba(53,70,144,.16)}
+.wstep.on{border-color:var(--primary);box-shadow:0 8px 20px rgba(53,70,144,.16)}
+.wstep .n{display:block;font-family:var(--mono);font-size:10px;color:var(--primary)}
+.wstep .wt{display:block;font-size:14px;font-weight:700;letter-spacing:-0.048em;margin:6px 0 6px;line-height:1.4}
+.wstep .wdsc{display:block;font-size:11.5px;line-height:1.6;color:var(--text-body)}
+.wdetail{margin-top:14px;background:rgba(255,255,255,.55);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:22px}
+.wd{display:none}
+.wd.on{display:block;animation:ansIn .36s var(--ease-elastic) both}
+.wd h3{font-size:15px;font-weight:700;letter-spacing:-0.048em;margin-bottom:8px}
+.wd p{font-size:13px;line-height:1.72;color:var(--text-body);max-width:880px}
+.wd p b{color:var(--text-strong);font-weight:700}
+.wd ul{list-style:none;margin-top:10px;display:grid;gap:8px}
+.wd li{font-size:12.5px;line-height:1.65;color:var(--text-body);display:flex;gap:9px}
+.wd li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--primary);flex:none;margin-top:8px}
+.wd li b{color:var(--text-strong);font-weight:700}
+.snomed{margin-top:16px;display:grid;grid-template-columns:1fr 34px 1fr;gap:10px;align-items:center}
+.sn-in{display:flex;flex-direction:column;gap:8px}
+.sn-chip{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:9px 12px;font:inherit;
+  font-size:12px;letter-spacing:-0.02em;color:var(--text-body);cursor:pointer;transition:all .28s var(--ease-elastic);text-align:left}
+.sn-chip:hover{transform:translateX(3px);border-color:var(--primary)}
+.sn-chip.on{color:var(--text-strong);border-color:var(--primary);box-shadow:0 6px 16px rgba(53,70,144,.14)}
+.sn-chip i{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line);flex:none;display:grid;place-items:center;font-style:normal;font-size:9px;color:#fff}
+.sn-chip.on i{background:var(--primary);border-color:var(--primary)}
+.sn-out{background:var(--surface);border:1px dashed var(--bg-grid);border-radius:var(--radius-sm);padding:14px;font-size:12.5px;line-height:1.6;color:var(--text-body);min-height:92px;transition:all .3s var(--ease-elastic)}
+.sn-out.hit{border-style:solid;border-color:var(--primary);color:var(--text-strong);box-shadow:0 8px 20px rgba(53,70,144,.14)}
+.sn-out small{font-family:var(--mono);font-size:9.5px;color:var(--text-muted);display:block;margin-bottom:5px}
+
+/* HITL */
+.hitl{display:grid;grid-template-columns:1fr 250px;gap:18px;align-items:start}
+.cands{display:flex;flex-direction:column;gap:8px}
+.cand{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:10px 12px;
+  box-shadow:0 2px 8px rgba(53,70,144,.06);transition:all .28s var(--ease-elastic);flex-wrap:wrap}
+.cand:hover{border-color:var(--primary);transform:translateX(3px)}
+.cand .spo{flex:1;min-width:260px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:12px}
+.cand .spo b{font-weight:700;letter-spacing:-0.03em}
+.cand .spo .pill{color:var(--primary);font-family:var(--mono);font-size:9.5px}
+.cand .cf{font-family:var(--mono);font-size:9.5px;color:var(--text-body);white-space:nowrap}
+.cand .acts{display:flex;gap:4px}
+.cand .acts button{border:1px solid var(--bg-grid);background:var(--surface);border-radius:999px;padding:4px 10px;font:inherit;font-size:10px;font-weight:700;
+  letter-spacing:-0.02em;cursor:pointer;color:var(--text-body);transition:all .24s var(--ease-elastic)}
+.cand .acts button:hover{transform:translateY(-2px)}
+.cand .acts .ap:hover{color:var(--success);border-color:var(--success)}
+.cand .acts .ed:hover{color:var(--warning);border-color:var(--warning)}
+.cand .acts .rj:hover{color:var(--danger);border-color:var(--danger)}
+.cand.done{opacity:.62}
+.cand.done .acts{display:none}
+.cand .res{display:none}
+.cand.done .res{display:inline-flex}
+.hitl-side{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:16px;box-shadow:0 2px 8px rgba(53,70,144,.06)}
+.hitl-side h5{font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:10px}
+.hs-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0}
+.hs-row b{font-family:var(--mono);font-weight:700;font-size:13px}
+.hs-log{margin-top:10px;padding-top:10px;border-top:1px dashed var(--bg-grid);font-size:11px;line-height:1.6;color:var(--text-body);min-height:54px}
+.hs-log b{color:var(--primary);font-weight:700}
+
+/* PALANTIR 4 ELEMENTS */
+.p4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.p4c{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:18px;box-shadow:0 2px 8px rgba(53,70,144,.06);transition:all .28s var(--ease-elastic)}
+.p4c:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 8px 20px rgba(53,70,144,.16)}
+.p4c .k{font-family:var(--mono);font-size:10px;color:var(--primary)}
+.p4c h3{font-size:15px;font-weight:700;letter-spacing:-0.048em;margin:5px 0 3px}
+.p4c small{font-size:11px;color:var(--text-body);display:block;margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chips span{font-size:10.5px;background:var(--bg-base);border:.8px solid var(--bg-grid);border-radius:999px;padding:3px 9px;letter-spacing:-0.02em;transition:all .24s var(--ease-elastic)}
+.chips span:hover{border-color:var(--primary);color:var(--primary);transform:translateY(-2px)}
+.chips.m span{font-family:var(--mono);font-size:10px}
+
+/* VISION */
+.vision{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.vcard{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius-md);padding:22px;box-shadow:0 2px 8px rgba(53,70,144,.06);transition:all .28s var(--ease-elastic)}
+.vcard:hover{transform:translateY(-5px);border-color:var(--primary);box-shadow:0 12px 26px rgba(53,70,144,.16)}
+.vcard .k{font-family:var(--mono);font-size:10px;color:var(--primary)}
+.vcard h3{font-size:16px;font-weight:700;letter-spacing:-0.048em;margin:8px 0 8px;line-height:1.4}
+.vcard p{font-size:12.5px;line-height:1.7;color:var(--text-body)}
+.evo{display:grid;grid-template-columns:1fr 60px 1fr;gap:12px;align-items:stretch;margin-top:18px}
+.evo-c{border-radius:var(--radius-md);padding:20px}
+.evo-c.was{background:rgba(200,212,228,.22);border:1px dashed var(--bg-grid)}
+.evo-c.now{background:var(--grad-main);color:#fff;box-shadow:0 12px 28px -6px rgba(53,70,144,.4)}
+.evo-c small{font-family:var(--mono);font-size:10px;opacity:.75}
+.evo-c h3{font-size:17px;font-weight:700;letter-spacing:-0.048em;margin:6px 0 10px}
+.evo-c li{font-size:12.5px;line-height:1.75;list-style:none;display:flex;gap:8px}
+.evo-c li::before{content:'–';opacity:.6}
+.evo-c.was li{color:var(--text-body)}
+.evo-ar{display:grid;place-items:center;color:var(--primary);font-size:22px}
+.closing{margin-top:22px;text-align:center;padding:40px 24px;border-radius:var(--radius-md);background:rgba(255,255,255,.42);border:1px solid var(--bg-grid)}
+.closing h3{font-size:26px;font-weight:700;letter-spacing:-0.055em;line-height:1.4}
+.closing p{font-size:13px;color:var(--text-body);margin-top:10px}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:6px}
+@media(max-width:1100px){.hero{grid-template-columns:1fr}.limits,.wsteps,.p4{grid-template-columns:1fr 1fr}.vision,.two,.hitl{grid-template-columns:1fr}
+  .keyhint,.appnav .brand span{display:none}}
+@media(max-width:640px){.appnav{padding:0 16px;gap:10px}.hero h1{font-size:34px}.chap-head h2{font-size:25px}.hero-stats{grid-template-columns:1fr 1fr}
+  .shift-row,.snomed,.evo{grid-template-columns:1fr}.shift-arrow,.evo-ar{transform:rotate(90deg)}.limits,.wsteps,.p4{grid-template-columns:1fr}}
+@media(max-width:640px){.chunk{width:min(266px,82%)}.chunk:nth-child(2){left:auto!important;right:2px}.board{padding:16px}.pane{padding:14px}
+  .cand .spo{min-width:0}.hitl-side{order:-1}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.rv{opacity:1;transform:none;transition:none}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media(forced-colors:active){.hero h1 em{background:none;color:CanvasText;-webkit-text-fill-color:CanvasText}}
+
+/* ================= KEYNOTE NARRATIVE LAYOUT (Superdesign draft 236b0615 → local) ================= */
+/* 레이아웃만 바꾼다. 색 · 타이포 · 반경 · 그림자 · 모션 토큰은 design.md.md 그대로. */
+.wrap{padding:64px 40px 96px 120px}
+.chap{padding:88px 0 36px;scroll-margin-top:24px}
+.chap:first-of-type{padding-top:0}
+.fig{scroll-margin-top:24px}
+
+/* --- left chapter rail --- */
+.appnav.rail{left:0;top:0;bottom:0;right:auto;width:76px;height:auto;flex-direction:column;align-items:center;gap:0;padding:28px 0 20px;
+  border-bottom:0;border-right:1px solid var(--bg-grid)}
+.appnav.rail .brand{margin-bottom:44px}
+.appnav.rail .brand i{width:30px;height:30px;border-radius:9px}
+.appnav.rail .navlinks{flex-direction:column;align-items:center;gap:22px;margin:0;position:relative;overflow:visible;padding:2px 0}
+.railline{position:absolute;left:50%;top:0;bottom:0;width:1px;margin-left:-.5px;background:var(--bg-grid)}
+.appnav.rail .navprog{left:50%;top:0;bottom:auto;width:2px;margin-left:-1px;height:var(--p,0%);border-radius:2px;transition:height .12s linear}
+.appnav.rail .navlinks a{position:relative;z-index:1;width:40px;height:40px;padding:0;justify-content:center;border-radius:50%;background:var(--surface);
+  border:1px solid var(--bg-grid);box-shadow:0 2px 8px rgba(53,70,144,.06)}
+.appnav.rail .navlinks a b{font-size:11.5px;color:var(--primary)}
+.appnav.rail .navlinks a:hover{transform:scale(1.08);border-color:var(--primary)}
+.appnav.rail .navlinks a.on{background:var(--grad-main);border-color:transparent;box-shadow:0 8px 18px rgba(53,70,144,.3)}
+.appnav.rail .navlinks a.on b{color:#fff;font-weight:700;font-size:13px}
+.appnav.rail .navlinks a span{position:absolute;left:52px;top:50%;transform:translate(-6px,-50%);white-space:nowrap;background:var(--surface);border:1px solid var(--bg-grid);
+  border-radius:999px;padding:5px 12px;font-size:11.5px;font-weight:700;letter-spacing:-0.02em;color:var(--text-strong);box-shadow:0 8px 20px rgba(53,70,144,.16);
+  opacity:0;pointer-events:none;transition:all .26s var(--ease-elastic)}
+.appnav.rail .navlinks a:hover span,.appnav.rail .navlinks a:focus-visible span{opacity:1;transform:translate(0,-50%)}
+.appnav.rail .keyhint{margin-top:auto;writing-mode:vertical-rl;transform:rotate(180deg)}
+
+/* --- asymmetric chapter opener --- */
+.chap-head.opener{max-width:none;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:48px;align-items:end;margin-bottom:52px}
+.op-l{position:relative}
+.op-num{font-family:var(--mono);font-size:120px;font-weight:700;line-height:1;letter-spacing:-0.06em;color:var(--bg-grid);opacity:.5;margin:0 0 -40px -6px;
+  user-select:none;pointer-events:none}
+.op-l .chap-no,.op-l h2{position:relative;z-index:1}
+.chap-head.opener h2{font-size:36px;line-height:1.25;margin:10px 0 0;max-width:680px}
+.op-r{border-top:1px solid var(--bg-grid);padding-top:16px}
+.chap-head.opener .op-r p{font-size:14px;line-height:1.7}
+#s0 .chap-head.opener{margin-bottom:34px;grid-template-columns:minmax(0,1fr) 400px}
+
+/* --- hero: near full viewport, strip below --- */
+.hero{grid-template-columns:minmax(0,1fr);gap:0;padding:0}
+.hero-main{min-height:74vh;display:flex;flex-direction:column;justify-content:center}
+.hero h1{font-size:64px;line-height:1.14;margin:12px 0 22px}
+.hero .lede{font-size:18px;max-width:700px;line-height:1.65}
+.hero-cta{margin-top:30px}
+.hero-cta .btn{font-size:13px;padding:13px 24px}
+.hero-stats{display:flex;align-items:center;gap:0;margin-top:44px;padding:22px 0;border-top:1px solid var(--bg-grid);border-bottom:1px solid var(--bg-grid)}
+.hstat{background:transparent;border:0;border-radius:0;padding:0 32px;display:flex;align-items:baseline;gap:12px;border-left:1px solid var(--bg-grid)}
+.hstat:first-child{padding-left:0;border-left:0}
+.hstat:hover{transform:translateY(-3px);box-shadow:none}
+.hstat b{font-size:28px}
+.shift{margin-top:44px;padding:26px}
+.shift-row{grid-template-columns:minmax(0,1fr) 44px minmax(0,1.25fr)}
+.shift-col{min-height:0;padding:18px}
+.shift-col.to{display:flex;flex-direction:column}
+.mini-chain{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px 0;margin:auto 0}
+.mini-chain .lk{margin:0 3px;height:auto;border-left:0;padding-left:0}
+.mini-chain .lk::before,.mini-chain .lk::after{content:'';width:10px;border-top:1.5px solid var(--line)}
+.frag{font-size:11.5px;padding:8px 11px}
+
+/* --- limit cards: asymmetric bento --- */
+.limits{grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:repeat(3,auto);gap:16px 24px}
+.lim:not(.key){flex-direction:row;align-items:center;gap:28px;padding:22px 24px}
+.bign{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-0.04em;color:var(--primary);opacity:.3;width:44px;text-align:center;flex:none}
+.lim-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.lim:not(.key) .q{flex:none;width:210px;margin-top:0;align-self:stretch;display:flex;align-items:center;font-size:12px}
+.lim.key{grid-column:2;grid-row:1 / span 3;padding:30px;gap:14px}
+.lim.key h3{font-size:19px}
+.lim.key p{font-size:13.5px}
+.lim.key .q{font-size:13px}
+
+/* --- figure boards with vertical caption rail --- */
+.fig{display:grid;grid-template-columns:32px minmax(0,1fr);column-gap:24px;margin-top:40px}
+.fig>.fighead,.fig>.board{grid-column:2}
+.figcap{grid-column:1;grid-row:1 / span 2;writing-mode:vertical-rl;transform:rotate(180deg);justify-self:center;align-self:start;
+  font-family:var(--mono);font-size:10px;letter-spacing:-0.02em;color:var(--primary);white-space:nowrap;padding-bottom:6px;
+  border-right:1px solid var(--bg-grid);padding-right:8px}
+
+/* Fig 4: 캡션 레일만큼 보드가 좁아지므로 스텝 카드 쪽에 폭을 더 준다 */
+@media(min-width:1101px){.pipe{grid-template-columns:minmax(280px,.72fr) 140px minmax(360px,1.5fr)}.arrow{width:84px}.fstep{padding:14px 12px}}
+@media(max-width:1100px){.chap-head.opener{grid-template-columns:minmax(0,1fr);gap:18px;align-items:start}.limits{grid-template-columns:minmax(0,1fr)}
+  .lim.key{grid-column:1;grid-row:auto}.hero-main{min-height:0;padding:24px 0}.hero h1{font-size:46px}.hero-stats{flex-wrap:wrap;gap:16px 0}}
+@media(max-width:900px){
+  .appnav.rail{right:0;bottom:auto;width:auto;height:52px;flex-direction:row;padding:0 14px;gap:12px;border-right:0;border-bottom:1px solid var(--bg-grid)}
+  .appnav.rail .brand{margin:0}.appnav.rail .brand i{width:22px;height:22px;border-radius:7px}
+  .appnav.rail .navlinks{flex-direction:row;gap:10px;margin-left:auto;overflow-x:auto;padding:0 2px}
+  .appnav.rail .navlinks a{width:34px;height:34px;flex:none}.appnav.rail .keyhint{display:none}
+  /* 라벨은 화면에서만 숨긴다 — display:none이면 링크의 접근 가능한 이름이 숫자만 남는다 */
+  .appnav.rail .navlinks a span,.appnav.rail .navlinks a:hover span,.appnav.rail .navlinks a:focus-visible span{left:0;top:0;width:1px;height:1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);opacity:0;transform:none;box-shadow:none}
+  .railline{left:0;right:0;top:50%;bottom:auto;width:auto;height:1px;margin:0}
+  .appnav.rail .navprog{left:0;top:50%;width:var(--p,0%);height:2px;margin:-1px 0 0;transition:width .12s linear}
+  .wrap{padding:84px 24px 72px}.chap,.fig{scroll-margin-top:64px}
+  .fig{grid-template-columns:minmax(0,1fr)}.fig>.fighead,.fig>.board{grid-column:1}.figcap{display:none}
+  .lim:not(.key){flex-direction:column;align-items:flex-start;gap:10px}.lim:not(.key) .q{width:auto}.bign{text-align:left;width:auto}
+  .shift-row{grid-template-columns:minmax(0,1fr)}.shift-arrow{transform:rotate(90deg)}}
+@media(max-width:640px){.wrap{padding:76px 16px 64px}.op-num{font-size:84px;margin-bottom:-28px}.chap-head.opener h2{font-size:26px}.hero h1{font-size:36px}.hero .lede{font-size:15px}
+  .hstat{padding:0 18px}.hstat b{font-size:22px}}
+.hero-main .op-num{margin:0 0 -34px -6px}
+.hero-main .chap-no,.hero-main h1{position:relative;z-index:1}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+
+<nav class="appnav rail" aria-label="섹션 내비게이션">
+  <a class="brand" href="#s0" aria-label="BEOL AX — 처음으로"><i></i></a>
+  <div class="navlinks" id="navlinks">
+    <span class="railline" aria-hidden="true"></span><span class="navprog" id="navprog" aria-hidden="true"></span>
+    <a href="#s0" data-s="s0"><b>00</b><span>Introduction</span></a>
+    <a href="#s1" data-s="s1"><b>01</b><span>Vision</span></a>
+    <a href="#s2" data-s="s2"><b>02</b><span>The Bottleneck</span></a>
+    <a href="#s3" data-s="s3"><b>03</b><span>Semantic Solution</span></a>
+    <a href="#s4" data-s="s4"><b>04</b><span>Architecture &amp; Pipeline</span></a>
+    <a href="#s5" data-s="s5"><b>05</b><span>Future Vision</span></a>
+  </div>
+  <span class="keyhint">key 0–5</span>
+</nav>
+
+<div class="wrap">
+
+<!-- ================= 00 INTRODUCTION ================= -->
+<section class="chap" id="s0">
+  <div class="chap-head opener">
+    <div class="op-l"><div class="op-num" aria-hidden="true">00</div><div class="chap-no">00 — Introduction</div><h2>우리가 말하는 AI는 무엇인가</h2></div>
+    <div class="op-r"><p>질문을 던지면 답을 돌려주는 채팅형 AI가 곧 "AI"라는 인식이 여전히 지배적입니다. 반도체 개발에 필요한 것은 <b>정보를 바탕으로 상황을 파악하고, 판단하고, 실행까지 이어가는 AI 에이전트</b>입니다. 그 모델은 ChatGPT · Gemini가 아니라 <b>미국 국방부 등에서 쓰는 팔란티어(Palantir) 모델</b>입니다 — 쏟아지는 정보와 복잡하게 얽힌 인과관계 위에서 판단을 돕는 것, 이것이 개인이 쓰는 AI와 Enterprise AI의 가장 큰 차이이자 어려움입니다.</p></div>
+  </div>
+  <section class="fig" id="f0">
+  <div class="figcap" aria-hidden="true">FIG 0 · INTRO</div>
+  <div class="fighead">
+    <div><h2>Fig 0. 채팅형 AI vs 에이전트형 AI — 인트로 비교 뷰어</h2>
+    <p>웹앱 최상단 인트로. 질문이 자동으로 타이핑된 뒤, 개인이 쓰는 채팅형 AI와 반도체 개발에 필요한 Enterprise AI(팔란티어 방식)를 좌우로 대비합니다</p></div>
+    <span class="tag">Section 0 · Introduction</span>
+  </div>
+  <div class="board">
+    <div class="hook">
+      <div class="hook-q" id="hookQ"></div>
+      <div class="hook-a" id="hookA"></div>
+    </div>
+    <div class="f1-split f0-split" id="f0split">
+      <div class="pane pane-l">
+        <div class="phead"><h3>채팅형 AI</h3><span class="ph-sub mono">personal · ChatGPT / Gemini · 1회성 Q&amp;A</span></div>
+        <div class="chatwin" id="chatwin">
+          <div class="bub user"><span class="who">엔지니어</span>최근 M1 Short 원인이 뭐야?</div>
+          <div class="bub ai typing"><span class="dots"><i></i><i></i><i></i></span></div>
+          <div class="bub ai"><span class="who">AI</span>M1 Short은 일반적으로 금속 배선 간 브리징으로 발생하며, CMP·에칭·리소 공정의 이상이 원인일 수 있습니다. 구체적인 공정 데이터나 로트 정보를 알려주시면 더 도움을 드릴 수 있습니다.</div>
+          <div class="bub end">대화 종료 — 상황 파악도, 판단도, 실행도 사용자 몫</div>
+        </div>
+        <div class="stagefoot"><span class="badge b-muted"><i></i>개인용 AI · 질문에 답하고 끝</span><span class="snote">정보를 스스로 가져오지 않고, 답한 뒤 멈춘다</span></div>
+      </div>
+      <div class="pane pane-r">
+        <div class="phead"><h3>에이전트형 AI</h3><span class="ph-sub mono">enterprise · Palantir 방식 · 판단·실행 루프</span></div>
+        <div class="loopfit" id="loopfit"><div class="loop" id="loop">
+          <svg width="520" height="300" viewBox="0 0 520 300">
+            <defs><marker id="arw" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#4A5FA8"/></marker></defs>
+            <path class="arc" marker-end="url(#arw)"/>
+            <path class="arc" marker-end="url(#arw)"/>
+            <path class="arc" marker-end="url(#arw)"/>
+            <path class="arc" marker-end="url(#arw)"/>
+          </svg>
+          <div class="core" id="f0core"><b>엔지니어</b><span>판단은 사람이<br>근거는 AI가</span></div>
+          <div class="lnode" style="left:260px;top:38px"><i>1</i><b>정보 유입</b><span>FDC · 회의록 · TEM · 메일</span></div>
+          <div class="lnode" style="left:372px;top:150px"><i>2</i><b>인과관계 파악</b><span>온톨로지 · 지식 그래프</span></div>
+          <div class="lnode" style="left:260px;top:262px"><i>3</i><b>상황 판단 지원</b><span>근거 제시 · 시뮬레이션</span></div>
+          <div class="lnode" style="left:148px;top:150px"><i>4</i><b>실행 · 조치</b><span>Recipe Trim · Interlock</span></div>
+        </div></div>
+        <div class="stagefoot"><span class="badge b-ok"><i></i>Enterprise AI · 정보 → 인과 → 판단 → 실행 루프</span></div>
+      </div>
+    </div>
+    <div class="fn" id="f0fn">※ 채팅형 AI(챗봇) 역시 AI의 한 형태입니다. 여기서 대비하는 것은 AI 여부가 아니라 <b>"답하는 데서 그치는가, 정보와 인과관계를 바탕으로 판단·실행을 돕는가"</b>의 역할 차이입니다. 팔란티어(Palantir)는 단일 AI 모델이 아니라 <b>데이터 · 온톨로지 · 운영을 하나로 연결하는 플랫폼 접근</b>이며, 본 기획이 벤치마킹하는 것은 그 플랫폼 구조입니다.</div>
+    <div class="f0ctl"><button class="btn ghost" id="f0replay">↻ 다시 재생</button></div>
+  </div>
+</section>
+</section>
+
+<!-- ================= 01 HERO / VISION ================= -->
+<section class="chap" id="s1">
+  <div class="hero">
+    <div class="rv hero-main">
+      <div class="op-num" aria-hidden="true">01</div>
+      <div class="chap-no">01 — Vision</div>
+      <h1>단순 검색에서<br><em>지식 네트워크</em>로</h1>
+      <p class="lede">"더 좋은 챗봇"이 아닙니다. BEOL 개발 데이터 · 문서 · 설비 정보를 온톨로지로 엮어, 인과관계 위에서 엔지니어의 판단을 돕는 Enterprise AI 체계를 구축합니다.</p>
+      <div class="hero-cta">
+        <a class="btn" href="#s2">왜 지금의 AI로는 부족한가 →</a>
+        <a class="btn ghost" href="#f3">트러블슈팅 시뮬레이터 바로 보기</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat"><b id="hsNodes">–</b><span>지식망 노드 · Fig 2 데모</span></div>
+        <div class="hstat"><b id="hsTriples">–</b><span>S-P-O 트리플 · Fig 2 데모</span></div>
+        <div class="hstat"><b>11</b><span>수집 소스 · 3개 레인</span></div>
+        <div class="hstat"><b>4</b><span>Layer 지식 패브릭</span></div>
+      </div>
+    </div>
+    <div class="shift rv">
+      <p class="sectionlabel">같은 질문 · "최근 M1 Short 원인이 뭐야?"</p>
+      <div class="shift-row">
+        <div class="shift-col from">
+          <h3>문서 조각 검색</h3><small>keyword · similarity</small>
+          <div class="frag">2024.03 · SF1.4 CMP time 이상으로 <mark>M1 Short</mark> 발생…</div>
+          <div class="frag">2025.10 · WDC hardmask 붕괴로 <mark>M1 Short</mark>…</div>
+          <div class="frag">Trench etch 강화 시 <mark>M1 Short</mark> 가능성 언급…</div>
+          <span class="badge b-danger"><i></i>단어만 공유 · 맥락 단절</span>
+        </div>
+        <div class="shift-arrow">→</div>
+        <div class="shift-col to">
+          <h3>인과 네트워크 탐색</h3><small>ontology · triple</small>
+          <div class="mini-chain">
+            <span class="node"><span class="sdot" style="background:var(--danger)"></span>M1 Short</span>
+            <span class="lk"><span class="pill">발생 원인</span></span>
+            <span class="node"><span class="sdot" style="background:var(--warning)"></span>WDC Hardmask 부족</span>
+            <span class="lk"><span class="pill">원인</span></span>
+            <span class="node"><span class="sdot" style="background:var(--warning)"></span>AMI CD 과다</span>
+            <span class="lk"><span class="pill">원인</span></span>
+            <span class="node"><span class="sdot" style="background:var(--warning)"></span>Spacer Etch 과다</span>
+            <span class="lk"><span class="pill">확인 지표</span></span>
+            <span class="node"><span class="sdot" style="background:var(--info)"></span>EPD 증가</span>
+            <span class="lk"><span class="pill">증빙 자료</span></span>
+            <span class="node"><span class="sdot" style="background:var(--success)"></span><span class="mono" style="font-size:10.5px">TEM APM N20260428_4352</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 THE BOTTLENECK ================= -->
+<section class="chap" id="s2">
+  <div class="chap-head opener rv">
+    <div class="op-l"><div class="op-num" aria-hidden="true">02</div><div class="chap-no">02 — The Bottleneck</div><h2>ChatGPT와 Claude에 업무를 물어보면<br>왜 만족스럽지 않을까</h2></div>
+    <div class="op-r"><p>범용 LLM은 방대한 인터넷 일반 지식만 학습했습니다. 보안으로 격리된 사내 도메인 데이터는 모델 파라미터 안에 <b>아예 존재하지 않습니다.</b></p></div>
+  </div>
+
+  <div class="limits">
+    <div class="lim rv"><span class="bign" aria-hidden="true">01</span><div class="lim-main"><span class="n">LIMIT 01</span><h3>학습되지 않은 파라미터</h3><p>BEOL 개발 이력, 사내 전용 약어, 세부 공정 내용을 물으면 엉뚱한 대답(할루시네이션)이 돌아옵니다. 해당 지식이 신경망에 없기 때문입니다.</p></div><div class="q">사내 도메인 데이터는 학습된 적이 없다</div></div>
+    <div class="lim rv"><span class="bign" aria-hidden="true">02</span><div class="lim-main"><span class="n">LIMIT 02</span><h3>설명 불가능성 (Black Box)</h3><p>"왜 HOL 열화 혐의 step이 MND etch야?"라는 질문에 "학습한 가중치로는 이게 최적입니다"라는 답은 신뢰받지 못합니다.</p></div><div class="q">결과의 타당한 근거를 논리적으로 제시하지 못한다</div></div>
+    <div class="lim rv"><span class="bign" aria-hidden="true">03</span><div class="lim-main"><span class="n">LIMIT 03</span><h3>수치 · 시계열 데이터 처리 불가</h3><p>LLM은 language model입니다. 글을 읽고 요약하는 데 특화되어, 쏟아지는 CD · ET data와 설비 FDC 데이터를 직접 분석하지 못합니다.</p></div><div class="q">Fab 수치 데이터 앞에서는 무력하다</div></div>
+    <div class="lim key rv"><span class="flag">제일 중요</span><span class="n">LIMIT 04</span><h3>비정형 프레젠테이션 · 시각 데이터</h3>
+      <p>도식 · TEM 이미지 · 그래프가 담긴 PPT를 VLM으로 읽어도 단순 추출에 그칩니다. 시각 데이터 이면의 공정 간 인과관계를 리포트로 바꾸지 못합니다.</p>
+      <div class="q">이미지는 읽지만 인과는 읽지 못한다</div></div>
+  </div>
+
+  <h3 class="sub-h rv">그래서 Vector RAG로 'BEOL GPT'를 만들어 보았습니다</h3>
+  <p class="sub-p rv">파라미터에 없는 사내 지식을 주입하기 위해 문서를 벡터로 변환해 검색하는 방식을 적용했습니다. 그러나 Vector RAG는 질문과 <b>비슷한 단어가 포함된 문서 조각(Chunk)</b>을 가져올 뿐입니다.</p>
+  <div class="two">
+    <div class="panel rv">
+      <h3>문서 검색의 한계 — 키워드 · 유사도 매칭</h3>
+      <p>"M1 Short"이라는 단어가 들어간 과거 이력의 파편만 가져와 억지로 이어 붙입니다. 당시 왜 불량이 났는지에 대한 선행 공정의 인과관계, 장비 상태 변화, 검측 지표와의 연관성은 짚어내지 못합니다.</p>
+      <div class="quotes"><small>RETRIEVED · 실제로 돌아오는 답의 재료</small>
+        <span>"2024년 3월에 SF1.4에서 CMP time이 틀어지면서 <mark>M1 Short</mark>이 났습니다"</span>
+        <span>"2025년 10월에는 SF1.0 BMV0에서 WDC hardmask가 무너지면서 <mark>M1 Short</mark>이 났습니다"</span></div>
+    </div>
+    <div class="panel rv">
+      <h3>M1 Short의 원인은 여러 가지입니다</h3>
+      <div class="causes">
+        <div class="cause"><span class="node">Spacer / I1 Etch 과다</span><span class="ar">→</span><span class="node">WDC 붕괴</span><span class="ar">→</span><span class="node"><span class="sdot" style="background:var(--danger)"></span>Short</span></div>
+        <div class="cause"><span class="node">Trench Etch 강함</span><span class="ar">→</span><span class="node">ACI CD 증가</span><span class="ar">→</span><span class="node"><span class="sdot" style="background:var(--danger)"></span>Short</span></div>
+        <div class="cause"><span class="node">unCMP</span><span class="ar">→</span><span class="node"><span class="sdot" style="background:var(--danger)"></span>Short</span></div>
+      </div>
+      <p style="margin-top:12px">LLM은 이 맥락을 이해하지 못한 채 단어가 겹치는 문서만 돌려줍니다.</p>
+    </div>
+  </div>
+  <section class="fig" id="f1">
+  <div class="figcap" aria-hidden="true">FIG 1 · RAG VS GRAPH</div>
+  <div class="fighead">
+    <div><h2>Fig 1. Vector RAG vs Knowledge Graph — 답변 생성까지의 전체 흐름</h2>
+    <p>같은 질의가 <b>검색 → 컨텍스트 주입 → LLM 답변</b>으로 이어지는 과정을 좌우로 비교합니다. 좌측은 문서 조각이, 우측은 온톨로지 서브그래프가 LLM에 주입됩니다</p></div>
+    <span class="tag">Section 2 vs 3</span>
+  </div>
+  <div class="board">
+    <div class="f1-query">
+      <span class="q">?</span>
+      <span class="pill">질의</span>
+      <input id="f1input" value="최근 M1 Short 원인이 뭐야?" aria-label="질의 입력">
+      <button class="btn" id="f1run">▶  전체 흐름 재생</button>
+    </div>
+    <div class="f1-split">
+      <!-- LEFT: Vector RAG -->
+      <div class="pane pane-l">
+        <div class="phead"><h3>Vector RAG</h3><span class="ph-sub mono">STEP 1 · top-k chunk retrieval</span></div>
+        <div class="stage">
+          <div class="chunks" id="f1chunks">
+            <div class="chunk" style="left:2px;top:0;transform:rotate(-3.5deg)">
+              <div class="m">chunk_0142 · sim 0.81</div>
+              <div class="t">2024.03 · SF1.4 에서 CMP time 이 틀어지며 M1 Short 발생. polish time re-target 조치.</div>
+              <div class="s">src: 모듈미팅_240312.pptx</div></div>
+            <div class="chunk" style="left:184px;top:92px;transform:rotate(3deg)">
+              <div class="m">chunk_0877 · sim 0.77</div>
+              <div class="t">2025.10 · SF1.0 BMV0 에서 WDC hardmask 붕괴로 M1 Short. AMI CD 경계치 초과 확인.</div>
+              <div class="s">src: 수율분석_251021.docx</div></div>
+            <div class="chunk" style="left:12px;top:192px;transform:rotate(-2deg)">
+              <div class="m">chunk_0311 · sim 0.69</div>
+              <div class="t">Trench etch 강화 시 ACI CD 증가 → M1 Short 가능성 언급. 원인 확정 없이 종료.</div>
+              <div class="s">src: Confluence/BEOL-ETCH-77</div></div>
+            <div class="brk" style="left:252px;top:90px;transform:rotate(40deg)"></div>
+            <div class="cut" style="left:270px;top:80px">✕</div>
+            <div class="brk" style="left:130px;top:196px;transform:rotate(-32deg)"></div>
+            <div class="cut" style="left:148px;top:184px">✕</div>
+          </div>
+        </div>
+        <div class="stagefoot">
+          <span class="badge b-danger"><i></i>단순 키워드 매칭 / 맥락 단절</span>
+          <span class="snote">3개 조각 모두 "M1 Short" 단어만 공유</span>
+        </div>
+        <div class="flowrow"><span class="fa">↓</span>
+          <span class="inject" id="injL"><span class="st">STEP 2</span><span id="injLt">컨텍스트 주입 대기</span></span></div>
+        <div class="llmcard" id="llmL"><span class="llmico">LLM</span>
+          <div><div class="llmt">범용 LLM · 텍스트 컨텍스트</div><div class="llms" id="llmLs">STEP 3 · 대기 중</div></div></div>
+        <div class="answer bad" id="ansL">
+          <div class="atitle">STEP 4 · 생성된 답변</div>
+          <p>과거 M1 Short 사례를 종합하면 원인은 두 가지로 보입니다. 2024년 3월 SF1.4에서는 CMP time이 틀어져 발생했고, 2025년 10월 SF1.0 BMV0에서는 WDC hardmask가 무너져 발생했습니다. 현재 로트도 이와 유사한 원인일 가능성이 있으며, 정확한 판단을 위해서는 추가 분석이 필요합니다.</p>
+          <div class="flaws">
+            <span>현재 로트에서 관측된 EPD 이상을 전혀 설명하지 못함</span>
+            <span>과거 두 사례를 나열할 뿐 선행 공정과의 인과관계가 없음</span>
+            <span>"가능성이 있다"로 끝나 의사결정 근거로 쓸 수 없음</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Knowledge Graph RAG -->
+      <div class="pane pane-r">
+        <div class="phead"><h3>Knowledge Graph RAG</h3><span class="ph-sub mono">STEP 1 · ontology subgraph traversal</span></div>
+        <div class="stage">
+          <div class="gv-wrap" style="position:absolute;inset:0" id="f1gvwrap">
+            <canvas id="f1canvas"></canvas>
+            <div class="f1leg" id="f1leg"></div>
+          </div>
+          <div class="gv-tip" id="f1tip"></div>
+        </div>
+        <div class="stagefoot">
+          <span class="badge b-ok"><i></i>입체적 인과 추론 완결</span>
+          <span class="snote" id="f1stat"></span>
+        </div>
+        <div class="flowrow"><span class="fa">↓</span>
+          <span class="inject" id="injR"><span class="st">STEP 2</span><span id="injRt">컨텍스트 주입 대기</span></span></div>
+        <div class="llmcard" id="llmR"><span class="llmico">LLM</span>
+          <div><div class="llmt">도메인 LLM · 서브그래프 컨텍스트</div><div class="llms" id="llmRs">STEP 3 · 대기 중</div></div></div>
+        <div class="answer ok" id="ansR">
+          <div class="atitle">STEP 4 · 생성된 답변</div>
+          <p>현재 로트의 M1 Short은 <em>Spacer Etch 과다로 인한 WDC Hardmask 손실</em>이 근본 원인일 가능성이 높습니다. ETCH-07에서 Spacer Etch step EPD가 +14% 상승했고, 이는 AMI CD 과다 → WDC Hardmask 부족 경로로 이어집니다. 동일 경로가 2026년 4월 모듈 미팅에 보고되었고 TEM APM N20260428_4352에서 WDC 잔여 5.2 nm(임계 7 nm 미달)로 확인됩니다. unCMP 경로는 CMP Polish Time이 관리 범위 내여서 배제합니다. 권고 조치는 Spacer Etch recipe trim입니다.</p>
+          <div class="apath">추론 경로 · <b>[M1 Short]</b> -(발생 원인)-> <b>[WDC Hardmask 부족]</b> -(원인)-> <b>[AMI CD 과다]</b> -(원인)-> <b>[Spacer Etch]</b> -(확인 지표)-> <b>[EPD +14%]</b> -(증빙)-> <b>[TEM APM N20260428_4352]</b></div>
+          <div class="ev"><span><i></i>TEM APM N20260428_4352</span><span><i></i>2026.04 모듈 미팅</span><span><i></i>FDC · ETCH-07 EPD</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</section>
+
+<!-- ================= 03 SEMANTIC SOLUTION ================= -->
+<section class="chap" id="s3">
+  <div class="chap-head opener rv">
+    <div class="op-l"><div class="op-num" aria-hidden="true">03</div><div class="chap-no">03 — Semantic Solution &amp; Simulation</div><h2>의미를 연결하는 온톨로지</h2></div>
+    <div class="op-r"><p>파편화된 과거 문서 짜깁기를 넘어, 사람(엔지니어) · 기계(설비) · 공정 데이터 사이에 <b>의미적 연결 관계</b>를 부여합니다. 사내 데이터를 <b>"A → (원인) → B"</b> 형태의 트리플(Triple)로 엮으면 AI는 단어가 아니라 네트워크를 탐색합니다.</p></div>
+  </div>
+
+  <div class="board rv">
+    <p class="sectionlabel">Triple Chain Explorer · 경로를 선택하면 트리플이 순서대로 연결됩니다</p>
+    <div class="tabs" id="chainTabs" role="tablist" aria-label="트리플 체인 경로 선택">
+      <button class="on" data-c="0" role="tab" aria-selected="true" aria-controls="chain">원인 1 · unCMP</button>
+      <button data-c="1" role="tab" aria-selected="false" aria-controls="chain" tabindex="-1">원인 2 · WDC Hardmask</button>
+      <button data-c="2" role="tab" aria-selected="false" aria-controls="chain" tabindex="-1">과거 해결 이력</button>
+      <button data-c="3" role="tab" aria-selected="false" aria-controls="chain" tabindex="-1">VLM 이미지 바인딩</button>
+    </div>
+    <div class="chain" id="chain" role="tabpanel" aria-label="선택한 경로의 트리플 체인"></div>
+    <div class="chain-note" id="chainNote" aria-live="polite"></div>
+  </div>
+
+  <div class="callout rv">
+    <span class="ic">SIM</span>
+    <div><h3>의사결정을 위한 시뮬레이션 지원</h3>
+    <p>온톨로지가 구축되면 특정 파라미터를 바꿨을 때 이어질 연쇄 결과(예: HOL 열화)를 논리적으로 시뮬레이션할 수 있습니다. 검색 도구가 아니라 의사결정 지원 시스템입니다. 아래 시뮬레이터에서 같은 지식망 위의 추론 경로를 직접 따라가 보세요.</p></div>
+  </div>
+  <section class="fig" id="f3">
+  <div class="figcap" aria-hidden="true">FIG 3 · REASONING</div>
+  <div class="fighead">
+    <div><h2>Fig 3. 가상 트러블슈팅 시뮬레이터 — 그래프 추론 뷰</h2>
+    <p>Fig 2와 같은 지식망 위에서 시나리오를 선택하면 추론 엔진이 결함 → 의심 스텝 → 지표 → 증빙·액션 경로를 순차 점등합니다. 점등된 노드를 클릭하면 액션 가이드가 열립니다</p></div>
+    <span class="tag">Section 3 실무 예시 · Traversal</span>
+  </div>
+  <div class="board">
+    <div class="f3-grid">
+      <div class="gv-wrap" style="height:520px" id="f3wrap">
+        <canvas id="f3canvas"></canvas>
+        <div class="gv-tip" id="f3tip"></div>
+        <button class="btn ghost gv-reset" id="f3replay">경로 재생</button>
+        <div class="gv-hint">비활성 분기 16% 디밍 · 점등 노드 click: 액션 가이드</div>
+      </div>
+      <div class="f3-side">
+        <div class="f3-toggle" id="f3toggle">
+          <button class="on" data-s="A"><i style="background:#C25450"></i>시나리오 A: M1 Short 불량</button>
+          <button data-s="B"><i style="background:#C99A3B"></i>시나리오 B: HOL 저항 열화</button>
+        </div>
+        <div class="ministep" id="f3steps"><h5>Root-cause path</h5></div>
+      </div>
+    </div>
+    <div class="guide" id="f3guide">
+      <h4><span id="f3gtitle"></span><span class="badge b-info"><i></i>엔지니어 권고 액션</span><span class="mono" id="f3gmeta" style="font-size:10px;color:var(--text-muted)"></span></h4>
+      <ul id="f3glist"></ul>
+    </div>
+  </div>
+</section>
+</section>
+
+<!-- ================= 04 ARCHITECTURE & PIPELINE ================= -->
+<section class="chap" id="s4">
+  <div class="chap-head opener rv">
+    <div class="op-l"><div class="op-num" aria-hidden="true">04</div><div class="chap-no">04 — Architecture &amp; Pipeline</div><h2>AI-Ready 데이터셋과 파이프라인</h2></div>
+    <div class="op-r"><p>온톨로지 구축의 성패는 IT 기술보다 <b>현업의 전문성</b>에 달려 있습니다. 네 단계의 워크플로우로 지식이 한 번 만들어지고 끝나지 않고 계속 살아 움직이게 합니다.</p></div>
+  </div>
+
+  <div class="wsteps rv" id="wsteps" role="tablist" aria-label="워크플로우 단계">
+    <button class="wstep on" role="tab" aria-selected="true" aria-controls="wdetail" data-w="0"><span class="n">STEP 01</span><span class="wt">온톨로지스트 역할 부여 · 스키마 설계</span><span class="wdsc">BEOL 인테그레이션 엔지니어가 곧 온톨로지스트</span></button>
+    <button class="wstep" role="tab" aria-selected="false" aria-controls="wdetail" tabindex="-1" data-w="1"><span class="n">STEP 02</span><span class="wt">AI 기반 지식 추출 자동화</span><span class="wdsc">과거 문서에서 개체 · 관계를 LLM으로 추출</span></button>
+    <button class="wstep" role="tab" aria-selected="false" aria-controls="wdetail" tabindex="-1" data-w="2"><span class="n">STEP 03</span><span class="wt">실시간 자동화 데이터 파이프라인</span><span class="wdsc">Raw Fab 데이터 → AI-Readable → Triplification</span></button>
+    <button class="wstep" role="tab" aria-selected="false" aria-controls="wdetail" tabindex="-1" data-w="3"><span class="n">STEP 04</span><span class="wt">표준화 · 확장성 확보</span><span class="wdsc">표준 공정 온톨로지 → Cu · Ru 메탈별 최적화</span></button>
+  </div>
+  <div class="wdetail rv" id="wdetail" role="tabpanel" aria-live="polite">
+    <div class="wd on">
+      <h3>현장의 맥락을 가장 잘 아는 사람이 지식의 뼈대를 세웁니다</h3>
+      <p>팔란티어(Palantir)가 현장 파견 엔지니어(FDE)를 국방부나 병원에 보내듯, 우리 조직에서는 <b>BEOL 인테그레이션 엔지니어 본인이 온톨로지스트</b>가 되어 데이터 간의 올바른 의미 관계(스키마)를 직접 설계합니다.</p>
+      <p style="margin-top:12px"><b>타 산업 벤치마킹 · 의료 분야 SNOMED CT</b> — 독립된 관찰값을 입력하면 온톨로지가 이를 엮어 추론합니다. 아래 관찰값을 눌러 보세요.</p>
+      <div class="snomed">
+        <div class="sn-in" id="snIn">
+          <button class="sn-chip" aria-pressed="false" data-k="a"><i>✓</i>[반점] -(유형)-> [불규칙하다]</button>
+          <button class="sn-chip" aria-pressed="false" data-k="b"><i>✓</i>[반점] -(색깔)-> [회색]</button>
+        </div>
+        <div class="shift-arrow">→</div>
+        <div class="sn-out" id="snOut" aria-live="polite"><small>ONTOLOGY INFERENCE</small><span id="snTxt">관찰값을 선택하면 추론 결과가 표시됩니다.</span></div>
+      </div>
+    </div>
+    <div class="wd">
+      <h3>과거 문서에서 숨은 인과관계를 자동으로 끌어냅니다</h3>
+      <p>방대한 기술 문서와 리포트에서 AI 모델이 두 개체 사이의 의미와 인과 관계를 추출해 <b>초기 지식 그래프(Knowledge Graph)</b>를 생성합니다. 추출 결과는 아래 HITL 검증을 거쳐 그래프에 반영됩니다.</p>
+    </div>
+    <div class="wd">
+      <h3>한 번 구축하고 끝나지 않는, 살아 있는 지식</h3>
+      <ul>
+        <li><span><b>지속적 유입</b> — 매일 생성되는 모듈 회의록 · 수율 분석 리포트와, 설비에서 쏟아지는 Fab 시계열 · 수치 데이터를 파이프라인에 계속 공급합니다.</span></li>
+        <li><span><b>AI-Readable 정제</b> — 데이터 레이크의 Raw Fab 데이터를 Text-to-SQL과 정제 파이프라인으로 AI가 즉시 읽을 수 있는 형태(AI-Readable CSV 등)로 바꿉니다.</span></li>
+        <li><span><b>Triplification</b> — 정제된 데이터는 온톨로지 스키마 규칙에 따라 쪼개지고 관계가 부여되어 그래프 DB에 실시간으로 적재됩니다.</span></li>
+      </ul>
+    </div>
+    <div class="wd">
+      <h3>표준에서 시작해 공정별로 끊임없이 최적화합니다</h3>
+      <p>반도체 제조 표준 공정 온톨로지를 먼저 구축하고, 지속 업데이트되는 파이프라인을 바탕으로 사내 환경에 맞춰 <b>세부 공정별(Cu, Ru 메탈 등)</b>로 계속 다듬습니다. 한 번 만든 스키마는 다른 모듈에서도 재사용됩니다.</p>
+    </div>
+  </div>
+
+  <h3 class="sub-h rv">Human-In-The-Loop 큐레이션 — 엔지니어의 부담을 줄이는 방법</h3>
+  <p class="sub-p rv">LLM이 후보 트리플을 자동 추출하고, 엔지니어는 <b>클릭 한 번으로 승인 · 수정 · 기각</b>합니다. 피드백은 추출 모델의 프롬프트와 Few-shot 예시에 즉시 반영됩니다. 아래 후보를 직접 처리해 보세요.</p>
+  <div class="board rv">
+    <p class="sectionlabel">Verification UI · 데모 후보 (실제 추출 결과 아님)</p>
+    <div class="hitl">
+      <div class="cands" id="cands"></div>
+      <div class="hitl-side">
+        <h5>Verification Queue</h5>
+        <div class="hs-row"><span>승인 Approve</span><b id="hsA" style="color:var(--success)">0</b></div>
+        <div class="hs-row"><span>수정 Edit</span><b id="hsE" style="color:var(--warning)">0</b></div>
+        <div class="hs-row"><span>기각 Reject</span><b id="hsR" style="color:var(--danger)">0</b></div>
+        <div class="hs-log" id="hsLog" aria-live="polite">Active Learning 피드백 대기 중</div>
+        <button class="btn ghost" id="hsReset" style="margin-top:10px;width:100%">↻ 후보 다시 불러오기</button>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sub-h rv">팔란티어 온톨로지 4요소 → BEOL 도메인 매핑</h3>
+  <p class="sub-p rv">스키마 설계의 출발점입니다. 아래 네 요소가 그래프의 노드 · 속성 · 엣지 · 조치로 그대로 옮겨집니다.</p>
+  <div class="p4">
+    <div class="p4c rv"><span class="k">OBJECT</span><h3>객체</h3><small>그래프의 노드</small>
+      <div class="chips"><span>Wafer</span><span>Lot</span><span>Chamber / Equipment</span><span>Spacer Etch</span><span>MND Etch</span><span>CMP</span><span>M1 Short</span><span>HOL 열화</span></div></div>
+    <div class="p4c rv"><span class="k">PROPERTY</span><h3>속성</h3><small>노드가 갖는 계측 · 수치</small>
+      <div class="chips"><span>ACI CD</span><span>AMI CD</span><span>EPD</span><span>CMP Polish Time</span><span>Sheet Resistance (Rs)</span><span>Yield (%)</span></div></div>
+    <div class="p4c rv"><span class="k">LINK</span><h3>의미적 관계</h3><small>트리플의 Predicate</small>
+      <div class="chips m"><span>Caused_by</span><span>Measured_at</span><span>Reported_in_meeting</span><span>Mitigated_by_action</span></div></div>
+    <div class="p4c rv"><span class="k">ACTION</span><h3>의사결정 · 제어</h3><small>추론 결과가 닿는 곳</small>
+      <div class="chips"><span>Recipe Trim 조정</span><span>Interlock 발령</span><span>추가 TEM 계측 의뢰</span><span>조건 변경 시뮬레이션</span></div></div>
+  </div>
+  <section class="fig" id="f2">
+  <div class="figcap" aria-hidden="true">FIG 2 · GRAPH VIEW</div>
+  <div class="fighead">
+    <div><h2>Fig 2. BEOL 지식 패브릭 그래프 뷰 — Graph DB 구조</h2>
+    <p>Fab 원천 데이터 · 비정형 문서 · 온톨로지 개체 · Multi-Agent가 하나의 지식망으로 연결된 모습. 노드 색이 4-Layer를 나타내며, 범례를 클릭하면 해당 레이어만 남습니다</p></div>
+    <span class="tag">Section 3 &amp; 5 · Graph DB</span>
+  </div>
+  <div class="board">
+    <div class="gv-toolbar">
+      <div class="legend" id="f2legend"></div>
+      <div class="gv-search"><span class="mono" style="font-size:10px;color:var(--text-muted)">⌕</span><input id="f2search" aria-label="그래프 노드 검색" placeholder="노드 검색 · 예: EPD, TEM, Agent"></div>
+      <div class="gv-stat" id="f2stat"></div>
+    </div>
+    <div class="gv-wrap" style="height:560px" id="f2wrap">
+      <canvas id="f2canvas"></canvas>
+      <div class="gv-tip" id="f2tip"></div>
+      <button class="btn ghost gv-reset" id="f2reset">뷰 초기화</button>
+      <div class="gv-hint">drag: 노드 이동 · wheel: 줌 · 배경 drag: 팬 · hover: 인접 관계 표시 · dblclick: 초기화</div>
+    </div>
+  </div>
+</section>
+  <section class="fig" id="f4">
+  <div class="figcap" aria-hidden="true">FIG 4 · PIPELINE</div>
+  <div class="fighead">
+    <div><h2>Fig 4. AI-Ready 다중 소스 파이프라인 &amp; 마일스톤 대시보드</h2>
+    <p>정형 수치 · 비정형 문서/이미지 · 커뮤니케이션 3개 레인의 소스가 하나의 수집 허브로 모여 정제 → Triplification → Graph DB로 흐릅니다. 소스에 마우스를 올리면 경로와 변환 방식이 표시됩니다</p></div>
+    <span class="tag">Section 4 · Multi-source</span>
+  </div>
+  <div class="board">
+    <p class="sectionlabel">Data Sources → Ingestion → Triplification</p>
+    <div class="pipe" id="pipe">
+      <svg class="wires" id="wires"></svg>
+      <div class="lanes" id="lanes">
+        <div class="lane" data-lane="A">
+          <div class="lh"><span class="lt">정형 수치 데이터</span><span class="lm">structured · Text-to-SQL → AI-Readable CSV</span></div>
+          <div class="srcs">
+            <div class="src" data-x="Text-to-SQL · AI-Readable CSV 변환" data-st="plan"><svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke="#4A5FA8" stroke-width="1.2"><rect x="1" y="1" width="12" height="10" rx="1.5"/><path d="M1 4.5h12M5 4.5v6.5"/></svg><span class="nm">FAB Data (Lot / Yield DB)</span></div>
+            <div class="src" data-x="Text-to-SQL · 계측 포인트별 정규화" data-st="plan"><svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke="#4A5FA8" stroke-width="1.2" stroke-linecap="round"><path d="M1 11V1M1 11h12M3 8l3-4 3 2 3-4"/></svg><span class="nm">In-line CD / ET 측정치</span></div>
+            <div class="src" data-x="시계열 리샘플링 · 이상 구간 태깅" data-st="plan"><svg width="16" height="10" viewBox="0 0 16 10" fill="none" stroke="#4A5FA8" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 8l3-4 3 3 3-6 3 5 4-3"/></svg><span class="nm">설비 FDC 시계열</span></div>
+            <div class="src" data-x="Trend 통계 · 관리 한계 판정" data-st="plan"><svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke="#4A5FA8" stroke-width="1.2" stroke-linecap="round"><path d="M1 11h12M2 9l3-3 3 1 4-5"/><circle cx="12" cy="2" r="1.2"/></svg><span class="nm">EPD / SPC Trend</span></div>
+          </div>
+        </div>
+        <div class="lane" data-lane="B">
+          <div class="lh"><span class="lt">비정형 문서 · 이미지</span><span class="lm">unstructured · LLM / VLM 추출</span></div>
+          <div class="srcs">
+            <div class="src" data-x="회의록 파서 · 개체/관계 후보 추출" data-st="beta"><svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="#4A5FA8" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"><path d="M1 1h7l3 3v9H1zM3.5 7h5M3.5 10h5"/></svg><span class="nm">모듈 회의록</span></div>
+            <div class="src" data-x="페이지 크롤링 · LLM 트리플 추출" data-st="prog"><svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="#4A5FA8" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"><path d="M1 1h7l3 3v9H1zM3.5 7h5M3.5 10h5"/></svg><span class="nm">Confluence 문서</span></div>
+            <div class="src" data-x="슬라이드 도식 · 그래프 VLM 해석" data-st="plan"><svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke="#4A5FA8" stroke-width="1.2" stroke-linejoin="round"><rect x="1" y="1" width="12" height="9" rx="1.5"/><path d="M5 11h4M4 7l2-2 2 1 2-3"/></svg><span class="nm">EDM PPT 리포트</span></div>
+            <div class="src" data-x="VLM 측정값 추출 · 임계치 판정 노드 바인딩" data-st="done"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#4A5FA8" stroke-width="1.2" stroke-linejoin="round"><rect x="1" y="1" width="12" height="12" rx="2"/><path d="M1 9.5l3.5-3.5 2.5 2.5 2.5-3 3.5 3.5"/></svg><span class="nm">TEM / SEM APM 이미지</span></div>
+            <div class="src" data-x="리포트 섹션 분할 · 원인/조치 추출" data-st="plan"><svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="#4A5FA8" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"><path d="M1 1h7l3 3v9H1zM3.5 7h5M3.5 10h5"/></svg><span class="nm">수율 분석 리포트</span></div>
+          </div>
+        </div>
+        <div class="lane" data-lane="C">
+          <div class="lh"><span class="lt">커뮤니케이션</span><span class="lm">conversation · 스레드 요약 → HITL 검증</span></div>
+          <div class="srcs">
+            <div class="src" data-x="메일 스레드 요약 · 결정 사항 추출" data-st="plan"><svg width="14" height="11" viewBox="0 0 14 11" fill="none" stroke="#4A5FA8" stroke-width="1.2" stroke-linejoin="round"><rect x="1" y="1" width="12" height="9" rx="1.5"/><path d="M1 2l6 4 6-4"/></svg><span class="nm">Knox Mail</span></div>
+            <div class="src" data-x="대화 클러스터링 · 액션 아이템 추출" data-st="plan"><svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke="#4A5FA8" stroke-width="1.2" stroke-linejoin="round"><path d="M1 1h12v7H5l-3 3V8H1z"/></svg><span class="nm">Messenger (사내 메신저)</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="hubcol">
+        <div class="hub" id="hub"><span class="n">INGESTION HUB</span><span class="t">수집 · 정제</span><span class="d" id="hubd">11개 소스 · 3개 레인</span></div>
+      </div>
+      <div class="steps">
+        <div class="arrow"><span class="cap">AI-Readable CSV</span>
+          <svg width="100%" height="10" viewBox="0 0 80 10" preserveAspectRatio="none"><path d="M0 5H70" stroke="#7A9CC0" stroke-width="1.5" stroke-linecap="round"/><path d="M70 1L78 5 70 9Z" fill="#4A5FA8"/></svg></div>
+        <div class="fstep"><div class="n">STEP 02</div><div class="t">정제 · 구조화</div>
+          <div class="d">Text-to-SQL · LLM 개체/관계 후보 · VLM 측정값 추출</div></div>
+        <div class="arrow"><span class="cap">RDF / OWL Schema</span>
+          <svg width="100%" height="10" viewBox="0 0 80 10" preserveAspectRatio="none"><path d="M0 5H70" stroke="#7A9CC0" stroke-width="1.5" stroke-linecap="round"/><path d="M70 1L78 5 70 9Z" fill="#4A5FA8"/></svg></div>
+        <div class="fstep"><div class="n">STEP 03</div><div class="t">Triplification</div>
+          <div class="d">온톨로지 스키마 규칙으로 S-P-O 부여 · HITL 승인/수정/기각</div></div>
+        <div class="arrow"><span class="cap">Graph Upsert</span>
+          <svg width="100%" height="10" viewBox="0 0 80 10" preserveAspectRatio="none"><path d="M0 5H70" stroke="#7A9CC0" stroke-width="1.5" stroke-linecap="round"/><path d="M70 1L78 5 70 9Z" fill="#4A5FA8"/></svg></div>
+        <div class="fstep"><div class="n">STEP 04</div><div class="t">Graph DB 적재</div>
+          <div class="d">실시간 업데이트 · Knowledge Vault 최신화 · Fig 2 그래프로 노출</div></div>
+      </div>
+    </div>
+    <div class="stlegend">
+      <span class="badge b-ok"><i></i>COMPLETED</span>
+      <span class="badge b-ok" style="border-style:dashed"><i></i>BETA</span>
+      <span class="badge b-warn"><i></i>IN PROGRESS</span>
+      <span class="badge b-muted"><i></i>PLANNED</span>
+      <span class="mono" style="font-size:10px;color:var(--text-muted);align-self:center">· 소스 hover 시 변환 방식과 수집 경로 표시</span>
+    </div>
+
+    <p class="sectionlabel" style="margin-top:34px">현재 진행 현황</p>
+    <div class="mile" id="f4mile">
+      <div class="mcard" data-p="100">
+        <div class="no">MILESTONE 01</div>
+        <h4>TEM 기록 전용 페이지 개설 및 구조화 데이터 적재</h4>
+        <span class="badge b-ok"><i></i>● COMPLETED</span>
+        <div class="gauge"><span></span></div>
+        <div class="mm">progress 100% · 운영 중</div>
+        <div class="srcref">source · <b>TEM / SEM APM 이미지</b></div>
+      </div>
+      <div class="mcard" data-p="100">
+        <div class="no">MILESTONE 02</div>
+        <h4>모듈 회의록 데이터 파이프라인 자동 유입 연동</h4>
+        <span class="badge b-ok"><i></i>● COMPLETED (Beta)</span>
+        <div class="gauge"><span></span></div>
+        <div class="mm">progress 100% · beta version 완료</div>
+        <div class="srcref">source · <b>모듈 회의록</b></div>
+      </div>
+      <div class="mcard" data-p="55">
+        <div class="no">MILESTONE 03</div>
+        <h4>Confluence 과거 문서 개체 · 관계 추출 및 초기 지식 그래프</h4>
+        <span class="badge b-warn"><i></i>◐ IN PROGRESS</span>
+        <div class="gauge"><span></span></div>
+        <div class="mm">progress 55% · 연내 EDM 연동 목표</div>
+        <div class="srcref">source · <b>Confluence 문서</b> → 다음: <b>EDM PPT 리포트</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+</section>
+
+<!-- ================= 05 FUTURE VISION ================= -->
+<section class="chap" id="s5">
+  <div class="chap-head opener rv">
+    <div class="op-l"><div class="op-num" aria-hidden="true">05</div><div class="chap-no">05 — Future Vision</div><h2>시맨틱 패브릭과 인간-AI 협업 기반의 MAS</h2></div>
+    <div class="op-r"><p>실시간 파이프라인으로 최신화된 온톨로지는 도메인 특화 <b>지식 금고(Knowledge Vault)</b>가 됩니다. 그 위에서 공정별 역할을 맡은 여러 AI 에이전트가 서로 지식을 참조하며 일합니다.</p></div>
+  </div>
+  <div class="vision">
+    <div class="vcard rv"><span class="k">KNOWLEDGE VAULT × MAS</span><h3>지식 금고와 AI 에이전트 간의 소통</h3>
+      <p>세부 공정별로 역할이 부여된 Multi-Agent System이 시맨틱 패브릭 인프라 위에서 서로 지식을 참조하며 종합 분석과 리포트 생성을 돕습니다.</p></div>
+    <div class="vcard rv"><span class="k">HUMAN × AGENT</span><h3>인간 온톨로지스트와 에이전트의 협업</h3>
+      <p>엔지니어는 단순 반복 업무와 엑셀 취합에서 벗어나, 조직의 지식망을 설계하고 감독하는 역할로 이동합니다.</p></div>
+    <div class="vcard rv"><span class="k">SOVEREIGN AI</span><h3>진정한 소버린 자율 제조</h3>
+      <p>철저한 온프레미스 보안 환경 안에서, 끊임없이 공급되는 Fab 데이터와 문서로 자가 학습하는 독자 지식망을 완성합니다.</p></div>
+  </div>
+  <div class="evo rv">
+    <div class="evo-c was"><small>TODAY</small><h3>BEOL 엔지니어</h3>
+      <ul><li>데이터 엑셀 취합과 단순 반복 업무</li><li>과거 회의록 · 리포트를 기억에 의존해 검색</li><li>불량 원인을 매번 처음부터 추적</li></ul></div>
+    <div class="evo-ar">→</div>
+    <div class="evo-c now"><small>TOMORROW</small><h3>Chief Ontologist</h3>
+      <ul><li>조직의 지식망을 설계하고 감독</li><li>에이전트가 제시한 근거를 검증하고 판단</li><li>승인한 지식이 다음 추론의 재료가 되는 선순환</li></ul></div>
+  </div>
+  <div class="closing rv">
+    <h3>이것은 먼 미래의 계획이 아니라,<br>이미 실행 중인 우리의 현재입니다.</h3>
+    <p>TEM 기록 구조화 완료 · 모듈 회의록 파이프라인 Beta 완료 · Confluence 지식 그래프 구축 진행 중</p>
+  </div>
+</section>
+
+<footer>BEOL AX — Ontology &amp; Knowledge Fabric System · 차분한 바탕, 살아있는 디테일.</footer>
+</div>
+
+<script>
+var RM=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+/* ============ helper: 요소가 처음 화면에 들어올 때 1회 실행 ============ */
+function onFirstView(el,fn,delay){
+  if(!('IntersectionObserver' in window)){ setTimeout(fn,delay||0); return; }
+  var io=new IntersectionObserver(function(en){ if(en[0].isIntersecting){ io.disconnect(); setTimeout(fn,delay||0); } },{rootMargin:'0px 0px -22% 0px'});
+  io.observe(el);
+}
+
+/* ============ background: dot repel + trail + constellation ============ */
+(function(){
+  var cv=document.getElementById('fx'), ctx=cv.getContext('2d'), dots=[], trail=[], mouse={x:-9999,y:-9999}, W=0,H=0;
+  function build(){
+    W=cv.width=window.innerWidth; H=cv.height=window.innerHeight; dots=[];
+    var gap=48;
+    for(var y=gap;y<H;y+=gap) for(var x=gap;x<W;x+=gap) dots.push({ox:x,oy:y,x:x,y:y,vx:0,vy:0});
+  }
+  build(); window.addEventListener('resize',function(){ build(); if(RM) tick(); });
+  window.addEventListener('mousemove',function(e){ if(RM) return; mouse.x=e.clientX; mouse.y=e.clientY; trail.push({x:e.clientX,y:e.clientY,l:28}); });
+  document.addEventListener('mouseleave',function(){ mouse.x=-9999; mouse.y=-9999; });
+  function tick(){
+    ctx.clearRect(0,0,W,H);
+    for(var i=0;i<dots.length;i++){
+      var d=dots[i], dx=d.x-mouse.x, dy=d.y-mouse.y, dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<140&&dist>0.01){ var f=(1-dist/140)*38/dist; d.vx+=dx*f*0.05; d.vy+=dy*f*0.05; }
+      d.vx+=(d.ox-d.x)*0.05; d.vy+=(d.oy-d.y)*0.05; d.vx*=0.78; d.vy*=0.78; d.x+=d.vx; d.y+=d.vy;
+      var off=Math.min(Math.sqrt((d.x-d.ox)*(d.x-d.ox)+(d.y-d.oy)*(d.y-d.oy))/22,1);
+      ctx.beginPath(); ctx.arc(d.x,d.y,1.1+off*1.5,0,6.283);
+      ctx.fillStyle='rgba(168,189,212,'+(0.5+off*0.45)+')'; ctx.fill();
+      if(dist<110){ ctx.beginPath(); ctx.moveTo(d.x,d.y); ctx.lineTo(mouse.x,mouse.y);
+        ctx.strokeStyle='rgba(122,156,192,'+(1-dist/110)*0.4+')'; ctx.lineWidth=0.6; ctx.stroke(); }
+    }
+    for(var j=trail.length-1;j>=0;j--){ var t=trail[j]; t.l--;
+      if(t.l<=0){ trail.splice(j,1); continue; }
+      ctx.beginPath(); ctx.arc(t.x,t.y,t.l*0.22,0,6.283);
+      ctx.fillStyle='rgba(90,130,190,'+(t.l/28*0.1)+')'; ctx.fill(); }
+    if(!RM) requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ============ SHARED KNOWLEDGE GRAPH DATA (Fig 2 + Fig 3) ============ */
+var KG={
+  groups:{L4:{name:'L4 · MAS & Application',color:'#354690',r:8.5,inner:true},L3:{name:'L3 · Semantic Fabric (온톨로지 개체)',color:'#4A5FA8',r:6.5},
+          L2:{name:'L2 · Unstructured (문서·이미지)',color:'#7A9CC0',r:5.5},L1:{name:'L1 · Raw Fab Data',color:'#A8BDD4',r:4.5}},
+  nodes:[
+    {id:'ag_etch',label:'Etch Agent',group:'L4'},{id:'ag_cmp',label:'CMP Agent',group:'L4'},{id:'ag_met',label:'Metrology Agent',group:'L4'},
+    {id:'ag_causal',label:'인과 추론 엔진',group:'L4',big:true},{id:'ag_sim',label:'수율 시뮬레이터',group:'L4'},{id:'ag_human',label:'Chief Ontologist',group:'L4',big:true},
+    {id:'m1short',label:'M1 Short',group:'L3',status:'danger',big:true,kind:'Defect'},{id:'hol',label:'HOL 저항 열화',group:'L3',status:'danger',big:true,kind:'Defect'},
+    {id:'uncmp',label:'unCMP',group:'L3',kind:'Condition'},{id:'wdc',label:'WDC Hardmask 부족',group:'L3',kind:'Condition'},{id:'amicd_over',label:'AMI CD 과다',group:'L3',kind:'Condition'},
+    {id:'acicd_over',label:'ACI CD 증가',group:'L3',kind:'Condition'},{id:'barrier_thin',label:'Barrier 잔막 부족',group:'L3',kind:'Condition'},
+    {id:'spacer',label:'Spacer Etch',group:'L3',kind:'Process Step'},{id:'mnd',label:'MND Etch',group:'L3',kind:'Process Step'},{id:'trench',label:'Trench Etch',group:'L3',kind:'Process Step'},
+    {id:'cmp',label:'M1 CMP',group:'L3',kind:'Process Step'},{id:'i1',label:'I1 Etch',group:'L3',kind:'Process Step'},{id:'barrier_dep',label:'Barrier 증착',group:'L3',kind:'Process Step'},
+    {id:'epd',label:'EPD',group:'L3',status:'warning',kind:'Property'},{id:'amicd',label:'AMI CD',group:'L3',kind:'Property'},{id:'acicd',label:'ACI CD',group:'L3',kind:'Property'},
+    {id:'polish',label:'CMP Polish Time',group:'L3',kind:'Property'},{id:'rs',label:'Via Rs',group:'L3',status:'warning',kind:'Property'},{id:'yieldp',label:'Yield',group:'L3',kind:'Property'},
+    {id:'ch07',label:'ETCH-07 Chamber',group:'L3',kind:'Equipment'},{id:'ch12',label:'CMP-12 Chamber',group:'L3',kind:'Equipment'},
+    {id:'sf14',label:'SF1.4',group:'L3',kind:'Product'},{id:'sf10',label:'SF1.0 BMV0',group:'L3',kind:'Product'},{id:'lot',label:'Lot W2609-114',group:'L3',kind:'Lot'},
+    {id:'trim',label:'Recipe Trim',group:'L3',kind:'Action'},{id:'interlock',label:'Interlock',group:'L3',kind:'Action'},{id:'temreq',label:'TEM 계측 의뢰',group:'L3',kind:'Action'},{id:'simrun',label:'조건 변경 시뮬레이션',group:'L3',kind:'Action'},
+    {id:'mt2604',label:'2026.04 모듈 미팅',group:'L2',status:'success'},{id:'tem4352',label:'TEM APM N20260428_4352',group:'L2',status:'success'},{id:'tem1188',label:'TEM APM N20260512_1188',group:'L2',status:'success'},
+    {id:'conf77',label:'Confluence BEOL-ETCH-77',group:'L2'},{id:'ya251021',label:'수율분석_251021',group:'L2'},{id:'mm240312',label:'모듈미팅_240312.pptx',group:'L2'},
+    {id:'edm_ppt',label:'EDM 리포트 PPT',group:'L2'},{id:'knox1',label:'Knox Mail 스레드',group:'L2'},{id:'msg1',label:'메신저 대화',group:'L2'},
+    {id:'fdc',label:'FDC 시계열',group:'L1'},{id:'inline',label:'In-line CD/ET',group:'L1'},{id:'epdtrend',label:'EPD Trend DB',group:'L1'},{id:'yielddb',label:'Yield DB',group:'L1'},{id:'rsdata',label:'Rs 측정 DB',group:'L1'}
+  ],
+  edges:[
+    ['m1short','uncmp','Caused_by'],['m1short','wdc','Caused_by'],['m1short','acicd_over','Caused_by'],['wdc','amicd_over','Caused_by'],['amicd_over','spacer','Caused_by'],
+    ['wdc','i1','Caused_by'],['acicd_over','trench','Caused_by'],['uncmp','cmp','Occurs_at'],['hol','mnd','Caused_by'],['hol','barrier_thin','Caused_by'],['barrier_thin','barrier_dep','Occurs_at'],
+    ['spacer','epd','Measured_by'],['cmp','polish','Measured_by'],['amicd_over','amicd','Measured_by'],['acicd_over','acicd','Measured_by'],['mnd','rs','Measured_by'],['hol','rs','Measured_by'],['m1short','yieldp','Impacts'],
+    ['spacer','ch07','Runs_on'],['mnd','ch07','Runs_on'],['cmp','ch12','Runs_on'],['lot','sf14','Belongs_to'],['m1short','lot','Observed_on'],['sf10','wdc','Reported_case'],['sf14','uncmp','Reported_case'],
+    ['epd','mt2604','Reported_in_meeting'],['mt2604','tem4352','Evidence'],['tem4352','wdc','Analyzes'],['tem1188','barrier_thin','Analyzes'],['conf77','acicd_over','Mentions'],['ya251021','wdc','Mentions'],
+    ['mm240312','uncmp','Mentions'],['edm_ppt','hol','Mentions'],['knox1','mt2604','Follow_up'],['msg1','temreq','Requested_via'],
+    ['spacer','trim','Mitigated_by_action'],['mnd','trim','Mitigated_by_action'],['epd','interlock','Triggers'],['wdc','temreq','Requires'],['trim','simrun','Validated_by'],
+    ['fdc','epd','Feeds'],['fdc','ch07','Monitors'],['inline','amicd','Feeds'],['inline','acicd','Feeds'],['epdtrend','epd','Feeds'],['yielddb','yieldp','Feeds'],['rsdata','rs','Feeds'],
+    ['ag_etch','spacer','Owns'],['ag_etch','mnd','Owns'],['ag_cmp','cmp','Owns'],['ag_met','tem4352','Curates'],['ag_met','inline','Curates'],['ag_causal','m1short','Infers'],['ag_causal','hol','Infers'],
+    ['ag_sim','simrun','Runs'],['ag_human','ag_causal','Supervises'],['ag_human','mt2604','Approves'],['ag_causal','ag_etch','Queries'],['ag_causal','ag_cmp','Queries'],['ag_causal','ag_met','Queries']
+  ]
+};
+
+/* ============ GRAPH VIEW ENGINE (vanilla canvas force graph) ============ */
+var GraphView=(function(){
+  var SC={danger:'#C25450',warning:'#C99A3B',success:'#3B8A6E'};
+  var GCENTER={L4:[0,-240],L3:[0,-10],L2:[-330,200],L1:[330,200]};
+  var FONT="'Apple SD Gothic Neo','Pretendard','Noto Sans KR','Inter',sans-serif";
+  function rgba(hex,a){var n=parseInt(hex.slice(1),16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';}
+  function G(canvas,data,opts){
+    var self=this; this.cv=canvas; this.ctx=canvas.getContext('2d'); this.opts=opts||{}; this.data=data;
+    var O=this.opts, rm=O.rmul||1;
+    this.gc=O.centers||GCENTER;
+    this.P={link:O.linkDist||86,charge:O.charge||4600,cmax:O.chargeMax||9,font:O.font||11,pillFont:O.pillFont||9,
+            pillMax:O.pillMax||16,labelZoom:O.labelZoom||0.62,spread:O.spread||160,minPill:O.minPill||70};
+    this.nodes=data.nodes.map(function(n){
+      var gd=data.groups[n.group]||{}; var r=(n.r||gd.r||6)*rm; if(n.big) r+=2.5*rm;
+      return {id:n.id,label:n.label,group:n.group,status:n.status||null,kind:n.kind||null,r:r,x:0,y:0,vx:0,vy:0,fixed:false};
+    });
+    this.byId={}; this.nodes.forEach(function(n){ self.byId[n.id]=n; });
+    this.edges=[]; this.adj={}; this.nodes.forEach(function(n){ self.adj[n.id]={}; });
+    data.edges.forEach(function(e){ var s=self.byId[e[0]],t=self.byId[e[1]]; if(!s||!t) return;
+      var E={s:s,t:t,label:e[2],key:e[0]+'|'+e[1]}; self.edges.push(E); self.adj[e[0]][e[1]]=E; self.adj[e[1]][e[0]]=E; });
+    this.view={s:1,x:0,y:0}; this.target=null;
+    this.hover=null; this.drag=null; this.pan=null; this.moved=0; this.mouse=null;
+    this.hl=null; this.filter=null; this.search=null; this.alpha=1; this.t=0;
+    this.seed(); if(RM){ for(var q=0;q<320;q++) this.tick(); } this.bind(); this.resize();
+    if(window.ResizeObserver){ new ResizeObserver(function(){ self.resize(); }).observe(canvas.parentElement); }
+    window.addEventListener('resize',function(){ self.resize(); });
+    this.loop();
+  }
+  G.prototype.seed=function(){
+    var seed=7; function rnd(){ seed=(seed*9301+49297)%233280; return seed/233280; }
+    var gc=this.gc, sp=this.P.spread;
+    this.nodes.forEach(function(n){ var c=gc[n.group]||[0,0]; var a=rnd()*6.283, r=sp*0.22+rnd()*sp; n.x=c[0]+Math.cos(a)*r; n.y=c[1]+Math.sin(a)*r; });
+  };
+  G.prototype.resize=function(){
+    var dpr=window.devicePixelRatio||1, w=this.cv.parentElement.clientWidth, h=this.cv.parentElement.clientHeight;
+    if(!w||!h) return;
+    this.w=w; this.h=h; this.cv.width=w*dpr; this.cv.height=h*dpr; this.cv.style.width=w+'px'; this.cv.style.height=h+'px';
+    this.dpr=dpr;
+  };
+  G.prototype.tick=function(){
+    var a=this.alpha, N=this.nodes, i,j,n,m,dx,dy,d2,d,f;
+    for(i=0;i<N.length;i++){ n=N[i];
+      for(j=i+1;j<N.length;j++){ m=N[j]; dx=m.x-n.x; dy=m.y-n.y; d2=dx*dx+dy*dy; if(d2<1) d2=1; d=Math.sqrt(d2);
+        f=Math.min(this.P.charge/d2,this.P.cmax)*a; var fx=dx/d*f, fy=dy/d*f; n.vx-=fx; n.vy-=fy; m.vx+=fx; m.vy+=fy; } }
+    for(i=0;i<this.edges.length;i++){ var E=this.edges[i]; dx=E.t.x-E.s.x; dy=E.t.y-E.s.y; d=Math.sqrt(dx*dx+dy*dy)||1;
+      var L=this.P.link+E.s.r+E.t.r; f=(d-L)*0.02*a; var fx2=dx/d*f, fy2=dy/d*f; E.s.vx+=fx2; E.s.vy+=fy2; E.t.vx-=fx2; E.t.vy-=fy2; }
+    for(i=0;i<N.length;i++){ n=N[i]; var gc=this.gc[n.group]||[0,0];
+      n.vx+=(-n.x)*0.0022*a+(gc[0]-n.x)*0.005*a; n.vy+=(-n.y)*0.0022*a+(gc[1]-n.y)*0.005*a;
+      if(n.fixed){ n.vx=0; n.vy=0; continue; }
+      n.vx*=0.8; n.vy*=0.8; var sp=Math.sqrt(n.vx*n.vx+n.vy*n.vy); if(sp>7){ n.vx*=7/sp; n.vy*=7/sp; }
+      n.x+=n.vx; n.y+=n.vy; }
+    this.alpha=Math.max(RM?0:0.018,this.alpha*0.986);
+    if(this.target){ var v=this.view,t=this.target,LK=RM?1:0.12; v.s+=(t.s-v.s)*LK; v.x+=(t.x-v.x)*LK; v.y+=(t.y-v.y)*LK;
+      if(Math.abs(t.s-v.s)<0.002&&Math.abs(t.x-v.x)<0.5&&Math.abs(t.y-v.y)<0.5){ this.view={s:t.s,x:t.x,y:t.y}; this.target=null; } }
+  };
+  G.prototype.nodeState=function(n){
+    if(this.hover){ return (n===this.hover||this.adj[this.hover.id][n.id])?'lit':'dim'; }
+    if(this.hl){ return this.hl.nodes[n.id]?'lit':'dim'; }
+    if(this.search){ return n.label.toLowerCase().indexOf(this.search)>=0?'lit':'dim'; }
+    if(this.filter){ return n.group===this.filter?'lit':'dim'; }
+    return 'norm';
+  };
+  G.prototype.edgeState=function(E){
+    if(this.hover){ return (E.s===this.hover||E.t===this.hover)?'lit':'dim'; }
+    if(this.hl){ return this.hl.edges[E.key]?'lit':'dim'; }
+    if(this.search){ var s=this.search; return (E.s.label.toLowerCase().indexOf(s)>=0||E.t.label.toLowerCase().indexOf(s)>=0)?'norm':'dim'; }
+    if(this.filter){ return (E.s.group===this.filter&&E.t.group===this.filter)?'norm':'dim'; }
+    return 'norm';
+  };
+  G.prototype.render=function(){
+    var ctx=this.ctx, W=this.w, H=this.h, v=this.view, self=this; if(!W) return;
+    ctx.setTransform(this.dpr,0,0,this.dpr,0,0); ctx.clearRect(0,0,W,H);
+    ctx.save(); ctx.translate(W/2+v.x,H/2+v.y); ctx.scale(v.s,v.s);
+    var inv=1/v.s, showAll=v.s>=this.P.labelZoom, t=this.t, P=this.P;
+    // edges
+    var litEdges=[];
+    this.edges.forEach(function(E){
+      var st=self.edgeState(E);
+      ctx.beginPath(); ctx.moveTo(E.s.x,E.s.y); ctx.lineTo(E.t.x,E.t.y);
+      if(st==='lit'){ ctx.strokeStyle=rgba('#4A5FA8',0.95); ctx.lineWidth=1.7*inv; litEdges.push(E); }
+      else if(st==='norm'){ ctx.strokeStyle=rgba('#7A9CC0',0.55); ctx.lineWidth=1*inv; }
+      else { ctx.strokeStyle=rgba('#7A9CC0',0.12); ctx.lineWidth=1*inv; }
+      ctx.stroke();
+    });
+    if(this.hl){ ctx.save(); ctx.setLineDash([3*inv,9*inv]); ctx.lineDashOffset=-t*0.5*inv; ctx.strokeStyle=rgba('#EDF1F7',0.95); ctx.lineWidth=1.7*inv;
+      litEdges.forEach(function(E){ ctx.beginPath(); ctx.moveTo(E.s.x,E.s.y); ctx.lineTo(E.t.x,E.t.y); ctx.stroke(); }); ctx.restore(); }
+    // predicate pills on lit edges (drawn under nodes/labels; skipped on very short edges)
+    var placed=[], lh=(P.font+2)*inv;
+    if(litEdges.length&&litEdges.length<=P.pillMax){
+      ctx.font=(P.pillFont*inv)+'px '+FONT; ctx.textAlign='center'; ctx.textBaseline='middle';
+      litEdges.forEach(function(E){ var ex=E.t.x-E.s.x, ey=E.t.y-E.s.y; if(Math.sqrt(ex*ex+ey*ey)*v.s<P.minPill) return;
+        var mx=(E.s.x+E.t.x)/2, my=(E.s.y+E.t.y)/2, tw=ctx.measureText(E.label).width, pw=tw+12*inv, ph=15*inv;
+        ctx.beginPath(); roundRect(ctx,mx-pw/2,my-ph/2,pw,ph,ph/2); ctx.fillStyle=rgba('#EDF1F7',0.97); ctx.fill(); ctx.lineWidth=0.8*inv; ctx.strokeStyle='#C8D4E4'; ctx.stroke();
+        ctx.fillStyle='#4A5FA8'; ctx.fillText(E.label,mx,my); placed.push({x:mx-pw/2,y:my-ph/2,w:pw,h:ph}); });
+    }
+    // nodes
+    this.nodes.forEach(function(n){
+      var st=self.nodeState(n), al=st==='dim'?0.16:1, r=n.r*(n===self.hover?1.3:1), col=self.data.groups[n.group].color;
+      if(st==='lit'&&self.hl&&self.hl.nodes[n.id]){ var pr=r+5+Math.sin(t*0.06+n.x*0.01)*1.5; ctx.beginPath(); ctx.arc(n.x,n.y,pr,0,6.283); ctx.fillStyle=rgba(col,0.14); ctx.fill(); }
+      ctx.beginPath(); ctx.arc(n.x,n.y,r,0,6.283); ctx.fillStyle=rgba(col,al); ctx.fill();
+      ctx.lineWidth=1.5*inv; ctx.strokeStyle=rgba('#EDF1F7',al); ctx.stroke();
+      if((self.data.groups[n.group]||{}).inner){ ctx.beginPath(); ctx.arc(n.x,n.y,r*0.36,0,6.283); ctx.fillStyle=rgba('#FFFFFF',0.9*al); ctx.fill(); }
+      if(n.status&&st!=='dim'){ ctx.beginPath(); ctx.arc(n.x,n.y,r+3.2*inv,0,6.283); ctx.lineWidth=1.6*inv; ctx.strokeStyle=SC[n.status]; ctx.stroke(); }
+    });
+    // labels
+    ctx.font=(P.font*inv)+'px '+FONT; ctx.textAlign='center'; ctx.textBaseline='top'; try{ ctx.letterSpacing='-0.02em'; }catch(e){}
+    function overlaps(r){ for(var i=0;i<placed.length;i++){ var p=placed[i]; if(r.x<p.x+p.w&&r.x+r.w>p.x&&r.y<p.y+p.h&&r.y+r.h>p.y) return true; } return false; }
+    var order=this.nodes.slice().sort(function(a,b){ var sa=self.nodeState(a)==='lit'?0:1, sb=self.nodeState(b)==='lit'?0:1; return sa-sb||b.r-a.r; });
+    order.forEach(function(n){
+      var st=self.nodeState(n); if(st==='dim') return;
+      var always=(self.data.groups[n.group]||{}).always;
+      if(!(showAll||st==='lit'||always||n.r>=8)) return;
+      var bold=(st==='lit'&&(self.hl||self.hover));
+      ctx.font=(bold?'700 ':'400 ')+(P.font*inv)+'px '+FONT;
+      var tw=ctx.measureText(n.label).width, y=n.y+n.r+5*inv, rect={x:n.x-tw/2,y:y,w:tw,h:lh};
+      if(overlaps(rect)){ var y2=n.y-n.r-5*inv-lh, r2={x:n.x-tw/2,y:y2,w:tw,h:lh}; if(!overlaps(r2)){ y=y2; rect=r2; } else if(st!=='lit'&&!showAll) return; }
+      placed.push(rect);
+      ctx.lineWidth=3*inv; ctx.strokeStyle=rgba('#EDF1F7',0.9); ctx.strokeText(n.label,n.x,y);
+      ctx.fillStyle=rgba('#1E2D4A',st==='norm'?0.82:1); ctx.fillText(n.label,n.x,y);
+    });
+    ctx.restore();
+  };
+  function roundRect(ctx,x,y,w,h,r){ ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  G.prototype.loop=function(){ var self=this;
+    if('IntersectionObserver' in window){ new IntersectionObserver(function(en){ self.visible=en[0].isIntersecting; },{rootMargin:'120px'}).observe(this.cv.parentElement); }
+    (function f(){ if(self.visible!==false){ if(!RM) self.t++; self.tick(); self.render(); } requestAnimationFrame(f); })(); };
+  G.prototype.toWorld=function(mx,my){ var v=this.view; return [(mx-this.w/2-v.x)/v.s,(my-this.h/2-v.y)/v.s]; };
+  G.prototype.toScreen=function(x,y){ var v=this.view; return [x*v.s+this.w/2+v.x, y*v.s+this.h/2+v.y]; };
+  G.prototype.hit=function(wx,wy){ var best=null,bd=1e9; for(var i=0;i<this.nodes.length;i++){ var n=this.nodes[i], dx=n.x-wx, dy=n.y-wy, d=dx*dx+dy*dy, rr=(n.r+6/this.view.s); if(d<rr*rr&&d<bd){ best=n; bd=d; } } return best; };
+  G.prototype.bind=function(){
+    var self=this, cv=this.cv;
+    function pos(e){ var r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; }
+    cv.addEventListener('mousedown',function(e){ var p=pos(e), w=self.toWorld(p[0],p[1]), n=self.hit(w[0],w[1]); self.moved=0;
+      if(n){ self.drag=n; n.fixed=true; self.alpha=Math.max(self.alpha,0.5); cv.classList.add('dragging'); } else { self.pan={x:p[0],y:p[1],vx:self.view.x,vy:self.view.y}; cv.classList.add('dragging'); } e.preventDefault(); });
+    window.addEventListener('mousemove',function(e){ var p=pos(e);
+      if(self.drag){ var w=self.toWorld(p[0],p[1]); self.drag.x=w[0]; self.drag.y=w[1]; self.moved++; self.alpha=Math.max(self.alpha,0.25); return; }
+      if(self.pan){ self.view.x=self.pan.vx+(p[0]-self.pan.x); self.view.y=self.pan.vy+(p[1]-self.pan.y); self.target=null; self.moved++; return; }
+      if(p[0]<0||p[1]<0||p[0]>self.w||p[1]>self.h){ if(self.hover){ self.hover=null; cv.classList.remove('pointer'); if(self.opts.onHover) self.opts.onHover(null); } return; }
+      var w2=self.toWorld(p[0],p[1]), n=self.hit(w2[0],w2[1]);
+      if(n!==self.hover){ self.hover=n; cv.classList.toggle('pointer',!!n); if(self.opts.onHover) self.opts.onHover(n,n?self.toScreen(n.x,n.y):null); }
+      else if(n&&self.opts.onHover){ self.opts.onHover(n,self.toScreen(n.x,n.y),true); } });
+    window.addEventListener('mouseup',function(e){ if(self.drag){ var n=self.drag; self.drag=null; n.fixed=false; cv.classList.remove('dragging'); if(self.moved<3&&self.opts.onClick) self.opts.onClick(n); }
+      if(self.pan){ self.pan=null; cv.classList.remove('dragging'); } });
+    cv.addEventListener('wheel',function(e){ e.preventDefault(); var p=pos(e), v=self.view, k=Math.pow(1.0018,-e.deltaY), ns=Math.min(3.2,Math.max(0.35,v.s*k));
+      var wx=(p[0]-self.w/2-v.x)/v.s, wy=(p[1]-self.h/2-v.y)/v.s; v.s=ns; v.x=p[0]-self.w/2-wx*ns; v.y=p[1]-self.h/2-wy*ns; self.target=null; },{passive:false});
+    cv.addEventListener('dblclick',function(){ self.resetView(); });
+    cv.addEventListener('mouseleave',function(){ if(self.hover){ self.hover=null; cv.classList.remove('pointer'); if(self.opts.onHover) self.opts.onHover(null); } });
+  };
+  G.prototype.setHighlight=function(nodeIds,edgeKeys){ if(!nodeIds){ this.hl=null; return; } var n={},e={}; nodeIds.forEach(function(i){ n[i]=1; }); (edgeKeys||[]).forEach(function(k){ e[k]=1; var p=k.split('|'); e[p[1]+'|'+p[0]]=1; }); this.hl={nodes:n,edges:e}; };
+  G.prototype.setFilter=function(g){ this.filter=g||null; };
+  G.prototype.setSearch=function(q){ this.search=q?q.toLowerCase():null; };
+  G.prototype.fit=function(ids,pad,maxS){ if(!this.w||!this.h) return; var self=this, xs=[],ys=[]; (ids||this.nodes.map(function(n){return n.id;})).forEach(function(i){ var n=self.byId[i]; if(n){ xs.push(n.x); ys.push(n.y); } });
+    if(!xs.length) return; var minx=Math.min.apply(null,xs)-40,maxx=Math.max.apply(null,xs)+40,miny=Math.min.apply(null,ys)-40,maxy=Math.max.apply(null,ys)+50;
+    pad=pad||60; var s=Math.min((this.w-pad)/(maxx-minx),(this.h-pad)/(maxy-miny),maxS||1.6); var cx=(minx+maxx)/2, cy=(miny+maxy)/2;
+    this.target={s:s,x:-cx*s,y:-cy*s}; };
+  G.prototype.resetView=function(){ this.target={s:1,x:0,y:0}; };
+  G.prototype.neighbors=function(id){ var self=this; return Object.keys(this.adj[id]).map(function(k){ var E=self.adj[id][k]; return {node:self.byId[k],label:E.label,out:E.s.id===id}; }); };
+  return G;
+})();
+
+function bindTip(gv,tipEl,wrapEl){
+  gv.opts.onHover=function(n,sp){
+    if(!n){ tipEl.classList.remove('on'); return; }
+    var rel=gv.neighbors(n.id).slice(0,5).map(function(r){ return (r.out?'→ ':'← ')+'<em>'+r.label+'</em> '+r.node.label; }).join('<br>');
+    var gname=(gv.data.groups[n.group]||{name:''}).name.split(' · ')[0];
+    tipEl.innerHTML='<span class="k">'+gname+(n.kind?' · '+n.kind:'')+(n.status?' · '+n.status:'')+'</span><b>'+n.label+'</b><div class="rel">'+rel+(gv.neighbors(n.id).length>5?'<br>…':'')+'</div>';
+    var x=sp[0]+16, y=sp[1]-10; if(x+270>wrapEl.clientWidth) x=sp[0]-16-270; if(y+120>wrapEl.clientHeight) y=wrapEl.clientHeight-130;
+    tipEl.style.left=x+'px'; tipEl.style.top=Math.max(8,y)+'px'; tipEl.classList.add('on');
+  };
+}
+
+/* ============ FIG 0: intro — typing hook + chatbot vs agent loop ============ */
+(function(){
+  var Q='여러분이 생각하는 AI는?';
+  var A='질문에 답만 하는 채팅형 AI라면 — 그것만으로는 반도체 개발에 부족합니다.';
+  var hq=document.getElementById('hookQ'), ha=document.getElementById('hookA'), split=document.getElementById('f0split'),
+      bubs=document.querySelectorAll('#chatwin .bub'), loopEl=document.getElementById('loop'), fit=document.getElementById('loopfit'),
+      nodes=loopEl.querySelectorAll('.lnode'), arcs=loopEl.querySelectorAll('.arc'), core=document.getElementById('f0core'), fn=document.getElementById('f0fn');
+  var CX=260,CY=150,R=112,ANG=[-90,0,90,180];
+  function pt(a){ var r=a*Math.PI/180; return [CX+R*Math.cos(r),CY+R*Math.sin(r)]; }
+  function inside(p,el,m){ var w=el.offsetWidth+2*m,h=el.offsetHeight+2*m,x=el.offsetLeft-w/2,y=el.offsetTop-h/2; return p[0]>=x&&p[0]<=x+w&&p[1]>=y&&p[1]<=y+h; }
+  function buildArcs(){
+    for(var k=0;k<4;k++){ var a0=ANG[k],a1=ANG[(k+1)%4]; if(a1<a0) a1+=360; var s=a0,e=a1;
+      while(s<a1&&inside(pt(s),nodes[k],6)) s+=1; s+=3;
+      while(e>s&&inside(pt(e),nodes[(k+1)%4],6)) e-=1; e-=6;
+      var p=pt(s),q=pt(e);
+      arcs[k].setAttribute('d','M'+p[0].toFixed(1)+','+p[1].toFixed(1)+' A'+R+','+R+' 0 0 1 '+q[0].toFixed(1)+','+q[1].toFixed(1)); }
+  }
+  var timers=[];
+  function T(f,ms){ timers.push(setTimeout(f,ms)); }
+  function type(el,text,speed,cb){
+    el.textContent=''; var caret=document.createElement('span'); caret.className='caret'; el.appendChild(caret); var i=0;
+    (function step(){ if(i<text.length){ el.insertBefore(document.createTextNode(text.charAt(i++)),caret); T(step,speed); } else { T(function(){ caret.remove(); },600); if(cb) cb(); } })();
+  }
+  function reset(){
+    timers.forEach(clearTimeout); timers=[];
+    hq.textContent=''; ha.textContent=''; split.classList.remove('in'); fn.classList.remove('in'); core.classList.remove('pulse');
+    for(var i=0;i<bubs.length;i++) bubs[i].classList.remove('in','gone');
+    for(var i=0;i<nodes.length;i++) nodes[i].classList.remove('on');
+    for(var i=0;i<arcs.length;i++) arcs[i].classList.remove('on');
+  }
+  function panes(){
+    T(function(){ bubs[0].classList.add('in'); },300);
+    T(function(){ bubs[1].classList.add('in'); },900);
+    T(function(){ bubs[1].classList.add('gone'); bubs[2].classList.add('in'); },2100);
+    T(function(){ bubs[3].classList.add('in'); },3000);
+    var step=620;
+    T(function(){ nodes[0].classList.add('on'); },300);
+    for(var k=0;k<4;k++)(function(k){ T(function(){ arcs[k].classList.add('on'); nodes[(k+1)%4].classList.add('on'); },300+step*(k+1)); })(k);
+    T(function(){ core.classList.add('pulse'); },300+step*5);
+    T(function(){ fn.classList.add('in'); },300+step*5+200);
+  }
+  function run(){
+    reset();
+    type(hq,Q,RM?0:55,function(){ T(function(){ type(ha,A,RM?0:28,function(){ T(function(){ split.classList.add('in'); panes(); },350); }); },450); });
+  }
+  function scale(){ var s=Math.min(1,(fit.clientWidth||520)/520); loopEl.style.transform='scale('+s+')'; fit.style.height=(300*s)+'px'; }
+  buildArcs(); scale(); window.addEventListener('resize',scale);
+  document.getElementById('f0replay').addEventListener('click',run);
+  setTimeout(run,500);
+})();
+
+/* ============ FIG 1: retrieval → context injection → LLM answer ============ */
+var KG1={
+  groups:{
+    Defect:{name:'결함',color:'#354690',r:7.5,inner:true,always:true},
+    Condition:{name:'현상·조건',color:'#4A5FA8',r:6},
+    Process:{name:'공정 스텝',color:'#4A6BAF',r:5.5},
+    Property:{name:'계측 지표',color:'#6B82C4',r:5},
+    Evidence:{name:'문서·증빙',color:'#7A9CC0',r:5},
+    Equip:{name:'설비·로트',color:'#A8BDD4',r:4.5}
+  },
+  centers:{Defect:[-235,-85],Condition:[-45,5],Process:[180,-95],Property:[255,80],Evidence:[-255,100],Equip:[30,170]},
+  nodes:[
+    {id:'m1short',label:'M1 Short',group:'Defect',big:true,status:'danger',kind:'Defect'},
+    {id:'m1open',label:'M1 Open',group:'Defect',kind:'Defect'},
+    {id:'hardopen',label:'Hard Open',group:'Defect',kind:'Defect'},
+    {id:'x1uncut',label:'X1 Uncut',group:'Defect',kind:'Defect'},
+    {id:'l1uncut',label:'L1 Uncut',group:'Defect',kind:'Defect'},
+    {id:'hol',label:'HOL 저항 열화',group:'Defect',kind:'Defect'},
+    {id:'uncmp',label:'unCMP',group:'Condition',kind:'Condition'},
+    {id:'wdc',label:'WDC Hardmask 부족',group:'Condition',kind:'Condition'},
+    {id:'amicd_over',label:'AMI CD 과다',group:'Condition',kind:'Condition'},
+    {id:'aasicd_over',label:'AASI CD 과다',group:'Condition',kind:'Condition'},
+    {id:'acicd_over',label:'ACI CD 증가',group:'Condition',kind:'Condition'},
+    {id:'minarea',label:'M1 Min Area Cu Fill 불량',group:'Condition',kind:'Condition'},
+    {id:'bftort',label:'L1e BF Torture 마진 부족',group:'Condition',kind:'Condition'},
+    {id:'ovlshift',label:'M1 Photo Overlay Shift',group:'Condition',kind:'Condition'},
+    {id:'barrier_thin',label:'Barrier 잔막 부족',group:'Condition',kind:'Condition'},
+    {id:'stack_thin',label:'M1 Stack 두께 부족',group:'Condition',kind:'Condition'},
+    {id:'spacer',label:'Spacer Etch',group:'Process',kind:'Process Step'},
+    {id:'mnd',label:'MND Etch',group:'Process',kind:'Process Step'},
+    {id:'stackdepo',label:'M1 Stack Depo',group:'Process',kind:'Process Step'},
+    {id:'m1photo',label:'M1 Photo',group:'Process',kind:'Process Step'},
+    {id:'trench',label:'Trench Etch',group:'Process',kind:'Process Step'},
+    {id:'i1',label:'I1 Etch',group:'Process',kind:'Process Step'},
+    {id:'cmp',label:'M1 CMP',group:'Process',kind:'Process Step'},
+    {id:'ecp',label:'Cu Fill (ECP)',group:'Process',kind:'Process Step'},
+    {id:'barrierdep',label:'Barrier 증착',group:'Process',kind:'Process Step'},
+    {id:'epd',label:'EPD',group:'Property',status:'warning',kind:'Property'},
+    {id:'amicd',label:'AMI CD',group:'Property',kind:'Property'},
+    {id:'aasicd',label:'AASI CD',group:'Property',kind:'Property'},
+    {id:'acicd',label:'ACI CD',group:'Property',kind:'Property'},
+    {id:'polish',label:'CMP Polish Time',group:'Property',kind:'Property'},
+    {id:'ovl',label:'Overlay X/Y',group:'Property',kind:'Property'},
+    {id:'rs',label:'Via Rs',group:'Property',kind:'Property'},
+    {id:'minareav',label:'Min Area',group:'Property',kind:'Property'},
+    {id:'bfmargin',label:'BF Torture Margin',group:'Property',kind:'Property'},
+    {id:'stackth',label:'Stack Thickness',group:'Property',kind:'Property'},
+    {id:'tem4352',label:'TEM APM N20260428_4352',group:'Evidence',status:'success',kind:'Evidence'},
+    {id:'mt2604',label:'2026.04 모듈 미팅',group:'Evidence',status:'success',kind:'Meeting'},
+    {id:'fdc07',label:'FDC · ETCH-07 EPD',group:'Evidence',kind:'Time-series'},
+    {id:'conf77',label:'Confluence BEOL-ETCH-77',group:'Evidence',kind:'Document'},
+    {id:'ya251021',label:'수율분석_251021',group:'Evidence',kind:'Document'},
+    {id:'mm240312',label:'모듈미팅_240312',group:'Evidence',kind:'Document'},
+    {id:'etch07',label:'ETCH-07',group:'Equip',kind:'Equipment'},
+    {id:'cmp12',label:'CMP-12',group:'Equip',kind:'Equipment'},
+    {id:'litho03',label:'LITHO-03',group:'Equip',kind:'Equipment'},
+    {id:'ecp05',label:'ECP-05',group:'Equip',kind:'Equipment'},
+    {id:'lot',label:'Lot W2609-114',group:'Equip',kind:'Lot'}
+  ],
+  edges:[
+    ['m1short','wdc','Caused_by'],['m1short','uncmp','Caused_by'],['m1short','acicd_over','Caused_by'],['m1short','ovlshift','Caused_by'],
+    ['wdc','amicd_over','Caused_by'],['amicd_over','spacer','Caused_by'],['wdc','i1','Caused_by'],['acicd_over','trench','Caused_by'],
+    ['uncmp','cmp','Occurs_at'],['ovlshift','m1photo','Occurs_at'],
+    ['m1open','aasicd_over','Caused_by'],['m1open','minarea','Caused_by'],['aasicd_over','mnd','Caused_by'],['minarea','ecp','Occurs_at'],
+    ['hardopen','stack_thin','Caused_by'],['hardopen','barrier_thin','Caused_by'],['stack_thin','stackdepo','Occurs_at'],['barrier_thin','barrierdep','Occurs_at'],
+    ['x1uncut','mnd','Caused_by'],['x1uncut','aasicd_over','Caused_by'],['l1uncut','spacer','Caused_by'],['l1uncut','bftort','Caused_by'],['bftort','i1','Occurs_at'],
+    ['hol','mnd','Caused_by'],['hol','barrier_thin','Caused_by'],['hol','rs','Measured_by'],
+    ['spacer','epd','Measured_by'],['mnd','epd','Measured_by'],['cmp','polish','Measured_by'],['amicd_over','amicd','Measured_by'],
+    ['aasicd_over','aasicd','Measured_by'],['acicd_over','acicd','Measured_by'],['ovlshift','ovl','Measured_by'],['minarea','minareav','Measured_by'],
+    ['bftort','bfmargin','Measured_by'],['stack_thin','stackth','Measured_by'],
+    ['spacer','etch07','Runs_on'],['mnd','etch07','Runs_on'],['i1','etch07','Runs_on'],['cmp','cmp12','Runs_on'],
+    ['m1photo','litho03','Runs_on'],['ecp','ecp05','Runs_on'],['m1short','lot','Observed_on'],['lot','cmp','Processed_at'],
+    ['epd','mt2604','Reported_in_meeting'],['mt2604','tem4352','Evidence'],['tem4352','wdc','Analyzes'],
+    ['fdc07','epd','Feeds'],['fdc07','etch07','Monitors'],
+    ['conf77','acicd_over','Mentions'],['ya251021','wdc','Mentions'],['mm240312','uncmp','Mentions'],['mt2604','spacer','Discusses']
+  ]
+};
+(function(){
+  var chunks=document.querySelectorAll('#f1chunks .chunk'),
+      cuts=document.querySelectorAll('#f1chunks .cut'),
+      brks=document.querySelectorAll('#f1chunks .brk');
+  var injL=document.getElementById('injL'), injLt=document.getElementById('injLt'),
+      injR=document.getElementById('injR'), injRt=document.getElementById('injRt'),
+      llmL=document.getElementById('llmL'), llmLs=document.getElementById('llmLs'),
+      llmR=document.getElementById('llmR'), llmRs=document.getElementById('llmRs'),
+      ansL=document.getElementById('ansL'), ansR=document.getElementById('ansR');
+  var gv=new GraphView(document.getElementById('f1canvas'),KG1,{
+    centers:KG1.centers,linkDist:44,charge:1500,chargeMax:6,rmul:0.9,
+    font:9.5,pillFont:8,pillMax:12,labelZoom:0.92,spread:105,minPill:56
+  });
+  bindTip(gv,document.getElementById('f1tip'),document.getElementById('f1gvwrap'));
+  var leg=document.getElementById('f1leg');
+  Object.keys(KG1.groups).forEach(function(k){
+    var s=document.createElement('span');
+    s.innerHTML='<i style="background:'+KG1.groups[k].color+'"></i>'+KG1.groups[k].name;
+    leg.appendChild(s);
+  });
+  document.getElementById('f1stat').textContent=KG1.nodes.length+' 노드 · '+KG1.edges.length+' 트리플에서 인과 경로만 추출';
+
+  var PATH=[
+    {nodes:['m1short'],edges:[]},
+    {nodes:['wdc','amicd_over','spacer'],edges:['m1short|wdc','wdc|amicd_over','amicd_over|spacer']},
+    {nodes:['epd','etch07','fdc07'],edges:['spacer|epd','spacer|etch07','fdc07|epd']},
+    {nodes:['mt2604','tem4352'],edges:['epd|mt2604','mt2604|tem4352','tem4352|wdc']}
+  ];
+  var nPathNodes=0,nPathEdges=0;
+  PATH.forEach(function(s){ nPathNodes+=s.nodes.length; nPathEdges+=s.edges.length; });
+  var timers=[], acc=[], accE=[];
+  function clearT(){ timers.forEach(clearTimeout); timers=[]; }
+  function dots(){ return ' <span class="dots"><i></i><i></i><i></i></span>'; }
+  function run(){
+    clearT();
+    for(var i=0;i<chunks.length;i++) chunks[i].classList.remove('in');
+    for(var i=0;i<cuts.length;i++) cuts[i].classList.remove('in');
+    for(var i=0;i<brks.length;i++) brks[i].classList.remove('in');
+    injL.classList.remove('on'); injR.classList.remove('on');
+    injLt.textContent='컨텍스트 주입 대기'; injRt.textContent='컨텍스트 주입 대기';
+    llmL.classList.remove('think'); llmR.classList.remove('think');
+    llmLs.textContent='STEP 3 · 대기 중'; llmRs.textContent='STEP 3 · 대기 중';
+    ansL.classList.remove('on'); ansR.classList.remove('on');
+    acc=[]; accE=[]; gv.setHighlight(null); gv.fit(null,24,1.15);
+
+    for(var i=0;i<chunks.length;i++)(function(c,n){ timers.push(setTimeout(function(){ c.classList.add('in'); },170+n*230)); })(chunks[i],i);
+    timers.push(setTimeout(function(){
+      for(var i=0;i<cuts.length;i++) cuts[i].classList.add('in');
+      for(var i=0;i<brks.length;i++) brks[i].classList.add('in');
+    },900));
+
+    PATH.forEach(function(s,i){
+      timers.push(setTimeout(function(){
+        acc=acc.concat(s.nodes); accE=accE.concat(s.edges);
+        gv.setHighlight(acc,accE); gv.fit(acc,50,2.0);
+      },330+i*620));
+    });
+
+    timers.push(setTimeout(function(){
+      injL.classList.add('on'); injLt.textContent='chunk 3개 · 1,240 tokens 원문 텍스트 주입';
+      injR.classList.add('on'); injRt.textContent='서브그래프 '+nPathNodes+' 노드 · '+nPathEdges+' 트리플(S-P-O) 주입';
+    },2560));
+    timers.push(setTimeout(function(){
+      llmL.classList.add('think'); llmLs.innerHTML='STEP 3 · 생성 중'+dots();
+      llmR.classList.add('think'); llmRs.innerHTML='STEP 3 · 생성 중'+dots();
+    },2860));
+    timers.push(setTimeout(function(){
+      llmL.classList.remove('think'); llmLs.textContent='STEP 3 · 완료 · 근거 추적 불가';
+      llmR.classList.remove('think'); llmRs.textContent='STEP 3 · 완료 · 증빙 3건 추적 가능';
+      ansL.classList.add('on'); ansR.classList.add('on');
+      gv.fit(acc,64,1.45);
+    },4150));
+  }
+  gv.opts.onClick=function(n){ gv.fit([n.id].concat(gv.neighbors(n.id).map(function(r){ return r.node.id; })),44,2.2); };
+  document.getElementById('f1run').addEventListener('click',run);
+  document.getElementById('f1input').addEventListener('keydown',function(e){ if(e.key==='Enter') run(); });
+  onFirstView(document.getElementById('f1gvwrap'),run,400);
+})();
+
+/* ============ FIG 2: structure view ============ */
+(function(){
+  var gv=new GraphView(document.getElementById('f2canvas'),KG,{});
+  bindTip(gv,document.getElementById('f2tip'),document.getElementById('f2wrap'));
+  var legend=document.getElementById('f2legend'), counts={};
+  KG.nodes.forEach(function(n){ counts[n.group]=(counts[n.group]||0)+1; });
+  ['L4','L3','L2','L1'].forEach(function(g){
+    var b=document.createElement('button'); b.className='lg'; b.dataset.g=g;
+    b.innerHTML='<i style="background:'+KG.groups[g].color+'"></i>'+KG.groups[g].name+' <b>'+counts[g]+'</b>';
+    legend.appendChild(b);
+  });
+  var active=null;
+  legend.addEventListener('click',function(e){ var b=e.target.closest('.lg'); if(!b) return; active=(active===b.dataset.g)?null:b.dataset.g; gv.setFilter(active);
+    var all=legend.querySelectorAll('.lg'); for(var i=0;i<all.length;i++){ all[i].classList.toggle('on',all[i].dataset.g===active); all[i].classList.toggle('off',!!active&&all[i].dataset.g!==active); } });
+  document.getElementById('f2stat').textContent='nodes '+KG.nodes.length+' · edges '+KG.edges.length+' · triples S-P-O';
+  document.getElementById('f2search').addEventListener('input',function(){ gv.setSearch(this.value.trim()); });
+  document.getElementById('f2reset').addEventListener('click',function(){ gv.resetView(); gv.setFilter(null); gv.setSearch(null); document.getElementById('f2search').value=''; active=null;
+    var all=legend.querySelectorAll('.lg'); for(var i=0;i<all.length;i++){ all[i].classList.remove('on','off'); } });
+  gv.opts.onClick=function(n){ gv.fit([n.id].concat(gv.neighbors(n.id).map(function(r){return r.node.id;})),80,1.8); };
+  onFirstView(document.getElementById('f2wrap'),function(){ gv.fit(null,40,1.3); var t0=gv.target; setTimeout(function(){ var v=gv.view; if(t0&&Math.abs(v.s-t0.s)<0.01&&Math.abs(v.x-t0.x)<2&&Math.abs(v.y-t0.y)<2) gv.fit(null,40,1.3); },1900); },1500);
+  gv.resetView=function(){ gv.fit(null,40,1.3); };
+})();
+
+/* ============ FIG 3: reasoning view ============ */
+(function(){
+  var SCEN={
+    A:{title:'M1 Short 불량',steps:[
+        {t:'결함 감지',d:'M1 Short · API 이미지 bridging',nodes:['m1short'],edges:[]},
+        {t:'의심 스텝 추론',d:'WDC Hardmask 부족 → AMI CD 과다 → Spacer Etch 과다',nodes:['wdc','amicd_over','spacer'],edges:['m1short|wdc','wdc|amicd_over','amicd_over|spacer']},
+        {t:'지표 검증',d:'Spacer Etch step EPD +14% · Trend 튐',nodes:['epd'],edges:['spacer|epd']},
+        {t:'증빙 및 액션',d:'2026.04 모듈 미팅 · TEM APM N20260428_4352 → Recipe Trim',nodes:['mt2604','tem4352','trim'],edges:['epd|mt2604','mt2604|tem4352','tem4352|wdc','spacer|trim']}]},
+    B:{title:'HOL 저항 열화',steps:[
+        {t:'결함 감지',d:'HOL 저항 열화 · Via chain Rs shift',nodes:['hol'],edges:[]},
+        {t:'의심 스텝 추론',d:'MND Etch 과다 (Barrier 잔막 손상)',nodes:['mnd','barrier_thin'],edges:['hol|mnd','hol|barrier_thin']},
+        {t:'지표 검증',d:'Via Rs Trend +8%',nodes:['rs'],edges:['mnd|rs','hol|rs']},
+        {t:'증빙 및 액션',d:'TEM APM N20260512_1188 · Barrier 1.8 nm → Recipe Trim',nodes:['tem1188','trim'],edges:['tem1188|barrier_thin','mnd|trim']}]}
+  };
+  var GUIDE={
+    m1short:['API 이미지에서 bridging 위치와 반복 패턴을 먼저 확인한다','동일 로트 내 발생률과 웨이퍼 맵 편중 여부를 본다','직전 2주간 동일 결함 코드 이력을 조회한다','선행 공정 변경점(PCN) 리스트를 대조한다'],
+    wdc:['WDC hardmask 잔여 두께 계측 이력을 확인한다','AMI CD 상한 초과 로트와 교차 확인한다','TEM 계측 의뢰 여부를 결정한다'],
+    amicd_over:['AMI CD 측정 포인트별 산포를 확인한다','Spacer Etch 조건 변경 시점과 정렬한다'],
+    spacer:['Spacer Etch 레시피 최근 변경 이력과 챔버 교체 시점을 확인한다','동일 챔버 처리 로트와 타 챔버 로트의 결함률을 비교한다','Etch time / power trim 값을 기준 레시피와 대조한다','후속 AMI CD 측정치의 상한 초과 여부를 확인한다'],
+    epd:['Spacer Etch step EPD trend를 최근 30 로트 기준으로 플롯한다','EPD 상승 시점과 결함 발생 시점의 시차를 정렬한다','FDC 상의 챔버 압력 · RF 반사파 동반 변화를 확인한다','관리 한계선(UCL) 재설정 필요 여부를 판단한다'],
+    mt2604:['당시 적용한 Spacer Etch recipe trim 값을 그대로 재적용 검토한다','Interlock 발령 기준과 해제 조건을 확인한다','회의록의 조치 결과를 Mitigated_by_action 링크로 기록한다'],
+    tem4352:['TEM 이미지에서 WDC hardmask 잔여 두께 5.2 nm를 확인한다','임계치 대비 Loss 과다 위험 구간임을 판정한다','동일 조건 과거 TEM 케이스와 두께 분포를 비교한다','판정 결과를 온톨로지 노드 속성으로 등록한다'],
+    trim:['Recipe Trim 조정값을 조건 변경 시뮬레이션으로 먼저 검증한다','시뮬레이션 결과를 Etch Agent · CMP Agent가 교차 검토한다','적용 후 EPD · AMI CD 회복 여부를 3 로트 추적한다'],
+    hol:['Rs 측정 트렌드에서 열화 시작 로트를 특정한다','Via chain 구조별 저항 상승폭을 비교한다','온도 · 습도 등 계측 환경 변수를 배제한다'],
+    mnd:['MND Etch over-etch 마진과 레시피 변경 이력을 확인한다','챔버별 식각률 편차를 비교한다','Barrier 잔막 손상 가능 구간을 특정한다'],
+    barrier_thin:['Barrier 잔여 두께 계측치를 임계치와 비교한다','증착 타깃 수명과 파워 로그를 대조한다'],
+    rs:['Rs trend를 via 사이즈별로 분리해 플롯한다','MND Etch EPD와 Rs 상승 시점을 정렬한다','관리 한계선 재설정 필요 여부를 판단한다'],
+    tem1188:['Barrier 잔여 두께 1.8 nm 계측치를 임계치와 비교한다','Void 및 계면 손상 유무를 판정한다','판정 결과를 온톨로지 노드 속성으로 등록한다']
+  };
+  var gv=new GraphView(document.getElementById('f3canvas'),KG,{});
+  bindTip(gv,document.getElementById('f3tip'),document.getElementById('f3wrap'));
+  var stepsEl=document.getElementById('f3steps'), guide=document.getElementById('f3guide'), gt=document.getElementById('f3gtitle'), gl=document.getElementById('f3glist'), gm=document.getElementById('f3gmeta');
+  var cur='A', timers=[], litNodes=[], litEdges=[];
+  function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
+  function renderSteps(sc){
+    stepsEl.innerHTML='<h5>Root-cause path · 시나리오 '+cur+'</h5>';
+    sc.steps.forEach(function(s,i){ var d=document.createElement('div'); d.className='ms'; d.dataset.i=i;
+      d.innerHTML='<span class="no">'+(i+1)+'</span><div><div class="t">'+s.t+'</div><div class="d">'+s.d+'</div></div>'; stepsEl.appendChild(d); });
+  }
+  function play(){
+    clearTimers(); guide.classList.remove('open');
+    var sc=SCEN[cur]; litNodes=[]; litEdges=[]; gv.setHighlight(null);
+    renderSteps(sc);
+    var items=stepsEl.querySelectorAll('.ms');
+    sc.steps.forEach(function(s,i){
+      timers.push(setTimeout(function(){
+        litNodes=litNodes.concat(s.nodes); litEdges=litEdges.concat(s.edges);
+        gv.setHighlight(litNodes,litEdges);
+        for(var k=0;k<items.length;k++){ items[k].classList.toggle('on',k<=i); items[k].classList.toggle('cur',k===i); }
+        gv.fit(litNodes,90,1.7);
+      }, 250+i*750));
+    });
+  }
+  stepsEl.addEventListener('click',function(e){ var d=e.target.closest('.ms'); if(!d) return; clearTimers(); var s=SCEN[cur].steps[+d.dataset.i];
+    var items=stepsEl.querySelectorAll('.ms'); for(var k=0;k<items.length;k++){ items[k].classList.toggle('cur',items[k]===d); items[k].classList.add('on'); }
+    litNodes=[]; litEdges=[]; SCEN[cur].steps.forEach(function(st){ litNodes=litNodes.concat(st.nodes); litEdges=litEdges.concat(st.edges); }); gv.setHighlight(litNodes,litEdges);
+    gv.fit(s.nodes,120,2); openGuide(gv.byId[s.nodes[0]]); });
+  function openGuide(n){
+    var list=GUIDE[n.id]; if(!list){ list=gv.neighbors(n.id).slice(0,4).map(function(r){ return (r.out?'→ ':'← ')+r.label+' : '+r.node.label+' 관계를 확인한다'; }); }
+    gt.textContent=n.label; gm.textContent=KG.groups[n.group].name.split(' · ')[0]+(n.kind?' · '+n.kind:'')+' · '+gv.neighbors(n.id).length+' links';
+    gl.innerHTML=list.map(function(t){ return '<li>'+t+'</li>'; }).join(''); guide.classList.add('open');
+  }
+  gv.opts.onClick=function(n){ if(gv.hl&&!gv.hl.nodes[n.id]) return;
+    if(timers.length){ clearTimers(); litNodes=[]; litEdges=[]; SCEN[cur].steps.forEach(function(st){ litNodes=litNodes.concat(st.nodes); litEdges=litEdges.concat(st.edges); }); gv.setHighlight(litNodes,litEdges);
+      var it=stepsEl.querySelectorAll('.ms'); for(var k=0;k<it.length;k++) it[k].classList.add('on'); }
+    openGuide(n); };
+  document.getElementById('f3toggle').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return;
+    var btns=this.querySelectorAll('button'); for(var i=0;i<btns.length;i++) btns[i].classList.remove('on'); b.classList.add('on'); cur=b.dataset.s; play(); });
+  document.getElementById('f3replay').addEventListener('click',play);
+  onFirstView(document.getElementById('f3wrap'),play,500);
+})();
+
+/* ============ FIG 4: multi-source pipeline wires ============ */
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  var pipe=document.getElementById('pipe'), svg=document.getElementById('wires'), hub=document.getElementById('hub'), hubd=document.getElementById('hubd');
+  var srcs=[].slice.call(document.querySelectorAll('#lanes .src')), wires=[];
+  var STL={done:['COMPLETED','st-done'],beta:['BETA','st-beta'],prog:['IN PROGRESS','st-prog'],plan:['PLANNED','st-plan']};
+  srcs.forEach(function(s){ var st=STL[s.dataset.st]; var b=document.createElement('span'); b.className='st '+st[1]; b.innerHTML='<i></i>'+st[0]; s.appendChild(b); });
+  function draw(){
+    svg.innerHTML=''; wires=[];
+    if(window.innerWidth<=1100) return;
+    var pr=pipe.getBoundingClientRect(), hr=hub.getBoundingClientRect();
+    var hx=hr.left-pr.left, hy=hr.top-pr.top+hr.height/2;
+    srcs.forEach(function(s,i){
+      var r=s.getBoundingClientRect(); var x1=r.right-pr.left, y1=r.top-pr.top+r.height/2;
+      var p=document.createElementNS(NS,'path'); var k=(hx-x1)*0.5;
+      p.setAttribute('d','M'+x1+','+y1+' C'+(x1+k)+','+y1+' '+(hx-k)+','+hy+' '+hx+','+hy);
+      p.setAttribute('class','wire'); svg.appendChild(p); wires.push(p);
+      var f=document.createElementNS(NS,'path'); f.setAttribute('d',p.getAttribute('d')); f.setAttribute('class','wire flow'); f.style.animationDelay=(-i*0.23)+'s'; f.style.opacity='0'; svg.appendChild(f); wires.push(f);
+    });
+    // hub → first step
+    var stepEl=pipe.querySelector('.steps'), sr=stepEl.getBoundingClientRect();
+    var p2=document.createElementNS(NS,'path'); var x2=hr.right-pr.left, x3=sr.left-pr.left;
+    p2.setAttribute('d','M'+x2+','+hy+' L'+x3+','+hy); p2.setAttribute('class','wire hi'); svg.appendChild(p2);
+  }
+  draw(); window.addEventListener('resize',draw); setTimeout(draw,300);
+  srcs.forEach(function(s,i){
+    s.addEventListener('mouseenter',function(){ s.classList.add('hi'); hub.classList.add('pulse'); hubd.textContent=s.dataset.x;
+      if(wires[i*2]){ wires[i*2].classList.add('hi'); wires[i*2+1].style.opacity='1'; } });
+    s.addEventListener('mouseleave',function(){ s.classList.remove('hi'); hub.classList.remove('pulse'); hubd.textContent=srcs.length+'개 소스 · 3개 레인';
+      if(wires[i*2]){ wires[i*2].classList.remove('hi'); wires[i*2+1].style.opacity='0'; } });
+  });
+  hubd.textContent=srcs.length+'개 소스 · 3개 레인';
+  // milestone ↔ source cross highlight
+  var cards=document.querySelectorAll('#f4mile .mcard');
+  for(var c=0;c<cards.length;c++)(function(card){
+    card.addEventListener('mouseenter',function(){ var names=[].slice.call(card.querySelectorAll('.srcref b')).map(function(b){return b.textContent;});
+      srcs.forEach(function(s,i){ if(names.indexOf(s.querySelector('.nm').textContent)>=0){ s.classList.add('hi'); if(wires[i*2]){ wires[i*2].classList.add('hi'); wires[i*2+1].style.opacity='1'; } } }); });
+    card.addEventListener('mouseleave',function(){ srcs.forEach(function(s,i){ s.classList.remove('hi'); if(wires[i*2]){ wires[i*2].classList.remove('hi'); wires[i*2+1].style.opacity='0'; } }); });
+  })(cards[c]);
+  // gauges
+  var io=new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ x.target.querySelector('.gauge span').style.width=x.target.dataset.p+'%'; io.unobserve(x.target); } }); },{threshold:.4});
+  for(var i=0;i<cards.length;i++) io.observe(cards[i]);
+  setTimeout(function(){ for(var i=0;i<cards.length;i++){ var bar=cards[i].querySelector('.gauge span'); if(!bar.style.width) bar.style.width=cards[i].dataset.p+'%'; } },1800);
+})();
+
+/* ============ APP SHELL: nav · scroll-spy · reveal · hero stats ============ */
+(function(){
+  var links=[].slice.call(document.querySelectorAll('#navlinks a')), prog=document.getElementById('navprog');
+  var secs=links.map(function(a){ return document.getElementById(a.dataset.s); });
+  function spy(){
+    var y=window.scrollY+120, cur=0;
+    for(var i=0;i<secs.length;i++){ if(secs[i].offsetTop<=y) cur=i; }
+    links.forEach(function(a,i){ a.classList.toggle('on',i===cur); if(i===cur) a.setAttribute('aria-current','true'); else a.removeAttribute('aria-current'); });
+    var max=document.documentElement.scrollHeight-window.innerHeight;
+    prog.style.setProperty('--p',(max>0?Math.min(100,window.scrollY/max*100):0)+'%');
+  }
+  window.addEventListener('scroll',spy,{passive:true}); window.addEventListener('resize',spy); spy();
+  secs.forEach(function(s){ s.tabIndex=-1; });
+  document.addEventListener('keydown',function(e){
+    if(e.ctrlKey||e.metaKey||e.altKey||e.shiftKey||e.isComposing) return;
+    var el=e.target, t=el.tagName; if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT'||el.isContentEditable) return;
+    if(!/^[0-9]$/.test(e.key)) return; var k=+e.key; if(k>=secs.length) return;
+    e.preventDefault();
+    secs[k].scrollIntoView({behavior:RM?'auto':'smooth',block:'start'}); secs[k].focus({preventScroll:true});
+  });
+  var rv=[].slice.call(document.querySelectorAll('.rv'));
+  if('IntersectionObserver' in window&&!RM){
+    var io=new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ x.target.classList.add('in'); io.unobserve(x.target); } }); },{threshold:.12});
+    rv.forEach(function(el,i){ el.style.transitionDelay=(i%4*60)+'ms'; io.observe(el); });
+  } else { rv.forEach(function(el){ el.classList.add('in'); }); }
+  // Fig 2 툴바(nodes · edges)와 같은 데이터셋 기준으로 표시해 페이지 안에서 수치가 어긋나지 않게 한다
+  document.getElementById('hsNodes').textContent=KG.nodes.length;
+  document.getElementById('hsTriples').textContent=KG.edges.length;
+  // Fig 4: hover 전용 정보를 키보드 포커스로도 열람
+  [].forEach.call(document.querySelectorAll('#lanes .src, #f4mile .mcard'),function(s){ s.tabIndex=0;
+    s.addEventListener('focus',function(){ s.dispatchEvent(new Event('mouseenter')); });
+    s.addEventListener('blur',function(){ s.dispatchEvent(new Event('mouseleave')); }); });
+  window.addEventListener('load',function(){ window.dispatchEvent(new Event('resize')); });
+})();
+
+/* ============ shared: tablist wiring (click · ← → · aria-selected) ============ */
+function wireTabs(list,onSelect){
+  var tabs=[].slice.call(list.querySelectorAll('[role="tab"]'));
+  function select(i,focus){ tabs.forEach(function(t,k){ var on=k===i; t.classList.toggle('on',on); t.setAttribute('aria-selected',on?'true':'false'); t.tabIndex=on?0:-1; });
+    if(focus) tabs[i].focus(); onSelect(i); }
+  list.addEventListener('click',function(e){ var b=e.target.closest('[role="tab"]'); if(b) select(tabs.indexOf(b)); });
+  list.addEventListener('keydown',function(e){ var i=tabs.indexOf(document.activeElement); if(i<0) return;
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'){ e.preventDefault(); select((i+1)%tabs.length,true); }
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){ e.preventDefault(); select((i+tabs.length-1)%tabs.length,true); } });
+  return select;
+}
+
+/* ============ TRIPLE CHAIN EXPLORER (Section 3 · 6.1-1) ============ */
+(function(){
+  var C={danger:'var(--danger)',warning:'var(--warning)',success:'var(--success)',info:'var(--info)'};
+  var CH=[
+    {note:'<b>원인 1 — unCMP.</b> CMP가 덜 되어 Cu가 남으면 배선이 붙습니다. 확인 지표는 두 갈래입니다: CMP 진행 시간 Trend가 기준에 못 미치는지, M1 API CD 이미지에 불량이 보이는지.',
+     items:[['M1 Short','danger'],'발생 원인 1',['unCMP','warning'],'확인 지표',['CMP 진행 시간 Trend 미달','info'],'혹은',['M1 API CD 이미지 불량','info']]},
+    {note:'<b>원인 2 — WDC Hardmask 부족.</b> 결함에서 출발해 세 단계를 거슬러 올라가면 Spacer Etch 과다에 닿고, 그 스텝의 EPD 증가라는 <b>지금 확인 가능한 지표</b>로 이어집니다.',
+     items:[['M1 Short','danger'],'발생 원인 2',['WDC Hardmask 부족','warning'],'원인',['AMI CD 과다','warning'],'원인',['Spacer Etch 과다','warning'],'확인 지표',['Spacer Etch step EPD 증가','info']]},
+    {note:'<b>과거 해결 이력.</b> 수치 지표가 회의 이력과 분석 이미지로 연결됩니다. 현재 EPD 값이 튀는 현상만 보고도 과거 TEM APM을 근거로 "Spacer Etch 과다로 인한 M1 Short 가능성"을 선제적으로 제시할 수 있습니다.',
+     items:[['Spacer Etch step EPD 증가','info'],'과거 해결 이력',['2026년 4월 모듈 미팅 공유 내용','success'],'증빙 자료',['TEM APM: N20260428_4352','success',1]]},
+    {note:'<b>VLM 이미지 바인딩.</b> VLM이 이미지를 캡셔닝하는 데 그치지 않고 정량 측정값과 결함 패턴을 추출해 트리플 노드로 바인딩합니다. 이미지 분석 결과가 추론 엔진의 <b>조건(Condition)</b>으로 동작합니다.',
+     items:[['TEM APM: N20260428_4352','success',1],'분석 대상',['WDC Hardmask','info'],'잔여 두께 측정값',['5.2 nm','warning',1],'임계치 판정',['Loss 과다 위험','danger'],'공정 인과관계',['M1 Short 발생 가능성 증가','danger']]}
+  ];
+  var el=document.getElementById('chain'), note=document.getElementById('chainNote'), timers=[], cur=0;
+  var ARW='<svg width="18" height="8" viewBox="0 0 18 8" aria-hidden="true"><path d="M0 4H13" stroke="#7A9CC0" stroke-width="1.5" stroke-linecap="round"/><path d="M12 1L17 4 12 7Z" fill="#4A5FA8"/></svg>';
+  function show(i){
+    cur=i; timers.forEach(clearTimeout); timers=[]; el.innerHTML=''; note.innerHTML=CH[i].note;
+    CH[i].items.forEach(function(it,k){
+      var d=document.createElement('span');
+      if(typeof it==='string'){ d.className='edge'; d.innerHTML='<span class="pill">-('+it+')-></span>'+ARW; }
+      else { d.className='node'; d.innerHTML='<span class="sdot" style="background:'+C[it[1]]+'"></span>'+(it[2]?'<span class="mono" style="font-size:12px">'+it[0]+'</span>':it[0]); }
+      el.appendChild(d);
+      timers.push(setTimeout(function(){ d.classList.add('in'); },RM?0:120+k*170));
+    });
+  }
+  wireTabs(document.getElementById('chainTabs'),show);
+  onFirstView(el,function(){ show(cur); },0);
+})();
+
+/* ============ WORKFLOW STEPS + SNOMED CT demo (Section 4) ============ */
+(function(){
+  var panes=document.querySelectorAll('#wdetail .wd');
+  wireTabs(document.getElementById('wsteps'),function(w){ for(var i=0;i<panes.length;i++) panes[i].classList.toggle('on',i===w); });
+  var sn=document.getElementById('snIn'), out=document.getElementById('snOut'), txt=document.getElementById('snTxt'), on={};
+  sn.addEventListener('click',function(e){ var b=e.target.closest('.sn-chip'); if(!b) return;
+    on[b.dataset.k]=!on[b.dataset.k]; b.classList.toggle('on',on[b.dataset.k]); b.setAttribute('aria-pressed',on[b.dataset.k]?'true':'false');
+    var n=(on.a?1:0)+(on.b?1:0); out.classList.toggle('hit',n===2);
+    txt.textContent=n===0?'관찰값을 선택하면 추론 결과가 표시됩니다.':n===1?'관찰값 1개 — 단독으로는 판단 근거가 부족합니다. 하나를 더 선택해 보세요.':
+      '독립된 두 관찰값을 온톨로지가 엮어 "특정 암일 가능성이 높다"고 자동 추론합니다. 같은 구조를 BEOL 수율 분석 모델에 적용합니다.'; });
+})();
+
+/* ============ HITL verification queue (6.1-2 · demo data) ============ */
+(function(){
+  var DATA=[
+    ['AMI CD 과다','Caused_by','Spacer Etch 과다',0.93,'모듈 회의록'],
+    ['EPD 증가','Reported_in_meeting','2026.04 모듈 미팅',0.88,'모듈 회의록'],
+    ['Spacer Etch 과다','Mitigated_by_action','Recipe Trim',0.84,'Confluence'],
+    ['WDC Hardmask','Measured_at','TEM APM N20260428_4352',0.79,'TEM APM'],
+    ['M1 Short','Caused_by','M1 Photo',0.41,'Confluence']
+  ];
+  var LOG={A:'승인된 트리플이 Graph DB에 Upsert되고 <b>Few-shot 예시</b>로 추가되었습니다.',
+           E:'수정 내용이 추출 <b>프롬프트 규칙</b>에 반영됩니다. 같은 유형의 후보가 다음부터 교정되어 올라옵니다.',
+           R:'기각 사례가 <b>Negative 예시</b>로 등록되어 유사 오추출을 줄입니다.'};
+  var RES={A:['b-ok','Approved'],E:['b-warn','Edited'],R:['b-danger','Rejected']};
+  var box=document.getElementById('cands'), log=document.getElementById('hsLog'), cnt={A:0,E:0,R:0};
+  function paint(){ ['A','E','R'].forEach(function(k){ document.getElementById('hs'+k).textContent=cnt[k]; }); }
+  function load(){
+    cnt={A:0,E:0,R:0}; paint(); log.textContent='Active Learning 피드백 대기 중'; box.innerHTML='';
+    DATA.forEach(function(d){
+      var r=document.createElement('div'); r.className='cand';
+      r.innerHTML='<div class="spo"><b>'+d[0]+'</b><span class="pill">'+d[1]+'</span><b>'+d[2]+'</b></div>'+
+        '<span class="cf">conf '+d[3].toFixed(2)+' · '+d[4]+'</span>'+
+        '<div class="acts"><button class="ap" data-a="A">승인</button><button class="ed" data-a="E">수정</button><button class="rj" data-a="R">기각</button></div>'+
+        '<span class="badge res"><i></i></span>';
+      box.appendChild(r);
+    });
+  }
+  box.addEventListener('click',function(e){ var b=e.target.closest('button[data-a]'); if(!b) return;
+    var a=b.dataset.a, r=b.closest('.cand'), badge=r.querySelector('.res');
+    r.classList.add('done'); badge.classList.add(RES[a][0]); badge.innerHTML='<i></i>'+RES[a][1];
+    cnt[a]++; paint(); log.innerHTML=LOG[a]; });
+  document.getElementById('hsReset').addEventListener('click',load);
+  load();
+})();
+</script>
+</body>
+</html>

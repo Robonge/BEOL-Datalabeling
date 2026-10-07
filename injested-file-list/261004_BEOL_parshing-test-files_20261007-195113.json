@@ -1,0 +1,32 @@
+{
+  "run_id": "20261007T105157-2b26",
+  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261007-195113",
+  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "recorded_at": "2026-10-07T19:58:10",
+  "files": [
+    "260115_RDX5TA.6C V1 신규 chamber 호환 평가.pptx",
+    "260115_RNC8N.69 V1 via barrier RSBM(PA) 적용 Rc 개선 평가.pptx",
+    "260116_QOAWC088.64 M2 Ru etch SiN HM 조건 (SiN 22) 평가.pptx",
+    "260119_QFYOL088.6C VA Ru 증착 방식 (CVD Ru, PVD+SLA 20us) 저항 평가.pptx",
+    "260119_RNRS2.6B VA Ru etch ALE Line AR split 평가.pptx",
+    "260525_QLCNI057.62 M1 trench etch 호환 평가.pptx",
+    "260612_RXO1KC.6C I1 Trench etch BM LK depo split 평가.pptx",
+    "260622_RQUT4B.62 M3 ASD inhibitor (ODT, PEM) 적용 평가.pptx",
+    "260625_RQJD8C.6D F4 Ru liner 2-step H2 O2, Wet+O2 계면 산화 억제 평가.pptx",
+    "260703_RNJB8C.67 I2 LK depo 막질 변경 (HCLK, HDLK+HMDS, ULK-B, pSiCOH) 호환 평가.pptx",
+    "260709_QYSFM057.65 M1 ALE Ru etch split 평가.pptx",
+    "260721_QAPSU080.1 M1 Airgap Line AR split 평가.pptx",
+    "260722_QRQMX093.64 F4 Trench etch CMP OP split 평가.pptx",
+    "260813_RNER4A.64 I2 via chamfer 개선 평가.pptx",
+    "260826_QZPPX058.6D M2 Trench etch Via OE split 평가.pptx",
+    "260828_QAJPS025.61 M2 Ru line AR 4.0 고종횡비 평가.pptx",
+    "260828_QQJIG034.6C I2 ALD cycle Via OE split 평가.pptx",
+    "260904_RQB3A.61 I1 Ru liner Trench etch split 평가.pptx",
+    "260910_RDNC9B.6B M1 ASD inhibitor (ODT, PEM, Propargylamine) 적용 평가.pptx",
+    "260921_QFICN095.68 I2 LK depo CMP OP Via OE split 평가.pptx",
+    "260930_QGAZX051.6D VA Ru direct metal etch (Long ME, RIE+IBE trim, Segmented E-C) 평가.pptx",
+    "261001_QIBRX055.63 M3 BM barrier liner 변경 (TaN 1.4) 평가.pptx",
+    "261001_RQV6C.1 V2 Ru liner 2-step H2 O2, Wet+O2 계면 산화 억제 평가.pptx",
+    "sample pptx.pptx"
+  ]
+}

@@ -38,7 +38,7 @@ TAX_KINDS = tuple(TAX_REQUIRED)
 NAME_KEYS = ("axis", "value", "parent", "name", "alias", "canonical", "qid")
 LONG_KEYS = ("text", "definition", "include", "exclude")
 # taxonomy 초안 kind → 쓰는 칸. 이 밖의 칸은 check_draft가 비운다. 질문 화면은 이 칸만 보여 주고 편집하게 하며,
-# 보드도 이 칸만 붙여넣기 행에 채운다(사람이 보지 못한 문장이 확정되지 않게 한 곳에서 정한다).
+# 보드도 이 칸만 행 초안에 채운다(사람이 보지 못한 문장이 확정되지 않게 한 곳에서 정한다).
 TAX_FIELDS = {
     "value_add": ("axis", "value", "parent", "definition", "include", "exclude", "memo"),
     "value_def": ("axis", "value", "definition", "include", "exclude", "memo"),
@@ -163,11 +163,31 @@ def question_id(fp):
 
 # ---- 초안 -----------------------------------------------------------------------
 
-def check_draft(d, axes=None):
+_QID = re.compile(r"^Q-[A-Za-z0-9_-]{1,60}$")   # labelbot 질문 ID(Q-001, Q-GEN-…, Q-CTL-…)
+
+
+def clean_scope(stage, target, axes=None):
+    """rule 초안의 범위 정리. classify는 축 이름, label은 "축=값" 또는 질문 ID. 맞지 않으면 빈칸.
+    axes를 주면 축 이름이 그 안에 있어야 한다(값은 보지 않는다)."""
+    if not target or target in STAGES:
+        return ""
+    if stage == "label":
+        if _QID.match(target):
+            return target
+        axis, eq, value = target.partition("=")
+        axis, value = axis.strip(), value.strip()
+        ok = bool(eq and axis and value) and (axes is None or axis in axes)
+        return "%s=%s" % (axis, value) if ok else ""
+    return "" if axes is not None and target not in axes else target
+
+
+def check_draft(d, axes=None, require_scope=False):
     """초안 하나 → (정리한 초안, None) 또는 (None, 사유 코드).
 
     axes: 활성 축 이름 모음(주면 rule의 target이 그 안에 없을 때 빈칸으로 바꾼다). taxonomy 초안의 축·값이 지금
     taxonomy에 있는지는 보지 않는다(보드가 '먼저 할 일'로 알린다).
+    require_scope: rule의 범위(classify=축 이름, label="축=값"·질문 ID)가 비면 RULE_SCOPE_MISSING으로 거부한다.
+    반영(answers)만 켠다. 화면·LLM 초안은 비워 둔 채 두어 사람이 채운다.
     """
     if not isinstance(d, dict):
         return None, "DRAFT_FORMAT_INVALID"
@@ -180,12 +200,14 @@ def check_draft(d, axes=None):
         target = soft_text(d.get("target"), NAME_MAX)
         if target is None:
             return None, "DRAFT_TARGET_INVALID"
-        if target in STAGES or (axes is not None and target not in axes):
-            target = ""
+        target = clean_scope(stage, target, axes)
         out = {"type": "rule", "stage": stage, "target": target, "text": text}
         pid = d.get("pattern_id")
         if isinstance(pid, str) and _PATTERN_ID.match(pid):
             out["pattern_id"] = pid
+        # 패턴(FR) 문장 교체는 단계·대상을 패턴이 정하므로 범위를 요구하지 않는다
+        if require_scope and not target and "pattern_id" not in out:
+            return None, "RULE_SCOPE_MISSING"
         return out, None
     if kind == "example":
         eid = d.get("example_id")

@@ -11,6 +11,10 @@
     "help": "usage: wait_review_done.py [-h] --workspace WORKSPACE --run RUN [--signal {done,start}] [--after-start] [--check] [--timeout TIMEOUT] [--interval INTERVAL]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n  --signal {done,start}\n  --after-start\n  --check\n  --timeout TIMEOUT\n  --interval INTERVAL\n",
     "status": "ok"
   },
+  ".claude/skills/BEOL-labeling-project-html/scripts/build_project_html.py": {
+    "help": "usage: build_project_html.py [-h] [--workspace WORKSPACE] [--run RUN] [--out OUT] [--snapshot-dir SNAPSHOT_DIR] [--flow FLOW] [--no-flow] [--no-snapshot] [--dry-run]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n  --out OUT\n  --snapshot-dir SNAPSHOT_DIR\n  --flow FLOW\n  --no-flow\n  --no-snapshot\n  --dry-run\n",
+    "status": "ok"
+  },
   ".claude/skills/BEOL-labeling-workflow/scripts/build_workflow.py": {
     "help": "usage: build_workflow.py [-h] [--workspace WORKSPACE] [--run RUN] [--out OUT]\n\noptions:\n  -h, --help            show this help message and exit\n  --workspace WORKSPACE\n  --run RUN\n  --out OUT\n",
     "status": "ok"

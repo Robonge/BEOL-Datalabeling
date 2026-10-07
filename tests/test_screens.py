@@ -136,7 +136,7 @@ class ScreenTemplateTests(unittest.TestCase):
         self.assertIsNotNone(m)
         self.assertIn("if (items.length) item.evidence = items;", m.group(1))
         self.assertIn("if (r) item.reason", m.group(1))
-        self.assertEqual(text.count("evAttach(c.chunk_id, "), 2)
+        self.assertEqual(text.count("evAttach(c.chunk_id, "), 3)  # 축·질문·대조 질문
         # 같은 localStorage 상태에 저장하고, evid가 없는 예전 상태도 읽는다.
         self.assertEqual(len(re.findall(r"setItem\(KEY, JSON\.stringify\(\{[^}]*evid:evid", text)), 2)
         self.assertIn('if (o.evid && typeof o.evid === "object" && !Array.isArray(o.evid)) evid = o.evid;', text)
@@ -158,6 +158,49 @@ class ScreenTemplateTests(unittest.TestCase):
         self.assertIn("taxonomy에서 빠진 축", text)
         self.assertIn('disabled:editable ? null : "disabled"', text)
         self.assertIn("nActive > 12", text)
+
+    def test_review_attention_folds_high_confidence(self):
+        text = read("review.html")
+        # 확인 필요가 아닌 축·질문은 lockgrp 묶음("확신도 높음 n개 · 펼치기")으로 접고, 펼침 상태를 기억한다.
+        m = re.search(r"function calmGroup\(c, kind, nAttn, cards\)\{(.*?)\n  \}", text, re.S)
+        self.assertIsNotNone(m)
+        body = m.group(1)
+        self.assertIn('h("details", {class:"lockgrp"', body)
+        self.assertIn("openHigh[key]", body)
+        self.assertIn("확인 필요 없음 · ", body)
+        self.assertIn("확신도 높음 ", body)
+        self.assertIn('calmGroup(c, "a", ', text)
+        self.assertIn('calmGroup(c, "q", ', text)
+        # 사유 칩 이름과, attention이 없는 예전 DATA의 화면 판정(LOW_CONF·UNKNOWN만).
+        self.assertIn('{LOW_CONF:"확신도 낮음", UNKNOWN:"unknown", VERIFY_X:"검증 X", CONTROL_O:"대조 O", OX_SAMPLE:"표본 확인"}', text)
+        m = re.search(r"function attnAxis\(c, ax\)\{(.*?)\n  \}", text, re.S)
+        self.assertIsNotNone(m)
+        self.assertIn("if (c.attention)", m.group(1))
+        self.assertNotIn("VERIFY_X", m.group(1))
+        # axis-update 잠긴 축 묶음은 그대로 둔다.
+        self.assertIn("이번 축 변경 대상이 아닌 축 ", text)
+        # 봇 값이 없는 분류·라벨링 실패 chunk는 "확신도 높음"으로 접지 않는다.
+        self.assertIn("if (!canEdit(ax) || c.classify_failed){ hotAxes.push(ax); return; }", text)
+        self.assertIn("if (c.label_failed || c.classify_failed){ hotQ.push(q); return; }", text)
+
+    def test_review_locks_after_done(self):
+        text = read("review.html")
+        self.assertIn("function lockScreen(at, o){", text)
+        self.assertIn("검수 완료 · 반영·적재 진행 중", text)
+        self.assertIn("이 탭은 닫아도 됩니다", text)
+        # 잠긴 뒤에는 localStorage·inbox 저장과 단축키가 바로 돌아간다.
+        for fn in ("function save()", "function inboxSave()"):
+            m = re.search(re.escape(fn) + r"\{(.*?)\n  \}", text, re.S)
+            self.assertIsNotNone(m, fn)
+            self.assertTrue(m.group(1).strip().startswith("if (locked) return"), fn)
+        self.assertRegex(text, r'document\.addEventListener\("keydown", function\(ev\)\{\s*if \(locked\) return;')
+        # 서버의 완료 신호 확인과, 완료 성공 시 잠금(실패 때만 버튼을 다시 켠다).
+        self.assertIn('fetch("inbox/status?run=" + encodeURIComponent(DATA.run_id)', text)
+        self.assertIn("if (o.done_signal === true){ lockScreen(", text)
+        m = re.search(r"function reviewDone\(\)\{(.*?)\n  \}", text, re.S)
+        self.assertIsNotNone(m)
+        self.assertIn("lockScreen(", m.group(1))
+        self.assertNotIn(".then(function(){ doneBtn.disabled = false; })", m.group(1))
 
     def test_no_fixed_question_id(self):
         # 첫 공통 질문 ID는 DATA.primary_qid로 받는다(questions 시트에서 도출).

@@ -1,5 +1,9 @@
 > 2026-10-06 이름 변경: Engr-bot → Domain-Engr-bot(`domain_engrbot`), code-bot → Code-Engr-bot(`code_engrbot`). 아래 본문은 이력이라 옛 이름을 그대로 둔다.
 
+> 2026-10-07 taxonomy 원본 전환: 원본은 `taxonomy/taxonomy.xlsx`에서 `taxonomy/taxonomy.json`으로 바뀌었다(사람은 Excel 대신 taxonomy 보드·편집기로 고친다). 이 문서의 taxonomy 읽기·쓰기 설명은 json 기준으로 고쳤고, 나머지 xlsx 언급은 이력이다.
+
+> 2026-10-07 대조 답 교정: 검수자가 고친 대조 질문(Q-CTL-) 답과 직접 입력(typed) 근거를 교정 장부가 받아 도메인 질문의 근거로 쓴다. 골든·L4 후보에는 넣지 않는다(`docs/plan-correction-evidence.md` 3.7절).
+
 > 이력 문서다(2026-10-06 이전 개념). Engr-bot의 현재 개념은 `domain_engrbot/docs/plan-question-loop.md`를 본다.
 
 # plan: 검수봇(Label QA Agent) 구현 계획
@@ -32,7 +36,7 @@
 | 라벨러 | 있다. 1차 분류(분류 축 8 + 상태 축 2, 근거, 확신도, chunk 유형), 3차 라벨링(질문별 O/X/N/A, 근거 인용, 확신도, 날짜·담당자 추출) | `PRD.md` FR-2, FR-4. `labelbot/classify.py`, `label.py` |
 | 라벨러 출력 형식 | JSON 파일이 아니라 작업 DB `work.sqlite`의 `labels` 표다. 행 종류는 `chunk_type`, `axis`, `answer`, `extract`이고, 행마다 근거, 확신도, 시트 해시, 프롬프트 버전, 모델을 가진다 | `plan.md` 2절 "작업 DB 표" |
 | 근거 span | 인용 문자열만 있다. offset과 슬라이드 번호는 없다. 인용 범위는 그 chunk 본문으로 한정된다 | `PRD.md` FR-2, FR-4 |
-| taxonomy | `taxonomy.xlsx`의 `taxonomy` 시트. 버전은 시트 해시다. 봇은 읽기만 한다 | `PRD.md` 6.1절, 9.4절 |
+| taxonomy | `taxonomy/taxonomy.json`의 `taxonomy` 목록. 버전은 목록 해시다. 이 루프의 봇은 읽기만 하고, 쓰기는 사람이 taxonomy 보드에서 최종 완료할 때만 일어난다 | `PRD.md` 6.1절, 9.4절 |
 | 기존 검수 단계 | 4차 불량 목록 추출이 있다. LLM 호출 없이 사유 코드 6개(`UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED`)로 chunk를 골라 검수 화면에 올린다 | `PRD.md` FR-5, `labelbot/review.py` |
 | LLM 클라이언트 | OpenAI Chat Completions 호환(`urllib`), 호스트 판정과 더미 해시 조건, 리다이렉트 거부, mock 전송 계층이 있다 | `PRD.md` 9.1절, 9.3절. `labelbot/llm.py`, `mock.py` |
 | 골든셋 | 없다. `tests/gold/`에는 `dummy_hashes.jsonl`만 있다. `gold_labels.jsonl`은 `plan.md` M2에 계획만 있다 | `plan.md` 2절, M2 |
@@ -105,7 +109,7 @@ flowchart TD
     subgraph IN[입력 - 읽기 전용]
         WS[(work.sqlite<br/>chunks, labels, failures,<br/>images, corrections)]
         B64[b64/파일ID.b64<br/>images/이미지ID.b64]
-        TAX[taxonomy.xlsx]
+        TAX[taxonomy.json]
         CFG[qa/policy.json<br/>qa/schema.json]
         GOLD[qa/golden/golden.jsonl]
         BASE[qa/baseline.json]
@@ -148,7 +152,7 @@ flowchart TD
     PROP --> SCR
     SCR --> HUM[사람: 화면에서 결정,<br/>json 내려받기]
     HUM --> FB[feedback<br/>승인된 교정·규칙 제안 묶음]
-    FB --> LB[사람: labelbot에 반영<br/>taxonomy.xlsx, 프롬프트]
+    FB --> LB[사람: labelbot에 반영<br/>taxonomy.json, 프롬프트]
     LB -.->|labelbot 재실행 후 재검수| WS
     HUM --> GADD[golden add]
     GADD --> GOLD
@@ -715,7 +719,7 @@ flowchart LR
     A[labelbot run] --> B[engrbot run<br/>판정, 규칙 제안]
     B --> C[사람: review.html에서<br/>수정사항·규칙 검토]
     C --> D[engrbot feedback<br/>승인된 것만 묶음]
-    D --> E[사람: labelbot에 반영<br/>taxonomy.xlsx, 프롬프트]
+    D --> E[사람: labelbot에 반영<br/>taxonomy.json, 프롬프트]
     E --> A
     B -. 다음 실행에서 판정 전이표 .-> B
 ```
@@ -775,7 +779,7 @@ flowchart LR
 
 | 피드백 | 반영 수단 | labelbot 코드 변경 |
 |---|---|---|
-| 새 값, 동의어, 질문 문장, 미사용 값 | `taxonomy.xlsx`에 붙여넣거나 고친다. 다음 실행에서 영향받는 chunk만 다시 처리된다(`PRD.md` 9.4절) | 필요 없다 |
+| 새 값, 동의어, 질문 문장, 미사용 값 | taxonomy 보드·편집기로 `taxonomy.json`을 고친다. 다음 실행에서 영향받는 chunk만 다시 처리된다(`PRD.md` 9.4절) | 필요 없다 |
 | 축 정의, 인용 규칙, 표기 규칙 | `taxonomy` 시트의 정의 열이나 `prompts/*.md`를 고친다. 해당 단계가 다시 처리된다 | 필요 없다 |
 | 재작업 | 위 규칙을 고치면 요청이 바뀐 chunk가 다시 라벨링된다. 규칙을 고치지 않고 chunk 하나만 다시 돌리는 경로는 없다 | chunk 단위 재작업은 필요하다(범위 밖) |
 | 레코드 교정 | `feedback.json`의 `corrections`에 남는다. labelbot의 `apply`는 4차 불량 목록에 있는 chunk의 교정만 받는다 | 4차 목록 밖 chunk의 교정을 산출에 넣으려면 필요하다(범위 밖). 그 전까지 교정은 골든셋과 피드백 묶음에 남는다 |
@@ -788,7 +792,7 @@ flowchart LR
 - 판정 전이표: 직전 판정 × 이번 판정의 건수(REJECT → PASS 등). `text_hash`가 바뀐 레코드와 한쪽에만 있는 레코드는 따로 센다.
 - 직전 피드백에서 승인된 제안의 대상(축, 질문, 코드)별 이슈율의 전후 값
 
-검수봇은 이 루프에서 `taxonomy.xlsx`, `prompts/`, `work.sqlite`를 쓰지 않는다.
+검수봇은 이 루프에서 `taxonomy.json`, `prompts/`, `work.sqlite`를 마음대로 쓰지 않는다(taxonomy.json은 사람이 보드에서 최종 완료한 것만 저장된다).
 
 ## 7. LLM adapter 인터페이스와 judge 프롬프트 초안
 
@@ -920,7 +924,7 @@ R은 그 배치에서 chunk 유형이 내용이고 라벨러가 성공한 레코
 
 실데이터는 개발 환경에 들이지 않는다. 생성기 `engrbot/tests/fixturegen.py`가 시드로 결정되는 fixture를 메모리에서 만든다.
 
-- **taxonomy**: 저장소 `taxonomy/taxonomy.xlsx`를 어댑터와 같은 경로(`labelbot_ws.load_taxonomy` → `snapshot`)로 읽는다. 엑셀을 고치면 다음 테스트부터 반영된다. 깨끗한 레코드는 생성 단계에서 L2 규칙(unknown 비율, 전부 해당 없음)을 만족하게 맞춘다.
+- **taxonomy**: 저장소 `taxonomy/taxonomy.json`을 어댑터와 같은 경로(`labelbot_ws.load_taxonomy` → `snapshot`)로 읽는다. taxonomy를 고치면 다음 테스트부터 반영된다. 깨끗한 레코드는 생성 단계에서 L2 규칙(unknown 비율, 전부 해당 없음)을 만족하게 맞춘다.
 - **문장 틀**: 축 값과 질문에 대응하는 BEOL 문장 틀을 둔다. 예: "{layer} {공정} 후 {불량 현상} 확인", "{조건} 적용 시 {지표} {결과}". 틀마다 그 문장이 지지하는 라벨이 정해져 있다.
 - **chunk**: 슬라이드마다 문장 3~8개를 고른다. 라벨이 붙는 문장과 라벨과 무관한 문장을 섞는다. 표와 노트를 가진 슬라이드도 만든다.
 - **정답 레코드**: 문장 틀에서 라벨, 근거 인용, 확신도가 정해진다. 이것이 사외 골든셋이다. 표지·목차 유형, `해당 없음`과 `unknown`이 섞인 레코드, 다중값 축과 계층 축 레코드를 포함한다.
@@ -1138,7 +1142,7 @@ R은 그 배치에서 chunk 유형이 내용이고 라벨러가 성공한 레코
 - [x] "검수 오탐"으로 표시한 REJECT는 `rework`에 없고 `qa_false_positives`에 코드별로 집계된다.
 - [x] 같은 결정 파일로 두 번 돌려도 `feedback.json`이 같다.
 - [x] 라벨을 고친 번들로 다시 `run`하면 리포트에 판정 전이표가 나오고 손으로 센 값과 같다.
-- [x] 검수봇 실행 전후로 `taxonomy.xlsx`, `prompts/`, `work.sqlite`가 바이트 단위로 같다.
+- [x] 검수봇 실행 전후로 `taxonomy.json`, `prompts/`, `work.sqlite`가 바이트 단위로 같다(2026-10-07: 예전 `taxonomy.xlsx` 기준 항목을 json으로 옮겼다).
 - [x] `feedback.json`과 `feedback.md`에 파일명과 경로가 없다.
 
 ### QM9. 사외 실 judge 측정(더미 pptx)
@@ -1186,7 +1190,7 @@ R은 그 배치에서 chunk 유형이 내용이고 라벨러가 성공한 레코
 | R5 | L0 독립 추출기와 파서의 정당한 차이(반복 문구 제거, 노트, 차트, 장식 이미지)가 오탐을 만든다 | REVIEW가 불필요하게 늘어난다 | 반복 줄을 분모에서 뺀다. 이미지는 부등식만 본다. QM3에서 더미 pptx 전체로 임계값을 맞춘다 |
 | R6 | 4차 불량 목록과 검수봇의 REVIEW가 겹쳐 사람이 볼 화면이 두 개가 된다(병행으로 확정) | 검수 부담이 늘고 같은 chunk를 두 번 본다 | 사람이 이미 교정·확인한 chunk는 검수봇 대기열에서 뺀다. 두 화면의 통합은 첫 실행 뒤 겹치는 비율을 보고 다시 정한다 |
 | R7 | 판정·대기열 파일이 본문 발췌와 judge 사유를 담는다 | 작업 폴더 밖으로 나가면 본문이 샌다 | 부류를 나눈다(4.6절). 발췌를 끄는 설정을 둔다. 본문 없음 부류는 테스트로 지킨다 |
-| R8 | taxonomy 스냅샷을 labelbot의 xlsx 읽기 코드로 만든다 | 그 코드의 버그가 라벨러와 검수봇에 똑같이 들어간다 | 수용한다. xlsx 읽기를 다시 만드는 비용이 더 크다. 스냅샷 해시를 매니페스트에 남긴다 |
+| R8 | taxonomy 스냅샷을 labelbot의 taxonomy 읽기 코드로 만든다(2026-10-07: xlsx 읽기에서 json 읽기로 바뀜) | 그 코드의 버그가 라벨러와 검수봇에 똑같이 들어간다 | 수용한다. 읽기를 다시 만드는 비용이 더 크다. 스냅샷 해시를 매니페스트에 남긴다 |
 | R9 | mock judge로는 judge 품질을 알 수 없고, 사외 실측은 더미 pptx와 사외 모델 기준이다 | 사내 모델에서는 수치가 다를 수 있다 | 목표 지표에서 mock과 실 judge를 나눠 적었다(10.4절). QM9의 수치는 프롬프트를 다듬는 데 쓰고, 판정 정책은 QM10의 사내 수치로 확정한다 |
 | R10 | 한글 토큰화를 정규식으로만 한다 | 용어 후보에 조사가 붙은 형태나 일반 명사가 섞인다 | 후보는 사람이 보는 목록이다. stoplist를 정책에 둔다. 영문 약어 위주의 도메인이라 영향이 작을 것으로 본다 |
 | R11 | 사내 Python 버전이 3.14보다 낮을 수 있다 | 문법 차이로 실행이 안 된다 | labelbot과 같은 문법 수준으로 쓴다. QM10에서 사내 테스트로 확인한다 |

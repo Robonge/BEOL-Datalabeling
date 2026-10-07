@@ -1,0 +1,43 @@
+{
+  "kind": "taxonomy_revisit",
+  "review_run_id": "20261007T034837-92cb",
+  "generated_at": "2026-10-07T04:07:24Z",
+  "sheet": "taxonomy",
+  "columns": [
+    "축",
+    "값",
+    "상위값",
+    "다중값",
+    "계층",
+    "중복 알림 제외",
+    "종류",
+    "정의·판정 규칙",
+    "포함 예",
+    "제외 예",
+    "사용 여부"
+  ],
+  "paste_rows": [],
+  "paste_requests": [],
+  "check_rows": [],
+  "requests": [
+    {
+      "review_run_id": "20261007T034837-92cb",
+      "chunk_id": "92456f56b297f320:ppt/slides/slide4.xml",
+      "file_id": "92456f56b297f3200921d2570ac5e8a452f781e9f8c073c79686fd612c53c398",
+      "target": "axis",
+      "key": "Main step",
+      "reason": "AMBIGUOUS_DEF",
+      "proposed": null,
+      "related_values": [],
+      "memo": "Main step의 경우 단순히 데이터만 있다고 선택하지 않고, 각 step의 SEM, TEM image가 있거나 해당 step이 주요 평가 step인 경우만 지정",
+      "bot_value": [
+        "해당 없음"
+      ],
+      "human_value": null,
+      "file_sha256": "0af5245e0330f948585a39e3db2ac7e08a0bc7e2d778bc75beab1336543f561f",
+      "applied_at": "2026-10-07T04:07:24Z",
+      "no": 1,
+      "block": "list"
+    }
+  ]
+}

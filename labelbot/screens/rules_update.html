@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>규칙 변경 현황판</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --dot:#A8BDD4; --line:#7A9CC0;
+  --surface:rgba(246,248,252,.92); --surface-solid:#F6F8FC; --surface-2:#E4EAF3;
+  --text-strong:#1E2D4A; --text-muted:#5F6F89; --text-faint:#9DAABF;
+  --danger:#C25450; --warning:#C99A3B; --warning-ink:#7E5C12; --success:#3B8A6E;
+  --on-indigo:#EDF1F7;
+  --radius-sm:8px; --radius:12px;
+  --shadow:0 2px 8px rgba(53,70,144,.06); --shadow-up:0 8px 20px rgba(53,70,144,.16);
+  --font:'Pretendard','Apple SD Gothic Neo','Noto Sans KR','Inter',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--bg-base);
+  background-image:linear-gradient(rgba(200,212,228,.5) .5px,transparent .5px),linear-gradient(90deg,rgba(200,212,228,.5) .5px,transparent .5px);
+  background-size:48px 48px;
+  font-family:var(--font);font-size:13px;line-height:1.5;letter-spacing:-0.02em;color:var(--text-strong);
+}
+b,strong,h1,h2,h3{font-weight:700}
+h1,h2,h3,p,ul,dl,dd{margin:0}
+ul{padding:0;list-style:none}
+button{font:inherit;letter-spacing:inherit;color:inherit}
+.mono{font-family:var(--mono);letter-spacing:-0.01em}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.wrap{max-width:1400px;margin:0 auto;padding:18px 28px 32px;display:flex;flex-direction:column;gap:16px}
+
+/* 머리 */
+.top{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap}
+.top h1{font-size:22px;letter-spacing:-0.055em}
+.pill{font-size:11px;font-weight:700;border-radius:999px;padding:2px 10px;border:1px solid var(--line);color:var(--primary-deep);white-space:nowrap}
+.pill.ok{border-color:var(--success);color:var(--success)}
+.pill.warn{border-color:var(--warning);color:var(--warning-ink)}
+.pill.off{border-color:var(--dot);color:var(--text-muted)}
+.run{font-size:11.5px;color:var(--text-muted);overflow-wrap:anywhere}
+.run b{color:var(--text-strong);font-weight:700}
+.lede{font-size:12.5px;color:var(--text-muted);max-width:80ch}
+
+/* 실행 띠 */
+.band{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.panel{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:12px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;min-width:0}
+.panel h2{font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:-0.02em}
+.panel.warn{border-color:rgba(201,154,59,.7)}
+.big{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.big b{font-family:var(--mono);font-size:24px;letter-spacing:-0.04em;line-height:1.1}
+.big span{font-size:12px;color:var(--text-muted)}
+.meter{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;position:relative}
+.meter i{display:block;height:100%;background:var(--primary-soft);border-radius:3px}
+.meter.over i{background:var(--warning)}
+.meter s{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--text-strong);text-decoration:none}
+.note{font-size:11.5px;color:var(--text-muted);overflow-wrap:anywhere}
+.note.warn{color:var(--warning-ink)}
+.counts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,130px),1fr));gap:8px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:10px 16px;box-shadow:var(--shadow)}
+.counts div{display:flex;flex-direction:column;min-width:0}
+.counts b{font-family:var(--mono);font-size:17px;line-height:1.2}
+.counts span{font-size:11px;color:var(--text-muted)}
+.counts .zero b{color:var(--text-faint)}
+.counts .bad b{color:var(--danger)}
+
+/* 섹션 머리 */
+.sh{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin-bottom:10px}
+.sh h2{font-size:15px;letter-spacing:-0.048em}
+.sh p{font-size:12px;color:var(--text-muted)}
+
+/* 규칙 카드 */
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:12px}
+.rc{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;min-width:0}
+.rch{display:flex;align-items:center;gap:8px;min-width:0}
+.rch h3{font-family:var(--mono);font-size:13.5px;letter-spacing:-0.02em;min-width:0;overflow-wrap:anywhere}
+.chg{flex:none;margin-left:auto;font-size:10.5px;font-weight:700;border-radius:5px;padding:1px 7px;border:1px solid var(--line);color:var(--primary-deep);background:rgba(74,95,168,.08)}
+.chg.added{border-color:var(--success);color:var(--success);background:rgba(59,138,110,.08)}
+.chg.disabled{border-color:var(--warning);color:var(--warning-ink);background:rgba(201,154,59,.1)}
+.chg.removed{border-color:var(--danger);color:#9E3B37;background:rgba(194,84,80,.07)}
+.meta{display:flex;gap:4px 8px;flex-wrap:wrap;font-size:11.5px;color:var(--text-muted);min-width:0}
+.meta .tg{color:var(--text-strong);overflow-wrap:anywhere;min-width:0}
+.rtext{font-size:12px;color:var(--text-strong);overflow-wrap:anywhere;border-left:2px solid var(--bg-grid);padding-left:8px}
+.rn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--bg-grid);padding-top:8px;gap:6px}
+.rn div{display:flex;flex-direction:column;min-width:0}
+.rn b{font-family:var(--mono);font-size:16px;line-height:1.2}
+.rn span{font-size:11px;color:var(--text-muted)}
+.rn .zero b{color:var(--text-faint)}
+.rn .miss{grid-column:1 / -1;flex-direction:row;gap:6px;font-size:11px;color:var(--text-muted)}
+.none{font-size:12px;color:var(--text-muted)}
+.facts{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:10px 16px;box-shadow:var(--shadow);font-size:12.5px;margin-top:12px}
+.facts li{display:flex;gap:4px 10px;flex-wrap:wrap;align-items:baseline;min-width:0}
+.facts .k{flex:none;width:120px;color:var(--text-muted)}
+.facts .v{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}
+.facts .v b{font-family:var(--mono)}
+
+/* 슬라이드 카드 */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px}
+.sc{background:var(--surface);border:1px solid var(--bg-grid);border-radius:var(--radius);padding:8px 8px 10px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;min-width:0}
+.thumb{position:relative;display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:16 / 9;padding:0;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);background:#FBFCFE;overflow:hidden;cursor:zoom-in}
+.thumb:disabled{cursor:default}
+.thumb img.full{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.thumb .slide{border:0;border-radius:0;flex:none}
+.thumb .noimg{font-size:11.5px;color:var(--text-muted)}
+.thumb .approx{position:absolute;left:4px;bottom:4px;font-size:9.5px;color:var(--text-muted);background:rgba(246,248,252,.9);border-radius:4px;padding:0 5px}
+.sm{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;min-width:0}
+.pos{color:var(--text-muted)}
+.ttl{flex:1 1 100%;min-width:0;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chs{display:flex;flex-direction:column;gap:4px}
+.ch{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;font-size:11.5px;border-radius:6px;padding:3px 7px;background:rgba(74,95,168,.08);color:var(--primary-deep);min-width:0}
+.ch .ck{font-weight:700;overflow-wrap:anywhere;min-width:0}
+.ch .cb{color:var(--text-muted);text-decoration:line-through;overflow-wrap:anywhere;min-width:0}
+.ch .ca{font-weight:700;overflow-wrap:anywhere;min-width:0}
+.ch.ans{background:rgba(59,138,110,.09);color:#2C6B55}
+.ch.stale{background:var(--surface-2);color:var(--text-muted)}
+.empty-list{grid-column:1 / -1;font-size:12.5px;color:var(--text-muted);padding:20px;text-align:center}
+.foot{font-size:11px;color:var(--text-faint)}
+
+/* 확대 모달 */
+.modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(30,45,74,.72)}
+.modal.on{display:flex}
+.mbox{display:flex;flex-direction:column;gap:8px;max-width:100%;max-height:100%}
+.mhead{display:flex;align-items:center;gap:10px;color:#fff;font-size:12.5px;min-width:0}
+.mhead span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mclose{flex:none;border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.25);color:#fff;border-radius:var(--radius-sm);padding:4px 12px;cursor:pointer;font-weight:700}
+.mclose:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.mbody{display:flex;justify-content:center;min-height:0}
+.mbody img{max-width:calc(100vw - 32px);max-height:calc(100vh - 90px);object-fit:contain;border-radius:var(--radius-sm);background:#FBFCFE;display:block}
+.mbody .slide{max-width:calc(100vw - 32px)}
+.emptystate{max-width:560px;margin:80px auto;text-align:center;color:var(--text-muted)}
+.emptystate h2{color:var(--text-strong);margin-bottom:8px}
+
+/*__SLIDE_PREVIEW_CSS__*/
+
+@media (max-width:680px){
+  .wrap{padding:14px 16px 24px;gap:14px}
+  .top h1{font-size:19px}
+  .facts .k{width:auto}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mcap">
+  <div class="mbox">
+    <div class="mhead"><span id="mcap"></span><button class="mclose" id="mclose" type="button">닫기 (Esc)</button></div>
+    <div class="mbody" id="mbody"></div>
+  </div>
+</div>
+<script>
+/*__SLIDE_PREVIEW_JS__*/
+const DATA = /*__DATA__*/null;
+(function(){
+  "use strict";
+  var app = document.getElementById("app");
+  function h(tag, attrs, kids){
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs){
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else if (k.slice(0,2) === "on") e.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function(c){ if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+  if (!DATA || DATA.kind !== "rules_update"){
+    app.appendChild(h("div", {class:"emptystate"}, [
+      h("h2", {text:"표시할 데이터가 없습니다"}),
+      h("p", {text:"이 화면은 labelbot rules-board 명령이 rules-update 실행 결과를 채워 넣은 뒤에 사용합니다."})
+    ]));
+    return;
+  }
+  var CL = DATA.change_labels || {}, R = DATA.ratio || {}, P = DATA.push || {}, C = DATA.counts || {};
+  var slides = DATA.slides || [];
+  var opener = null;  // 모달을 연 썸네일
+  function pct(x){ return (Math.round((x || 0) * 1000) / 10) + "%"; }
+  function stageLabel(r){
+    if (r.stage === "classify" || (r.axes || []).length) return "1차 분류";
+    if (r.stage === "label" || (r.keys || []).length) return "3차 라벨";
+    return "";
+  }
+
+  // ---------- 실행 띠: 변경 비율, 적재 상태, 건수 ----------
+  function ratioPanel(){
+    var w = Math.min(100, (R.ratio || 0) * 100), lim = Math.min(100, (R.limit || 0) * 100);
+    var under = (R.relabeled || 0) < (R.min_relabels || 0);
+    return h("section", {class:"panel" + (R.blocked ? " warn" : ""), "aria-labelledby":"h-ratio"}, [
+      h("h2", {id:"h-ratio", text:"변경 비율"}),
+      h("div", {class:"big"}, [h("b", {text:pct(R.ratio)}),
+        h("span", {text:"값 바뀜 " + (R.changed || 0) + " / 다시 라벨 " + (R.relabeled || 0)})]),
+      h("div", {class:"meter" + (R.blocked ? " over" : ""), role:"img",
+        "aria-label":"변경 비율 " + pct(R.ratio) + ", 상한 " + pct(R.limit)}, [
+        h("i", {style:"width:" + w.toFixed(1) + "%"}), h("s", {style:"left:calc(" + lim.toFixed(1) + "% - 1px)"})]),
+      h("p", {class:"note" + (R.blocked ? " warn" : ""), text:"상한 " + pct(R.limit) +
+        (under ? " · 다시 라벨 " + (R.min_relabels || 0) + "건 미만이라 상한을 적용하지 않음" : "") +
+        (R.blocked ? " · 상한을 넘어 적재를 멈춤" : "")})
+    ]);
+  }
+  function pushPanel(){
+    var st = P.state, pill, note;
+    if (st === "pushed"){ pill = h("span", {class:"pill ok", text:"적재됨"}); note = "지금 확정 라벨 그대로 올라간 chunk 수"; }
+    else if (st === "blocked"){ pill = h("span", {class:"pill warn", text:"보류 " + (P.code || "")});
+      note = "변경 비율이 상한을 넘었습니다. 바뀐 슬라이드를 확인한 뒤 push-vectors --force로 보냅니다."; }
+    else if (st === "off"){ pill = h("span", {class:"pill off", text:"Supabase 꺼짐"}); note = "적재하지 않는 설정입니다."; }
+    else { pill = h("span", {class:"pill", text:"미적재"}); note = "embed → push-vectors 뒤에 이 화면을 다시 만들면 채워집니다."; }
+    return h("section", {class:"panel" + (st === "blocked" ? " warn" : ""), "aria-labelledby":"h-push"}, [
+      h("h2", {id:"h-push", text:"적재 상태"}),
+      h("div", {class:"big"}, [pill, st === "off" ? null :
+        h("span", {}, [h("b", {class:"mono", text:String(P.pushed_ok || 0)}), " / " + (P.total || 0) + " chunk"])]),
+      h("p", {class:"note" + (st === "blocked" ? " warn" : ""), text:note})
+    ]);
+  }
+  function counts(){
+    var cell = function(n, label, bad){
+      return h("div", {class:(n ? (bad ? "bad" : "") : "zero")}, [h("b", {text:String(n || 0)}), h("span", {text:label})]);
+    };
+    return h("div", {class:"counts", role:"group", "aria-label":"건수"}, [
+      cell(C.relabeled, "다시 라벨"), cell(C.changed, "값 바뀜"), cell(C.skipped_human, "사람 값이라 건너뜀"),
+      cell(C.skipped_confirmed, "확인 chunk 건너뜀"), cell(C.stale_answers, "낡은 답 버림"),
+      cell(C.unasked_questions, "새 값 질문 미답"), cell(C.failed, "실패", true)
+    ]);
+  }
+
+  // ---------- 규칙 카드 ----------
+  function rulesSection(){
+    var rules = DATA.rules || [];
+    var grid = h("div", {class:"rgrid"});
+    rules.forEach(function(r){ grid.appendChild(ruleCard(r)); });
+    if (!rules.length) grid.appendChild(h("p", {class:"none", text:"범위(축·질문)가 있는 바뀐 규칙이 없습니다."}));
+    return h("section", {"aria-labelledby":"h-rules"}, [
+      h("div", {class:"sh"}, [h("h2", {id:"h-rules", text:"바뀐 규칙 " + rules.length + "개"}),
+        h("p", {text:"규칙이 닿는 범위를 다시 라벨한 건수"})]),
+      grid, facts()]);
+  }
+  function ruleCard(r){
+    var tg = (r.axes || []).concat(r.keys || []);
+    var cell = function(n, label){ return h("div", {class:n ? "" : "zero"}, [h("b", {text:String(n || 0)}), h("span", {text:label})]); };
+    var st = stageLabel(r);
+    return h("article", {class:"rc"}, [
+      h("div", {class:"rch"}, [h("h3", {text:r.rule_id}), h("span", {class:"chg " + r.change, text:CL[r.change] || r.change})]),
+      h("div", {class:"meta"}, [h("span", {class:"mono", text:(r.kind || "-") + (st ? " · " + st : "")}),
+        h("span", {}, ["대상 ", h("span", {class:"tg", text:tg.join(", ") || r.target || "-"})])]),
+      r.text ? h("p", {class:"rtext", text:r.text}) : null,
+      h("div", {class:"rn"}, [cell(r.relabeled, "다시 라벨"), cell(r.changed, "값 바뀜"), cell(r.skipped_human, "건너뜀"),
+        r.skipped_missing ? h("div", {class:"miss", text:"질문이 없어 건너뜀 " + r.skipped_missing + "건"}) : null])
+    ]);
+  }
+  function facts(){
+    return h("ul", {class:"facts", "aria-label":"다시 라벨하지 않은 변경"}, [
+      h("li", {}, [h("span", {class:"k", text:"축 없는 규칙"}), h("span", {class:"v"}, [
+        h("b", {text:String(DATA.stage_wide || 0)}), "개 · 범위가 없어 다시 라벨하지 않음, 다음 전체 실행 때 반영"])]),
+      h("li", {}, [h("span", {class:"k", text:"사례 변경"}), h("span", {class:"v"}, [
+        h("b", {text:String(DATA.examples_changed || 0)}), "건 · 다음 전체 실행 때 반영"])])
+    ]);
+  }
+
+  // ---------- 값이 바뀐 슬라이드 ----------
+  function slidesSection(){
+    var grid = h("div", {class:"sgrid"});
+    slides.forEach(function(s){ grid.appendChild(slideCard(s)); });
+    if (!slides.length) grid.appendChild(h("p", {class:"empty-list", text:"값이 바뀐 슬라이드가 없습니다."}));
+    return h("section", {"aria-labelledby":"h-slides"}, [
+      h("div", {class:"sh"}, [h("h2", {id:"h-slides", text:"값이 바뀐 슬라이드 " + slides.length + "개"}),
+        h("p", {text:"이전 → 지금. 이미지를 누르면 크게 보입니다"})]), grid]);
+  }
+  function preview(s, big){
+    if (s.image){
+      return h("img", {class:big ? "" : "full", src:s.image, alt:"슬라이드 " + s.slide_no + " 미리보기", loading:big ? null : "lazy"});
+    }
+    var node = SlidePreview.build(s.layout, null);  // 삽입 그림은 자리 표시로 그린다
+    if (!node) return null;
+    var r = s.layout.w / s.layout.h;
+    if (big) node.style.width = "min(calc(100vw - 32px), calc((100vh - 90px) * " + r.toFixed(4) + "))";
+    else node.style.width = r < 16 / 9 ? (r / (16 / 9) * 100).toFixed(2) + "%" : "100%";
+    return node;
+  }
+  function label(s){ return "파일 " + s.file_no + " · 슬라이드 " + s.slide_no; }
+  function val(v){
+    if (v === null || v === undefined) return "-";
+    if (Array.isArray(v)) return v.length ? v.join(", ") : "값 없음";
+    return String(v);
+  }
+  function chip(c){
+    if (c.stale) return h("div", {class:"ch stale"}, [h("span", {class:"ck", text:"질문 " + c.key + ":"}),
+      h("span", {text:"답 버림(낡음)"}), h("span", {class:"cb", text:val(c.before)})]);
+    var ans = c.kind === "answer";
+    return h("div", {class:"ch" + (ans ? " ans" : "")}, [h("span", {class:"ck", text:(ans ? "질문 " : "") + c.key + ":"}),
+      h("span", {class:"cb", text:val(c.before)}), h("span", {"aria-hidden":"true", text:"→"}),
+      h("span", {class:"ca", text:val(c.after)})]);
+  }
+  function slideCard(s){
+    var pv = preview(s, false);
+    var thumb = h("button", {class:"thumb", type:"button", "aria-label":label(s) + " 크게 보기", disabled:pv ? null : "disabled"},
+      [pv || h("span", {class:"noimg", text:"미리보기 없음"}), pv && !s.image ? h("span", {class:"approx", text:"근사 배치"}) : null]);
+    if (pv) thumb.addEventListener("click", function(){ openModal(s, thumb); });
+    return h("article", {class:"sc"}, [
+      thumb,
+      h("div", {class:"sm"}, [
+        h("span", {class:"pos mono", text:"F" + s.file_no + " · p." + s.slide_no, title:s.file_name || ""}),
+        s.title ? h("span", {class:"ttl", text:s.title, title:s.title}) : null
+      ]),
+      h("div", {class:"chs", "aria-label":"바뀐 값"}, (s.changes || []).map(chip))
+    ]);
+  }
+
+  // ---------- 확대 모달: Esc·바깥 클릭으로 닫고, 열려 있는 동안 포커스는 닫기 버튼에 둔다 ----------
+  var modal = document.getElementById("modal"), mbody = document.getElementById("mbody");
+  var mcap = document.getElementById("mcap"), mclose = document.getElementById("mclose");
+  function openModal(s, from){
+    var pv = preview(s, true);
+    if (!pv) return;
+    opener = from;
+    mbody.textContent = "";
+    mbody.appendChild(pv);
+    mcap.textContent = label(s) + (s.title ? " · " + s.title : "") + (s.image ? "" : " (근사 배치)");
+    modal.classList.add("on");
+    document.body.style.overflow = "hidden";
+    mclose.focus();
+  }
+  function closeModal(){
+    if (!modal.classList.contains("on")) return;
+    modal.classList.remove("on");
+    mbody.textContent = "";
+    document.body.style.overflow = "";
+    if (opener) opener.focus();
+    opener = null;
+  }
+  mclose.addEventListener("click", closeModal);
+  modal.addEventListener("click", function(ev){ if (ev.target === modal || ev.target === mbody) closeModal(); });
+  document.addEventListener("keydown", function(ev){
+    if (!modal.classList.contains("on")) return;
+    if (ev.key === "Escape"){ ev.preventDefault(); closeModal(); }
+    else if (ev.key === "Tab"){ ev.preventDefault(); mclose.focus(); }
+  });
+
+  function render(){
+    app.appendChild(h("div", {class:"wrap"}, [
+      h("header", {class:"top"}, [
+        h("h1", {text:"규칙 변경 현황판"}),
+        h("span", {class:"pill ok", text:"사람 검수 없이 반영됨"}),
+        h("span", {class:"run mono"}, ["실행 ", h("b", {text:DATA.run_id}), " ← 기준 ", h("b", {text:DATA.parent_run || "-"})])
+      ]),
+      h("p", {class:"lede", text:"라벨링 규칙이 바뀐 범위만 다시 라벨링한 결과입니다. 축 규칙은 그 축의 1차 분류만, 답 규칙은 그 질문의 O/X만 " +
+        "다시 매겼고, 사람이 교정하거나 확인한 값은 그대로 두었습니다."}),
+      h("div", {class:"band"}, [ratioPanel(), pushPanel()]),
+      counts(), rulesSection(), slidesSection(),
+      h("p", {class:"foot mono", text:"생성 " + (DATA.generated_at || "-")})
+    ]));
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

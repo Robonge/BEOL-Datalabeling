@@ -21,6 +21,7 @@ import os
 import re
 import sys
 import threading
+import urllib.parse
 
 from labelbot import util
 
@@ -68,7 +69,12 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         if self.path.split("?")[0] == "/inbox/status":
             # done: 검수 완료 버튼(POST /inbox/review/done)을 받는 서버라는 표시. 예전 서버에는 없어 버튼이 숨는다.
             # start: 검수 시작 신호(POST /signals/review_start)를 받는 서버라는 표시.
-            return self._json(200, {"ok": True, "kinds": list(KINDS), "done": True, "start": True})
+            out = {"ok": True, "kinds": list(KINDS), "done": True, "start": True}
+            # ?run=<실행 ID>이면 그 실행의 완료 신호가 있는지 알려 준다(검수 화면이 잠금 여부를 정한다).
+            run = urllib.parse.parse_qs(self.path.partition("?")[2]).get("run", [None])[0]
+            if run is not None and _RUN_ID.match(run):
+                out["done_signal"] = os.path.isfile(done_signal_path(self.ws_root, run))
+            return self._json(200, out)
         return super().do_GET()
 
     def do_HEAD(self):

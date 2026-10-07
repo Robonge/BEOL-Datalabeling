@@ -1,6 +1,6 @@
 """axis-update 회귀: taxonomy 축이 바뀐 작업 폴더에서 바뀐 축만 1차 분류로 다시 라벨링한다.
 
-합성 taxonomy(메모리 xlsx, 실제 taxonomy.xlsx는 열지 않는다)로 mock 실행 A를 돌리고 검수 교정을 넣은 뒤, taxonomy를
+합성 taxonomy(임시 폴더의 taxonomy.json, 저장소 taxonomy.json은 열지 않는다)로 mock 실행 A를 돌리고 검수 교정을 넣은 뒤, taxonomy를
 바꿔(축 추가·삭제, 값 추가만, 값 삭제) axis-update 실행 B를 돌린다. mock transport가 받은 작업 종류로 LLM 호출 수를 센다.
 B의 부분 분류는 일부 chunk(본문 해시 버킷 6)에 잘못된 JSON을 돌려줘 부분 분류 실패를 만든다.
 활성 토글(Y→N, N→Y), 멈춤 사유, 잠금, 적재 대기, 중단 뒤 재시도는 두 번째 작업 폴더에서 본다.
@@ -100,7 +100,7 @@ def adopting_responder(body, hint):
 
 def make_ws(sheets):
     d = tempfile.mkdtemp(prefix="labelbot_ws_")
-    tax_path = os.path.join(d, "tax_fixture.xlsx")
+    tax_path = os.path.join(d, "taxonomy.json")
     with open(tax_path, "wb") as f:
         f.write(build(sheets))
     cfg = {"taxonomy_path": tax_path, "input_root": DUMMY_DIR,
@@ -204,7 +204,7 @@ class AxisUpdateTest(unittest.TestCase):
         self.assertIsNotNone(r[1])
 
     def test_latest_label_run_picks_axis_update(self):
-        self.assertEqual(store.LABEL_COMMANDS, ("run", "axis-update"))
+        self.assertEqual(store.LABEL_COMMANDS, ("run", "axis-update", "rules-update"))
         self.assertEqual(store.latest_label_run(self.con), self.run_b)
         self.assertEqual(store.latest_run(self.con), self.run_b)  # cli 기본 --run
 
@@ -558,7 +558,7 @@ class AxisUpdateGateTest(unittest.TestCase):
         """실행 중 잠금을 잃으면 AXIS_UPDATE_LOCK_LOST로 멈추고(종료 코드 3) 실행은 끝나지 않은 채 남는다."""
         with mock.patch.object(axisupdate, "touch_lock", return_value=False):
             code, lines, _ = run_cli("axis-update", "--workspace", self.dir)
-        self.assertEqual((code, lines[-1]), (3, "[axis-update] 건너뜀 AXIS_UPDATE_LOCK_LOST"))
+        self.assertEqual((code, lines[-1]), (4, "[axis-update] 건너뜀 AXIS_UPDATE_LOCK_LOST"))
         lost = store.latest_label_run(self.con)
         self.assertNotEqual(lost, self.run_a)
         self.assertIsNone(self.con.execute("SELECT finished_at FROM runs WHERE run_id=?", (lost,)).fetchone()[0])

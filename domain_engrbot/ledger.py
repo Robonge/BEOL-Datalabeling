@@ -12,6 +12,9 @@
 - 같은 입력으로 다시 돌리면 장부 파일 바이트가 같다. 시각은 intake_at뿐이고 corrections_sha가 바뀔 때만 갱신한다.
 - 장부 위치는 <코드 폴더>/workspaces/ 아래나 <작업 폴더>/qa/ 아래만 허용한다.
 - 규칙 후보는 모두 draft다. 봇은 어떤 규칙도 approved로 올리지 않는다.
+- 대조 질문(Q-CTL-) 답 교정(target_kind='control')은 field "control:<qid>" 사례로 cases.jsonl(과 근거는 evidence.jsonl)에만
+  남긴다. 대조 대상 (축, 값)은 ctl_axis·ctl_value에 둔다. 라벨이 아니라 품질 신호이므로 골든·레코드(final_axes)·judge 예시·
+  규칙 후보에는 쓰지 않고, 도메인 질문의 근거 자료로만 쓴다.
 """
 import contextlib
 import json
@@ -57,9 +60,12 @@ CONFIRMED, CORRECTED = "confirmed", "corrected"
 OX = ("O", "X")
 CAND_TYPES = ("expect", "forbid", "title", "synonym")
 CAND_NOTE_TAIL = "승인하려면 domain_engrbot/defaults/domain_rules.json에 옮기고 status를 approved로 바꾼다."
-# 검수 교정의 근거(labelbot corrections.evidence 항목의 source)와 장부의 위치 종류
-EVIDENCE_SOURCES = ("chunk", "file_name", "doc_title")
-EVIDENCE_KINDS = ("chunk_same", "chunk_other", "file_name", "doc_title")
+# 검수 교정의 근거(labelbot corrections.evidence 항목의 source)와 장부의 위치 종류.
+# typed는 사람이 직접 타이핑한(본문에 없는) 근거라 chunk_id·slide_no가 없다
+EVIDENCE_SOURCES = ("chunk", "file_name", "doc_title", "typed")
+EVIDENCE_KINDS = ("chunk_same", "chunk_other", "file_name", "doc_title", "typed")
+CONTROL = "control"
+CONTROL_ANSWERS = ("O", "X", "N/A", "판단 불가")   # 대조 질문 답(사람·봇)으로 받는 값
 EVIDENCE_MAX = 3   # 교정 하나에 근거 최대 3개(labelbot apply와 같은 상한)
 
 
@@ -170,10 +176,21 @@ def read_evidence(d):
 
 
 def evidence_kind(item, record_id):
-    """근거 항목 → 위치 종류. chunk 근거는 교정 레코드 자신이면 chunk_same, 같은 파일의 다른 슬라이드면 chunk_other."""
+    """근거 항목 → 위치 종류. chunk 근거는 교정 레코드 자신이면 chunk_same, 같은 파일의 다른 슬라이드면 chunk_other.
+    나머지(file_name, doc_title, typed)는 source 그대로다."""
     if item.get("source") == "chunk":
         return "chunk_same" if item.get("chunk_id") == record_id else "chunk_other"
     return item.get("source")
+
+
+def _json_value(v):
+    """corrections의 JSON 문자열 값 → 값(깨졌으면 원문 문자열)."""
+    if isinstance(v, str):
+        try:
+            return json.loads(v)
+        except ValueError:
+            return v
+    return v
 
 
 def read_candidates(d):
@@ -292,12 +309,13 @@ def _undecidable(value):
 
 
 def _evidence(row, quote_max):
-    """교정 행의 근거·이유 → (항목 목록, 이유 또는 None, 버린 항목 수). 필드(축·답) 교정 행만 근거를 갖는다.
+    """교정 행의 근거·이유 → (항목 목록, 이유 또는 None, 버린 항목 수). 필드(축·답·대조 답) 교정 행만 근거를 갖는다.
 
     항목은 {source, chunk_id, slide_no, quote}로 맞춘다. source가 모르는 값이거나, 인용이 비었거나 quote_max를 넘거나,
     chunk 근거에 chunk_id가 없거나, EVIDENCE_MAX를 넘는 항목은 버린다. evidence 열이 JSON 목록이 아니면 한 건으로 센다.
+    chunk 근거만 chunk_id를, typed(직접 입력) 근거는 slide_no도 갖지 않는다.
     """
-    if row.get("target_kind") not in ("axis", "answer"):
+    if row.get("target_kind") not in ("axis", "answer", CONTROL):
         return [], None, 0
     raw, items, bad = row.get("evidence"), [], 0
     if raw not in (None, ""):
@@ -316,7 +334,8 @@ def _evidence(row, quote_max):
                     or len(items) >= EVIDENCE_MAX):
                 bad += 1
                 continue
-            items.append({"source": src, "chunk_id": cid if src == "chunk" else None, "slide_no": slide, "quote": q})
+            items.append({"source": src, "chunk_id": cid if src == "chunk" else None,
+                          "slide_no": None if src == "typed" else slide, "quote": q})
     reason = row.get("reason")
     reason = reason.strip() if isinstance(reason, str) and reason.strip() else None
     return items, reason, bad
@@ -349,6 +368,7 @@ class _Intake(object):
         self.cur = None
         self.tax = None
         self.taxonomy_version = None
+        self.controls = {}                      # 대조 질문 qid → {axis, value, text}(그 실행 번들 기준)
 
     def skip(self, code, n=1):
         if n:
@@ -364,6 +384,7 @@ class _Intake(object):
         tax = model.TaxIndex(bundle.taxonomy)
         self.tax = tax
         self.taxonomy_version = (bundle.taxonomy or {}).get("version")
+        self.controls = (bundle.meta or {}).get("control_questions") or {}
         recs = {r["record_id"]: r for r in bundle.records}
         corr = {}
         for cid, rows in ((bundle.meta or {}).get("corrections") or {}).items():
@@ -399,7 +420,7 @@ class _Intake(object):
                 else:
                     self.skip("SKIP_STATUS_OTHER")
                     continue
-            elif kind in ("axis", "answer") and key:
+            elif kind in ("axis", "answer", CONTROL) and key:
                 fields["%s:%s" % (kind, key)] = (row, hv)
             else:
                 self.skip("SKIP_TARGET_OTHER")
@@ -422,6 +443,14 @@ class _Intake(object):
         for field in sorted(fields):
             row, hv = fields[field]
             kind, _, key = field.partition(":")
+            if kind == CONTROL:
+                # 대조 답은 레코드 라벨이 아니라 교정 행의 봇 답과 비교한다. 판단 불가도 품질 신호로 남긴다
+                bv = _json_value(row.get("bot_value"))
+                if hv not in CONTROL_ANSWERS:
+                    self.skip("SKIP_VALUE_INVALID")
+                    continue
+                cases[field] = (CONFIRMED if hv == bv else CORRECTED, bv, hv, row)
+                continue
             bv, _ = _bot_value(rec, field)
             if _undecidable(hv):
                 self.skip("SKIP_UNDECIDABLE")
@@ -483,6 +512,9 @@ class _Intake(object):
         for field in sorted(cases):
             kind_, bv, hv, row = cases[field]
             kind, _, key = field.partition(":")
+            if kind == CONTROL:
+                self._control_case(run_id, rec, unit, field, kind_, bv, hv, row)
+                continue
             gen_axis = gen_value = None
             q_changed = False
             if kind == "answer":
@@ -501,14 +533,7 @@ class _Intake(object):
                 "kind": kind_, "bot_value": bv, "human_value": hv, "gen_axis": gen_axis, "gen_value": gen_value,
                 "applied_at": row.get("applied_at"),
             }
-            items, reason, bad = _evidence(row, self.cfg["quote_chars"])
-            self.skip("SKIP_EVIDENCE_INVALID", bad)
-            if items or reason:
-                kinds = {evidence_kind(x, rid) for x in items}
-                case.update(evidence_sources=[k for k in EVIDENCE_KINDS if k in kinds], has_reason=reason is not None)
-                self.evidence.append({"case_id": case_id, "source_ws": self.source, "labeler_run_id": run_id,
-                                      "record_id": rid, "field": field, "evidence": items, "reason": reason})
-            self.cases.append(case)
+            self._add_case(case, row)
             _, quote = _bot_value(rec, field)
             golden._put(labels, evidence, field, hv, quote if kind_ == CONFIRMED else None)
             if kind == "axis" and kind_ == CORRECTED:
@@ -538,6 +563,35 @@ class _Intake(object):
                 "taxonomy_version": snap.get("version"), "questions_version": snap.get("questions_version"),
                 "source_ws": self.source, "labeler_run_id": run_id,
             }
+
+    def _add_case(self, case, row):
+        """사례를 넣고, 근거·이유가 있으면 위치 종류·이유 유무를 사례에, 인용·이유를 evidence.jsonl 행에 둔다."""
+        items, reason, bad = _evidence(row, self.cfg["quote_chars"])
+        self.skip("SKIP_EVIDENCE_INVALID", bad)
+        if items or reason:
+            kinds = {evidence_kind(x, case["record_id"]) for x in items}
+            case.update(evidence_sources=[k for k in EVIDENCE_KINDS if k in kinds], has_reason=reason is not None)
+            self.evidence.append({"case_id": case["case_id"], "source_ws": self.source,
+                                  "labeler_run_id": case["labeler_run_id"], "record_id": case["record_id"],
+                                  "field": case["field"], "evidence": items, "reason": reason})
+        self.cases.append(case)
+
+    def _control_case(self, run_id, rec, unit, field, kind_, bv, hv, row):
+        """대조 답 교정 사례. 대조 대상 (축, 값)을 ctl_questions에서 못 찾으면 SKIP_CONTROL_UNRESOLVED.
+        골든·레코드·judge 예시에는 넣지 않는다(확정 라벨에 영향이 없는 품질 신호)."""
+        qid = field.partition(":")[2]
+        q = self.controls.get(qid) or {}
+        if not (isinstance(q.get("axis"), str) and q["axis"] and isinstance(q.get("value"), str) and q["value"]):
+            self.skip("SKIP_CONTROL_UNRESOLVED")
+            return
+        rid = rec["record_id"]
+        self._add_case({
+            "case_id": model.hash_obj([self.source, run_id, rid, field])[:16], "source_ws": self.source,
+            "labeler_run_id": run_id, "record_id": rid, "file_id": rec.get("file_id"),
+            "text_hash": unit.get("text_hash"), "field": field, "kind": kind_, "bot_value": bv, "human_value": hv,
+            "gen_axis": None, "gen_value": None, "ctl_axis": q["axis"], "ctl_value": q["value"],
+            "applied_at": row.get("applied_at"),
+        }, row)
 
     def _examples(self, run_id, rec, unit, field, kind_, bv, hv, quote, gen_axis, gen_value, tax, q_changed):
         """사람 판정이 붙은 (라벨, 인용) 예시. 인용이 없으면 만들지 않는다.
@@ -895,7 +949,7 @@ def _synonym_candidates(d):
         srcs = {x for s in rows for x in s.get("sources") or []}
         rule = {"id": _cand_id("synonym", ["synonym", a]), "type": "synonym_suggest", "status": "draft",
                 "severity": "minor", "axis": a}
-        head = "검수 등록 동의어 %d쌍(작업 폴더 %d곳). 동의어 시트에 붙여넣은 뒤 효력이 있다." % (len(rows), len(srcs))
+        head = "검수 등록 동의어 %d쌍(작업 폴더 %d곳). taxonomy 보드에서 확정해 taxonomy.json synonyms에 쓴 뒤 효력이 있다." % (len(rows), len(srcs))
         found.append(("synonym", len(rows), rule, srcs, head))
     return found
 

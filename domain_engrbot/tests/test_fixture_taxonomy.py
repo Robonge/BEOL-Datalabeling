@@ -1,4 +1,4 @@
-"""합성 fixture가 최신 taxonomy/taxonomy.xlsx를 따라가고, taxonomy가 바뀌어도 깨끗한 레코드가 L2를 통과하는지 본다."""
+"""합성 fixture가 최신 taxonomy/taxonomy.json을 따라가고, taxonomy가 바뀌어도 깨끗한 레코드가 L2를 통과하는지 본다."""
 import copy
 import unittest
 from unittest import mock
@@ -25,7 +25,7 @@ def l2_codes(fx):
 
 
 def changed_snapshot():
-    """엑셀 수정 흉내: 새 분류 축 추가, 빈(비활성) 축 추가, 기존 축 값 줄이기."""
+    """taxonomy 수정 흉내: 새 분류 축 추가, 빈(비활성) 축 추가, 기존 축 값 줄이기."""
     snap = copy.deepcopy(synthetic.taxonomy_snapshot())
     snap["axes"].append({"name": "신규 축", "kind": "분류", "multi": True, "hierarchical": False, "active": True,
                          "definition": "", "values": [{"name": "새값%d" % i, "parent": None, "definition": ""}
@@ -39,11 +39,15 @@ def changed_snapshot():
 
 
 class FixtureTaxonomyTest(unittest.TestCase):
-    def test_snapshot_is_current_xlsx(self):
-        tax = labelbot_ws.load_taxonomy(synthetic.REPO_ROOT, {"taxonomy_path": synthetic.TAXONOMY_XLSX})
+    def test_snapshot_is_current_taxonomy(self):
+        tax = labelbot_ws.load_taxonomy(synthetic.REPO_ROOT, {"taxonomy_path": synthetic.TAXONOMY_JSON})
         snap = synthetic.taxonomy_snapshot()
         self.assertEqual(snap["version"], tax.sheet_hashes["taxonomy"])
-        self.assertEqual(snap, labelbot_ws.snapshot(tax))
+        # 축·값·질문은 저장소 taxonomy 그대로, 동의어만 fixture 고정 쌍(synthetic.FIXTURE_SYNONYMS)이다
+        repo = labelbot_ws.snapshot(tax)
+        self.assertEqual({k: v for k, v in snap.items() if k != "synonyms"},
+                         {k: v for k, v in repo.items() if k != "synonyms"})
+        self.assertTrue(snap["synonyms"])
 
     def test_clean_records_pass_l2_across_seeds(self):
         for seed in (1, 2, 3, 7, 11):

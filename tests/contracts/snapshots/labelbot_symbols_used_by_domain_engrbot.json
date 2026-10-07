@@ -6,9 +6,16 @@
       "domain_engrbot/adapters/labelbot_ws.py"
     ]
   },
-  "labelbot.candidates._safe": {
+  "labelbot.candidates.SYN_MIN_FREQ": {
+    "kind": "constant",
+    "type": "int",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.candidates.synonym_reject_code": {
     "kind": "function",
-    "signature": "(v)",
+    "signature": "(expression, canonical, vocab)",
     "used_in": [
       "domain_engrbot/adapters/labelbot_ws.py"
     ]
@@ -72,7 +79,7 @@
   },
   "labelbot.store.latest_run": {
     "kind": "function",
-    "signature": "(con, commands=('run', 'axis-update', 'ingest'), finished=True)",
+    "signature": "(con, commands=('run', 'axis-update', 'rules-update', 'ingest'), finished=True)",
     "used_in": [
       "domain_engrbot/adapters/labelbot_ws.py"
     ]
@@ -91,9 +98,23 @@
       "domain_engrbot/adapters/labelbot_ws.py"
     ]
   },
+  "labelbot.taxonomy.REJECTED_HEADER": {
+    "kind": "constant",
+    "type": "list",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
   "labelbot.taxonomy.RESERVED": {
     "kind": "constant",
     "type": "tuple",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.TaxonomyConflict": {
+    "kind": "exception",
+    "signature": null,
     "used_in": [
       "domain_engrbot/adapters/labelbot_ws.py"
     ]
@@ -105,6 +126,34 @@
       "domain_engrbot/adapters/labelbot_ws.py"
     ]
   },
+  "labelbot.taxonomy.check_doc": {
+    "kind": "function",
+    "signature": "(doc)",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.decode_doc": {
+    "kind": "function",
+    "signature": "(b)",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.diff_docs": {
+    "kind": "function",
+    "signature": "(old, new)",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.doc_version": {
+    "kind": "function",
+    "signature": "(b)",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
   "labelbot.taxonomy.norm_key": {
     "kind": "function",
     "signature": "(s)",
@@ -112,9 +161,44 @@
       "domain_engrbot/adapters/labelbot_ws.py"
     ]
   },
+  "labelbot.taxonomy.normalize_doc": {
+    "kind": "function",
+    "signature": "(doc)",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
   "labelbot.taxonomy.parse_bytes": {
     "kind": "function",
     "signature": "(b)",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.row_cells": {
+    "kind": "function",
+    "signature": "(obj, header)",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.row_obj": {
+    "kind": "function",
+    "signature": "(cells, header)",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.save_doc": {
+    "kind": "function",
+    "signature": "(path, doc, base_version, by, history_path=None, now=None)",
+    "used_in": [
+      "domain_engrbot/adapters/labelbot_ws.py"
+    ]
+  },
+  "labelbot.taxonomy.sheet_rows": {
+    "kind": "function",
+    "signature": "(doc, sheet)",
     "used_in": [
       "domain_engrbot/adapters/labelbot_ws.py"
     ]
@@ -173,20 +257,6 @@
     "signature": "(path=None)",
     "used_in": [
       "domain_engrbot/io.py"
-    ]
-  },
-  "labelbot.xlsx.XlsxError": {
-    "kind": "exception",
-    "signature": "(code, message)",
-    "used_in": [
-      "domain_engrbot/adapters/labelbot_ws.py"
-    ]
-  },
-  "labelbot.xlsx.read_workbook": {
-    "kind": "function",
-    "signature": "(data)",
-    "used_in": [
-      "domain_engrbot/adapters/labelbot_ws.py"
     ]
   }
 }

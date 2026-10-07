@@ -1,0 +1,96 @@
+/* reel.css: fixed 1920x1080 stage, WebGL canvas + DOM overlay (STYLE.md tokens) */
+:root {
+  --bg-center: #31343B; --bg-edge: #232429; --orange: #FF6A1A; --orange-soft: #E5682F;
+  --white: #FFFFFF; --desc: #D8DBE2; --future: #BFC2C9; --track: #4A4B53; --dot-future: #6A6D74;
+  --card-fill: #26272C; --card-inner: #20232A; --card-border: #53565D;
+  --display: "Segoe UI Variable Display", "Bahnschrift", sans-serif;
+  --text: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  --mono: "Cascadia Mono", "DejaVu Sans Mono", monospace;
+}
+html, body { margin: 0; padding: 0; background: #232429; overflow: hidden; }
+body { width: 1920px; height: 1080px; }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #232429; }
+#gl { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; display: block; }
+#ui { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; color: var(--white);
+  -webkit-font-smoothing: antialiased; font-optical-sizing: auto; text-rendering: geometricPrecision; }
+#ui * { box-sizing: border-box; }
+.layer { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+
+/* masked words */
+.mline { position: absolute; white-space: nowrap; margin: 0; }
+.mline .mask { display: inline-block; overflow: hidden; vertical-align: top; }
+.mline .word { display: inline-block; }
+.mline .orange, .orange { color: var(--orange); }
+.arr { display: inline-block; width: 0.8em; height: 0.5em; vertical-align: 0.07em; overflow: visible; }
+
+/* eyebrow */
+.eyebrow { position: absolute; white-space: nowrap; color: var(--orange); text-transform: uppercase; letter-spacing: 0.28em; }
+.eyebrow .sq { position: absolute; width: 12px; height: 12px; background: var(--orange); left: 0; }
+.eyebrow .tx { padding-left: 26px; }
+.eyebrow[style*="text-align: center"] .sq { position: relative; display: inline-block; vertical-align: top; left: 0; margin-right: 14px; }
+.eyebrow[style*="text-align: center"] .tx { padding-left: 0; }
+
+/* title block */
+.titleblock { position: absolute; left: 0; top: 0; width: 1920px; height: 400px; }
+.underline { position: absolute; left: 120px; top: 258px; width: 54px; height: 3px; background: var(--orange-soft); opacity: 0.85;
+  transform-origin: 0 50%; transform: scaleX(0); }
+.underline { background: rgba(229, 104, 47, 0.85); }
+.desc { position: absolute; left: 120px; max-width: 840px; font: 400 23px/36px var(--text); color: var(--desc); white-space: nowrap; }
+
+/* rail */
+.rail { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.rail .track { position: absolute; top: 972.5px; height: 3px; background: var(--track); }
+.rail .fill { position: absolute; top: 972.5px; height: 3px; background: var(--orange); width: 0; }
+.rail .dot { position: absolute; top: 974px; width: 11px; height: 11px; border-radius: 50%; transform: translate(-50%, -50%); background: var(--dot-future); }
+.rail .ring { position: absolute; top: 974px; width: 30px; height: 30px; border-radius: 50%; transform: translate(-50%, -50%);
+  border: 1.5px solid var(--orange); opacity: 0; }
+.rail .stop { position: absolute; width: 400px; text-align: center; font: 700 16px/20px var(--mono); letter-spacing: 0.30em;
+  text-indent: 0.30em; color: var(--future); white-space: nowrap; }
+
+/* counter */
+.counter { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.counter .clabel { position: absolute; right: 120px; font: 700 16px/20px var(--mono); letter-spacing: 0.30em; margin-right: -0.30em;
+  color: var(--orange); white-space: nowrap; text-transform: uppercase; }
+.counter .cvalue { position: absolute; right: 120px; font: 600 42px/50px var(--display); letter-spacing: -0.01em; color: var(--white);
+  white-space: nowrap; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.counter-B .clabel.bl, .counter-B .cvalue.bl { right: auto; left: 1470px; margin-right: 0; }
+.counter-B .clabel.br { right: 120px; }
+.counter-B .nbar { position: absolute; left: 1700px; top: 903px; width: 100px; height: 4px; background: #6B6E75; }
+.counter-B .nfill { position: absolute; right: 0; top: 0; height: 4px; background: var(--orange); }
+.counter-B .nval { position: absolute; right: 120px; font: 400 15px/18px var(--mono); color: var(--future); letter-spacing: 0.04em; }
+
+/* world labels */
+.wlabel { position: absolute; left: 0; top: 0; white-space: nowrap; color: var(--white); text-transform: uppercase; }
+
+/* content card */
+.card { position: absolute; left: 0; top: 0; transform-origin: 0 0; border-radius: 21px;
+  background: rgba(38, 39, 44, 0.94);
+  border: 2.5px solid transparent;
+  background-image: linear-gradient(rgba(38, 39, 44, 0.94), rgba(38, 39, 44, 0.94)), linear-gradient(180deg, #5C5F66, #484B52);
+  background-origin: border-box; background-clip: padding-box, border-box;
+  box-shadow: inset 0 0 0 4px #20232A, 0 12px 40px rgba(0, 0, 0, 0.28);
+  padding: 32px 35px; overflow: hidden; }
+.card .clab { font: 700 16px/20px var(--mono); letter-spacing: 0.22em; color: var(--orange); text-transform: uppercase; white-space: nowrap; }
+.card .clab .sq { display: inline-block; width: 10px; height: 10px; background: var(--orange); margin-right: 12px; vertical-align: 2px; }
+.card .cbody { margin-top: 24px; font: 500 25px/44px var(--mono); color: var(--white); white-space: pre; }
+.card .crow { position: relative; white-space: pre; }
+.card .ckey { color: rgba(191, 194, 201, 0.70); }
+.card .tok.hot { color: var(--orange); }
+.card .tok.acc { color: var(--orange); }
+
+/* perspective card: the frame is an SVG path through the homography, rows carry per-row affines (ui.js Card) */
+.card.persp { background: none; box-shadow: none; overflow: visible; }
+.card.persp .cframe { position: absolute; left: -2.5px; top: -2.5px; width: 1920px; height: 1080px; overflow: visible; pointer-events: none; }
+.card.persp .clab, .card.persp .crow { position: relative; transform-origin: 0 0; }
+
+/* scrim + hook */
+.scrim { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+  background: linear-gradient(180deg, rgba(30, 31, 35, 0) 702px, rgba(30, 31, 35, 0.70) 1080px),
+    radial-gradient(ellipse 1100px 520px at 120px 900px, rgba(30, 31, 35, 0.30), rgba(30, 31, 35, 0) 100%); }
+.caption { position: absolute; left: 0; width: 1920px; text-align: center; font: 400 17px/22px var(--mono); white-space: pre; }
+.caption .a { color: rgba(255, 255, 255, 0.90); }
+.caption .b { color: rgba(255, 255, 255, 0.55); }
+.caption .c { color: rgba(255, 255, 255, 0.66); }
+.floorlabel { position: absolute; left: 0; top: 0; font: 700 17px/22px var(--mono); letter-spacing: 0.28em; white-space: pre; color: var(--white); }
+.floorlabel .n { color: var(--orange); }
+.herolabel { position: absolute; left: 0; top: 0; font: 700 15px/18px var(--mono); letter-spacing: 0.22em; white-space: nowrap; color: var(--white); }

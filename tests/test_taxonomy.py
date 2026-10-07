@@ -1,4 +1,6 @@
-"""taxonomy.parse_bytes와 xlsx 읽기 테스트. 픽스처는 tests/xlsx_writer가 메모리에서 만든 bytes다."""
+"""taxonomy.json 파싱·검증·저장 테스트와 예전 taxonomy.xlsx 1회 변환(xlsx_to_doc) 테스트.
+JSON 픽스처는 시트 행 목록(첫 행 머리글)을 행 객체로 바꾼 bytes이고, xlsx 픽스처는 tests/xlsx_writer가 메모리에서 만든 bytes다."""
+import json
 import os
 import tempfile
 import unittest
@@ -8,6 +10,7 @@ from tests import xlsx_writer as xw
 from tests.xlsx_writer import Err, FormulaNoCache, FormulaStr, Inline, Runs
 
 H = taxonomy.HEADERS
+REJ = taxonomy.REJECTED_HEADER[:4]   # 예전 rejected 시트 머리글(출처 열 없음)
 
 
 def tax_row(axis, value=None, parent=None, multi=None, hier=None, dup=None, kind=None,
@@ -20,7 +23,7 @@ def axis_row(axis, multi="Y", hier="N", dup="N", kind="분류", definition="정�
 
 
 def base_sheets():
-    """유효한 최소 taxonomy.xlsx 시트 구성. 테스트마다 고쳐 쓴다."""
+    """유효한 최소 taxonomy 시트 구성(시트마다 첫 행은 머리글). 테스트마다 고쳐 쓴다."""
     return {
         "taxonomy": [
             H["taxonomy"],
@@ -37,14 +40,42 @@ def base_sheets():
         ],
         "questions": [H["questions"], ["Q-COM-001", "위험이 있는가.", "공통", 1], ["Q-FM-001", "단락인가.", "불량 모드=Short", 2]],
         "synonyms": [H["synonyms"], ["단락", "Short", "더미"], ["Metal1", "M1", None]],
-        "rejected": [H["rejected"]],
+        "rejected": [REJ],
     }
 
 
 ORDER = ("taxonomy", "questions", "synonyms", "rejected", "files", "queries")
 
 
-def build(sheets, **kw):
+def _text(v):
+    """xlsx 읽기와 같은 문자열(None → "", 정수 값 float → "2")."""
+    if v is None:
+        return ""
+    if isinstance(v, bool):
+        return "TRUE" if v else "FALSE"
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return str(v)
+
+
+def to_doc(sheets):
+    """시트 행 목록 dict → taxonomy.json doc. 머리글 행은 빼고 행 객체로 바꾼다. 빈 행도 자리를 지킨다."""
+    doc = {"version": 1}
+    for name, rows in sheets.items():
+        if name not in H and name != "rejected":
+            continue
+        header = taxonomy.REJECTED_HEADER if name == "rejected" else H[name]
+        doc[name] = [dict(zip(header, [_text(c) for c in (r or [])] + [""] * (len(header) - len(r or []))))
+                     for r in rows[1:]]
+    return doc
+
+
+def build(sheets):
+    """taxonomy.json bytes."""
+    return json.dumps(to_doc(sheets), ensure_ascii=False).encode("utf-8")
+
+
+def build_xlsx(sheets, **kw):
     specs = []
     for name in ORDER:
         if name in sheets:
@@ -56,8 +87,16 @@ def build(sheets, **kw):
     return xw.build(specs, **kw)
 
 
-def parse(sheets, **kw):
-    return taxonomy.parse_bytes(build(sheets, **kw))
+def parse(sheets, xlsx_path=False, **kw):
+    """JSON으로 파싱한다. xlsx_path나 xlsx 옵션(kw)을 주면 예전 xlsx를 변환(xlsx_to_doc)한 뒤 파싱한다."""
+    if not (xlsx_path or kw):
+        return taxonomy.parse_bytes(build(sheets))
+    doc, errors, warnings = taxonomy.xlsx_to_doc(build_xlsx(sheets, **kw))
+    if errors:
+        raise taxonomy.TaxonomyError(errors, warnings)
+    t = taxonomy.parse_doc(doc)
+    t.warnings = list(warnings) + t.warnings
+    return t
 
 
 class Helpers(unittest.TestCase):
@@ -95,7 +134,7 @@ class ValidTaxonomyTest(Helpers):
         self.assertEqual(t.questions[0].priority, 1)
         self.assertEqual(t.questions[1].target, ("불량 모드", "Short"))
         self.assertEqual([(s.alias, s.canonical) for s in t.synonyms], [("단락", "Short"), ("Metal1", "M1")])
-        self.assertEqual((t.rejected, t.files, t.queries), ([], [], []))
+        self.assertEqual(t.rejected, [])
         self.assertEqual(t.warnings, [])
 
     def test_axis_without_values_is_inactive(self):
@@ -236,42 +275,77 @@ class ReservedWordTest(Helpers):
 
 class SheetStructureTest(Helpers):
     def test_missing_required_sheet(self):
-        for name in taxonomy.REQUIRED:
+        for name in H:
             s = base_sheets()
             del s[name]
             err = self.assertRejected(s, "SHEET_MISSING", name, None)
             self.assertIn(" | ".join(H[name]), str(err))
 
+    def test_rejected_list_is_optional(self):
+        s = base_sheets()
+        del s["rejected"]
+        self.assertEqual(parse(s).rejected, [])
+
+    def test_only_three_sheets_hashed(self):
+        self.assertEqual(sorted(parse(base_sheets()).sheet_hashes), sorted(H))
+
+    def test_unknown_keys_warn(self):
+        doc = to_doc(base_sheets())
+        doc["synonyms"][0]["담당자"] = "홍길동"
+        t = taxonomy.parse_doc(doc)
+        warn = [w for w in t.warnings if w.code == "EXTRA_COLUMNS"]
+        self.assertEqual([(w.sheet, w.row) for w in warn], [("synonyms", 2)])
+        self.assertNotIn("홍길동", warn[0].message)
+
+    def test_non_text_cell_rejected(self):
+        doc = to_doc(base_sheets())
+        doc["questions"][0]["우선순위"] = 1
+        with self.assertRaises(taxonomy.TaxonomyError) as cm:
+            taxonomy.parse_doc(doc)
+        self.assertEqual([(i.sheet, i.row, i.code) for i in cm.exception.issues],
+                         [("questions", 2, "TAXONOMY_JSON_INVALID")])
+
+    def test_not_json(self):
+        for data in (b"not json", b"[1, 2]"):
+            with self.assertRaises(taxonomy.TaxonomyError) as cm:
+                taxonomy.parse_bytes(data)
+            self.assertEqual(cm.exception.issues[0].code, "TAXONOMY_JSON_INVALID")
+
+    def test_empty_rows_keep_row_numbers(self):
+        s = base_sheets()
+        s["synonyms"].insert(2, [None, None, None])
+        t = parse(s)
+        self.assertEqual([x.row for x in t.synonyms], [2, 4])
+        self.assertEqual(t.sheet_hashes, parse(base_sheets()).sheet_hashes)
+
+
+class MigrateSheetStructureTest(Helpers):
+    """예전 taxonomy.xlsx 변환(xlsx_to_doc)의 시트 구조 검사."""
+
     def test_header_mismatch(self):
         s = base_sheets()
         s["synonyms"][0] = ["동의어", "표준 어", "메모"]
-        err = self.assertRejected(s, "HEADER_MISMATCH", "synonyms", 1)
+        err = self.assertRejected(s, "HEADER_MISMATCH", "synonyms", 1, xlsx_path=True)
         self.assertIn("동의어 | 표준어 | 메모", str(err))
 
     def test_header_column_order(self):
         s = base_sheets()
         s["questions"][0] = ["질문 ID", "적용 대상", "문장", "우선순위"]
-        self.assertRejected(s, "HEADER_MISMATCH", "questions", 1)
+        self.assertRejected(s, "HEADER_MISMATCH", "questions", 1, xlsx_path=True)
 
-    def test_optional_sheets_missing_are_empty(self):
-        t = parse(base_sheets())
-        self.assertEqual((t.files, t.queries), ([], []))
-        self.assertEqual(t.sheet_hashes["files"], taxonomy.EMPTY_SHEET_HASH)
-        self.assertEqual(t.sheet_hashes["queries"], util.hash_obj([]))
-
-    def test_optional_sheet_header_mismatch_rejected(self):
+    def test_files_queries_sheets_are_dropped(self):
         s = base_sheets()
-        s["files"] = [["파일ID", "파일명", "제외", "맥락 메모"]]
-        self.assertRejected(s, "HEADER_MISMATCH", "files", 1)
-        s = base_sheets()
-        s["queries"] = [["조회 ID", "문장", "기대 정답"]]
-        self.assertRejected(s, "HEADER_MISMATCH", "queries", 1)
+        s["files"] = [["파일 ID", "파일명", "제외", "맥락 메모"], ["a" * 64, "a.pptx", "Y", "메모"]]
+        s["queries"] = [["조회 ID", "문장", "기대 정답", "채택"], ["QRY-0123abcd", "질문", None, "Y"]]
+        doc, errors, _w = taxonomy.xlsx_to_doc(build_xlsx(s))
+        self.assertEqual(errors, [])
+        self.assertEqual(sorted(doc), sorted(["version", "taxonomy", "questions", "synonyms", "rejected"]))
 
     def test_extra_right_columns_ignored_with_warning(self):
         s = base_sheets()
         s["synonyms"][0] = H["synonyms"] + ["담당자"]
         s["synonyms"][1] = ["단락", "Short", "더미", "홍길동"]
-        t = parse(s)
+        t = parse(s, xlsx_path=True)
         self.assertEqual(t.synonyms[0].memo, "더미")
         warn = [w for w in t.warnings if w.code == "EXTRA_COLUMNS"]
         self.assertEqual([(w.sheet, w.row) for w in warn], [("synonyms", 1)])
@@ -280,14 +354,15 @@ class SheetStructureTest(Helpers):
     def test_sheet_name_case_mismatch_warns(self):
         s = base_sheets()
         specs = [("Taxonomy", s["taxonomy"])] + [(n, s[n]) for n in ("questions", "synonyms", "rejected")]
-        t = taxonomy.parse_bytes(xw.build(specs))
-        self.assertEqual(len(t.axes), 4)
-        self.assertIn(("taxonomy", "SHEET_NAME_CASE"), [(w.sheet, w.code) for w in t.warnings])
+        doc, errors, warnings = taxonomy.xlsx_to_doc(xw.build(specs))
+        self.assertEqual(errors, [])
+        self.assertEqual(len(taxonomy.parse_doc(doc).axes), 4)
+        self.assertIn(("taxonomy", "SHEET_NAME_CASE"), [(w.sheet, w.code) for w in warnings])
 
     def test_not_a_zip(self):
-        with self.assertRaises(taxonomy.TaxonomyError) as cm:
-            taxonomy.parse_bytes(b"not a zip")
-        self.assertEqual(cm.exception.issues[0].code, "NOT_XLSX")
+        doc, errors, _w = taxonomy.xlsx_to_doc(b"not a zip")
+        self.assertIsNone(doc)
+        self.assertEqual(errors[0].code, "NOT_XLSX")
 
 
 class SynonymSheetTest(Helpers):
@@ -339,79 +414,19 @@ class QuestionsTest(Helpers):
         self.assertRejected(s, "QUESTION_ID_DUPLICATE", "questions", 4)
 
 
-FID_A = "a" * 64
-FID_B = "b" * 64
-
-
-class FilesQueriesTest(Helpers):
-    def test_files_parsed(self):
-        s = base_sheets()
-        s["files"] = [H["files"], [FID_A, "a.pptx", "Y", "메모"], [FID_B, "b.pptx", None, None]]
-        t = parse(s)
-        self.assertEqual([(f.file_id, f.exclude, f.memo) for f in t.files], [(FID_A, True, "메모"), (FID_B, False, "")])
-
-    def test_files_duplicate_id(self):
-        s = base_sheets()
-        s["files"] = [H["files"], [FID_A, "a", None, None], [FID_A, "a2", None, None]]
-        self.assertRejected(s, "FILE_ID_DUPLICATE", "files", 3, forbidden=[FID_A])
-
-    def test_files_exclude_y_n_blank(self):
-        s = base_sheets()
-        s["files"] = [H["files"], [FID_A, "a", "예", None]]
-        self.assertRejected(s, "YN_INVALID", "files", 2)
-
-    def test_unknown_file_id_warns_only(self):
-        s = base_sheets()
-        s["files"] = [H["files"], [FID_A, "a", None, None], [FID_B, "b", None, None]]
-        t = parse(s)
-        warns = t.unknown_file_warnings([FID_A])
-        self.assertEqual([(w.sheet, w.row, w.code) for w in warns], [("files", 3, "FILE_ID_UNKNOWN")])
-        self.assertNotIn(FID_B, xlsx.format_issue(warns[0]))
-
-    def test_queries_parsed(self):
-        s = base_sheets()
-        s["queries"] = [H["queries"], ["QRY-0123abcd", "질문", "%s; %s:ppt/slides/slide1.xml" % (FID_A, FID_A[:16]), "Y"],
-                        ["QRY-0000FFFF", "질문2", None, None]]
-        t = parse(s)
-        self.assertEqual(t.queries[0].expected, [FID_A, FID_A[:16] + ":ppt/slides/slide1.xml"])
-        self.assertTrue(t.queries[0].adopted)
-        self.assertEqual((t.queries[1].expected, t.queries[1].adopted), ([], False))
-
-    def test_queries_duplicate_id(self):
-        s = base_sheets()
-        s["queries"] = [H["queries"], ["QRY-0123abcd", "a", None, "Y"], ["QRY-0123abcd", "b", None, "N"]]
-        self.assertRejected(s, "QUERY_ID_DUPLICATE", "queries", 3)
-
-    def test_queries_adopted_y_n_blank(self):
-        s = base_sheets()
-        s["queries"] = [H["queries"], ["QRY-0123abcd", "a", None, "yes"]]
-        self.assertRejected(s, "YN_INVALID", "queries", 2)
-
-    def test_query_id_format(self):
-        s = base_sheets()
-        s["queries"] = [H["queries"], ["Q-1", "a", None, None]]
-        self.assertRejected(s, "QUERY_ID_INVALID", "queries", 2)
-
-
 class SheetHashTest(Helpers):
-    def test_all_six_sheets_hashed(self):
-        t = parse(base_sheets())
-        self.assertEqual(sorted(t.sheet_hashes), sorted(ORDER))
-
-    def test_stable_under_resave_and_right_columns(self):
+    def test_json_hash_equals_xlsx_hash(self):
+        # 변환 전후 시트 해시가 같아야 taxonomy-diff·L2 stale·axis-update가 변환을 '바뀜'으로 보지 않는다
         s = base_sheets()
-        s["files"] = [H["files"], [FID_A, "a", "N", "메모"]]
-        h1 = parse(s).sheet_hashes
-        # 재저장 흉내: inlineStr로 저장, 빈 서식 셀 추가
-        h2 = parse(s, shared=False, pad_empty=True).sheet_hashes
-        self.assertEqual(h1, h2)
-        # 오른쪽 열 추가
+        h_json = parse(s).sheet_hashes
+        for kw in ({}, {"shared": False, "pad_empty": True}, {"strict": True}):
+            self.assertEqual(parse(s, xlsx_path=True, **kw).sheet_hashes, h_json, kw)
+
+    def test_hash_ignores_right_columns_in_xlsx(self):
         s2 = base_sheets()
-        s2["files"] = [H["files"] + ["비고"], [FID_A, "a", "N", "메모", "x"]]
         for name in ("taxonomy", "synonyms"):
             s2[name] = [row + [None] * (len(H[name]) - len(row)) + ["추가"] for row in s2[name]]
-        h3 = parse(s2).sheet_hashes
-        self.assertEqual(h1, h3)
+        self.assertEqual(parse(s2, xlsx_path=True).sheet_hashes, parse(base_sheets()).sheet_hashes)
 
     def test_hash_changes_with_content_including_use_flag(self):
         h1 = parse(base_sheets()).sheet_hashes
@@ -432,7 +447,7 @@ class SheetHashTest(Helpers):
         s["synonyms"][2][2] = "a\nb"
         s2 = base_sheets()
         s2["synonyms"][2][2] = "a_x000A_b"
-        self.assertEqual(parse(s).sheet_hashes["synonyms"], parse(s2).sheet_hashes["synonyms"])
+        self.assertEqual(parse(s).sheet_hashes["synonyms"], parse(s2, xlsx_path=True).sheet_hashes["synonyms"])
 
 
 class XlsxReaderTest(Helpers):
@@ -481,19 +496,19 @@ class XlsxReaderTest(Helpers):
     def test_error_cell(self):
         s = base_sheets()
         s["taxonomy"][2][7] = Err("#REF!")
-        err = self.assertRejected(s, "CELL_ERROR", "taxonomy", 3)
+        err = self.assertRejected(s, "CELL_ERROR", "taxonomy", 3, xlsx_path=True)
         self.assertNotIn("#REF!", str(err))
 
     def test_r3_formula_without_cached_value(self):
         s = base_sheets()
         s["synonyms"][1][2] = FormulaNoCache()
-        err = self.assertRejected(s, "FORMULA_NO_CACHE", "synonyms", 2)
+        err = self.assertRejected(s, "FORMULA_NO_CACHE", "synonyms", 2, xlsx_path=True)
         self.assertIn("수식 결과 없음, Excel에서 저장 후 다시 실행", str(err))
 
     def test_r4_hidden_rows_warn_and_are_read(self):
         s = base_sheets()
         s["synonyms"] = {"name": "synonyms", "rows": s["synonyms"], "hidden_rows": [3]}
-        t = parse(s)
+        t = parse(s, xlsx_path=True)
         self.assertIn("Metal1", [x.alias for x in t.synonyms])
         warn = [w for w in t.warnings if w.code == "HIDDEN_ROWS"]
         self.assertEqual([(w.sheet, w.row) for w in warn], [("synonyms", 3)])
@@ -502,45 +517,43 @@ class XlsxReaderTest(Helpers):
     def test_r4_autofilter_warns(self):
         s = base_sheets()
         s["taxonomy"] = {"name": "taxonomy", "rows": s["taxonomy"], "autofilter": "A1:K11"}
-        t = parse(s)
+        t = parse(s, xlsx_path=True)
         self.assertIn(("taxonomy", "숨김 행도 읽는다. 제외는 사용 여부=N"), [(w.sheet, w.message) for w in t.warnings])
 
     def test_r5_merge_cells_rejected(self):
         s = base_sheets()
         s["taxonomy"] = {"name": "taxonomy", "rows": s["taxonomy"], "merge": ["A2:A4"]}
-        err = self.assertRejected(s, "MERGED_CELLS", "taxonomy", 2)
+        err = self.assertRejected(s, "MERGED_CELLS", "taxonomy", 2, xlsx_path=True)
         self.assertIn("A2:A4", str(err))
 
     def test_errors_in_unrelated_sheet_ignored(self):
         s = base_sheets()
         s["메모"] = {"name": "메모", "rows": [["x"]], "merge": ["A1:B1"]}
-        parse(s)
+        parse(s, xlsx_path=True)
 
     def test_r7_numeric_cells_warn(self):
         s = base_sheets()
         s["taxonomy"].append(tax_row("구조/레이어", 12.0))
         s["synonyms"].append([1, "M1", None])
         s["synonyms"].append(["일번", 2, None])
-        t = parse(s)
+        t = parse(s, xlsx_path=True)
         self.assertIn("12", [v.name for v in t.axis("구조/레이어").values])
         warn = [(w.sheet, w.row) for w in t.warnings if w.code == "NUMERIC_CELL"]
         self.assertEqual(warn, [("taxonomy", 12), ("synonyms", 4), ("synonyms", 5)])
 
     def test_r7_rejected_date_uses_date1904(self):
         s = base_sheets()
-        s["rejected"] = [H["rejected"], ["값", "물리 현상|erosion", 45292, "중복"], ["동의어", "a|b", "2024-02-01", None]]
-        t = parse(s)
+        s["rejected"] = [REJ, ["값", "물리 현상|erosion", 45292, "중복"], ["동의어", "a|b", "2024-02-01", None]]
+        t = parse(s, xlsx_path=True)
         self.assertEqual(t.rejected[0].date, "2024-01-01")
         self.assertEqual(t.rejected[0].content, "물리 현상|erosion")
         self.assertEqual(t.rejected[1].date, "2024-02-01")
         s["rejected"][1][2] = 45292 - 1462
-        t = parse(s, date1904=True)
-        self.assertTrue(t.date1904)
-        self.assertEqual(t.rejected[0].date, "2024-01-01")
+        self.assertEqual(parse(s, date1904=True).rejected[0].date, "2024-01-01")
 
     def test_rejected_kind(self):
         s = base_sheets()
-        s["rejected"] = [H["rejected"], ["축", "a|b", None, None]]
+        s["rejected"] = [REJ, ["축", "a|b", None, None]]
         self.assertRejected(s, "REJECTED_KIND_INVALID", "rejected", 2)
 
     def test_serial_to_date_before_leap_bug(self):
@@ -570,7 +583,7 @@ class ReadInputTest(unittest.TestCase):
         self.check(b"axis,value\n", "NOT_OOXML")
 
     def test_valid_bytes_pass(self):
-        data = build(base_sheets())
+        data = build_xlsx(base_sheets())
         with tempfile.TemporaryDirectory() as d:
             p = os.path.join(d, "input.b64")
             with open(p, "wb") as f:

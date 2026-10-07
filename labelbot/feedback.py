@@ -24,6 +24,7 @@ NA, UNKNOWN = "해당 없음", "unknown"
 SPECIAL = (NA, UNKNOWN)
 AXIS_KINDS = ("REPLACE", "REMOVE", "ADD")
 ANSWER_KINDS = ("ANSWER", "GEN_ANSWER")
+STAGES = ("classify", "label")
 GEN_PREFIX = "Q-GEN-"
 NONE_TEXT = "(없음)"
 TEXT_MAX = 300
@@ -74,8 +75,11 @@ def load_rules(ws):
     return doc
 
 
+RULE_ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
+
+
 def _valid_rule(r):
-    return (isinstance(r, dict) and isinstance(r.get("rule_id"), str) and r["rule_id"].strip()
+    return (isinstance(r, dict) and isinstance(r.get("rule_id"), str) and bool(RULE_ID.match(r["rule_id"]))
             and isinstance(r.get("text"), str) and r["text"].strip() and len(r["text"]) <= TEXT_MAX
             and r.get("kind") in AXIS_KINDS + ANSWER_KINDS + ("MANUAL",)
             and isinstance(r.get("target", ""), str) and isinstance(r.get("from", ""), str)
@@ -166,6 +170,9 @@ class NullFeedback(object):
 
     def applied(self):
         return {"enabled": False, "reason": self.reason}
+
+    def applied_rules(self):
+        return empty_record()
 
     def summary_line(self):
         return "[feedback] %s: 승인 규칙·사례를 넣지 않습니다." % self.reason
@@ -296,15 +303,21 @@ class Feedback(object):
             qids = {q.qid for q in questions or []}
             gens = {"%s=%s" % tuple(q.target) for q in questions or []
                     if q.qid.startswith(GEN_PREFIX) and isinstance(q.target, tuple) and len(q.target) == 2}
+            pairs = {"%s=%s" % tuple(q.target) for q in questions or []
+                     if isinstance(q.target, tuple) and len(q.target) == 2}
             rules = [r for r in self.label_rules
-                     if r["kind"] == "MANUAL" or (r["kind"] == "ANSWER" and r.get("target") in qids)
+                     if (r["kind"] == "MANUAL" and _manual_label_hit(r, qids, pairs))
+                     or (r["kind"] == "ANSWER" and r.get("target") in qids)
                      or (r["kind"] == "GEN_ANSWER" and r.get("target") in gens)]
         return _defang("\n".join("- [%s] %s" % (r["rule_id"], " ".join(r["text"].split())) for r in rules)) or NONE_TEXT
 
     def digest(self):
-        rules = [(r["rule_id"], " ".join(r["text"].split())) for r in self.classify_rules + self.label_rules]
-        return util.hash_obj({"rules": rules, "examples": sorted(e["example_id"] for e in self.examples),
-                              "k": self.k, "chars": self.chars})[:16]
+        return _digest(self.classify_rules + self.label_rules, [e["example_id"] for e in self.examples],
+                       self.k, self.chars)
+
+    def applied_rules(self):
+        """meta rules_applied:<run>에 남길 기록(규칙 해시·종류·대상, 사례 ID). 실제로 프롬프트에 들어간 규칙이다."""
+        return _record(self.classify_rules + self.label_rules, [e["example_id"] for e in self.examples])
 
     def applied(self):
         out = {"enabled": True, "rules_classify": len(self.classify_rules), "rules_label": len(self.label_rules),
@@ -344,13 +357,96 @@ def _rules_for_run(doc, tax, cap, only_axes=None):
             r["_stage"] = "classify"
         elif r["kind"] in ANSWER_KINDS:
             r["_stage"] = "label"
+        elif r.get("stage") in STAGES:
+            r["_stage"] = r["stage"]  # MANUAL: stage가 있으면 그것(1차는 축 이름, 3차는 축=값 또는 질문 ID target)
         else:
-            # MANUAL: target이 'label'이면 3차 라벨링, 그 밖(축 이름·'classify'·빈칸)은 1차 분류에 넣는다.
+            # stage 없는 옛 MANUAL: target이 'label'이면 3차 라벨링, 그 밖(축 이름·'classify'·빈칸)은 1차 분류에 넣는다.
             r["_stage"] = "label" if r.get("target") == "label" else "classify"
+        r["_scope"] = _scope(r, axes)
         rules.append(r)
     rules.sort(key=lambda r: (r["kind"] != "MANUAL", -int(r.get("count") or 0), r["rule_id"]))
     return ([r for r in rules if r["_stage"] == "classify"][:cap]
             + [r for r in rules if r["_stage"] == "label"][:cap]), invalid
+
+
+def _manual_label_hit(r, qids, pairs):
+    """3차 MANUAL 규칙이 이 chunk의 질문에 걸리는지. target이 'label'·빈칸이면 모든 chunk, 질문 ID면 그 질문,
+    축=값이면 적용 대상이 그 축=값인 질문(승인·검증 질문)이 있을 때."""
+    t = r.get("target") or ""
+    return t in ("", "label") or t in qids or t in pairs
+
+
+def _scope(r, axes):
+    """규칙의 기록 범위 (구역, 키). 1차는 축 이름, 3차는 질문 ID 또는 축=값. 그 밖은 단계 전체(stage_wide)."""
+    t = r.get("target") or ""
+    if r["_stage"] == "classify":
+        return ("classify", t) if t in axes else ("stage_wide", "")
+    if r["kind"] in ANSWER_KINDS or t not in ("", "label"):
+        return ("label", t)
+    return ("stage_wide", "")
+
+
+def rule_hash(r):
+    """규칙 내용 해시(앞 16자): 종류·대상·from·to·정규화 문장·켜짐·단계. 문장의 공백 차이는 무시한다."""
+    return util.hash_obj({"kind": r.get("kind"), "target": r.get("target") or "", "from": r.get("from") or "",
+                          "to": r.get("to") or "", "text": " ".join(str(r.get("text") or "").split()),
+                          "enabled": bool(r.get("enabled", True)), "stage": r.get("stage") or ""})[:16]
+
+
+def empty_record():
+    return {"classify": {}, "label": {}, "stage_wide": {}, "examples": []}
+
+
+def _record(rules, example_ids):
+    """{"classify": {축: {rule_id: {h, kind, target, stage}}}, "label": {질문 ID 또는 축=값: {...}},
+    "stage_wide": {rule_id: {...}}, "examples": [사례 ID]}. 규칙 문장은 넣지 않는다."""
+    out = empty_record()
+    for r in rules:
+        ent = {"h": rule_hash(r), "kind": r["kind"], "target": r.get("target") or "", "stage": r["_stage"]}
+        part, key = r["_scope"]
+        if part == "stage_wide":
+            out[part][r["rule_id"]] = ent
+        else:
+            out[part].setdefault(key, {})[r["rule_id"]] = ent
+    out["examples"] = sorted(set(example_ids))
+    return out
+
+
+def _digest(rules, example_ids, k, chars):
+    """실행의 sheet_hashes.labeling_rules. Feedback.digest와 digest_of가 같이 쓴다."""
+    pairs = [(r["rule_id"], " ".join(r["text"].split())) for r in rules]
+    return util.hash_obj({"rules": pairs, "examples": sorted(example_ids), "k": k, "chars": chars})[:16]
+
+
+def snapshot_of(ws, doc, tax, cfg=None, only_axes=None, cache=None):
+    """승인 문서 하나로 (digest, 기록)을 다시 계산한다. load()와 같은 입력(필터·정렬·cap 뒤 규칙, 실제 해석된 사례 ID,
+    k, chars)을 쓰고 네트워크를 부르지 않는다(사례 본문은 원래 작업 폴더 DB를 읽기 전용으로 본다).
+    피드백이 꺼져 있거나 쓸 것이 없으면 digest는 None(실행의 sheet_hashes에 labeling_rules 키가 없다).
+    cache({}): 같은 사례 참조 목록의 해석 결과를 다시 쓴다(여러 이력 문서를 비교할 때)."""
+    cfg = _cfg(ws) if cfg is None else cfg
+    if not cfg.get("enabled", True):
+        return None, empty_record()
+    rules, _ = _rules_for_run(doc, tax, max(0, int(cfg.get("max_rules") or 30)), only_axes)
+    active = {a.name for a in tax.active_axes() if only_axes is None or a.name in only_axes}
+    entries = [e for e in doc["examples"] if _valid_example(e) and e.get("enabled", True)]
+    key = util.hash_obj([entries, sorted(active)])
+    if cache is not None and key in cache:
+        examples = cache[key]
+    else:
+        examples, _ = _resolve_examples(ws, entries, None, active)
+        if cache is not None:
+            cache[key] = examples
+    if only_axes is not None:
+        examples = [e for e in examples if e["final_axes"]]
+    ids = [e["example_id"] for e in examples]
+    if not rules and not examples:
+        return None, empty_record()
+    return _digest(rules, ids, int(cfg.get("examples_k") or 0), int(cfg.get("example_chars") or 800)), _record(rules, ids)
+
+
+def digest_of(ws, doc, tax, cfg=None, only_axes=None):
+    """Feedback.digest()와 같은 값을 승인 문서에서 다시 계산한다(옛 실행의 규칙 기준 복원). 없으면 None."""
+    return snapshot_of(ws, doc, tax, cfg, only_axes)[0]
 
 
 def _read_evidence(con, record_id, keys):

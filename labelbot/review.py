@@ -5,7 +5,7 @@ import re
 
 from labelbot import axisupdate, finals, ingest, revisit, store, util
 from labelbot.classify import NA, UNKNOWN
-from labelbot.questions import all_questions, is_control
+from labelbot.questions import GEN_PREFIX, all_questions, is_control
 from labelbot.taxonomy import COMMON_TARGET
 from labelbot.workspace import CODE_ROOT
 
@@ -24,7 +24,8 @@ REASON_LABELS = {
     "UNKNOWN_O": "unknown 축 후보 값 O",
 }
 # 교정 근거(evidence): 한 교정에 최대 3개, 인용 2~300자(공백 정규화 뒤), 이유 300자 이내.
-EVIDENCE_SOURCES = ("chunk", "file_name", "doc_title")
+# typed는 사람이 근거 칸에 직접 친 문장 중 본문·파일명·문서 제목에서 찾지 못한 것(엔지니어 지식)이다. 본문 대조를 하지 않는다.
+EVIDENCE_SOURCES = ("chunk", "file_name", "doc_title", "typed")
 EVIDENCE_MAX = 3
 EVIDENCE_QUOTE_MIN, EVIDENCE_QUOTE_MAX = 2, 300
 EVIDENCE_REASON_MAX = 300
@@ -33,6 +34,11 @@ EV_QUOTE_NOT_FOUND, EV_OTHER_FILE, EV_FORMAT = "EVIDENCE_QUOTE_NOT_FOUND", "EVID
 AXIS_NOT_IN_RUN = "AXIS_NOT_IN_RUN"
 # axis-update 실행의 비대상 축 교정·질문 답 교정(대상 축만 검수한다). 건너뛴 수를 apply 결과 행으로 보고한다.
 AXIS_NOT_TARGET = "AXIS_NOT_TARGET"
+# 대조 질문 교정이 그 chunk의 대조 질문이 아니다(화면을 거치지 않은 JSON 대비). 건너뛴 수를 apply 결과 행으로 보고한다.
+CONTROL_UNKNOWN = "CONTROL_UNKNOWN"
+# 확신도가 높아 확인 필요로 잡히지 않은 O/X 답 중 검수 화면에서 '표본 확인'으로 강조할 비율(flag.ox_sample_rate로 바꾼다).
+# LLM이 매긴 확신도는 맞을 확률이 아니어서 0.99여도 틀린다. chunk·질문 ID 해시로 골라 다시 만들어도 같은 카드가 뽑힌다.
+OX_SAMPLE_RATE = 0.1
 _ELLIPSIS = re.compile(r"\s*(?:…|\.{3,})\s*")
 _HANGUL = re.compile(r"[가-힣]")
 _ALNUM = re.compile(r"[0-9A-Za-z]")
@@ -388,6 +394,43 @@ def review_axes(con, run_id, tax, chunks):
     return out
 
 
+def ox_sampled(chunk_id, qid, rate=OX_SAMPLE_RATE):
+    """O/X 답 표본 여부(결정적). chunk·질문 ID 해시의 앞 8자리를 [0, 1)로 바꿔 rate 미만이면 표본이다."""
+    h = util.sha256_text("%s|%s" % (chunk_id, qid))[:8]
+    return int(h, 16) / 0x100000000 < rate
+
+
+def attention_for(chunk, gen_map, conf_min, editable, sample_rate=OX_SAMPLE_RATE):
+    """검수 화면의 '확인 필요' 판정(순수 함수). {"axes": {축: [코드]}, "questions": {qid: [코드]}}, 빈 목록은 넣지 않는다.
+
+    코드: LOW_CONF(확신도 < conf_min, judge_chunk와 같은 비교식·None은 아님) · UNKNOWN(값에 unknown) ·
+    VERIFY_X(검증 질문 Q-GEN 답 X, gen_map {qid: 대상 축}의 축에만) · CONTROL_O(대조 질문 답 O의 대상 축) ·
+    OX_SAMPLE(확신도가 낮지 않은 O/X 답 중 ox_sampled로 뽑힌 표본, 과신 점검용).
+    editable은 검수에서 고칠 수 있는 축 이름 집합이다. 비활성·잠긴(axis-update) 축은 넣지 않는다.
+    """
+    low = lambda c: c is not None and c < conf_min - 1e-12
+    axes = {}
+    for k, a in (chunk.get("axes") or {}).items():
+        if k in editable:
+            if low(a.get("confidence")):
+                axes.setdefault(k, []).append("LOW_CONF")
+            if UNKNOWN in (a.get("values") or []):
+                axes.setdefault(k, []).append("UNKNOWN")
+    qs = {}
+    for qid, a in (chunk.get("answers") or {}).items():
+        if low(a.get("confidence")):
+            qs[qid] = ["LOW_CONF"]
+        elif a.get("answer") in ("O", "X") and ox_sampled(chunk.get("chunk_id"), qid, sample_rate):
+            qs[qid] = ["OX_SAMPLE"]
+        k = gen_map.get(qid)
+        if qid.startswith(GEN_PREFIX) and a.get("answer") == "X" and k in editable:
+            axes.setdefault(k, []).append("VERIFY_X")
+    for c in chunk.get("controls") or ():
+        if c.get("answer") == "O" and c.get("axis") in editable:
+            axes.setdefault(c["axis"], []).append("CONTROL_O")
+    return {"axes": axes, "questions": qs}
+
+
 def build_review(ws, con, run_id, tax):
     flagged = con.execute("SELECT * FROM flagged_chunks WHERE run_id=?", (run_id,)).fetchall()
     if not flagged and not con.execute("SELECT 1 FROM runs WHERE run_id=?", (run_id,)).fetchone():
@@ -403,6 +446,13 @@ def build_review(ws, con, run_id, tax):
     layouts = {}
     chunks = []
     pq = primary_qid(tax)
+    conf_min = float(ws.config["flag"]["confidence_min"])
+    sample_rate = float(ws.config["flag"].get("ox_sample_rate", OX_SAMPLE_RATE))
+    gen_map = {}
+    want = set(ids)
+    for r in con.execute("SELECT qid, chunk_id, axis FROM gen_questions"):  # 본문 열(text)은 읽지 않는다
+        if r["chunk_id"] in want:
+            gen_map[r["qid"]] = r["axis"]
     for f in flagged:
         c = con.execute("SELECT * FROM chunks WHERE chunk_id=?", (f["chunk_id"],)).fetchone()
         fi = con.execute("SELECT file_name, rel_path FROM files WHERE file_id=?", (c["file_id"],)).fetchone()
@@ -429,9 +479,14 @@ def build_review(ws, con, run_id, tax):
             "answers": bot["answers"],
             "extracted": [{"item": e["item"], "value": e["value"], "quote": e["quote"]} for e in bot["extracted"]],
             "mapped_questions": mapped or ([pq] if pq else []),
-            # 대조 질문 답(읽기 전용). O면 그 라벨을 축 교정으로 더할지 사람이 판단한다.
+            # 대조 질문 답. 사람이 답을 교정하면 품질 신호로만 남고(확정 라벨에 들어가지 않는다) 축은 따로 고친다.
             "controls": controls.get(f["chunk_id"], []),
         })
+
+    review_ax = review_axes(con, run_id, tax, chunks)
+    editable = {a["name"] for a in review_ax if a.get("editable")}
+    for c in chunks:  # 화면 DATA 전용이다. DB·label_hash·내보내기에는 넣지 않는다
+        c["attention"] = attention_for(c, gen_map, conf_min, editable, sample_rate)
     info = axisupdate.run_info(con, run_id)
     data = {
         "kind": "review", "run_id": run_id, "generated_at": util.now_iso(), "flag": ws.config["flag"],
@@ -440,7 +495,7 @@ def build_review(ws, con, run_id, tax):
         "reason_labels": REASON_LABELS,
         "revisit_reasons": revisit.REASON_LABELS, "revisit_rules": revisit.TARGET_REASONS,
         "revisit_memo_max": revisit.MEMO_MAX, "revisit_short_max": revisit.SHORT_MAX,
-        "axes": review_axes(con, run_id, tax, chunks),
+        "axes": review_ax,
         "primary_qid": pq,
         "questions": [{"qid": q.qid, "text": q.text} for q in all_questions(con, tax)],
         "chunks": chunks,
@@ -567,6 +622,8 @@ def _check_evidence(con, file_id, item):
     if not EVIDENCE_QUOTE_MIN <= len(quote) <= EVIDENCE_QUOTE_MAX:
         return None, EV_FORMAT
     src, cid, slide_no = item["source"], None, None
+    if src == "typed":
+        return {"source": src, "chunk_id": None, "slide_no": None, "quote": quote}, None
     if src == "chunk":
         cid = item.get("chunk_id")
         if not isinstance(cid, str):
@@ -620,6 +677,8 @@ def _apply_review(con, tax, doc, sha):
     ran = run_axes(con, run_id)
     target = axisupdate.target_axes(con, run_id)
     qtext = {q.qid: q.text for q in all_questions(con, tax)}  # export와 같은 출처(생성 질문 포함)
+    from labelbot.questions import control_answers
+    ctls = {cid: {x["qid"]: x for x in xs} for cid, xs in control_answers(con, run_id, set(flagged)).items()}
     now, n = util.now_iso(), 0
     con.execute("DELETE FROM corrections WHERE review_run_id=?", (run_id,))
 
@@ -638,10 +697,13 @@ def _apply_review(con, tax, doc, sha):
 
     for c in doc.get("corrections") or []:
         cid = c.get("chunk_id")
-        if cid not in flagged or c.get("target") not in ("axis", "answer"):
+        if cid not in flagged or c.get("target") not in ("axis", "answer", "control"):
             continue
         if c["target"] == "answer" and is_control(c.get("key")):
-            continue  # 대조 질문 답은 라벨이 아니라 품질 신호다. 교정하지 않는다(맞으면 축 교정으로 값을 더한다).
+            continue  # 대조 질문 답은 target "control"로만 받는다(확정 라벨 답과 섞지 않는다)
+        if c["target"] == "control" and (target is not None or c.get("key") not in ctls.get(cid, {})):
+            drop(CONTROL_UNKNOWN)  # 이 chunk의 대조 질문이 아니거나 axis-update 실행(대조 질문을 다시 돌리지 않는다)
+            continue
         if c["target"] == "axis" and ran is not None and c.get("key") not in ran:
             drop(AXIS_NOT_IN_RUN)  # 이 실행이 라벨링하지 않은 축(실행 뒤 taxonomy에 더해진 축 등)은 고칠 수 없다
             continue
@@ -652,6 +714,11 @@ def _apply_review(con, tax, doc, sha):
         if c["target"] == "axis":
             bv = (bot["axes"].get(c["key"]) or {}).get("values")
             qh = None
+        elif c["target"] == "control":
+            # 대조 질문 답 교정은 품질 신호로만 남는다(finals는 axis·answer 행만 확정 라벨에 쓴다). Domain-Engr-bot 장부로 간다.
+            x = ctls[cid][c["key"]]
+            bv = x["answer"]
+            qh = util.sha256_text(x["text"] or "")[:16]
         else:
             bv = (bot["answers"].get(c["key"]) or {}).get("answer")
             qh = util.sha256_text(qtext.get(c["key"], ""))[:16]

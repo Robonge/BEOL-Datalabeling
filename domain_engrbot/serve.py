@@ -404,17 +404,19 @@ def serve_questions(paths, qd, port=None, drafter=None, applier=None):
 
 
 # ---- taxonomy 수정 보드 서버 ----------------------------------------------------------
-# 보드 화면(taxonomy_board.html) 하나를 보여 주고, '최종 완료'(반영함·기각함 확정) 요청을 받아 record(marks)로
-# decisions.json에 더한 뒤 rebuild()로 taxonomy.xlsx를 다시 읽어 보드를 새로 만든다. 콘솔에는 건수만 낸다.
+# 보드 화면(taxonomy_board.html) 하나를 보여 주고, '최종 완료' 요청을 받는다. /board/preview는 바뀔 행과 검증 오류를
+# 돌려주고(아무것도 쓰지 않는다), /board/finalize는 taxonomy.json에 쓰고 보드를 새로 만든다. 처리는 호출한 쪽
+# (taxonomy_board.board_handlers)이 넘기는 콜러블이 한다. 콘솔에는 건수·사유 코드만 낸다.
 
 BOARD_PORT = 8795   # 고정 포트: 브라우저에 저장한 편집·표시(localStorage)를 같은 출처로 이어 쓴다
 BOARD_MAX_BODY = 1024 * 1024
+BOARD_KIND = "taxonomy_board_decisions"
 
 
 class _BoardHandler(_BaseHandler):
     screen = None
-    record = None
-    rebuild = None
+    preview = None
+    finalize = None
     lock = None
 
     def do_GET(self):
@@ -433,7 +435,8 @@ class _BoardHandler(_BaseHandler):
     do_HEAD = do_GET
 
     def do_POST(self):
-        if self.path.split("?")[0] != "/board/finalize":
+        path = self.path.split("?")[0]
+        if path not in ("/board/preview", "/board/finalize"):
             return self._json(404, {"ok": False, "code": "NOT_FOUND"})
         if not self._same_origin():
             return self._json(403, {"ok": False, "code": "ORIGIN_REJECTED"})
@@ -447,30 +450,37 @@ class _BoardHandler(_BaseHandler):
             return self._json(413, {"ok": False, "code": "DECISIONS_TOO_LARGE"})
         try:
             doc = json.loads(self.rfile.read(n).decode("utf-8-sig"))
-        except (UnicodeDecodeError, ValueError):
+        except (UnicodeDecodeError, ValueError, RecursionError):   # 아주 깊게 중첩된 JSON도 형식 오류로
             return self._json(400, {"ok": False, "code": "DECISIONS_JSON_INVALID"})
-        if not isinstance(doc, dict) or doc.get("kind") != "taxonomy_board_decisions":
+        if not isinstance(doc, dict) or doc.get("kind") != BOARD_KIND:
             return self._json(400, {"ok": False, "code": "DECISIONS_FORMAT_INVALID"})
+        final = path == "/board/finalize"
         with self.lock:
             try:
-                changed = self.record(doc.get("marks"))
-            except ValueError as e:
-                return self._json(400, {"ok": False, "code": str(e)})
-            try:
-                counts = self.rebuild()
-            except Exception as e:   # 다시 만들기 실패도 화면에 사유 코드로 알린다(서버는 계속 연다)
-                code = getattr(e, "reason_code", None) or type(e).__name__
-                print("[serve] 보드 다시 만들기 실패: %s" % code, flush=True)
-                return self._json(500, {"ok": False, "code": "BOARD_REBUILD_FAILED", "detail": code})
-        print("[serve] 최종 완료: 확정 %d건 · 미반영 %d · 반영됨 %d · 기각 %d · 먼저 할 일 %d" % (
-            changed, counts.get("open", 0), counts.get("done", 0), counts.get("rejected", 0),
-            counts.get("blocked", 0)), flush=True)
-        return self._json(200, {"ok": True, "changed": changed, "counts": counts})
+                status, body = (self.finalize if final else self.preview)(doc)
+            except Exception as e:   # 처리 실패도 화면에 사유 코드로 알린다(서버는 계속 연다). 예외 문장은 내지 않는다
+                code = getattr(e, "reason_code", None)
+                if not (isinstance(code, str) and _CODE.match(code)):
+                    code = type(e).__name__
+                print("[serve] 보드 처리 실패: %s" % code, flush=True)
+                return self._json(500, {"ok": False, "code": "BOARD_FAILED", "detail": code})
+        if final and status == 200:
+            c = body.get("counts") or {}
+            print("[serve] 최종 완료: 확정 %d건 · 바뀐 행 %d · 미반영 %d · 반영됨 %d · 기각 %d · 먼저 할 일 %d" % (
+                body.get("changed", 0), body.get("written", 0), c.get("open", 0), c.get("done", 0),
+                c.get("rejected", 0), c.get("blocked", 0)), flush=True)
+            if body.get("rebuild_failed"):
+                print("[serve] 저장은 했지만 보드 다시 만들기 실패: %s" % body["rebuild_failed"], flush=True)
+            if body.get("decisions_failed"):
+                print("[serve] 저장은 했지만 확정 기록 실패: %s" % body["decisions_failed"], flush=True)
+        elif status != 200:
+            print("[serve] %s 거절: %s" % ("최종 완료" if final else "미리보기", body.get("code")), flush=True)
+        return self._json(status, body)
 
 
-def make_board_server(screen_path, record, rebuild, port, host="127.0.0.1"):
-    """record(marks) → 바뀐 수, rebuild() → 상태 건수 dict. 둘 다 호출한 쪽(taxonomy_board)이 넘긴다."""
+def make_board_server(screen_path, preview, finalize, port, host="127.0.0.1"):
+    """preview(요청 dict)·finalize(요청 dict) → (HTTP 상태, 응답 dict). 둘 다 호출한 쪽(taxonomy_board)이 넘긴다."""
     handler = type("BoardHandler", (_BoardHandler,), {
-        "screen": screen_path, "record": staticmethod(record), "rebuild": staticmethod(rebuild),
+        "screen": screen_path, "preview": staticmethod(preview), "finalize": staticmethod(finalize),
         "lock": threading.Lock()})
     return _Server((host, port), handler)

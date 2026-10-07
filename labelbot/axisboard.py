@@ -1,13 +1,12 @@
 """축 변경 현황판(screens/axis_update.html). axis-update 실행의 대상 축별 불량·처리 결과와 슬라이드별 새 축 값. LLM 호출 0회.
 
 위쪽은 대상 축 카드(불량 사유별 건수, 교정·확인·남은 불량), 아래쪽은 슬라이드 카드(이미지 + 대상 축 최종 값)다.
-슬라이드 이미지는 slide-images가 만든 slide_images/<sha256>.b64를 data URL로 넣고, 없으면 검수 화면과 같은
-근사 미리보기 배치(layout)를 넣는다. 본문은 화면(HTML) 안에만 들어가고 출력·로그에는 건수만 쓴다.
+슬라이드 이미지·근사 미리보기 배치는 slidecards가 채운다. 본문은 화면(HTML) 안에만 들어가고 출력·로그에는 건수만 쓴다.
 """
 import json
 import os
 
-from labelbot import axisupdate, dashboard, finals, review, taxdiff, util
+from labelbot import axisupdate, dashboard, finals, review, slidecards, taxdiff, util
 
 KIND_LABELS = {"added": "추가", "changed": "변경", "values_added": "값 추가", "values_removed": "값 삭제"}
 OUTCOME_LABELS = {"pending": "검수 대기", "corrected": "교정", "confirmed": "확인", "undecidable": "판단 불가",
@@ -51,18 +50,6 @@ def _signals(ws, run_id):
         except (OSError, ValueError, AttributeError):
             counts = {}
     return os.path.isfile(start_signal_path(ws.root, run_id)), os.path.isfile(done), counts
-
-
-def _slide_image(ws, con, cid):
-    """slide-images가 만든 JPG(.b64)의 data URL. 본문이 바뀐(text_hash가 다른) 예전 그림·읽기 실패는 None."""
-    r = con.execute("SELECT s.rel_file FROM slide_images s JOIN chunks c ON c.chunk_id=s.chunk_id"
-                    " AND c.text_hash=s.text_hash WHERE s.chunk_id=?", (cid,)).fetchone()
-    if not r:
-        return None
-    try:
-        return "data:image/jpeg;base64," + util.read_b64_text(ws.path(r["rel_file"]))
-    except (OSError, ValueError):
-        return None
 
 
 def _outcome(d, target, rows, status):
@@ -129,22 +116,13 @@ def build_board(ws, con, run_id, tax):
     removed = [{"name": a, "dropped_rows": con.execute(
         "SELECT COUNT(*) FROM labels WHERE run_id=? AND kind='axis' AND key=?", (parent, a)).fetchone()[0]}
         for a in info["removed"]]
-    files, layouts, slides = {}, {}, []
-    meta = {r["chunk_id"]: r for r in con.execute(
-        "SELECT c.chunk_id, c.file_id, c.seq, c.title, c.part_name, f.file_name, f.rel_path FROM chunks c"
-        " JOIN files f ON f.file_id=c.file_id WHERE c.chunk_id IN (%s)" % ",".join("?" * len(pop)), pop)} if pop else {}
-    for cid in sorted(meta, key=lambda k: (meta[k]["rel_path"] or "", meta[k]["seq"] or 0, k)):
-        c = meta[cid]
-        file_no = files.setdefault(c["file_id"], len(files) + 1)
-        image = _slide_image(ws, con, cid)
-        # JPG가 없으면 근사 배치만 넣는다. 삽입 그림은 넣지 않는다(chunk마다 달라 화면이 수십 MB가 된다. 자리 표시로 그린다).
-        layout = None if image else review._slide_layout(ws, layouts, c["file_id"], c["file_name"], c["part_name"])
+    slides = []
+    for s in slidecards.cards(ws, con, pop):
+        cid = s["chunk_id"]
         d = labels.get(cid) or {"axes": {}}
-        slides.append({
-            "chunk_id": cid, "file_no": file_no, "file_name": c["file_name"], "slide_no": c["seq"], "title": c["title"] or "",
-            "image": image, "layout": layout,
-            "values": {a: list((d["axes"].get(a) or {}).get("values") or []) for a in target},
-            "flagged": cid in flagged, "reasons": flagged[cid][0] if cid in flagged else [], "outcome": outcome.get(cid)})
+        slides.append(dict(s, values={a: list((d["axes"].get(a) or {}).get("values") or []) for a in target},
+                           flagged=cid in flagged, reasons=flagged[cid][0] if cid in flagged else [],
+                           outcome=outcome.get(cid)))
     data = {
         "kind": "axis_update", "run_id": run_id, "parent_run": parent, "generated_at": util.now_iso(),
         "phase": "after" if applied else "before", "review_started": started, "review_done": done,

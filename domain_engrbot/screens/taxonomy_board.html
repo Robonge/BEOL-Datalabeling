@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>taxonomy 수정 보드</title>
 <style>
@@ -37,20 +38,40 @@
   --cell-edit-bg:var(--mustard-50); --cell-edit-line:var(--warning);
   --cell-req-bg:var(--coral-50); --cell-chg-bg:var(--teal-50);
   --bar-bg:rgba(237,241,247,.86);
+  --grid-line:rgba(200,212,228,.5);
+  --scrim:rgba(30,45,74,.72);
+}
+/* 어두운 화면: semantic·component 토큰만 바꾼다(primitive·hero 그라디언트는 그대로) */
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg-base:#151C2C; --bg-grid:#2C3954; --dot:#3A4A6A; --line:#5E77A3;
+    --surface:#1C2538; --surface-sunk:#232E45;
+    --text-strong:#E6ECF5; --text-body:#B4C0D4; --text-muted:#8391AA; --text-footer:#66748C;
+    --primary-deep:#AFC0EE; --primary:#8EA4E2; --primary-soft:#6B82C4;
+    --warning-text:#E2BD6A; --danger:#E07A75; --success:#5DB592;
+    --coral-50:#3A2526; --mustard-50:#3A3220; --teal-50:#1E3A31;
+    --card-bg:var(--surface); --chip-bg:rgba(28,37,56,.7);
+    --cell-edit-bg:var(--mustard-50); --cell-req-bg:var(--coral-50); --cell-chg-bg:var(--teal-50);
+    --bar-bg:rgba(21,28,44,.88); --grid-line:rgba(58,74,106,.35);
+    --shadow-sm:0 2px 8px rgba(0,0,0,.28); --shadow-md:0 8px 20px rgba(0,0,0,.42);
+  }
+  .hcard{background:linear-gradient(148deg, #3B4E92 0%, #26326A 100%)}
+  .donut::after{background:#26326A}
 }
 *{box-sizing:border-box}
 html,body{margin:0}
 body{
   font-family:var(--font);font-size:13.5px;line-height:1.55;letter-spacing:var(--ls-body);color:var(--text-strong);
   background-color:var(--bg-base);
-  background-image:linear-gradient(rgba(200,212,228,.5) .4px, transparent .4px),
-                   linear-gradient(90deg, rgba(200,212,228,.5) .4px, transparent .4px);
+  background-image:linear-gradient(var(--grid-line) .4px, transparent .4px),
+                   linear-gradient(90deg, var(--grid-line) .4px, transparent .4px);
   background-size:48px 48px;background-attachment:fixed;overflow-wrap:anywhere;
 }
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
 #root{position:relative;z-index:1}
 h1,h2,h3{margin:0;font-weight:700}
 button,input,select{font:inherit;letter-spacing:inherit;color:inherit}
+button,select{background-color:var(--surface)}
 .mono{font-family:var(--mono);letter-spacing:var(--ls-cap)}
 .muted,.sub{color:var(--text-muted)}
 .sub{font-size:11.5px;letter-spacing:var(--ls-cap)}
@@ -211,7 +232,7 @@ table.sheet td.req{background:var(--cell-req-bg);box-shadow:inset 0 0 0 1.5px va
 .btn.finalize::before{content:"";width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45);flex:none}
 .btn.finalize.ready::before{background:var(--on-primary);box-shadow:0 0 0 3px rgba(59,138,110,.55)}
 .btn.finalize:disabled{opacity:.6;cursor:progress}
-/* Excel 반영 표시 */
+/* 반영함·기각 표시 */
 .btn.applybtn{border-color:var(--success);color:var(--success);background:var(--surface);display:inline-flex;align-items:center;gap:6px}
 .btn.applybtn::before{content:"";width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--success);flex:none}
 .btn.applybtn:hover:not(:disabled){border-color:var(--success);background:var(--teal-50)}
@@ -270,7 +291,7 @@ table.sheet td.req{background:var(--cell-req-bg);box-shadow:inset 0 0 0 1.5px va
 .sl .cap .src2{display:block;color:var(--text-footer);font-size:10px}
 .sl.miss .th{font-size:11px;font-weight:400}
 .more{font-size:11px;color:var(--text-muted);margin-top:6px}
-.lightbox{position:fixed;inset:0;z-index:80;background:rgba(30,45,74,.72);display:none;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+.lightbox{position:fixed;inset:0;z-index:80;background:var(--scrim);display:none;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
 .lightbox.on{display:flex}
 .lightbox figure{margin:0;max-width:min(1100px,100%);max-height:100%;display:flex;flex-direction:column;gap:8px;animation:cardin .32s var(--ease-elastic) both}
 .lightbox img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;border-radius:var(--radius-sm);box-shadow:var(--shadow-md);background:var(--surface)}
@@ -282,6 +303,39 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   font-size:12.5px;box-shadow:var(--shadow-md);opacity:0;transform:translateY(8px);pointer-events:none;z-index:60;transition:opacity .24s,transform .32s var(--ease-elastic)}
 .toast.on{opacity:1;transform:none}
 .cardin{animation:cardin .32s var(--ease-elastic) both}
+/* 대안 행 고르기(새 행 추가 ↔ 덮어쓰기, 동의어 행 ↔ 값 행) */
+.pick{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--primary-deep);cursor:pointer;
+  border:1px solid var(--bg-grid);border-radius:var(--radius-pill);padding:1px 10px 1px 6px;background:var(--surface)}
+.pick input{margin:0;accent-color:var(--primary)}
+.rowb.off .tw,.rowb.off .chgline{opacity:.45}
+.blockwhy{font-size:11.5px;color:var(--warning-text)}
+/* 변경 미리보기 대화상자 */
+.modal{position:fixed;inset:0;z-index:90;background:var(--scrim);display:none;align-items:flex-start;justify-content:center;padding:6vh 16px 16px;overflow-y:auto}
+.modal.on{display:flex}
+.mbox{background:var(--surface);color:var(--text-strong);border:1px solid var(--bg-grid);border-radius:var(--radius);box-shadow:var(--shadow-md);
+  width:min(760px,100%);max-height:88vh;display:flex;flex-direction:column;animation:cardin .32s var(--ease-elastic) both}
+.mhead{padding:14px 18px 10px;border-bottom:1px solid var(--bg-grid)}
+.mhead h2{font-size:16px;letter-spacing:var(--ls-title)}
+.mhead .sub{margin-top:3px}
+.mbody{padding:10px 18px;overflow-y:auto;min-height:0}
+.mfoot{padding:10px 18px 14px;border-top:1px solid var(--bg-grid);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.dgrp{margin:8px 0 4px;font-size:11.5px;font-weight:700;color:var(--text-body)}
+.drow{border:1px solid var(--bg-grid);border-left:3px solid var(--primary);border-radius:var(--radius-sm);padding:7px 10px;margin:6px 0;background:var(--bg-base)}
+.drow.op-add{border-left-color:var(--success)}
+.drow.op-delete{border-left-color:var(--danger)}
+.drow.rej{border-left-color:var(--text-muted)}
+.drow .dh{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}
+.drow .dh b{letter-spacing:var(--ls-title)}
+.dcells{margin:5px 0 0;padding:0;list-style:none;font-size:12px}
+.dcells li{display:grid;grid-template-columns:minmax(64px,auto) minmax(0,1fr);gap:8px;padding:2px 0}
+.dcells .k{color:var(--text-muted);font-size:11px;white-space:nowrap}
+.dcells .v{white-space:pre-wrap;word-break:break-word}
+.dcells del{color:var(--danger);text-decoration-color:var(--danger)}
+.dcells ins{color:var(--success);text-decoration:none;font-weight:700}
+.dcells .arr{color:var(--text-muted);margin:0 4px}
+.missue{border:1px solid var(--bg-grid);border-left:3px solid var(--danger);border-radius:var(--radius-sm);padding:8px 12px;margin:8px 0;font-size:12px;background:var(--bg-base)}
+.missue ul{margin:4px 0 0;padding-left:18px}
+.mnote{font-size:12px;color:var(--text-body);margin:6px 0}
 @keyframes cardin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
 @media (max-width:860px){
@@ -290,6 +344,9 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:520px){
+  .modal{padding:12px}
+  .mbox{max-height:calc(100vh - 24px)}
+  .dcells li{grid-template-columns:minmax(0,1fr)}
   .hcard{grid-template-columns:minmax(0,1fr);padding:16px}
   .donut{width:96px;height:96px}
   .steps{grid-template-columns:minmax(0,1fr)}
@@ -304,6 +361,7 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
 <canvas id="fx" aria-hidden="true"></canvas>
 <div id="root"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle"><div class="mbox" id="mbox"></div></div>
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="슬라이드 크게 보기"><figure id="lbfig"><figcaption id="lbcap"></figcaption></figure></div>
 <script>
 (function(){
@@ -326,7 +384,7 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
              outside:"taxonomy 밖"};
   var GROUP = {taxonomy:"taxonomy 시트", synonyms:"synonyms 시트", questions:"questions 시트", term:"용어 후보",
                outside:"taxonomy 밖"};
-  var BULK = {taxonomy:true, synonyms:true, questions:true};
+  var EDIT_KINDS = {value_def:1, axis_def:1, overlap:1, q_edit:1};   // 문장을 고치는 항목: 쓸 문장이 있어야 반영
   var KEY = "taxonomy_board:v1";
   var store = loadStore();
   var ui = {status: DATA.taxonomy.readable ? "open" : "all", sheet: "all", action: "all", q: "", showHidden: false};
@@ -349,12 +407,13 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     if (!s.hidden || typeof s.hidden !== "object") s.hidden = {};
     if (!s.applied || typeof s.applied !== "object") s.applied = {};
     if (!s.rejects || typeof s.rejects !== "object") s.rejects = {};
+    if (!s.choice || typeof s.choice !== "object") s.choice = {};
     return s;
   }
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e){} }
 
   // ---- 사람이 처리했다는 표시(이 브라우저에만 저장): 반영함(store.applied)·기각함(store.rejects).
-  // 시트에서 확인되면(반영됨·기각됨) 표시를 지운다. 기각 행이 없는 항목의 기각 표시는 사람이 취소할 때까지 남는다.
+  // '최종 완료'로 taxonomy.json에 쓰기 전까지는 표시일 뿐이다. 이미 반영됨·기각됨인 항목의 표시는 지운다.
   var MARK = {applied: {store: "applied", badge: "반영함", cls: "m-applied"},
               rejected: {store: "rejects", badge: "기각함", cls: "m-rejected"}};
   (function(){
@@ -369,7 +428,7 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     if (changed) save();
   })();
   var expanded = {};
-  // 지금 표시: {kind: "applied"|"rejected", at} 또는 null. 시트가 이미 판정한 항목(반영됨·기각됨)은 표시하지 않는다
+  // 지금 표시: {kind: "applied"|"rejected", at} 또는 null. 이미 반영됨·기각됨인 항목은 표시하지 않는다
   function markOf(it){
     if (it.status === "done" || it.status === "rejected") return null;
     if (has(store.applied, it.id)) return {kind: "applied", at: store.applied[it.id]};
@@ -396,49 +455,191 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     window.scrollTo(0, keep);
     if (msg) toast(msg);
   }
-  // ---- 최종 완료: 표시(반영함·기각함)를 서버에 보내 확정하고 시트를 다시 읽은 보드로 새로고침 ----
-  function postDecisions(marks, busyText){
+  // ---- 최종 완료: 표시(반영함·기각함)와 편집을 보내 미리보기(board/preview)를 받고, 확인하면 board/finalize로
+  // taxonomy.json에 쓴다. 서버가 행을 다시 만들고 편집 칸만 얹는다. 쓰고 나면 새 보드로 새로고침한다.
+  function payload(marks){
+    var edits = {};
+    DATA.items.forEach(function(it){
+      if (marks[it.id] !== "applied" || !it.rows.length) return;
+      edits[it.id] = {choice: choiceOf(it), rows: it.rows.map(function(_, ri){ return rowCells(it, ri); })};
+    });
+    return {kind: "taxonomy_board_decisions", base_version: DATA.taxonomy.version || "", marks: marks, edits: edits};
+  }
+  function post(path, body){
+    return fetch(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)})
+      .then(function(r){
+        return r.json().catch(function(){ return {}; }).then(function(j){ return {status: r.status, j: j || {}}; });
+      });
+  }
+  function busy(text){
+    if (!finalBtn) return;
+    finalBtn.disabled = !!text;
+    if (text) finalBtn.textContent = text; else updateAppliedUI();
+  }
+  var REFUSED = {
+    TAXONOMY_CHANGED: "다른 화면(편집기 등)이 taxonomy.json을 먼저 저장했습니다. 새로고침해서 지금 내용으로 다시 하세요.",
+    TAXONOMY_INVALID: "저장하면 taxonomy.json 검증이 깨집니다. 아래 오류를 고친 뒤 다시 하세요. 파일은 그대로입니다.",
+    ITEM_NOT_APPLICABLE: "반영할 수 없는 항목이 있습니다(필수 칸 빈칸·쓸 문장 없음·먼저 할 일). 표시를 확인하세요.",
+    ITEM_CONFLICT: "두 항목이 같은 칸을 서로 다르게 고칩니다. 하나만 반영함으로 두세요.",
+    EDIT_INVALID: "편집 내용 형식이 맞지 않습니다. 편집을 되돌린 뒤 다시 하세요.",
+    TAXONOMY_NOT_FOUND: "taxonomy.json을 찾지 못했습니다. 경로를 확인한 뒤 보드를 다시 만드세요.",
+    TAXONOMY_WRITE_FAILED: "taxonomy.json에 쓰지 못했습니다(파일 잠금·권한). 파일은 그대로입니다. 서버 창을 확인하세요."
+  };
+  function refusedText(j){ return REFUSED[j.code] || ("처리하지 못했습니다(" + (j.detail || j.code || "FAILED") + "). 서버 창을 확인하세요."); }
+  function finalize(){
     if (!SERVED){
       toast("최종 완료는 보드 서버에서 됩니다: python -m domain_engrbot taxonomy-board --serve --open");
       return;
     }
-    if (finalBtn){ finalBtn.disabled = true; finalBtn.textContent = busyText; }
-    fetch("board/finalize", {method: "POST", headers: {"Content-Type": "application/json"},
-                             body: JSON.stringify({kind: "taxonomy_board_decisions", marks: marks})})
-      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok && j && j.ok, j: j}; }); })
-      .then(function(res){
-        if (!res.ok) throw new Error((res.j && (res.j.detail || res.j.code)) || "FAILED");
-        Object.keys(marks).forEach(function(id){ delete store.applied[id]; delete store.rejects[id]; });
-        save();
-        try { sessionStorage.setItem(KEY + ":toast", "최종 완료: 확정 " + res.j.changed + "건 · 미반영 " + res.j.counts.open +
-          " · 반영됨 " + res.j.counts.done + " · 기각 " + res.j.counts.rejected); } catch(e){}
-        location.reload();
-      })
-      .catch(function(e){
-        toast("최종 완료에 실패했습니다(" + e.message + "). 서버 창을 확인하세요.");
-        updateAppliedUI();
-      });
+    var marks = {};
+    DATA.items.forEach(function(it){ var m = markOf(it); if (m) marks[it.id] = m.kind; });
+    var body = payload(marks);
+    busy("미리보기 만드는 중…");
+    post("board/preview", body).then(function(res){
+      busy(null);
+      if (res.status !== 200 || !res.j.ok){ showRefused(res.j); return; }
+      showPreview(res.j, body);
+    }).catch(function(e){ busy(null); toast("미리보기에 실패했습니다(" + e.message + "). 서버 창을 확인하세요."); });
   }
-  function finalize(){
-    var marks = {}, na = 0, nr = 0;
-    DATA.items.forEach(function(it){
-      var m = markOf(it);
-      if (!m) return;
-      marks[it.id] = m.kind;
-      if (m.kind === "applied") na++; else nr++;
-    });
-    var msg = (na || nr) ? "반영함 " + na + "건 · 기각함 " + nr + "건을 확정하고 taxonomy.xlsx를 다시 읽습니다.\n" +
-      "Excel에서 저장했는지 확인하세요. 표시하지 않은 항목은 미반영으로 남습니다."
-      : "확정할 표시가 없습니다. taxonomy.xlsx를 다시 읽어 현황만 갱신할까요?";
-    if (!window.confirm(msg)) return;
-    postDecisions(marks, "확정하는 중…");
+  function commit(body, after){
+    busy("taxonomy.json에 쓰는 중…");
+    post("board/finalize", body).then(function(res){
+      if (res.status !== 200 || !res.j.ok){ busy(null); showRefused(res.j); return; }
+      Object.keys(body.marks).forEach(function(id){
+        delete store.applied[id]; delete store.rejects[id]; delete store.edits[id]; delete store.choice[id];
+      });
+      save();
+      if (res.j.rebuild_failed){   // taxonomy.json에는 썼지만 보드를 다시 만들지 못했다: 자동 새로고침하지 않는다
+        busy(null);
+        openModal("저장했지만 보드를 새로 만들지 못했습니다", res.j.rebuild_failed,
+          [el("p", "mnote", "taxonomy.json에는 썼습니다(바뀐 행 " + res.j.written + "). 이 화면은 예전 내용입니다. " +
+            "서버 창을 확인하고 보드를 다시 만든 뒤 새로고침하세요.")],
+          [button("btn ghost", "닫기", closeModal), button("btn primary", "새로고침", function(){ location.reload(); })]);
+        return;
+      }
+      if (res.j.decisions_failed){   // taxonomy.json에는 썼지만 확정 기록(decisions.json)을 남기지 못했다
+        busy(null);
+        openModal("저장했지만 확정 기록을 남기지 못했습니다", res.j.decisions_failed,
+          [el("p", "mnote", "taxonomy.json에는 썼습니다(바뀐 행 " + res.j.written + "). 보드의 '보드에서 반영함·기각함' 표시는 " +
+            "남지 않았습니다. 서버 창을 확인하세요. 새로고침하면 taxonomy.json 기준으로 다시 판정합니다.")],
+          [button("btn ghost", "닫기", closeModal), button("btn primary", "새로고침", function(){ location.reload(); })]);
+        return;
+      }
+      var c = res.j.counts || {};
+      try { sessionStorage.setItem(KEY + ":toast", (after || "최종 완료") + ": 확정 " + res.j.changed + "건 · 바뀐 행 " +
+        res.j.written + " · 미반영 " + (c.open || 0) + " · 반영됨 " + (c.done || 0) + " · 기각 " + (c.rejected || 0)); } catch(e){}
+      location.reload();
+    }).catch(function(e){ busy(null); toast("최종 완료에 실패했습니다(" + e.message + "). 서버 창을 확인하세요."); });
   }
   function undoDecision(it){
-    if (!window.confirm("'" + it.title + "'의 확정을 취소하고 시트 기준으로 다시 판정할까요?")) return;
+    if (!SERVED){ toast("확정 취소는 보드 서버에서 됩니다: python -m domain_engrbot taxonomy-board --serve"); return; }
+    if (!window.confirm("'" + it.title + "'의 확정 기록을 지우고 다시 판정할까요?\ntaxonomy.json에 이미 쓴 내용은 되돌리지 않습니다(필요하면 편집기에서 고칩니다).")) return;
     var m = {};
     m[it.id] = null;
-    postDecisions(m, "취소하는 중…");
+    commit(payload(m), "확정 취소");
   }
+
+  // ---- 미리보기 대화상자 ----
+  var modal = document.getElementById("modal"), mbox = document.getElementById("mbox"), lastFocus = null;
+  function closeModal(){
+    modal.classList.remove("on");
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function openModal(title, sub, parts, buttons){
+    mbox.innerHTML = "";
+    var h = el("div", "mhead");
+    h.appendChild(el("h2", null, title)).id = "mtitle";
+    if (sub) h.appendChild(el("div", "sub", sub));
+    mbox.appendChild(h);
+    var b = el("div", "mbody");
+    parts.forEach(function(p){ if (p) b.appendChild(p); });
+    mbox.appendChild(b);
+    var f = el("div", "mfoot");
+    buttons.forEach(function(x){ f.appendChild(x); });
+    mbox.appendChild(f);
+    lastFocus = document.activeElement;
+    modal.classList.add("on");
+    var first = f.querySelector("button:not(:disabled)");
+    if (first) first.focus();
+  }
+  function issueBox(issues, head){
+    if (!issues || !issues.length) return null;
+    var d = el("div", "missue");
+    d.appendChild(el("b", null, head || ("검증 오류 " + issues.length + "건 · 이대로는 쓸 수 없습니다")));
+    var ul = el("ul");
+    issues.forEach(function(i){
+      ul.appendChild(el("li", "mono", (i.sheet || "-") + " · " + (i.row != null ? i.row + "행" : "행 -") + " · " + i.code));
+    });
+    d.appendChild(ul);
+    return d;
+  }
+  var OP = {add: "추가", edit: "수정", "delete": "삭제"};
+  function cellList(d){
+    var ul = el("ul", "dcells"), cols = d.sheet === "rejected" ? COLS.rejected : (COLS[d.sheet] || []);
+    cols.forEach(function(name, ci){
+      var a = d.before ? String(d.before[name] || "") : "", b = d.after ? String(d.after[name] || "") : "";
+      if (d.op === "edit" && a === b) return;
+      if (d.op !== "edit" && !(d.op === "add" ? b : a)) return;
+      var li = el("li");
+      li.appendChild(el("span", "k", (d.sheet === "rejected" ? "" : LETTERS.charAt(ci) + " ") + name));
+      var v = el("span", "v");
+      if (d.op === "edit"){
+        v.appendChild(el("del", null, show(a)));
+        v.appendChild(el("span", "arr", "→"));
+        v.appendChild(el("ins", null, show(b)));
+      } else {
+        v.textContent = d.op === "add" ? b : a;
+      }
+      li.appendChild(v);
+      ul.appendChild(li);
+    });
+    return ul;
+  }
+  function diffRow(d){
+    var rej = d.sheet === "rejected";
+    var r = el("div", "drow op-" + d.op + (rej ? " rej" : ""));
+    var h = el("div", "dh");
+    h.appendChild(el("span", "badge act", rej ? "기각 기록" : (OP[d.op] || d.op)));
+    h.appendChild(el("b", null, (rej ? "rejected 목록" : d.sheet + " 시트") + " " + d.row + "행"));
+    r.appendChild(h);
+    r.appendChild(cellList(d));
+    return r;
+  }
+  function showPreview(res, body){
+    var diff = res.diff || [], issues = res.issues || [];
+    var na = 0, nr = 0;
+    Object.keys(body.marks).forEach(function(id){ if (body.marks[id] === "applied") na++; else nr++; });
+    var parts = [];
+    if (!diff.length){
+      parts.push(el("p", "mnote", (na || nr) ? "taxonomy.json에서 바뀌는 행이 없습니다. 확정(반영함 " + na + " · 기각함 " + nr +
+        ")만 기록하고 보드를 새로 만듭니다." : "확정할 표시가 없습니다. taxonomy.json을 다시 읽어 보드만 새로 만듭니다."));
+    } else {
+      var rows = diff.filter(function(d){ return d.sheet !== "rejected"; }), rej = diff.filter(function(d){ return d.sheet === "rejected"; });
+      [["add", "추가하는 행"], ["edit", "고치는 행"], ["delete", "지우는 행"]].forEach(function(g){
+        var ds = rows.filter(function(d){ return d.op === g[0]; });
+        if (!ds.length) return;
+        parts.push(el("div", "dgrp", g[1] + " " + ds.length));
+        ds.forEach(function(d){ parts.push(diffRow(d)); });
+      });
+      if (rej.length){
+        parts.push(el("div", "dgrp", "기각 기록(rejected 목록) " + rej.length));
+        rej.forEach(function(d){ parts.push(diffRow(d)); });
+      }
+    }
+    parts.push(issueBox(issues));
+    var write = button("btn primary", diff.length ? "taxonomy.json에 쓰기 · " + diff.length + "행" : "확정",
+      function(){ closeModal(); commit(body); },
+      diff.length ? "이력(taxonomy_history.jsonl)에 바꾸기 전 내용을 남기고 원자적으로 저장합니다" : "결정만 기록합니다");
+    write.disabled = !!(diff.length && issues.length);
+    openModal("변경 미리보기", "반영함 " + na + "건 · 기각함 " + nr + "건 · 바뀌는 행 " + diff.length + "개", parts,
+      [button("btn ghost", "취소", closeModal), write]);
+  }
+  function showRefused(j){
+    var buttons = [button("btn ghost", "닫기", closeModal)];
+    if (j.code === "TAXONOMY_CHANGED") buttons.push(button("btn primary", "새로고침", function(){ location.reload(); }));
+    openModal("반영하지 못했습니다", j.code || "", [el("p", "mnote", refusedText(j)), issueBox(j.issues)], buttons);
+  }
+  modal.addEventListener("click", function(e){ if (e.target === modal) closeModal(); });
 
   function appliedCount(kind){
     return DATA.items.filter(function(it){ var m = markOf(it); return m && (!kind || m.kind === kind); }).length;
@@ -461,11 +662,6 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   function norm(s){ return String(s || "").normalize("NFKC").replace(/\s+/g, "").toLowerCase(); }
   function has(o, k){ return Object.prototype.hasOwnProperty.call(o, k); }
   function pct(v){ return v == null ? "-" : (Math.round(v * 1000) / 10) + "%"; }
-  function today(){
-    var d = new Date();
-    function p(n){ return (n < 10 ? "0" : "") + n; }
-    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
-  }
   function toast(msg){
     var t = document.getElementById("toast");
     t.textContent = msg;
@@ -480,14 +676,6 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     if (ed && has(ed, k)) return String(ed[k]);
     return it.rows[ri].cells[ci];
   }
-  // Excel 클립보드 TSV 칸: 줄바꿈은 LF로 통일, 수식 시작 문자(= + - @) 앞에 ',
-  // 탭·줄바꿈·큰따옴표가 있으면 "…"로 감싸고 안의 "는 ""로 쓴다. 행 복사·묶음 복사·기각 행이 모두 이 함수를 쓴다.
-  function tsvCell(v){
-    v = String(v == null ? "" : v).replace(/\r\n?/g, "\n");
-    if (/^[=+\-@]/.test(v)) v = "'" + v;
-    return /[\t\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-  }
-  function tsvRow(cells){ return cells.map(tsvCell).join("\t"); }
   function rowCells(it, ri){ return it.rows[ri].cells.map(function(_, ci){ return cellVal(it, ri, ci); }); }
   function validTarget(v){
     if (v === "공통") return true;
@@ -511,13 +699,55 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
       if (rule === "yn" && !/^[YN]$/i.test(v)) out.push({ci: ci, why: "Y 또는 N이어야 합니다"});
       else if (rule === "kind" && v !== "분류" && v !== "상태") out.push({ci: ci, why: "분류 또는 상태여야 합니다"});
       else if (rule === "int" && !/^[+-]?\d+$/.test(v)) out.push({ci: ci, why: "정수여야 합니다"});
-      else if (rule === "target" && !validTarget(v)) out.push({ci: ci, why: "공통 또는 시트에 있는 켜진 축=값이어야 합니다"});
+      else if (rule === "target" && !validTarget(v)) out.push({ci: ci, why: "공통 또는 taxonomy에 있는 켜진 축=값이어야 합니다"});
       else if (rule === "qid_new" && QIDS[v]) out.push({ci: ci, why: "이미 있는 질문 ID입니다"});
-      else if (rule === "axis" && (DATA.axis_names || []).indexOf(v) < 0) out.push({ci: ci, why: "시트에 있는 켜진 축 이름과 똑같아야 합니다"});
+      else if (rule === "axis" && (DATA.axis_names || []).indexOf(v) < 0) out.push({ci: ci, why: "taxonomy에 있는 켜진 축 이름과 똑같아야 합니다"});
       else if (rule === "parent" && !validParent(String(cellVal(it, ri, 0)).trim(), v, String(cellVal(it, ri, 1))))
         out.push({ci: ci, why: "같은 축에 있는 켜진 값이어야 합니다(자기 자신은 안 됩니다)"});
     });
     return out;
+  }
+  function choiceOf(it){
+    var c = store.choice[it.id];
+    return (typeof c === "number" && c >= 0 && c < it.rows.length) ? c : 0;
+  }
+  function chosenRows(it){
+    return it.pick === "one" ? [choiceOf(it)] : it.rows.map(function(_, i){ return i; });
+  }
+  // 초안을 만들 때의 지금 행 값(초안이 바꾼 칸은 원래 값)
+  function baseVal(r, ci){
+    for (var i = 0; i < (r.changes || []).length; i++) if (r.changes[i].col === ci) return r.changes[i].from;
+    return r.cells[ci];
+  }
+  // 반영함을 막는 사유(없으면 null): 미반영이 아님, 칸 문제(필수 빈칸·형식), 쓸 문장 없음(문장 수정 항목)
+  function applyBlock(it){
+    if (it.status !== "open") return it.status === "blocked" ? "먼저 할 일이 있습니다: " + (it.status_note || "") : "미반영 항목만 반영합니다";
+    if (!it.rows.length) return null;
+    var wrote = false, why = null;
+    chosenRows(it).forEach(function(ri){
+      if (why) return;
+      var r = it.rows[ri], cols = COLS[r.sheet] || [], bad = problems(it, ri);
+      if (bad.length){
+        why = "칸을 확인하세요: " + bad.map(function(p){ return LETTERS.charAt(p.ci) + " " + cols[p.ci] + "(" + p.why + ")"; }).join(", ");
+        return;
+      }
+      var cells = rowCells(it, ri);
+      var noText = EDIT_KINDS[it.kind] && r.editable.length &&
+        !r.editable.some(function(ci){ return String(cells[ci]).trim(); });
+      if (r.target.mode !== "append" && !cells.some(function(v, ci){ return v !== baseVal(r, ci); })) return;
+      if (noText){ why = "쓸 문장이 없습니다. 노란 편집 칸을 채우세요"; return; }
+      wrote = true;
+    });
+    if (why) return why;
+    return wrote ? null : "지금 행과 같아 쓸 내용이 없습니다. 노란 편집 칸에 문장을 쓰세요";
+  }
+  function refreshApply(it){
+    var b = document.getElementById("ap-" + it.id), w = document.getElementById("apw-" + it.id);
+    if (!b) return;
+    var why = applyBlock(it);
+    b.disabled = !!why;
+    b.title = why || "taxonomy.json에 반영하겠다고 표시합니다('최종 완료'에서 미리보기 뒤 씁니다)";
+    if (w) w.textContent = why || "";
   }
   function setEdit(it, ri, ci, v){
     var k = ri + "_" + ci;
@@ -526,61 +756,6 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     else store.edits[it.id][k] = v;
     if (!Object.keys(store.edits[it.id]).length) delete store.edits[it.id];
     save();
-  }
-
-  // ---- 복사 ----
-  function copyText(text, msg){
-    function fallback(){
-      var ta = document.createElement("textarea"), ok = false;
-      ta.value = text;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "fixed";
-      ta.style.top = "-1000px";
-      document.body.appendChild(ta);
-      ta.select();
-      try { ok = document.execCommand("copy"); } catch(e){ ok = false; }
-      document.body.removeChild(ta);
-      toast(ok ? msg : "복사하지 못했습니다. 브라우저의 클립보드 권한을 확인하세요.");
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(function(){ toast(msg); }, fallback);
-    } else {
-      fallback();
-    }
-  }
-  function copyRow(it, ri){
-    var r = it.rows[ri], bad = problems(it, ri);
-    if (it.status === "blocked" &&
-        !window.confirm("먼저 할 일이 있습니다: " + (it.status_note || "") + "\n그래도 이 행을 복사할까요?")) return;
-    if (bad.length){
-      var names = bad.map(function(p){ return LETTERS.charAt(p.ci) + " " + (COLS[r.sheet] || [])[p.ci] + "(" + p.why + ")"; }).join(", ");
-      if (!window.confirm("칸을 확인하세요: " + names + "\n이대로 붙이면 taxonomy.xlsx를 읽지 못합니다. 그래도 복사할까요?")) return;
-    }
-    copyText(tsvRow(rowCells(it, ri)), "행을 복사했습니다. " + r.place + " · 붙여 넣은 뒤 'Excel에 반영함'을 누르세요");
-  }
-  function copyReject(it, msg){
-    var c = it.reject_row.slice();   // 내용은 항상 원래 값(편집 전)이다
-    c[2] = today();
-    copyText(tsvRow(c), msg || "기각 행을 복사했습니다. rejected 시트 빈 행에 붙입니다.");
-  }
-  // 묶음 복사: 미반영(먼저 할 일·확인 불가 제외)이고 숨기지 않았고 문제 칸이 없는 '빈 행에 추가' 행만.
-  // 같은 새 질문 ID가 두 행에 있으면 둘 다 붙였을 때 시트를 읽지 못하므로 뒤 행은 뺀다.
-  function bulkRows(group){
-    var out = [], qids = {};
-    DATA.items.forEach(function(it){
-      if (it.group !== group || it.status !== "open" || store.hidden[it.id] || isApplied(it)) return;
-      it.rows.forEach(function(r, ri){
-        if (r.target.mode !== "append" || problems(it, ri).length) return;
-        var cells = rowCells(it, ri);
-        if ((r.checks || {})["0"] === "qid_new"){
-          var q = String(cells[0]).trim();
-          if (qids[q]) return;
-          qids[q] = true;
-        }
-        out.push(tsvRow(cells));
-      });
-    });
-    return out;
   }
 
   // ---- 필터 상태 ----
@@ -620,13 +795,13 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     left.appendChild(big);
     var say = el("div", "say");
     if (!DATA.taxonomy.readable){
-      say.textContent = "taxonomy.xlsx를 읽지 못해 상태를 판정하지 못했습니다.";
+      say.textContent = "taxonomy.json을 읽지 못해 상태를 판정하지 못했습니다.";
     } else if (!total){
       say.textContent = "올라온 수정 제안이 없습니다. 다음 실행에서 새 제안이 생기면 여기에 모입니다.";
     } else {
       say.appendChild(document.createTextNode("전체 " + total + "건 중 "));
       say.appendChild(el("b", null, (c.open || 0) + "건"));
-      say.appendChild(document.createTextNode("을 Excel에 붙일 차례입니다" + (c.blocked ? ", 먼저 할 일 " + c.blocked + "건." : ".")));
+      say.appendChild(document.createTextNode("을 반영하거나 기각할 차례입니다" + (c.blocked ? ", 먼저 할 일 " + c.blocked + "건." : ".")));
     }
     left.appendChild(say);
     progress = el("div", "prog");
@@ -719,7 +894,7 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     q.addEventListener("input", function(){ ui.q = q.value.trim().toLowerCase(); renderBody(); });
     r1.appendChild(q);
     finalBtn = button("btn primary finalize", "최종 완료", finalize,
-      "반영함·기각함 표시를 확정하고 taxonomy.xlsx를 다시 읽어 현황을 갱신합니다. 표시하지 않은 항목은 그대로 남습니다");
+      "반영함·기각함 표시로 바뀔 행을 미리보기로 보여 주고, 확인하면 taxonomy.json에 씁니다. 표시하지 않은 항목은 그대로 남습니다");
     r1.appendChild(finalBtn);
     inner.appendChild(r1);
 
@@ -783,10 +958,10 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   function notes(){
     var n = el("div", "howto");
     var ol = el("ol", "steps");
-    [["항목 고르기", "필요하면 노란 편집 칸을 고칩니다."],
-     ["행 복사", "편집을 반영한 한 행이 클립보드에 담깁니다."],
-     ["Excel에 붙여넣기", "위치 문구대로 A열에 붙이고 저장한 뒤 'Excel에 반영함'을 누릅니다."],
-     ["다시 만들기", "python -m domain_engrbot taxonomy-board 로 반영됨·기각됨을 확인합니다."]
+    [["항목 고르기", "노란 편집 칸을 고치고, 대안 행이 있으면 하나를 고릅니다."],
+     ["반영함·기각", "카드마다 표시합니다. 필수 칸이 비었거나 쓸 문장이 없으면 반영함이 꺼져 있습니다."],
+     ["최종 완료", "추가·수정·기각 행과 검증 오류를 미리보기로 확인합니다."],
+     ["taxonomy.json에 쓰기", "확인하면 봇이 저장하고(이력 taxonomy_history.jsonl) 보드를 새로 만듭니다."]
     ].forEach(function(s){
       var li = el("li");
       li.appendChild(el("b", null, s[0]));
@@ -798,7 +973,7 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     d.appendChild(el("summary", null, "칸 색과 주의 사항"));
     var lg = el("div", "legend2");
     [["var(--cell-edit-bg)", "var(--cell-edit-line)", "편집 칸"], ["var(--cell-req-bg)", "var(--danger)", "필수 빈칸·형식 오류(마우스를 올리면 사유)"],
-     ["var(--cell-chg-bg)", "var(--success)", "덮어쓰기로 바뀌는 칸"]].forEach(function(x){
+     ["var(--cell-chg-bg)", "var(--success)", "봇 초안이 바꾸는 칸"]].forEach(function(x){
       var s = el("span"), i = el("i");
       i.style.background = x[0];
       i.style.boxShadow = "inset 0 0 0 1.5px " + x[1];
@@ -807,8 +982,9 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
       lg.appendChild(s);
     });
     d.appendChild(lg);
-    d.appendChild(el("p", null, "거절할 항목은 '기각'을 누르면 rejected 시트 행이 복사되고 기각함으로 표시됩니다. 그 행을 rejected 시트 빈 행에 붙입니다.봇은 taxonomy.xlsx를 쓰지 않고 정의 문장을 지어내지 않습니다. " +
-      "이 화면은 용어·메모(본문 표현)를 담으므로 작업 폴더 밖으로 내지 않습니다. 편집 내용과 숨김은 이 브라우저에만 저장됩니다."));
+    d.appendChild(el("p", null, "기각한 새 값·동의어·질문은 taxonomy.json의 rejected 목록에 남아 다시 올라오지 않습니다. 나머지 항목은 기각 결정만 남깁니다. " +
+      "봇은 정의 문장을 지어내지 않고, 사람이 고친 편집 칸만 씁니다. 반영은 보드 서버(--serve)에서만 됩니다. 직접 고칠 때는 python -m domain_engrbot taxonomy-editor 를 씁니다. " +
+      "이 화면은 용어·메모(본문 표현)를 담으므로 작업 폴더 밖으로 내지 않습니다. 편집 내용·표시·숨김은 '최종 완료' 전까지 이 브라우저에만 저장됩니다."));
     if (DATA.notes && DATA.notes.revisit_file) d.appendChild(el("p", null, DATA.notes.revisit_file));
     n.appendChild(d);
     if (DATA.cleared) n.appendChild(el("div", "cleared", "초기화(--reset)로 숨긴 항목 " + DATA.cleared + "건은 보이지 않습니다. 같은 제안이 새 실행에서 다시 올라오면 다시 보입니다."));
@@ -820,8 +996,8 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     if (!t.read_code && !issues.length) return null;
     var b = el("div", "errbox");
     b.appendChild(el("b", null, t.readable
-      ? "taxonomy.xlsx에 파싱 오류가 있습니다. 상태는 지금 행으로 판정했지만, 오류를 고친 뒤 다시 실행하세요."
-      : "taxonomy.xlsx를 읽지 못했습니다. 상태는 확인 불가로 둡니다."));
+      ? "taxonomy.json에 검증 오류가 있습니다. 상태는 지금 행으로 판정했지만, 오류가 남아 있으면 저장되지 않습니다. 편집기(taxonomy-editor)로 고친 뒤 다시 실행하세요."
+      : "taxonomy.json을 읽지 못했습니다. 상태는 확인 불가로 둡니다."));
     if (t.read_code) b.appendChild(el("div", "mono", t.read_code));
     if (issues.length){
       var ul = el("ul");
@@ -874,12 +1050,27 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
   function show(v){ return v === "" ? "(빈칸)" : v; }
 
   function rowBlock(it, r, ri){
-    var b = el("div", "rowb"), top = el("div", "rowtop");
+    var pickOne = it.pick === "one", on = !pickOne || choiceOf(it) === ri;
+    var b = el("div", "rowb" + (on ? "" : " off")), top = el("div", "rowtop");
     var cols = COLS[r.sheet] || [];
+    if (pickOne && markable(it)){
+      var lab = el("label", "pick"), rb = el("input");
+      rb.type = "radio";
+      rb.name = "pick-" + it.id;
+      rb.checked = on;
+      rb.addEventListener("change", function(){
+        store.choice[it.id] = ri;
+        save();
+        var keep = window.scrollY;
+        renderBody();
+        window.scrollTo(0, keep);
+      });
+      lab.appendChild(rb);
+      lab.appendChild(document.createTextNode("이 행으로 반영"));
+      top.appendChild(lab);
+    }
     if (r.label) top.appendChild(el("span", "rl", r.label));
     top.appendChild(el("span", "place", r.place));
-    top.appendChild(button("btn primary sm", "행 복사", function(){ copyRow(it, ri); },
-      "편집 칸을 반영해 탭으로 구분한 한 행(머리 없음)을 복사합니다"));
     b.appendChild(top);
     var changed = {};
     (r.changes || []).forEach(function(c){ changed[c.col] = 1; });
@@ -909,7 +1100,7 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
         td.className = "ed";
         editable(td);
         td.setAttribute("aria-label", LETTERS.charAt(ci) + " " + (cols[ci] || "") + " 편집");
-        td.addEventListener("input", function(){ setEdit(it, ri, ci, td.textContent); markRow(tr, it, ri); });
+        td.addEventListener("input", function(){ setEdit(it, ri, ci, td.textContent); markRow(tr, it, ri); refreshApply(it); });
         td.addEventListener("keydown", function(ev){ if (ev.key === "Enter"){ ev.preventDefault(); td.blur(); } });
       }
       tr.appendChild(td);
@@ -1021,27 +1212,27 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     return d;
   }
 
-  // 처리 표시 버튼(반영함·기각): 미반영·먼저 할 일 항목에만(반영됨·기각됨은 시트가 이미 확인했다)
-  function markable(it){ return it.status !== "done" && it.status !== "rejected"; }
+  // 처리 표시 버튼(반영함·기각): 미반영·먼저 할 일 항목에만(반영됨·기각됨은 이미 정해졌다). 반영함은 미반영만
+  function markable(it){ return it.status === "open" || it.status === "blocked"; }
   function applyButton(it){
-    if (!markable(it) || it.group === "outside") return null;
-    var b = button("btn applybtn", "Excel에 반영함", function(){
-      setMark(it, "applied", "반영함으로 표시했습니다. 보드를 다시 만들면 시트 기준으로 확인합니다.");
-    }, "이 항목을 taxonomy.xlsx에 붙여 넣었다고 표시합니다(이 브라우저에 저장)");
+    if (!markable(it)) return null;
+    var b = button("btn applybtn", "반영함", function(){
+      if (applyBlock(it)) return;
+      setMark(it, "applied", "반영함으로 표시했습니다. '최종 완료'에서 미리보기 뒤 taxonomy.json에 씁니다.");
+    });
+    b.id = "ap-" + it.id;
     b.setAttribute("aria-pressed", "false");
+    var why = applyBlock(it);
+    b.disabled = !!why;
+    b.title = why || "taxonomy.json에 반영하겠다고 표시합니다('최종 완료'에서 미리보기 뒤 씁니다)";
     return b;
   }
   function rejectButton(it){
     if (!markable(it)) return null;
-    var tip = it.reject_row ? "rejected 시트 행(종류, 내용, 기각일=오늘, 사유=빈칸)을 복사하고 기각함으로 표시합니다"
-                            : "기각함으로 표시합니다" + (it.reject_hint ? "(" + it.reject_hint + ")" : "");
+    var tip = it.reject_row ? "기각으로 표시합니다. '최종 완료' 때 rejected 목록에 남아 다시 올라오지 않습니다"
+                            : "기각으로 표시합니다(결정만 남깁니다)" + (it.reject_hint ? " · " + it.reject_hint : "");
     var b = button("btn rejectbtn", "기각", function(){
-      if (it.reject_row){
-        copyReject(it, "기각 행을 복사했습니다. rejected 시트 빈 행에 붙이면 다시 만들 때 기각됨이 됩니다.");
-        setMark(it, "rejected");
-      } else {
-        setMark(it, "rejected", "기각함으로 표시했습니다." + (it.reject_hint ? " " + it.reject_hint : ""));
-      }
+      setMark(it, "rejected", "기각으로 표시했습니다. '최종 완료'에서 확정합니다.");
     }, tip);
     b.setAttribute("aria-pressed", "false");
     return b;
@@ -1054,8 +1245,8 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     return b;
   }
   var FOLD_NOTE = {
-    applied: "Excel에 반영했다고 표시한 항목입니다. 보드를 다시 만들면 시트 기준으로 반영됨을 확인하고 이 표시는 사라집니다.",
-    rejected: "기각한다고 표시한 항목입니다. rejected 시트에 붙였다면 보드를 다시 만들 때 기각됨으로 바뀌고 이 표시는 사라집니다."
+    applied: "반영함으로 표시한 항목입니다. '최종 완료'에서 미리보기를 확인하면 taxonomy.json에 씁니다.",
+    rejected: "기각으로 표시한 항목입니다. '최종 완료'에서 확정합니다."
   };
 
   function card(it, i){
@@ -1070,13 +1261,11 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     if (m) h.appendChild(el("span", "badge st st-" + MARK[m.kind].cls, MARK[m.kind].badge + " " + stamp(m.at)));
     else h.appendChild(el("span", "badge st st-" + it.status, ST[it.status] || it.status));
     if (it.conflict) h.appendChild(el("span", "badge warn", "상충"));
-    if (it.human && it.human.unverified) h.appendChild(el("span", "badge warn", "시트 미확인")).title =
-      "보드에서 반영함으로 확정했지만 taxonomy.xlsx에서 자동으로 확인되지 않았습니다";
     h.appendChild(el("span", "title", it.title));
     if (it.human && !m){
       h.appendChild(el("span", "sp"));
       h.appendChild(button("btn sm ghost", "확정 취소", function(){ undoDecision(it); },
-        "보드에서 확정한 " + (it.human.decision === "applied" ? "반영함" : "기각함") + "을 취소하고 시트 기준으로 다시 판정합니다"));
+        "보드에서 확정한 " + (it.human.decision === "applied" ? "반영함" : "기각함") + " 기록을 지우고 다시 판정합니다(쓴 내용은 그대로)"));
     }
     if (m){
       h.appendChild(el("span", "sp"));
@@ -1104,10 +1293,13 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
       var ab = applyButton(it), rb = rejectButton(it);
       if (ab) act.appendChild(ab);
       if (rb) act.appendChild(rb);
+      if (ab){
+        var w = el("span", "blockwhy", ab.disabled ? ab.title : "");
+        w.id = "apw-" + it.id;
+        act.appendChild(w);
+      }
     }
-    if (!markable(it) && it.reject_row) act.appendChild(button("btn sm", "기각 행 복사", function(){ copyReject(it); },
-      "rejected 시트 4칸(종류, 내용, 기각일=오늘, 사유=빈칸)을 복사합니다"));
-    if (!it.reject_row && it.reject_hint) act.appendChild(el("span", "sub", "기각: " + it.reject_hint));
+    if (!it.reject_row && it.reject_hint && markable(it)) act.appendChild(el("span", "sub", "기각: " + it.reject_hint));
     if (store.edits[it.id]) act.appendChild(button("btn sm ghost", "편집 되돌리기", function(){
       delete store.edits[it.id];
       save();
@@ -1132,17 +1324,6 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     var s = el("section"), sh = el("div", "sh");
     sh.appendChild(el("h2", null, GROUP[group]));
     sh.appendChild(el("span", "n", n + "건"));
-    sh.appendChild(el("span", "sp"));
-    if (BULK[group]){
-      var rows = bulkRows(group);
-      var b = button("btn sm", "바로 붙일 추가 행 모두 복사 (" + rows.length + ")", function(){
-        var now = bulkRows(group);
-        if (!now.length){ toast("바로 붙일 추가 행이 없습니다."); return; }
-        copyText(now.join("\r\n"), group + " 시트 추가 행 " + now.length + "개를 복사했습니다. 빈 행에 붙입니다.");
-      }, "미반영이고 문제 칸이 없는 '빈 행에 추가' 행만 모읍니다(먼저 할 일·확인 불가·숨김·반영 표시한 항목 제외)");
-      b.disabled = !rows.length;
-      sh.appendChild(b);
-    }
     s.appendChild(sh);
     parent.appendChild(s);
     return s;
@@ -1154,7 +1335,7 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
     var t = el("div");
     var line = el("div");
     line.appendChild(el("span", "nm", ax.name));
-    line.appendChild(el("span", "sub", "  " + n + "건" + (ax.row ? " · 축 정의 " + ax.row + "행" : " · 시트에 없는 축") +
+    line.appendChild(el("span", "sub", "  " + n + "건" + (ax.row ? " · 축 정의 " + ax.row + "행" : " · taxonomy에 없는 축") +
       (ax.off ? " · 꺼진 축" : "")));
     t.appendChild(line);
     (ax.metrics || []).forEach(function(m){
@@ -1295,7 +1476,11 @@ details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;letter-spacing
 
   var lbox = document.getElementById("lightbox");
   lbox.addEventListener("click", function(){ lbox.classList.remove("on"); });
-  document.addEventListener("keydown", function(e){ if (e.key === "Escape") lbox.classList.remove("on"); });
+  document.addEventListener("keydown", function(e){
+    if (e.key !== "Escape") return;
+    lbox.classList.remove("on");
+    if (modal.classList.contains("on")) closeModal();
+  });
 
   root.appendChild(top());
   root.appendChild(hero());

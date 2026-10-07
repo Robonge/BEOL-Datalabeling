@@ -22,7 +22,7 @@ from domain_engrbot import policy as policy_mod
 from domain_engrbot.adapters import labelbot_ws
 from domain_engrbot import pptx_writer
 
-TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.xlsx")
+TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json")
 FOOTER = "사내 테스트용 더미 자료"
 
 

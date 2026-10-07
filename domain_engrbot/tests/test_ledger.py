@@ -1,7 +1,7 @@
 """교정 장부(ledger) 테스트: 위치, intake 산출물, 건너뜀 코드, 멱등성, 작업 폴더 교체, 규칙 후보, CLI, run 자동 intake.
 
 작업 폴더는 코드 폴더 밖(tempfile.mkdtemp)에 만들고 work.sqlite에 runs·chunks·labels·corrections 등을 직접 넣는다.
-taxonomy는 저장소의 taxonomy.xlsx를 pipeline.json으로 가리킨다. 네트워크는 쓰지 않는다.
+taxonomy는 저장소의 taxonomy.json을 pipeline.json으로 가리킨다. 네트워크는 쓰지 않는다.
 """
 import contextlib
 import hashlib
@@ -21,7 +21,7 @@ from domain_engrbot import cli, domain_rules, golden, io, ledger, model, runner
 from domain_engrbot import policy as policy_mod
 from domain_engrbot.adapters import labelbot_ws
 
-TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.xlsx")
+TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json")
 RUN = "20261001T000000-0001"
 RUN2 = "20261002T000000-0002"
 BODY = "본문표식XYZ"
@@ -505,7 +505,7 @@ class IntakeTest(LedgerTestBase):
         self.assertIn("M2", title[0]["title_pattern"])
         syn = [r for r in rules if r["type"] == "synonym_suggest"]
         self.assertEqual([r["axis"] for r in syn], [DEFECT])
-        self.assertTrue(syn[0]["note"].startswith("검수 등록 동의어 1쌍(작업 폴더 1곳). 동의어 시트에 붙여넣은 뒤 효력이 있다."))
+        self.assertTrue(syn[0]["note"].startswith("검수 등록 동의어 1쌍(작업 폴더 1곳). taxonomy 보드에서 확정해 taxonomy.json synonyms에 쓴 뒤 효력이 있다."))
         self.assertTrue(title[0]["title_pattern"].startswith("(?i)"))
         self.assertTrue(title[0]["note"].startswith("제목 적중 2건(레코드 2건, 작업 폴더 1곳)."))
         self.assertEqual(ledger.build_candidates(self.d, self.pol), doc)

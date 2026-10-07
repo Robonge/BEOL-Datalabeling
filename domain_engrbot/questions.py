@@ -168,7 +168,8 @@ def _clip(s, n):
 def _stage(rule):
     """승인 규칙의 단계(labelbot.feedback과 같은 기준). MANUAL은 target이 label이면 label, 아니면 classify."""
     kind = rule.get("kind")
-    if kind in lr.ANSWER_KINDS or (kind == "MANUAL" and rule.get("target") == "label"):
+    if kind in lr.ANSWER_KINDS or (kind == "MANUAL" and (rule.get("stage") == "label" or
+                                                         (rule.get("stage") is None and rule.get("target") == "label"))):
         return "label"
     return "classify"
 
@@ -325,6 +326,9 @@ def build_context(paths, policy, d, qd, carried, max_new, rules_path=None, cfg=N
         item = {"ref": ref, "field": c["field"], "kind": c["kind"], "bot": c.get("bot_value"),
                 "human": c.get("human_value"),
                 "record": rec_ref.get((c["record_id"], c.get("text_hash") or ""))}
+        if c.get("ctl_axis"):
+            # 대조 답 교정(field control:<qid>): 이 chunk에 붙지 않은 라벨(축=값)을 물은 질문의 봇 답 → 사람 답
+            item["control"] = {"axis": c["ctl_axis"], "value": c.get("ctl_value")}
         # 인용·이유도 문서 조각이다: 본문과 같은 조건(출처 작업 폴더의 전송처가 같음)일 때만 넣는다. 교정 값은 그대로 간다.
         if (e.get("evidence") or e.get("reason")) and sources.get(c["source_ws"])[0] is None:
             _plus(body_missing, "EVIDENCE_" + sources.get(c["source_ws"])[1][len("SOURCE_"):])

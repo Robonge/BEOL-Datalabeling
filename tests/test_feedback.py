@@ -20,7 +20,7 @@ from labelbot.workspace import CODE_ROOT, Workspace
 from tests.test_pipeline import responder
 
 DUMMY_DIR = os.path.join(CODE_ROOT, "dummy pptx files")
-TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.xlsx")
+TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json")
 
 
 def _dummy_ids():

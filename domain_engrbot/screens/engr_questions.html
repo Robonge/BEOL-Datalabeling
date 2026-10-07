@@ -235,7 +235,7 @@ const DATA = /*__DATA__*/null;
                      qid:"질문 ID", text:"질문 문장", definition:"정의", include:"포함 기준", exclude:"제외 기준", memo:"메모", values:"겹치는 두 값"};
   var NAME_KEYS = ["axis","value","parent","name","alias","canonical","qid"];
   var LONG_KEYS = ["text","definition","include","exclude"];
-  var EV_KIND = {chunk_same:"같은 슬라이드", chunk_other:"다른 슬라이드", file_name:"파일 이름", doc_title:"문서 제목"};
+  var EV_KIND = {chunk_same:"같은 슬라이드", chunk_other:"다른 슬라이드", file_name:"파일 이름", doc_title:"문서 제목", typed:"직접 입력"};
   var ORIGIN = {llm:"LLM 초안", edited:"사람이 고침", human:"직접 씀"};
   var TOPIC = {axis_value:"축 값", axis:"축", question:"질문", term:"용어", general:"일반"};
 
@@ -314,10 +314,20 @@ const DATA = /*__DATA__*/null;
     return "";
   }
   function fieldLimit(k){ return NAME_KEYS.indexOf(k) >= 0 || k === "values" ? LIM.name : k === "memo" ? LIM.memo : LIM.long; }
+  // 규칙 범위: 1차(classify)는 축 이름, 3차(label)는 "축=값" 또는 질문 ID. 없으면 반영 때 RULE_SCOPE_MISSING으로 거부된다.
+  function scopeProblem(d){
+    var t = collapse(d.target);
+    if (d.stage === "label"){
+      var m = t.match(/^([^=]+)=(.+)$/);
+      if (/^Q-[A-Za-z0-9_-]{1,60}$/.test(t) || (m && (!AXIS_NAMES.length || AXIS_NAMES.indexOf(collapse(m[1])) >= 0))) return "";
+      return "대상 범위를 '축=값' 또는 질문 ID(Q-…)로 쓰세요";
+    }
+    return t && (!AXIS_NAMES.length || AXIS_NAMES.indexOf(t) >= 0) ? "" : "대상 축을 고르세요";
+  }
   // 문제가 있으면 문장, 없으면 "". 문제 있는 초안은 확정 건수에서 빠지고 확정 버튼을 막는다.
   function draftProblem(d){
     if (d.type === "rule"){
-      return textProblem(d.text, LIM.rule_text, "규칙 문장", true) || textProblem(d.target, LIM.name, "대상 축", false);
+      return textProblem(d.text, LIM.rule_text, "규칙 문장", true) || textProblem(d.target, LIM.name, "대상 축", false) || scopeProblem(d);
     }
     if (d.type === "example") return /^EX-[0-9a-f]{12}$/.test(d.example_id || "") ? "" : "사례 ID가 맞지 않습니다";
     if (d.type === "taxonomy"){
@@ -469,7 +479,7 @@ const DATA = /*__DATA__*/null;
       "라벨링 규칙 승인 파일(taxonomy/labeling_rules.json)에 규칙 " + (r.rules || 0) + "개 · 사례 " + (r.examples || 0) +
         "개를 반영했습니다(후보 승인 " + (r.patterns_approved || 0) + "). 다음 /BEOL-labeling 실행부터 프롬프트에 들어갑니다."];
     if (r.taxonomy) items.push("taxonomy 제안 " + r.taxonomy + "개를 수정 보드(출처 S7)에 올렸습니다" +
-      (a.board ? ": " + a.board.replace("[taxonomy-board] ", "") : "") + ". 보드에서 행 복사해 taxonomy.xlsx에 붙여넣으세요.");
+      (a.board ? ": " + a.board.replace("[taxonomy-board] ", "") : "") + ". 보드에서 고치고 '최종 완료'를 누르면 taxonomy.json에 씁니다.");
     if (bad) items.push("확정한 초안이 없거나 형식이 맞지 않은 답 " + bad + "개는 반영하지 않았습니다. 그 질문은 다음에 다시 올라옵니다.");
     if ((r.not_open || []).length) items.push("이미 반영했거나 닫힌 질문의 답 " + r.not_open.length + "개는 건너뛰었습니다.");
     items.push("질문 화면 서버를 닫았습니다. Claude가 마무리 보고를 합니다. 이 탭은 닫아도 됩니다.");
@@ -755,11 +765,12 @@ const DATA = /*__DATA__*/null;
     return card;
   }
 
-  function fieldLabel(f){
+  function fieldLabel(f, ctl){
     f = f || "";
     var k = f.split(":")[0], key = f.slice(f.indexOf(":") + 1);
     if (k === "axis") return "축 · " + key;
     if (k === "answer") return "질문 · " + key;
+    if (k === "control") return "대조 질문 · " + key + (ctl ? " (" + ctl.axis + "=" + ctl.value + ")" : "");
     return f;
   }
   function vals(v, cls){
@@ -779,7 +790,7 @@ const DATA = /*__DATA__*/null;
         : h("div", {class:"noprev", text:"미리보기 없음"});
       var info = h("div", {}, [
         h("div", {class:"evh", text:(v.record_id || "-") + " · " + (v.source_ws || "-") + " · " + label}),
-        h("div", {class:"fh"}, [h("b", {text:fieldLabel(v.field)}),
+        h("div", {class:"fh"}, [h("b", {text:fieldLabel(v.field, v.control)}),
           h("span", {class:"badge " + (v.kind || ""), text:v.kind === "corrected" ? "교정" : v.kind === "confirmed" ? "확인" : (v.kind || "")})])
       ]);
       var line = h("div", {class:"vals"}, [h("span", {class:"muted", text:"봇"})].concat(vals(v.bot, v.kind === "corrected" ? "bot" : ""),
@@ -944,16 +955,23 @@ const DATA = /*__DATA__*/null;
   function ruleFields(card, q, it, touched, showProb){
     var d = it.draft, locked = !!d.pattern_id;
     if (locked) card.appendChild(h("div", {class:"lockline", text:"교정 패턴 " + d.pattern_id + " 규칙 · 단계와 대상 축은 패턴이 정합니다"}));
-    var stage = h("select", {"aria-label":"단계", disabled:locked ? "disabled" : null, onchange:function(e){ d.stage = e.target.value; touched(); }},
+    var scopeBox = null;
+    function syncScope(){ if (scopeBox) { scopeBox.sel.style.display = d.stage === "label" ? "none" : ""; scopeBox.txt.style.display = d.stage === "label" ? "" : "none"; } }
+    var stage = h("select", {"aria-label":"단계", disabled:locked ? "disabled" : null, onchange:function(e){ d.stage = e.target.value; d.target = ""; target.value = ""; tgtTxt.value = ""; syncScope(); touched(); }},
       ["classify", "label"].map(function(v){ return h("option", {value:v, selected:(d.stage === "label" ? "label" : "classify") === v ? "selected" : null, text:STAGE[v]}); }));
     var names = AXIS_NAMES.slice();
-    if (d.target && names.indexOf(d.target) < 0) names.unshift(d.target);
+    if (d.stage !== "label" && d.target && names.indexOf(d.target) < 0) names.unshift(d.target);
     var target = h("select", {"aria-label":"대상 축", disabled:locked ? "disabled" : null, onchange:function(e){ d.target = e.target.value; touched(); }},
       [h("option", {value:"", selected:d.target ? null : "selected", text:"(대상 축 지정 없음)"})].concat(names.map(function(n){
         return h("option", {value:n, selected:d.target === n ? "selected" : null, text:n}); })));
+    var tgtTxt = h("input", {type:"text", "aria-label":"대상 범위(축=값 또는 질문 ID)", placeholder:"축=값 또는 질문 ID(Q-…)",
+      disabled:locked ? "disabled" : null, oninput:function(e){ d.target = e.target.value; touched(); }});
+    tgtTxt.value = d.stage === "label" ? (d.target || "") : "";
+    scopeBox = {sel:target, txt:tgtTxt};
+    syncScope();
     card.appendChild(h("div", {class:"grid2"}, [
       h("div", {class:"fld"}, [h("span", {class:"lb", text:"단계"}), stage]),
-      h("div", {class:"fld"}, [h("span", {class:"lb", text:"대상 축"}), target])
+      h("div", {class:"fld"}, [h("span", {class:"lb", text:"대상(1차 축 · 3차 축=값/질문 ID)"}), target, tgtTxt])
     ]));
     var cnt = h("div", {class:"cnt"});
     function setCnt(){ var n = collapse(d.text).length; cnt.textContent = n + " / " + LIM.rule_text; cnt.className = "cnt" + (n > LIM.rule_text ? " over" : ""); }

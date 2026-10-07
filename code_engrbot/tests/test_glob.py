@@ -42,6 +42,12 @@ _PREFIX = {
         "__pycache__/x.py": True,
         "labelbot/x.py": False,
     },
+    "rag/**": {
+        "rag/x.py": True,
+        "rag/functions/a/index.ts": True,
+        "ragx/a.py": False,
+        "tests/rag/a.py": False,
+    },
 }
 # 정책 path 리터럴(allow, ingest_modules, transport_modules, cli_modules, contract)
 _LITERAL = {

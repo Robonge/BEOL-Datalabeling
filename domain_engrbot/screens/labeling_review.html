@@ -114,8 +114,8 @@ ol.help{padding-left:20px;margin:6px 0}
                    REMOVE:"봇이 붙인 값을 사람이 뺐다", ADD:"봇이 놓친 값을 사람이 더했다",
                    ANSWER:"봇의 질문 답(O·X·N/A)을 사람이 뒤집었다", GEN_ANSWER:"봇의 검증 질문 답을 사람이 뒤집었다",
                    MANUAL:"엔지니어 답변이나 사람이 승인 파일에 직접 쓴 규칙"};
-  var EV_KIND = {chunk_same:"같은 슬라이드", chunk_other:"다른 슬라이드", file_name:"파일명", doc_title:"문서 제목"};
-  var MIX_ORDER = ["doc_title", "chunk_other", "chunk_same", "file_name"];
+  var EV_KIND = {chunk_same:"같은 슬라이드", chunk_other:"다른 슬라이드", file_name:"파일명", doc_title:"문서 제목", typed:"직접 입력"};
+  var MIX_ORDER = ["doc_title", "chunk_other", "chunk_same", "file_name", "typed"];
   var TEXT_MAX = DATA.text_max || 300;
   var KEY = "labeling_review:" + DATA.digest;
   // apply와 같은 금지 글자(제어·폭 없는·방향 제어 문자)와 프롬프트 치환 표식

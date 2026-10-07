@@ -14,7 +14,7 @@ BEOL 비정형 자료 라벨링 결과다. 읽기 전용 SELECT로 조회한다.
 | title | TEXT | 문서 속성의 제목 |
 | authored_at | TEXT | 작성일(YYYY-MM-DD) |
 | author | TEXT | 작성자 |
-| memo | TEXT | taxonomy.xlsx files 시트의 맥락 메모 |
+| memo | TEXT | 사용 안 함(항상 NULL). 예전 files 시트 맥락 메모 자리로, 하위 호환을 위해 열만 둔다 |
 | chunk_count | INTEGER | chunk 수 |
 
 ## file_locations
@@ -137,12 +137,12 @@ chunk별 질문 답
 
 ## 분류 체계
 
-- **구조/레이어** (분류, 다중값 Y): M0, M1, I1(<M1), X1(<M1), L1(<M1), M2, M3, X3(<M3), M4, Fx, Dx, VA, V1, V2, V3, Sx, JHV
+- **구조/레이어** (분류, 다중값 Y): M0, M1, I1(<M1), X1(<M1), L1(<M1), M2, M3, X3(<M3), M4, Fx, Dx, VA, V1, V2, V3, Sx, JHV, I2(<M2)
 - **Main step** (분류, 다중값 Y): AASI, ASEI, AMI, ACI, API, AHI, AEI, ASI
 - **공정 모듈** (분류, 다중값 Y): Litho, Etch, Metal, CMP, Clean, CVD
 - **제품·세대** (분류, 다중값 Y): SF1.4, SF1.0, SF0.7, SF2, SF2X
 - **REMSPC** (분류, 다중값 Y): Reticle, Equipment, Materials, Scheme, Process, Controllability
-- **Patterning/scheme** (분류, 다중값 Y): EUV-SAUP, EUV-SET, ArF-SET, ArF-LELE, Cu dual damascene, Cu single damascene, Ru subtractive, Ru semi-damascene
+- **Patterning/scheme** (분류, 다중값 Y): EUV-SAUP, EUV-SET, ArF-SET, ArF-LELE, Cu dual damascene, Cu single damascene, Ru subtractive, Ru semi-damascene, SAV(<Cu dual damascene), Trench-first(<Cu dual damascene)
 - **Material** (분류, 다중값 Y): CMP slurry, Clean chemical, IMD, BM/Liner, Metallization
 - **불량 모드** (분류, 다중값 Y): Open, Short, Reliability, EM(<Reliability), TDDB(<Reliability), Parametric, Rs 산포(<Parametric), MHC, Via Rc high(<MHC), Line R high(<MHC), MinA void(<Open)
 - **물리 현상** (분류, 다중값 Y): Void, metal bridge, not open, unCMP, overCMP, hardmask loss, dishing, Particle, CD imbalance, CD small, CD 산포불량, low-k plasma damage, 계면 산화

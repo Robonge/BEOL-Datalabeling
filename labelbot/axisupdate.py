@@ -12,21 +12,22 @@ start()는 command='axis-update' 실행을 만들고 기준 실행의 행을 SQL
 - 기준 실행에서 분류에 실패한 chunk: chunk_type·비대상 축이 없어 부분 분류로 채울 수 없다. 범위에서 빼고 실패 기록을
   옮겨 CLASSIFY_FAILED 불량으로 남긴다(전체 /BEOL-labeling 재실행 대상).
 - 잠금: logs/axis_update.lock.json(실행 ID·시작 시각만). 있으면 AXIS_UPDATE_LOCKED, LOCK_STALE_SEC보다 오래되면 무시한다.
+  rules-update도 같은 잠금을 쓴다. 실행 체인·기준 실행 조건은 runchain에 있다.
 """
 import json
 import os
 import time
 
-from labelbot import store, taxdiff, util
+from labelbot import runchain, store, taxdiff, util
 
 COMMAND = "axis-update"
 NO_PREVIOUS_RUN, NO_AXIS_CHANGE = taxdiff.NO_PREVIOUS_RUN, "NO_AXIS_CHANGE"
-PREV_NOT_REVIEWED, REVIEW_IN_PROGRESS = "PREV_NOT_REVIEWED", "REVIEW_IN_PROGRESS"
-PREV_PUSH_PENDING, AXIS_UPDATE_LOCKED = "PREV_PUSH_PENDING", "AXIS_UPDATE_LOCKED"
+PREV_NOT_REVIEWED, REVIEW_IN_PROGRESS = runchain.PREV_NOT_REVIEWED, runchain.REVIEW_IN_PROGRESS
+PREV_PUSH_PENDING, AXIS_UPDATE_LOCKED = runchain.PREV_PUSH_PENDING, "AXIS_UPDATE_LOCKED"
 AXIS_UPDATE_LOCK_LOST = "AXIS_UPDATE_LOCK_LOST"
 LOCK_STALE_SEC = 6 * 3600
 LOCK_GRACE_SEC = 600  # 잠금 주인이 아직 runs 행을 만들기 전인 유예
-_PARENT = "parent_run:"
+_PARENT = runchain.PARENT
 
 
 def _q(names):
@@ -37,17 +38,10 @@ def run_info(con, run_id):
     """axis-update 실행이면 {run_id, parent, target, removed, values_added_only, axes, confirmed, 건수…}, 아니면 None.
 
     axes는 그 실행이 라벨을 가진 활성 축, confirmed는 이어받은 확인 상태({chunk_id: 확인 해시})다.
+    rules-update 실행까지 보려면 runchain.run_info를 쓴다.
     """
-    if not run_id:
-        return None
-    info = store.meta_json(con, "axis_update:" + run_id)
-    if not isinstance(info, dict):
-        return None
-    info = dict(info, run_id=run_id, parent=store.meta_get(con, _PARENT + run_id))
-    for k in ("target", "removed", "values_added_only", "axes"):
-        info[k] = list(info.get(k) or [])
-    info["confirmed"] = store.meta_json(con, "axis_update_confirmed:" + run_id) or {}
-    return info
+    info = runchain.run_info(con, run_id)
+    return info if info and info["command"] == COMMAND else None
 
 
 def target_axes(con, run_id):
@@ -56,22 +50,9 @@ def target_axes(con, run_id):
     return set(info["target"]) if info else None
 
 
-def chain(con, run_id):
-    """run_id부터 부모를 따라 올라가는 axis-update 실행 정보 목록(가까운 실행이 먼저). 보통 실행을 만나면 멈춘다."""
-    out, seen = [], set()
-    while run_id and run_id not in seen:
-        seen.add(run_id)
-        info = run_info(con, run_id)
-        if info is None:
-            break
-        out.append(info)
-        run_id = info["parent"]
-    return out
-
-
-def dropped_axes(info):
-    """이전 교정을 적용하지 않는 축: 삭제 축과, 값 추가만 된 축을 뺀 대상 축(D5)."""
-    return (set(info["target"]) - set(info["values_added_only"])) | set(info["removed"])
+# 실행 체인·기준 실행 조건은 runchain에 있다(rules-update와 같이 쓴다). 이름은 그대로 남긴다.
+chain, dropped_axes, new_run_id = runchain.chain, runchain.dropped_axes, runchain.new_run_id
+_reviewed, _push_pending = runchain.reviewed, runchain.push_pending
 
 
 def _decide(d, tax):
@@ -122,31 +103,6 @@ def _copy_where(tax, target, removed):
     ans, args = _answer_filter(tax, target, removed)
     axis_cond = "(kind='axis' AND key IN (%s))" % _q(axes) if axes else "0"
     return "NOT (%s OR %s)" % (axis_cond, ans), axes + args
-
-
-def _reviewed(ws, con, prev):
-    """기준 실행의 사람 검수 상태: None(끝남 또는 검수할 불량 없음), REVIEW_IN_PROGRESS, PREV_NOT_REVIEWED."""
-    from labelbot.serve import done_signal_path, start_signal_path
-
-    if os.path.isfile(done_signal_path(ws.root, prev)):
-        return None
-    if con.execute("SELECT 1 FROM corrections WHERE review_run_id=? LIMIT 1", (prev,)).fetchone():
-        return None
-    if not con.execute("SELECT 1 FROM flagged_chunks WHERE run_id=? LIMIT 1", (prev,)).fetchone():
-        return None
-    return REVIEW_IN_PROGRESS if os.path.isfile(start_signal_path(ws.root, prev)) else PREV_NOT_REVIEWED
-
-
-def _push_pending(ws, con, prev):
-    """supabase를 쓰는데 기준 실행의 확정 라벨이 아직 다 적재되지 않았으면 PREV_PUSH_PENDING(vectorpush 기록 재사용).
-
-    axis-update는 file_locations를 새 실행으로 옮기므로, 그 뒤에는 기준 실행을 embed·push할 수 없다.
-    """
-    if not (ws.config.get("supabase") or {}).get("enabled"):
-        return None
-    from labelbot import vectorpush
-
-    return PREV_PUSH_PENDING if vectorpush.unpushed(ws, con, prev) else None
 
 
 def _lock_path(ws):
@@ -296,15 +252,6 @@ def plan(ws, con, tax, own_lock=None):
             "SELECT COUNT(*) FROM corrections WHERE target_kind='axis' AND target_key IN (%s)"
             " AND chunk_id IN (SELECT chunk_id FROM labels WHERE run_id=?)" % _q(gone), gone + [prev]).fetchone()[0]
     return out
-
-
-def new_run_id(prev):
-    """기준 실행보다 뒤에 정렬되는 실행 ID(최신 실행은 run_id 정렬로 고른다)."""
-    run_id = util.new_run_id()
-    while run_id <= prev:
-        time.sleep(0.2)
-        run_id = util.new_run_id()
-    return run_id
 
 
 def start(ws, con, p, tax, run_id=None):

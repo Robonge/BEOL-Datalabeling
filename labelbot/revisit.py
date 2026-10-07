@@ -2,7 +2,7 @@
 
 요청은 검수 교정 파일(review JSON)의 revisits 배열로 온다. 라벨·label_hash는 바꾸지 않는다.
 메모와 제안 값은 revisit_requests 표, reports/taxonomy_revisit.md·.jsonl(누적), apply가 쓰는
-taxonomy.xlsx 옆 taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md·.html·.json(실행별)에만 쓴다.
+taxonomy.json 옆 taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md·.html·.json(실행별)에만 쓴다.
 반환값·예외 메시지에는 사유 코드와 건수만 넣는다.
 """
 import datetime
@@ -321,23 +321,23 @@ def write_reports(ws, con, tax):
         util.write_text(ws.path("reports", "taxonomy_revisit.md"), "\n".join(lines) + "\n")
         return 0
     groups = _paste_groups(rs, tax)
-    lines += ["## taxonomy 시트 붙여넣기 행 (NO_FIT_VALUE 제안 값, A~K 탭 구분)", ""]
+    lines += ["## taxonomy 행 초안 (NO_FIT_VALUE 제안 값, A~K 탭 구분)", ""]
     if groups:
         lines += ["| 축 | 제안 값 | 상위값 | 요청 수 | 검수 실행 |", "|---|---|---|---|---|"]
         paste = []
         for axis, value, parent, n, rids, skip in groups:
-            note = _cell(", ".join(rids)) + (" (%s: 붙여넣기 행 생략)" % skip if skip else "")
+            note = _cell(", ".join(rids)) + (" (%s: 행 초안 생략)" % skip if skip else "")
             lines.append("| %s | %s | %s | %d | %s |" % (_cell(axis), _cell(value), _cell(parent), n, note))
             if not skip:
                 row = candidates.paste_row({"kind": "new_value", "content": "%s|%s" % (axis, value),
                                             "parent": parent, "source": "review"})
                 paste.append(row.replace("```", ""))
         lines.append("")
-        lines += (["```"] + paste + ["```"]) if paste else ["붙여넣기 행 없음."]
+        lines += (["```"] + paste + ["```"]) if paste else ["행 초안 없음."]
     else:
         lines.append("NO_FIT_VALUE 제안 값이 없다.")
     lines += ["", "새 축(NEW_AXIS) 제안은 축 정의 행의 D~G(다중값·계층·중복 알림 제외·종류)를 사람이 정해야 하므로 "
-                  "붙여넣기 행을 내지 않는다.", ""]
+                  "행 초안을 내지 않는다.", ""]
     for rid in runs:
         rr = [r for r in rs if r["review_run_id"] == rid]
         lines += ["## 검수 실행 %s: %d건" % (rid, len(rr)), ""] + _request_lines(rr)
@@ -373,14 +373,14 @@ def _request_lines(rr):
 
 REQUESTS_DIRNAME = "taxonomy_revisit_requests"
 SHEET_COLUMNS = taxonomy.HEADERS["taxonomy"]  # A~K 11열
-BLOCK_LABELS = {"paste": "바로 붙여넣기", "check": "확인 필요", "list": "목록만"}
+BLOCK_LABELS = {"paste": "바로 반영 가능", "check": "확인 필요", "list": "목록만"}
 NEW_AXIS_CHECK = "축 정의 행의 D~G(다중값·계층·중복 알림 제외·종류)를 정해야 한다"
 _HTTP = re.compile(r"h(?=ttp)", re.I)
 _CTRL = re.compile(r"[\t\r\n]+")
 
 
 def requests_dir(ws):
-    """실행별 재검토 파일 폴더: taxonomy.xlsx가 있는 폴더 아래 taxonomy_revisit_requests/."""
+    """실행별 재검토 파일 폴더: taxonomy.json이 있는 폴더 아래 taxonomy_revisit_requests/."""
     return os.path.join(os.path.dirname(os.path.abspath(ws.taxonomy_path)), REQUESTS_DIRNAME)
 
 
@@ -451,13 +451,12 @@ def _run_md(rid, gen, rs, paste, check, block):
         by_reason[r["reason"]] = by_reason.get(r["reason"], 0) + 1
     n_list = sum(1 for b in block.values() if b == "list")
     lines = ["# taxonomy 재검토 요청: 검수 실행 %s" % rid, "", "- 생성: %s" % gen,
-             "- 요청: %d건 (바로 붙여넣기 행 %d, 확인 필요 행 %d, 목록만 %d건)" % (len(rs), len(paste), len(check), n_list),
+             "- 요청: %d건 (바로 반영 가능 행 %d, 확인 필요 행 %d, 목록만 %d건)" % (len(rs), len(paste), len(check), n_list),
              "- 사유별: %s" % ", ".join("%s %d" % (c, by_reason[c]) for c in REASONS if c in by_reason),
-             "- 붙이는 법: 코드 블록의 행(머리글 없음, A열부터 탭 구분 11칸)을 복사해 taxonomy 시트 A열의 빈 행에 붙인다. "
-             "같은 이름의 .html에서 표를 드래그 복사해도 된다. 사용 여부(K)는 빈칸(바로 켜짐)이다.",
-             "- 붙인 뒤에 다음 apply를 한다. 붙이기 전에 다음 apply를 하면 같은 값이 다음 파일에도 나와, 두 번 붙이면 값 중복 오류로 시트 전체를 읽지 못한다.",
+             "- 반영하는 법: 이 요청은 taxonomy 보드(python -m domain_engrbot taxonomy-board --serve)에 카드로 올라온다. "
+             "카드에서 고치고 반영함 → 최종 완료를 누르면 봇이 taxonomy.json에 쓴다. 아래 행(A~K 탭 구분 11칸)은 참고용 초안이다.",
              "- 이 파일은 사람이 적은 메모를 담는다.", "",
-             "## 바로 붙여넣기 (taxonomy 시트 A~K)", ""]
+             "## 바로 반영 가능 (taxonomy 행 A~K)", ""]
     if paste:
         lines += ["```"] + _code_rows(c for c, _ in paste) + ["```", "",
                   "| 행 | 축 | 값 | 상위값 | 요청 # |", "|---|---|---|---|---|"]
@@ -465,8 +464,8 @@ def _run_md(rid, gen, rs, paste, check, block):
             lines.append("| %d | %s | %s | %s | %s |" % (j, _cell(c[0]), _cell(c[1]), _cell(c[2]),
                                                        ", ".join("#%d" % n for n in nos)))
     else:
-        lines.append("바로 붙여넣을 행이 없다.")
-    lines += ["", "## 확인 필요 (고친 뒤 붙여넣기)", ""]
+        lines.append("바로 반영할 행이 없다.")
+    lines += ["", "## 확인 필요 (고친 뒤 반영)", ""]
     if check:
         lines += ["```"] + _code_rows(c for c, _, _ in check) + ["```", "",
                   "| 행 | 축 | 값 | 상위값 | 사유 | 요청 # |", "|---|---|---|---|---|---|"]
@@ -477,7 +476,7 @@ def _run_md(rid, gen, rs, paste, check, block):
         lines.append("확인할 행이 없다.")
     lines += ["", "## 요청 목록", "",
               "- 시트 배치: %s" % ", ".join("#%d %s" % (i, BLOCK_LABELS[block[i]]) for i in range(1, len(rs) + 1)),
-              "- AMBIGUOUS_DEF·VALUE_OVERLAP·OTHER·NEED_QUESTION은 엑셀 행을 내지 않는다(질문은 questions 시트에 직접 쓴다).",
+              "- AMBIGUOUS_DEF·VALUE_OVERLAP·OTHER·NEED_QUESTION은 행 초안을 내지 않는다(질문은 questions 시트에 직접 쓴다).",
               ""] + _request_lines(rs)
     return "\n".join(lines).rstrip("\n") + "\n"
 
@@ -497,19 +496,18 @@ def _run_html(rid, gen, rs, paste, check, block):
          "table.sheet td{min-width:48px;white-space:nowrap}td.memo{white-space:pre-wrap;max-width:480px}"
          "p.note{color:#555;font-size:13px}</style></head><body>",
          "<h1>taxonomy 재검토 요청: 검수 실행 %s</h1>" % _h(rid),
-         '<p class="note">생성 %s. 요청 %d건. 표의 첫 데이터 칸(A)부터 마지막 칸(K)까지 드래그해 복사하고 '
-         "taxonomy 시트 A열의 빈 행에 붙인다. 머리글 행은 선택되지 않는다. 사용 여부(K)는 빈칸(바로 켜짐)이다. "
-         "붙인 뒤에 다음 apply를 한다. 같은 값을 두 번 붙이면 값 중복 오류로 시트 전체를 읽지 못한다. "
+         '<p class="note">생성 %s. 요청 %d건. 이 요청은 taxonomy 보드에 카드로 올라온다. 카드에서 고치고 '
+         "반영함 → 최종 완료를 누르면 봇이 taxonomy.json에 쓴다. 아래 표(A~K)는 참고용 행 초안이다. "
          "이 파일은 사람이 적은 메모를 담는다.</p>" % (_h(gen), len(rs)),
-         "<h2>바로 붙여넣기 (%d행)</h2>" % len(paste)]
+         "<h2>바로 반영 가능 (%d행)</h2>" % len(paste)]
     if paste:
         p.append(_html_table([c for c, _ in paste], "sheet paste"))
         p.append("<table><thead><tr><th>행</th><th>요청 #</th></tr></thead><tbody>%s</tbody></table>" % "".join(
             "<tr><td>%d</td><td>%s</td></tr>" % (j, ", ".join("#%d" % n for n in nos))
             for j, (_, nos) in enumerate(paste, 1)))
     else:
-        p.append('<p class="note">바로 붙여넣을 행이 없다.</p>')
-    p.append("<h2>확인 필요: 고친 뒤 붙여넣기 (%d행)</h2>" % len(check))
+        p.append('<p class="note">바로 반영할 행이 없다.</p>')
+    p.append("<h2>확인 필요: 고친 뒤 반영 (%d행)</h2>" % len(check))
     if check:
         p.append(_html_table([c for c, _, _ in check], "sheet check"))
         p.append("<table><thead><tr><th>행</th><th>사유</th><th>요청 #</th></tr></thead><tbody>%s</tbody></table>" % "".join(
@@ -518,7 +516,7 @@ def _run_html(rid, gen, rs, paste, check, block):
     else:
         p.append('<p class="note">확인할 행이 없다.</p>')
     p.append("<h2>요청 목록 (%d건)</h2>" % len(rs))
-    p.append('<p class="note">AMBIGUOUS_DEF·VALUE_OVERLAP·OTHER·NEED_QUESTION은 엑셀 행을 내지 않는다'
+    p.append('<p class="note">AMBIGUOUS_DEF·VALUE_OVERLAP·OTHER·NEED_QUESTION은 행 초안을 내지 않는다'
              "(질문은 questions 시트에 직접 쓴다).</p>")
     head = ["#", "chunk ID", "파일 ID", "대상", "키", "사유", "시트 배치", "봇 값", "사람 교정", "제안·관련 값", "메모"]
     p.append("<table><thead><tr>%s</tr></thead><tbody>" % "".join("<th>%s</th>" % _h(x) for x in head))

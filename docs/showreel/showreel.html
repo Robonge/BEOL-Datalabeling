@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920, initial-scale=1">
+<title>BEOL AX Showreel</title>
+<link rel="stylesheet" href="./reel.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/build/three.module.js", "three/addons/": "./vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl" width="1920" height="1080"></canvas>
+  <div id="ui"></div>
+</div>
+<script type="module">
+import { createEngine, DURATION, FPS, W, H, clamp } from './engine.js';
+import { el, Rail } from './ui.js';
+import hook from './scenes/01_hook.js';
+import overview from './scenes/02_overview.js';
+import label from './scenes/03_label.js';
+import verify from './scenes/04_verify.js';
+import learn from './scenes/05_learn.js';
+import vault from './scenes/06_vault.js';
+import close from './scenes/07_close.js';
+
+const params = new URLSearchParams(location.search);
+const ui = document.getElementById('ui');
+// overlay stacking: cards (anchored to 3D) < world labels < titles < rail/counter
+const layers = {};
+for (const name of ['cards', 'world', 'titles', 'chrome']) layers[name] = el('div', `layer layer-${name}`, ui);
+
+let resolveReady;
+const ready = new Promise((r) => { resolveReady = r; });
+let ctx = null;
+const seek = (t) => { if (ctx) ctx.seek(t); };
+window.REEL = { duration: DURATION, fps: FPS, width: W, height: H, ready, seek };
+
+async function boot() {
+  await document.fonts.ready;
+  ctx = createEngine({ canvas: document.getElementById('gl'), overlay: ui });
+  ctx.layers = layers;
+  const list = [hook, overview, label, verify, learn, vault, close];
+  for (const s of list) {
+    const res = s.setup(ctx) || {};
+    ctx.register({ ...s, root: res.root || null, dom: res.dom || null });
+  }
+  const rail = new Rail(layers.chrome, ['SLIDE', 'LABEL', 'VERIFY', 'LEARN', 'VAULT']);
+  const steps = [{ k: 1, T: 2.5 }, { k: 2, T: 5.0 }, { k: 3, T: 7.5 }, { k: 4, T: 10.0 }];
+  ctx.setUI((t) => rail.update(t, { steps, show: [2.6, 3.0], finale: 13.0 }));
+  // compile + first frame
+  ctx.seek(0);
+  ctx.seek(+params.get('t') || 0);
+  resolveReady();
+}
+boot().catch((e) => { console.error(e); resolveReady(); });
+
+if (!params.has('render')) {
+  ready.then(() => {
+    if (params.has('t')) return; // frozen frame
+    let playing = true, t = 0, last = performance.now();
+    const loop = (now) => {
+      if (playing) { t = (t + (now - last) / 1000) % DURATION; seek(t); }
+      last = now; requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+    addEventListener('keydown', (e) => {
+      if (e.code === 'Space') { playing = !playing; e.preventDefault(); }
+      if (e.code === 'ArrowRight') { playing = false; t = clamp(t + 1 / FPS, 0, DURATION); seek(t); }
+      if (e.code === 'ArrowLeft') { playing = false; t = clamp(t - 1 / FPS, 0, DURATION); seek(t); }
+    });
+  });
+}
+</script>
+</body>
+</html>

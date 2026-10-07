@@ -7,7 +7,7 @@
       "runtimeArgs": [
         "C:/Users/dltkd/Desktop/261004 BEOL AX day2/.claude/skills/BEOL-labeling/scripts/serve_screens.py",
         "--workspace",
-        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261006-134010",
+        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261007-195113",
         "--port",
         "8771"
       ],
@@ -24,6 +24,46 @@
         "8772"
       ],
       "port": 8772
+    },
+    {
+      "name": "review-preview-195113",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8798",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261007-195113/screens"
+      ],
+      "port": 8798
+    },
+    {
+      "name": "docs-static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8790",
+        "--directory",
+        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/docs"
+      ],
+      "port": 8790
+    },
+    {
+      "name": "rag-ui",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8795",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/rag"
+      ],
+      "port": 8795
     }
   ]
 }

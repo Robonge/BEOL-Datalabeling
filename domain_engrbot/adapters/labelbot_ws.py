@@ -1,7 +1,7 @@
 """labelbot 작업 폴더 → 입력 번들(4.1절 중립 계약).
 
 - work.sqlite는 읽기 전용(mode=ro)으로만 연다. 쓰지 않는다.
-- pipeline.json과 taxonomy.xlsx는 labelbot.ingest.read_input으로 읽는다. pipeline.json이 없어도 만들지 않는다.
+- pipeline.json과 taxonomy.json은 labelbot.ingest.read_input으로 읽는다. pipeline.json이 없어도 만들지 않는다.
 - 기대하는 표·열이 없으면 BundleError("ADAPTER_SCHEMA_MISMATCH", "<표.열,...>")로 멈춘다(13.1절 R1).
 - labelbot을 import할 수 있는 곳은 이 모듈, io.py, llm_http.py뿐이다(2절).
 """
@@ -11,13 +11,12 @@ import sqlite3
 import urllib.parse
 
 from labelbot import ingest as lb_ingest
+from labelbot import candidates as lb_candidates
 from labelbot import taxonomy as lb_taxonomy
 from labelbot import axisupdate as lb_axisupdate
-from labelbot import candidates as lb_candidates
 from labelbot import finals as lb_finals
 from labelbot import store as lb_store
 from labelbot import util as lb_util
-from labelbot import xlsx as lb_xlsx
 from labelbot.synonyms import SynonymTable
 from labelbot.workspace import DEFAULT_CONFIG
 
@@ -95,7 +94,7 @@ def taxonomy_path(ws_root, cfg):
     p = cfg.get("taxonomy_path")
     if p and not os.path.isabs(p):
         p = os.path.join(ws_root, p)
-    return p or os.path.join(ws_root, "taxonomy.xlsx")
+    return p or os.path.join(ws_root, "taxonomy.json")
 
 
 def snapshot(tax):
@@ -117,6 +116,7 @@ def snapshot(tax):
 
 
 GEN_PREFIX = "Q-GEN-"
+CTL_PREFIX = "Q-CTL-"
 
 
 def generated_questions(con):
@@ -129,14 +129,28 @@ def generated_questions(con):
             for r in con.execute("SELECT qid, axis, value, text FROM gen_questions ORDER BY qid")]
 
 
+def control_questions(con):
+    """labelbot이 붙지 않은 라벨로 만든 대조 질문(ctl_questions 표, 선택). 표가 없으면 빈 dict다.
+    반환: {qid: {"axis", "value", "text"}}. 답은 labels kind='control'에 남고 확정 라벨에 들어가지 않는다."""
+    cols = {r[1] for r in con.execute("PRAGMA table_info(ctl_questions)")}
+    if not {"qid", "axis", "value", "text"} <= cols:
+        return {}
+    return {r["qid"]: {"axis": r["axis"], "value": r["value"], "text": r["text"] or ""}
+            for r in con.execute("SELECT qid, axis, value, text FROM ctl_questions ORDER BY qid")}
+
+
 def load_taxonomy(ws_root, cfg):
     p = taxonomy_path(ws_root, cfg)
     if not os.path.isfile(p):
         raise model.BundleError("ADAPTER_TAXONOMY_MISSING")
     try:
-        data = lb_ingest.read_input(p, None, expect=".xlsx")
+        if p.lower().endswith(".xlsx"):
+            raise lb_ingest.InputError("TAXONOMY_XLSX_NEEDS_MIGRATION")
+        data = lb_ingest.read_input(p, None)
     except lb_ingest.InputError as e:
         raise model.BundleError("ADAPTER_TAXONOMY_UNREADABLE", e.reason_code)
+    except OSError:
+        raise model.BundleError("ADAPTER_TAXONOMY_UNREADABLE", "OS_ERROR")
     try:
         tax = lb_taxonomy.parse_bytes(data)
     except lb_taxonomy.TaxonomyError:
@@ -310,6 +324,7 @@ def load(ws_root, labeler_run_id=None):
         if run is None:
             raise model.BundleError("LABELER_RUN_NOT_FOUND", run_id)
         snap["questions"] += generated_questions(con)
+        controls = control_questions(con)
         run_sheet_hashes = _json(run["sheet_hashes"], {}) or {}
         label_rows = {}
         for r in con.execute("SELECT * FROM labels WHERE run_id=? ORDER BY id", (run_id,)):
@@ -365,7 +380,7 @@ def load(ws_root, labeler_run_id=None):
     sources = {fid: _source(f) for fid, f in files.items()}
     meta = {"adapter": "labelbot_ws", "file_names": {fid: f["file_name"] for fid, f in files.items()},
             "llm_cfg": cfg["llm"], "limits": cfg["limits"], "corrections": reviewed, "slide_previews": previews,
-            "population_missing_chunks": missing, "labeler_flagged": flagged}
+            "population_missing_chunks": missing, "labeler_flagged": flagged, "control_questions": controls}
     b = model.Bundle(run_id, sources, units, records, snap, WsLoader(ws_root), meta=meta)
     model.check_bundle(b)
     return b
@@ -491,22 +506,26 @@ def load_units_only(ws_root, file_ids=None):
 
 
 # ---- taxonomy 수정 보드용 읽기(domain_engrbot.taxonomy_board) --------------------------------
-# xlsx는 읽기만 한다. 오류에는 시트·행·코드만 넣고 셀 내용은 넣지 않는다.
+# taxonomy.json 읽기. 오류에는 시트·행·코드만 넣고 셀 내용은 넣지 않는다.
 
 TAXONOMY_RESERVED = lb_taxonomy.RESERVED
 norm_key = lb_taxonomy.norm_key    # NFKC, 소문자, 공백 제거
 nfkc = lb_util.nfkc
-safe_cell = lb_candidates._safe    # 수식 시작 문자(= + - @) 앞에 '
 
 
 def taxonomy_headers():
-    return {k: list(v) for k, v in lb_taxonomy.HEADERS.items()}
+    """시트별 열 이름. rejected는 taxonomy.json 안 기각 목록의 열이다."""
+    out = {k: list(v) for k, v in lb_taxonomy.HEADERS.items()}
+    out["rejected"] = list(lb_taxonomy.REJECTED_HEADER)
+    return out
 
 
 def read_taxonomy_bytes(path):
-    """taxonomy.xlsx → bytes(read_input, 시그니처 확인). 실패하면 BundleError("TAXONOMY_READ_FAILED", 사유 코드)."""
+    """taxonomy.json → bytes(read_input). 실패하면 BundleError("TAXONOMY_READ_FAILED", 사유 코드)."""
+    if str(path).lower().endswith(".xlsx"):
+        raise model.BundleError("TAXONOMY_READ_FAILED", "TAXONOMY_XLSX_NEEDS_MIGRATION")
     try:
-        return lb_ingest.read_input(path, None, expect=".xlsx")
+        return lb_ingest.read_input(path, None)
     except lb_ingest.InputError as e:
         raise model.BundleError("TAXONOMY_READ_FAILED", e.reason_code)
     except OSError:
@@ -518,22 +537,104 @@ def parse_taxonomy_bytes(b):
     try:
         return lb_taxonomy.parse_bytes(b), []
     except lb_taxonomy.TaxonomyError as e:
-        return None, [{"sheet": i.sheet, "row": i.row, "code": i.code} for i in e.issues]
+        return None, _issue_dicts(e.issues)
+
+
+def taxonomy_doc(b):
+    """taxonomy.json bytes → doc dict. JSON이 아니면 BundleError("TAXONOMY_PARSE_ERROR", 코드)."""
+    try:
+        return lb_taxonomy.decode_doc(b)
+    except lb_taxonomy.TaxonomyError as e:
+        raise model.BundleError("TAXONOMY_PARSE_ERROR", e.issues[0].code)
 
 
 def taxonomy_raw_rows(b, sheet):
-    """시트의 데이터 행 [(행 번호, 정의 열 셀)]. 파서 _load와 같이 머리글 다음 행부터 정의 열 수만큼 자르고 빈 행은 뺀다.
-    시트가 없으면 None. xlsx를 못 읽으면 BundleError("TAXONOMY_PARSE_ERROR", 코드)."""
-    width = len(lb_taxonomy.HEADERS[sheet])
+    """시트(taxonomy·questions·synonyms·rejected)의 데이터 행 [(행 번호, 정의 열 칸)]. 빈 행은 뺀다.
+    행 번호는 목록 index + 2(머리글이 1행)다. 목록이 없으면 None. JSON을 못 읽으면 BundleError("TAXONOMY_PARSE_ERROR", 코드)."""
+    return lb_taxonomy.sheet_rows(taxonomy_doc(b), sheet)
+
+
+# ---- taxonomy.json 읽기·저장(보드·편집기). domain_engrbot은 labelbot을 이 어댑터로만 쓴다 ----------------
+
+TaxonomyConflict = lb_taxonomy.TaxonomyConflict   # reason_code TAXONOMY_CHANGED
+# 동의어 후보 기준(엄밀한 동의어만, labelbot candidates와 같은 규칙)
+synonym_reject_code = lb_candidates.synonym_reject_code
+SYN_MIN_FREQ = lb_candidates.SYN_MIN_FREQ
+TaxonomyError = lb_taxonomy.TaxonomyError
+REJECTED_HEADER = list(lb_taxonomy.REJECTED_HEADER)
+row_obj = lb_taxonomy.row_obj
+row_cells = lb_taxonomy.row_cells
+normalize_taxonomy_doc = lb_taxonomy.normalize_doc
+diff_taxonomy_docs = lb_taxonomy.diff_docs
+
+
+def _issue_dicts(issues):
+    return [{"sheet": i.sheet, "row": i.row, "code": i.code} for i in issues]
+
+
+def load_taxonomy_doc(path):
+    """taxonomy.json → (doc, 버전). .xlsx면 BundleError("TAXONOMY_READ_FAILED", "TAXONOMY_XLSX_NEEDS_MIGRATION")."""
+    b = read_taxonomy_bytes(path)
+    return taxonomy_doc(b), lb_taxonomy.doc_version(b)
+
+
+def check_taxonomy_doc(doc):
+    """저장 전 검증. 반환: (오류 [{"sheet", "row", "code"}], 경고 [같은 형식])."""
+    errors, warnings = lb_taxonomy.check_doc(doc)
+    return _issue_dicts(errors), _issue_dicts(warnings)
+
+
+def save_taxonomy_doc(path, doc, base_version, by):
+    """원자적 저장(버전 확인·검증·이력 taxonomy_history.jsonl·잠금). 반환: 새 버전.
+    버전이 다르면 TaxonomyConflict, 검증 실패면 TaxonomyError(issues는 _issue_dicts로 바꿔 쓴다)."""
+    return lb_taxonomy.save_doc(path, doc, base_version, by)
+
+
+def taxonomy_error_issues(e):
+    return _issue_dicts(e.issues)
+
+
+class TaxonomyCommitError(Exception):
+    """commit_taxonomy 거절. code는 사유 코드, status는 HTTP 상태, issues는 검증 오류 [{"sheet", "row", "code"}],
+    detail은 읽기 실패의 하위 사유 코드(없으면 None)."""
+    STATUS = {"TAXONOMY_NOT_FOUND": 404, "TAXONOMY_READ_FAILED": 500, "TAXONOMY_CHANGED": 409,
+              "TAXONOMY_INVALID": 400, "TAXONOMY_WRITE_FAILED": 500}
+
+    def __init__(self, code, issues=None, detail=None):
+        Exception.__init__(self, code)
+        self.code, self.status = code, self.STATUS[code]
+        self.issues, self.detail = list(issues or []), detail
+
+
+def commit_taxonomy(path, base_version, build, by, preview=False):
+    """보드·편집기 공통 저장 절차: 읽기 → 버전 비교 → build(지금 doc)로 새 doc → diff → 검증 → (저장).
+
+    preview거나 바뀐 행이 없으면 쓰지 않는다. 반환: {"diff", "issues"(오류), "warnings", "version", "saved"}.
+    거절은 TaxonomyCommitError: TAXONOMY_NOT_FOUND(404)·TAXONOMY_READ_FAILED(500, detail)·TAXONOMY_CHANGED(409)·
+    TAXONOMY_INVALID(400, issues, 파일 그대로)·TAXONOMY_WRITE_FAILED(500). build가 던진 예외는 그대로 올린다."""
+    if not os.path.isfile(path):
+        raise TaxonomyCommitError("TAXONOMY_NOT_FOUND")
     try:
-        found, _ = lb_xlsx.read_workbook(b).find(sheet)
-    except lb_xlsx.XlsxError as e:
-        raise model.BundleError("TAXONOMY_PARSE_ERROR", e.code)
-    if found is None:
-        return None
-    out = []
-    for number, cells in found.iter_rows(2):
-        cells = list(cells[:width])
-        if any(c != "" for c in cells):
-            out.append((number, cells + [""] * (width - len(cells))))
+        current, version = load_taxonomy_doc(path)
+    except model.BundleError as e:
+        raise TaxonomyCommitError("TAXONOMY_READ_FAILED", detail=e.detail or e.reason_code)
+    if version != base_version:
+        raise TaxonomyCommitError("TAXONOMY_CHANGED")
+    new = build(current)
+    diff = diff_taxonomy_docs(current, new)
+    errors, warnings = check_taxonomy_doc(new)
+    out = {"diff": diff, "issues": errors, "warnings": warnings, "version": version, "saved": False}
+    if preview or not diff:
+        return out
+    if errors:
+        raise TaxonomyCommitError("TAXONOMY_INVALID", errors)
+    try:
+        out["version"] = save_taxonomy_doc(path, new, base_version, by)
+    except TaxonomyConflict:
+        raise TaxonomyCommitError("TAXONOMY_CHANGED")
+    except TaxonomyError as e:
+        raise TaxonomyCommitError("TAXONOMY_INVALID", taxonomy_error_issues(e))
+    except (OSError, ValueError, lb_ingest.InputError):
+        raise TaxonomyCommitError("TAXONOMY_WRITE_FAILED")
+    out["saved"] = True
     return out

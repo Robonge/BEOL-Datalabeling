@@ -12,7 +12,7 @@
   "selfcheck": 0
  },
  "failures": [
-  "classify AXIS_MISSING 3",
+  "classify AXIS_MISSING 4",
   "label QUESTION_MISSING 5"
  ],
  "files_after_all": [
@@ -30,7 +30,6 @@
   "reports/baseline_<RUN>.md",
   "reports/candidates.jsonl",
   "reports/candidates.md",
-  "reports/file_list.md",
   "reports/flagged_<RUN>.jsonl",
   "reports/flagged_<RUN>.md",
   "reports/taxonomy_revisit.jsonl",
@@ -54,7 +53,6 @@
   "reports/baseline_<RUN>.md",
   "reports/candidates.jsonl",
   "reports/candidates.md",
-  "reports/file_list.md",
   "reports/flagged_<RUN>.jsonl",
   "reports/flagged_<RUN>.md",
   "reports/taxonomy_revisit.jsonl",
@@ -76,32 +74,32 @@
    "model",
    "created_at"
   ],
-  "rows": 378
+  "rows": 359
  },
  "out_labeling_sqlite": {
   "aliases": {
-   "rows": 43,
-   "sha256": "902af3ad430f608c30a3aeaa22419738defed2b3d834b54b1d99bb280d003f0d"
+   "rows": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   "answers": {
-   "rows": 41,
-   "sha256": "5f71d85dfe711d71b0de65502441c7943db69db95500b8509bfb6ea643708508"
+   "rows": 35,
+   "sha256": "28d44c50c9bb9f0f162b1130912756a477662f2f33da7fbd6ea8ee9cc72926db"
   },
   "chunks": {
    "rows": 28,
-   "sha256": "24046431f1ad55ce541bdf77ca40d1f7dc44039bbda103dbca564b0558fa1d74"
+   "sha256": "7a07bda03e4201f607014940e22671bfbba253d52bd1f1f386ef5e6b6bdcaf5d"
   },
   "extracted_values": {
    "rows": 53,
    "sha256": "5af7270f3b2df320462d2a993aef934e563fc26faa75c99fdab5f516067aaf70"
   },
   "facet_labels": {
-   "rows": 333,
-   "sha256": "a890687bf34eae8da4232861c7e3bef44ea3b9b6f267230ecd8cf9fea914b6be"
+   "rows": 318,
+   "sha256": "cbfba554c89b96772f91d9fd6b0f9e89b462ced522b2ac6c20fca49e9d5dba48"
   },
   "facet_values": {
-   "rows": 86,
-   "sha256": "e1c2b6120346466e23c76d1876bd61d17c3cb9a156d168eadd3bbe669d76dbcd"
+   "rows": 89,
+   "sha256": "5cc71588d4f200c464cdf533a01b01ce925a7163367e40d0eb430294903f4173"
   },
   "file_locations": {
    "rows": 3,
@@ -113,11 +111,11 @@
   },
   "meta": {
    "rows": 7,
-   "sha256": "bf093de5930f89a17283efb7ee6cb0a8dbaecf2633396d759547bbab0dbabe7f"
+   "sha256": "f86403705dd8b31803f0e0d0e47c57473f616415b551148e8d6b79121b94b14c"
   },
   "questions": {
-   "rows": 22,
-   "sha256": "5da5ec4d26c242388da2fc06d74dcc6f548b6d3bb8daa07a071d507137e35ccd"
+   "rows": 17,
+   "sha256": "454679fe9187601ce9a9805c79c3269df8fc02da05a3d367357b572fa98de806"
   }
  },
  "stdout": {
@@ -145,22 +143,22 @@
    "[report] taxonomy 재검토 요청 누적 0건 → reports/taxonomy_revisit.md"
   ],
   "review": [
-   "[review] run_id=<RUN> 불량 chunk 18개 → screens/review.html, reports/flagged_<RUN>.*"
+   "[review] run_id=<RUN> 불량 chunk 17개 → screens/review.html, reports/flagged_<RUN>.*"
   ],
   "run": [
    "[ingest] 파일 3개 (정상 3, 새로 파싱 3)",
    "[feedback] 승인된 규칙·사례 없음: 승인 규칙·사례를 넣지 않습니다.",
-   "[classify] chunk 28개 중 실패 3, 비내용 0",
-   "[question] 검증 질문 21개, 대조 질문 47개 생성(chunk 25개, 상한으로 검증하지 못한 대상 39개)",
-   "[label] 대상 25개 중 실패 5",
-   "[알림] DUP_LABEL_HIGH 값=0.4848 기준=0.4",
-   "[run] 완료 run_id=<RUN> LLM 호출 86회 (캐시 0회)"
+   "[classify] chunk 28개 중 실패 4, 비내용 0",
+   "[question] 검증 질문 16개, 대조 질문 46개 생성(chunk 24개, 상한으로 검증하지 못한 대상 31개)",
+   "[label] 대상 24개 중 실패 5",
+   "[알림] DUP_LABEL_HIGH 값=0.4265 기준=0.4",
+   "[run] 완료 run_id=<RUN> LLM 호출 85회 (캐시 0회)"
   ],
   "selfcheck": [
    "python                       PASS <PY>",
    "sqlite3                      PASS <SQLITE>",
    "workspace_writable           PASS ",
-   "taxonomy.xlsx                PASS 축 11 (활성 11) [taxonomy] 지난 실행 대비 축 +0 -0 · 값 +0 · 종류/설정 변경 0 → 변경 없음",
+   "taxonomy.json                PASS 축 11 (활성 11) [taxonomy] 지난 실행 대비 축 +0 -0 · 값 +0 · 종류/설정 변경 0 → 변경 없음",
    "taxonomy_axes                PASS 점검 통과",
    "llm_config                   PASS model=mock",
    "llm_key_env                  PASS OPENAI_API_KEY",

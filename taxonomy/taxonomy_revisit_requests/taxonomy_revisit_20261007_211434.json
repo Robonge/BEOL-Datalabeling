@@ -1,0 +1,102 @@
+{
+  "kind": "taxonomy_revisit",
+  "review_run_id": "20261007T105157-2b26",
+  "generated_at": "2026-10-07T12:14:34Z",
+  "sheet": "taxonomy",
+  "columns": [
+    "축",
+    "값",
+    "상위값",
+    "다중값",
+    "계층",
+    "중복 알림 제외",
+    "종류",
+    "정의·판정 규칙",
+    "포함 예",
+    "제외 예",
+    "사용 여부"
+  ],
+  "paste_rows": [
+    [
+      "Material",
+      "ASD",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    [
+      "물리 현상",
+      "Depo selectivity loss",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  ],
+  "paste_requests": [
+    [
+      1
+    ],
+    [
+      2
+    ]
+  ],
+  "check_rows": [],
+  "requests": [
+    {
+      "review_run_id": "20261007T105157-2b26",
+      "chunk_id": "e431cf31a553c265:ppt/slides/slide4.xml",
+      "file_id": "e431cf31a553c2655ee0673161a4daf13fd33e4756fb882ec77c3babcb9c062d",
+      "target": "axis",
+      "key": "Material",
+      "reason": "NO_FIT_VALUE",
+      "proposed": {
+        "value": "ASD",
+        "parent": null
+      },
+      "related_values": [],
+      "memo": "FAV등 selective depsotion향으로 Material 추가 필요",
+      "bot_value": [
+        "unknown"
+      ],
+      "human_value": null,
+      "file_sha256": "d61f5fa87c9794e286d428209a0ce0d0760353b1ccc47a459621bc8e0a3fee7e",
+      "applied_at": "2026-10-07T12:14:34Z",
+      "no": 1,
+      "block": "paste"
+    },
+    {
+      "review_run_id": "20261007T105157-2b26",
+      "chunk_id": "e431cf31a553c265:ppt/slides/slide4.xml",
+      "file_id": "e431cf31a553c2655ee0673161a4daf13fd33e4756fb882ec77c3babcb9c062d",
+      "target": "axis",
+      "key": "물리 현상",
+      "reason": "NO_FIT_VALUE",
+      "proposed": {
+        "value": "Depo selectivity loss",
+        "parent": null
+      },
+      "related_values": [],
+      "memo": "sel depo에서 selectivity loss 현상",
+      "bot_value": [
+        "unknown"
+      ],
+      "human_value": null,
+      "file_sha256": "d61f5fa87c9794e286d428209a0ce0d0760353b1ccc47a459621bc8e0a3fee7e",
+      "applied_at": "2026-10-07T12:14:34Z",
+      "no": 2,
+      "block": "paste"
+    }
+  ]
+}

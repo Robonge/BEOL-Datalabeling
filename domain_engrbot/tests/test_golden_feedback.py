@@ -384,7 +384,7 @@ class FeedbackTest(unittest.TestCase):
         feedback.build(self.res)
         self.assertEqual(tree_hash(root, skip=("qa", "logs", "inputs")), before_ws)
         self.assertEqual(tree_hash(os.path.join(REPO_ROOT, "prompts")), before_prompts)
-        self.assertFalse(os.path.exists(os.path.join(root, "taxonomy.xlsx")))
+        self.assertFalse(os.path.exists(os.path.join(root, "taxonomy.json")))
         for d, _dirs, files in os.walk(root):
             for fn in files:
                 self.assertTrue(fn.lower().endswith(io.ALLOWED_EXT), fn)

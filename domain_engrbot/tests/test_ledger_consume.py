@@ -72,7 +72,7 @@ class JudgeExamplesBase(unittest.TestCase):
     def setUpClass(cls):
         cls.fx = synthetic.generate(seed=7, n_files=3)
         cls.tax = model.TaxIndex(cls.fx.bundle.taxonomy)
-        # 질문 답 항목이 있는 내용 레코드를 고른다(taxonomy.xlsx의 질문·축이 바뀌면 첫 레코드에는 없을 수 있다).
+        # 질문 답 항목이 있는 내용 레코드를 고른다(taxonomy.json의 질문·축이 바뀌면 첫 레코드에는 없을 수 있다).
         content = [r for r in cls.fx.bundle.records if r["chunk_type"] == "내용"]
         def items_of(r):
             return judge.build_items(RecordTarget(r, cls.fx.bundle.units[r["record_id"]]), cls.tax)

@@ -21,3 +21,4 @@ open(path,"rb") → b64encode → <sha256>.b64 저장 → b64decode → io.Bytes
 - 디코딩한 bytes와 추출 결과는 office·텍스트 확장자(`.pptx .xlsx .docx .csv .txt .pdf .hwp` 등)로 쓰지 않는다. 쓰면 DRM이 다시 걸린다.
 - 허용 형식은 `.b64`(원본과 이미지), `.sqlite`, `.json`, `.jsonl`, `.html`, `.md`, `.log`다. 표·이력 데이터는 `.jsonl`로 쓴다(예: `synonyms_log.jsonl`).
 - 로그에는 파일 ID와 사유 코드만 남긴다. base64, 본문, 파일명은 넣지 않는다.
+

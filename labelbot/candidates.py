@@ -1,4 +1,4 @@
-"""후보 집계와 reports/ 후보 리포트. 봇은 taxonomy.xlsx를 고치지 않고 붙여넣기 행만 낸다."""
+"""후보 집계와 reports/ 후보 리포트. taxonomy.json 반영은 taxonomy 보드(domain_engrbot)가 사람 확정 뒤에 한다."""
 import json
 
 from labelbot import util
@@ -25,12 +25,68 @@ def collect_from_label(ctx, chunk_id, res):
             _add(ctx, "synonym", "%s|%s" % (t["expression"], t["canonical"]), t.get("axis"), "", t.get("evidence"), chunk_id)
 
 
+# ---- 동의어 후보 기준(엄밀한 동의어만) ----------------------------------------------
+# 동의어는 1차 분류 본문에서 표준어로 '치환'된다. 바꿔 써도 뜻이 완전히 같은 표현(약어·표기 차이·오타·한영 혼용)만
+# 후보로 올린다. 상위·하위 개념, 관련어, 분류 체계에 없는 표준어는 올리지 않는다(사람 검수 등록은 예외).
+SYN_SHORT_ASCII_ALLOW = ("JGV",)   # PRD 6.2: 3자 이하 영문 키는 이 목록만 허용
+SYN_MIN_FREQ = 2                   # 봇 후보는 한 실행에서 2개 chunk 이상에서 나와야 올린다
+
+
+def taxonomy_vocab(tax):
+    """동의어 표준어로 쓸 수 있는 이름(축·값 이름, norm_key)."""
+    from labelbot.taxonomy import norm_key
+
+    out = set()
+    for a in tax.axes:
+        out.add(norm_key(a.name))
+        out.update(norm_key(v.name) for v in a.values)
+    return out
+
+
+def synonym_reject_code(expression, canonical, vocab):
+    """엄밀한 동의어가 아니면 사유 코드, 맞으면 None. vocab은 taxonomy_vocab 결과(None이면 그 검사는 건너뛴다)."""
+    from labelbot.taxonomy import norm_key
+
+    e, c = norm_key(expression or ""), norm_key(canonical or "")
+    if not e or not c:
+        return "SYN_EMPTY"
+    if e == c:
+        return "SYN_SAME"
+    raw = (expression or "").strip()
+    if len(raw) <= 3 and raw.isascii() and raw not in SYN_SHORT_ASCII_ALLOW:
+        return "SYN_SHORT_ASCII"
+    if vocab is not None and c not in vocab:
+        return "SYN_CANONICAL_NOT_IN_TAXONOMY"
+    if c in e:
+        return "SYN_NARROWER"   # 표현이 표준어를 품는다: 더 좁은(구체적인) 개념이다
+    return None
+
+
+def _strict_synonyms(groups, tax):
+    """봇 동의어 후보를 엄밀한 기준으로 거른다. 같은 표현에 표준어가 둘 이상이면 모두 뺀다(SYN_AMBIGUOUS)."""
+    vocab = taxonomy_vocab(tax)
+    canon = {}
+    for g in groups:
+        if g["kind"] == "synonym" and g["source"] != "review":
+            a, _, b = g["content"].partition("|")
+            canon.setdefault(util.nfkc(a).strip().lower(), set()).add(util.nfkc(b).strip().lower())
+    out = []
+    for g in groups:
+        if g["kind"] == "synonym" and g["source"] != "review":
+            a, _, b = g["content"].partition("|")
+            if (synonym_reject_code(a, b, vocab) or len(canon[util.nfkc(a).strip().lower()]) > 1
+                    or g["freq"] < SYN_MIN_FREQ):
+                continue
+        out.append(g)
+    return out
+
+
 def _rejected(tax):
     return {util.nfkc(r[1]).strip().lower() for r in tax.rejected if len(r) > 1 and r[1]}
 
 
 def grouped(con, tax, run_id):
-    """같은 후보는 빈도와 예시 chunk로 묶는다. rejected 시트에 있는 후보와 이미 시트에 있는 동의어는 뺀다."""
+    """같은 후보는 빈도와 예시 chunk로 묶는다. taxonomy.json rejected 목록에 있는 후보와 이미 있는 동의어는 뺀다."""
     rej = _rejected(tax)
     have_syn = {util.nfkc(s.alias).lower() for s in tax.synonyms}
     rows = con.execute(
@@ -52,7 +108,7 @@ def grouped(con, tax, run_id):
         g["freq"] += 1
         if r["chunk_id"] and r["chunk_id"] not in g["examples"] and len(g["examples"]) < 3:
             g["examples"].append(r["chunk_id"])
-    out = list(groups.values())
+    out = _strict_synonyms(list(groups.values()), tax)
     out.sort(key=lambda g: (g["source"] != "review", g["kind"], -g["freq"], g["content"]))
     return out
 
@@ -61,7 +117,7 @@ _FORMULA_START = ("=", "+", "-", "@")
 
 
 def _safe(v):
-    """엑셀에 붙여넣을 때 수식으로 읽히지 않도록 수식 시작 문자 앞에 '를 붙인다."""
+    """탭 구분 행 초안에서 수식 시작 문자 앞에 '를 붙인다(표 프로그램에 옮겨도 수식으로 읽히지 않게)."""
     return "'" + v if v.startswith(_FORMULA_START) else v
 
 
@@ -95,18 +151,7 @@ def write_reports(ctx):
             lines.append("| %s | %s | %d | %s | %s | %s |" % (
                 "검수 등록" if g["source"] == "review" else "봇", g["content"].replace("|", " → "), g["freq"],
                 g["axis"] or "", ", ".join(g["examples"]), (g["evidence"] or "").replace("|", "/").replace("\n", " ")[:80]))
-        lines += ["", "붙여넣기 행(탭 구분):", "", "```"] + [paste_row(g) for g in gs] + ["```", ""]
+        lines += ["", "행 초안(탭 구분, taxonomy 보드가 같은 후보를 카드로 보여 준다):", "", "```"] + [paste_row(g) for g in gs] + ["```", ""]
     util.write_text(ctx.ws.path("reports", "candidates.md"), "\n".join(lines) + "\n")
-    _write_file_list(ctx)
     return groups
 
-
-def _write_file_list(ctx):
-    rows = ctx.con.execute("SELECT file_id, file_name FROM files WHERE status='ok' ORDER BY rel_path").fetchall()
-    known = {f.file_id for f in ctx.tax.files}
-    lines = ["# 파일 목록 (files 시트 붙여넣기 행: 파일 ID, 파일명, 제외, 맥락 메모)", "", "```"]
-    for r in rows:
-        if r["file_id"] not in known:
-            lines.append("\t".join([r["file_id"], r["file_name"], "N", ""]))
-    lines.append("```")
-    util.write_text(ctx.ws.path("reports", "file_list.md"), "\n".join(lines) + "\n")

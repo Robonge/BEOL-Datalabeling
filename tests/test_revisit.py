@@ -319,7 +319,7 @@ class RevisitUnitTest(unittest.TestCase):
         self.assertEqual(code, [want])
         self.assertEqual(code[0].count("\t"), 10)
         self.assertIn("| 예시축A | 새값-가 | 상위-1 | 2 | %s, %s |" % (RUN, RUN2), md)
-        self.assertIn("시트에 이미 있는 값: 붙여넣기 행 생략", md)
+        self.assertIn("시트에 이미 있는 값: 행 초안 생략", md)
         self.assertIn("  > 첫 줄 &#124; 파이프 &lt;script&gt;", md)
         self.assertIn("  > 둘째 줄 &amp; 끝", md)
         self.assertNotIn("<script>", md)
@@ -336,10 +336,10 @@ class RevisitUnitTest(unittest.TestCase):
     def test_report_missing_axis_or_parent(self):
         self.apply([_item(key="사라진축", value="새값-나"), _item(cid="c2", value="새값-다", parent="없는상위")])
         n, md, jl = self._report()
-        self.assertIn("시트에 없는 축: 붙여넣기 행 생략", md)
-        self.assertIn("시트에 없는 상위값: 붙여넣기 행 생략", md)
+        self.assertIn("시트에 없는 축: 행 초안 생략", md)
+        self.assertIn("시트에 없는 상위값: 행 초안 생략", md)
         self.assertNotIn("```", md)
-        self.assertIn("붙여넣기 행 없음.", md)
+        self.assertIn("행 초안 없음.", md)
         self.assertEqual(n, 2)
 
     def test_zero_requests_report(self):
@@ -369,7 +369,7 @@ class RevisitUnitTest(unittest.TestCase):
 
     def test_requests_dir_next_to_taxonomy(self):
         ws = _FakeWs(self.dir)
-        ws.taxonomy_path = os.path.join(self.dir, "어딘가", "taxonomy.xlsx")
+        ws.taxonomy_path = os.path.join(self.dir, "어딘가", "taxonomy.json")
         self.assertEqual(revisit.requests_dir(ws), os.path.join(self.dir, "어딘가", "taxonomy_revisit_requests"))
 
     def test_run_files_created_and_named(self):
@@ -459,7 +459,7 @@ class RevisitUnitTest(unittest.TestCase):
             self.assertEqual(c["row"][10], "")
             self.assertTrue(c["requests"])
         self.assertEqual({r["block"] for r in doc["requests"]}, {"check"})
-        self.assertIn("바로 붙여넣을 행이 없다.", md)
+        self.assertIn("바로 반영할 행이 없다.", md)
         code = md.split("```\n", 1)[1].split("```", 1)[0].strip("\n").split("\n")
         self.assertEqual(len(code), 6)
         self.assertTrue(all(c.count("\t") == 10 for c in code))
@@ -544,7 +544,7 @@ class RevisitIntegrationTest(unittest.TestCase):
     def setUpClass(cls):
         cls.w = _Ws()
         cls.ws = cls.w.ws
-        # 이 작업 폴더의 taxonomy_path는 저장소 taxonomy/taxonomy.xlsx다. 실행별 재검토 파일이 저장소에 남지 않도록
+        # 이 작업 폴더의 taxonomy_path는 저장소 taxonomy/taxonomy.json다. 실행별 재검토 파일이 저장소에 남지 않도록
         # 파일 폴더만 임시 작업 폴더 안으로 돌린다(위치 규칙 자체는 단위 테스트가 본다).
         cls.rv_dir = os.path.join(cls.w.dir, "rvtax", revisit.REQUESTS_DIRNAME)
         cls._rv_patch = mock.patch.object(revisit, "requests_dir", lambda ws: cls.rv_dir)

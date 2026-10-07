@@ -168,6 +168,61 @@ class EvidenceApplyTest(unittest.TestCase):
         self.assertEqual([(r[1], r[2]) for r in res], [("OK", 1), ("EVIDENCE_OTHER_FILE", 1)])
 
 
+class TypedEvidenceAndControlTest(unittest.TestCase):
+    """직접 입력 근거(typed)와 대조 질문 답 교정(target control)."""
+
+    def setUp(self):
+        self.con = store.connect(":memory:")
+        _seed(self.con)
+        self.con.execute("INSERT INTO ctl_questions(qid, chunk_id, axis, value, text) VALUES(?,?,?,?,?)",
+                         ("Q-CTL-1", "c1", "예시축A", "값-2", "이 슬라이드는 값-2인가?"))
+        self.con.execute("INSERT INTO labels(run_id, chunk_id, kind, key, value, status, evidence, confidence)"
+                         " VALUES(?,?,?,?,?,?,?,?)", (RUN, "c1", "control", "Q-CTL-1", "O", "value", "장비 조건", 0.99))
+        self.con.commit()
+        self.tax = _tax()
+
+    def tearDown(self):
+        self.con.close()
+
+    def apply(self, corrections):
+        doc = {"kind": "review", "run_id": RUN, "corrections": corrections, "chunk_status": [], "synonyms": []}
+        return review._apply_review(self.con, self.tax, doc, SHA)
+
+    def rows(self, kind):
+        return self.con.execute("SELECT * FROM corrections WHERE review_run_id=? AND target_kind=?", (RUN, kind)).fetchall()
+
+    def test_typed_evidence_kept_without_text_check(self):
+        ev = [{"source": "typed", "quote": "  공정 엔지니어 경험상\n값-1이 맞다 "}, {"source": "typed", "quote": "가"}]
+        code, n, drops = self.apply([_corr(evidence=ev)])
+        self.assertEqual((code, n, drops), ("OK", 1, {"EVIDENCE_FORMAT": 1}))
+        self.assertEqual(json.loads(self.rows("axis")[0]["evidence"]),
+                         [{"source": "typed", "chunk_id": None, "slide_no": None, "quote": "공정 엔지니어 경험상 값-1이 맞다"}])
+
+    def test_control_correction_saved_with_evidence(self):
+        c = {"chunk_id": "c1", "target": "control", "key": "Q-CTL-1", "value": "X", "status": "corrected",
+             "evidence": [{"source": "typed", "quote": "값-2 공정은 쓰지 않는다"}], "reason": "봇 과잉 판정"}
+        code, n, drops = self.apply([c])
+        self.assertEqual((code, n, drops), ("OK", 1, {}))
+        r = self.rows("control")[0]
+        self.assertEqual((r["target_key"], json.loads(r["human_value"]), json.loads(r["bot_value"]), r["reason"]),
+                         ("Q-CTL-1", "X", "O", "봇 과잉 판정"))
+        self.assertEqual(json.loads(r["evidence"])[0]["source"], "typed")
+
+    def test_control_not_in_final_labels(self):
+        self.apply([{"chunk_id": "c1", "target": "control", "key": "Q-CTL-1", "value": "X", "status": "corrected"}])
+        d = finals.final_labels(self.con, RUN, ["c1"])["c1"]
+        self.assertNotIn("Q-CTL-1", d["answers"])
+        self.assertEqual(d["axes"]["예시축A"]["values"], ["unknown"])
+
+    def test_unknown_control_and_old_answer_target_skipped(self):
+        code, n, drops = self.apply([
+            {"chunk_id": "c1", "target": "control", "key": "Q-CTL-없음", "value": "X"},
+            {"chunk_id": "c3", "target": "control", "key": "Q-CTL-1", "value": "X"},
+            {"chunk_id": "c1", "target": "answer", "key": "Q-CTL-1", "value": "X"}])
+        self.assertEqual((code, n, drops), ("OK", 0, {"CONTROL_UNKNOWN": 2}))
+        self.assertEqual(self.rows("control"), [])
+
+
 class EvidenceMigrationTest(unittest.TestCase):
     def test_old_db_gets_columns(self):
         d = tempfile.mkdtemp(prefix="labelbot_evmig_")

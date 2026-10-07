@@ -3,7 +3,7 @@ import unittest
 
 from labelbot import taxonomy
 from labelbot.synonyms import SynonymTable
-from tests import xlsx_writer as xw
+from tests.test_taxonomy import build
 
 DEFAULT = [
     ("단락", "Short"),
@@ -95,13 +95,13 @@ class SynonymRulesTest(unittest.TestCase):
 class SynonymSheetIntegrationTest(unittest.TestCase):
     def test_table_from_parsed_sheet(self):
         H = taxonomy.HEADERS
-        data = xw.build([
-            ("taxonomy", [H["taxonomy"], ["불량 모드", None, None, "Y", "Y", "N", "분류"], ["불량 모드", "Short"]]),
-            ("questions", [H["questions"]]),
-            ("synonyms", [H["synonyms"], ["단락", "Short", None], ["JGV", "JHV", None], ["Metal1", "M1", None],
-                          ["metal1", "M9", None]]),
-            ("rejected", [H["rejected"]]),
-        ])
+        data = build({
+            "taxonomy": [H["taxonomy"], ["불량 모드", None, None, "Y", "Y", "N", "분류"], ["불량 모드", "Short"]],
+            "questions": [H["questions"]],
+            "synonyms": [H["synonyms"], ["단락", "Short", None], ["JGV", "JHV", None], ["Metal1", "M1", None],
+                         ["metal1", "M9", None]],
+            "rejected": [taxonomy.REJECTED_HEADER],
+        })
         t = taxonomy.parse_bytes(data)
         table = SynonymTable(t.synonyms)
         text, matches = table.apply("Metal1 단락, JGV")

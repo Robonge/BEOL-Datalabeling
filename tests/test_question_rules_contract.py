@@ -16,6 +16,7 @@ from domain_engrbot.adapters import labelbot_ws
 from domain_engrbot.tests.test_ledger import DEFECT, LAYER, TAXONOMY, _pol, build_ws, cid_of
 from domain_engrbot.tests.test_question_answers import answer, make_question, rule, save_questions, write_answers
 from labelbot import feedback
+from labelbot.taxonomy import Question
 
 
 class _Ws:
@@ -80,7 +81,9 @@ class QuestionRulesContractTest(unittest.TestCase):
         self.assertIn("패턴을 확정한 문장이다.", classify)
         self.assertLess(classify.index("사람이 쓴 1차 분류 규칙이다."), classify.index("패턴을 확정한 문장이다."))
         self.assertNotIn("3차 라벨링 규칙", classify)
-        label = fb.rules_text("label", [])
+        # 3차 MANUAL 규칙은 범위(축=값·질문 ID)가 chunk의 질문과 맞을 때만 들어간다(stage 없는 옛 target 'label'은 모든 chunk)
+        self.assertNotIn("3차 라벨링 규칙", fb.rules_text("label", []))
+        label = fb.rules_text("label", [Question("Q-X", "t", (LAYER, "값"), 1, None)])
         self.assertIn("사람이 쓴 3차 라벨링 규칙이다.", label)
         self.assertNotIn("1차 분류 규칙", label)
         self.assertEqual([e["example_id"] for e in fb.examples], [self.ex])

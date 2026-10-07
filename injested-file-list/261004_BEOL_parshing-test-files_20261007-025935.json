@@ -1,0 +1,17 @@
+{
+  "run_id": "20261006T175957-9c46",
+  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261007-025935",
+  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "recorded_at": "2026-10-07T03:02:04",
+  "files": [
+    "260121_QLDSR040.62 M1 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx",
+    "260126_QDKXW093.69 M1 Line AR Airgap split 평가.pptx",
+    "260302_QEQMN045.65 M2 trench etch recipe 변경 (T3+tilt trim, T7) 평가.pptx",
+    "260303_QRNGU000.6D M2 ALE Ru depo Airgap split 평가.pptx",
+    "260304_QWHSW069.6A M1 Trench etch CMP OP split 평가.pptx",
+    "260320_QGJIC025.6B VA Ru line 간 Airgap+cap opt 적용 평가.pptx",
+    "260324_RDD2O.68 M1 Ru direct metal etch (Long ME, RIE+IBE trim, Segmented E-C) 평가.pptx",
+    "260325_QERSF094.6B I1 Trench etch OE scheme split 평가.pptx",
+    "260401_RNRZ6.67 M1 trench etch MHM 박막화 (Al2O3 cap, TiN SiN, TiN SiN dual) 평가.pptx"
+  ]
+}

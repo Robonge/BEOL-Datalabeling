@@ -1,4 +1,4 @@
-"""taxonomy 변경 감지(taxdiff), taxonomy-diff 명령, selfcheck 축 품질 WARN 테스트. 픽스처 xlsx는 메모리에서 만든다."""
+"""taxonomy 변경 감지(taxdiff), taxonomy-diff 명령, selfcheck 축 품질 WARN 테스트. 픽스처 taxonomy.json은 임시 폴더에 만든다."""
 import contextlib
 import io
 import json
@@ -123,7 +123,7 @@ class WorkspaceCase(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp(prefix="labelbot_ws_")
         self.addCleanup(shutil.rmtree, self.dir, ignore_errors=True)
-        self.tax_path = os.path.join(self.dir, "tax_fixture.xlsx")
+        self.tax_path = os.path.join(self.dir, "taxonomy.json")
         with open(self.tax_path, "wb") as f:
             f.write(build(base_sheets()))
         cfg = {"taxonomy_path": self.tax_path, "llm": {"transport": "mock", "model": "mock"},
@@ -215,7 +215,7 @@ class SelfcheckAxisTest(WorkspaceCase):
         self.record_run({"axes_signature": taxdiff.axes_signature(parse(base_sheets()))})
         self.write_taxonomy(with_new_axis(base_sheets()))
         ok, lines = self.run_selfcheck()
-        row = self.line(lines, "taxonomy.xlsx")
+        row = self.line(lines, "taxonomy.json")
         self.assertIn("PASS", row)
         self.assertIn("축 +1(신규 축)", row)
         self.assertTrue(ok)
@@ -226,7 +226,7 @@ class SelfcheckAxisTest(WorkspaceCase):
         taxdiff.compare_workspace = lambda ws, tax: (_ for _ in ()).throw(RuntimeError("db"))
         self.addCleanup(setattr, taxdiff, "compare_workspace", orig)
         ok, lines = self.run_selfcheck()
-        row = self.line(lines, "taxonomy.xlsx")
+        row = self.line(lines, "taxonomy.json")
         self.assertIn("PASS", row)
         self.assertIn("diff 알 수 없음", row)
         self.assertTrue(ok)

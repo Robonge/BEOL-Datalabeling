@@ -1,7 +1,7 @@
 {
   "version": 1,
   "targets": ["labelbot", "domain_engrbot", "code_engrbot", "tests", ".claude/skills"],
-  "exclude": ["**/__pycache__/**", "code_engrbot/out/**"],
+  "exclude": ["**/__pycache__/**", "code_engrbot/out/**", "rag/**"],
   "layers": ["C1", "C2", "C3", "C4"],
   "severity_overrides": {},
   "allow": [

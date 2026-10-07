@@ -137,7 +137,7 @@ class L1Test(unittest.TestCase):
         self.assertEqual(codes_of(self.ev1(record(chunk_type=None))["issues"]), ["L1_REQUIRED_MISSING"])
 
     def test_inactive_axis_not_required(self):
-        # 축 이름은 taxonomy.xlsx에서 바뀔 수 있으므로 마지막 분류 축을 고른다.
+        # 축 이름은 taxonomy.json에서 바뀔 수 있으므로 마지막 분류 축을 고른다.
         name = TAX.classification_axes()[-1]["name"]
         snap = copy.deepcopy(TAX.snapshot)
         for a in snap["axes"]:
@@ -272,7 +272,7 @@ class L2Test(unittest.TestCase):
         return r
 
     def test_unknown_overuse_boundary(self):
-        # 분류 축 수는 taxonomy.xlsx를 따른다. 기준(기본 0.5) 바로 위·아래 unknown 수로 경계를 본다.
+        # 분류 축 수는 taxonomy.json을 따른다. 기준(기본 0.5) 바로 위·아래 unknown 수로 경계를 본다.
         n_cls = len(TAX.classification_axes())
         self.assertGreaterEqual(n_cls, 4)
         half = (n_cls + 1) // 2  # unknown/n >= 0.5가 되는 가장 작은 수

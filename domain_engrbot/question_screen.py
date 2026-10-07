@@ -66,6 +66,7 @@ def _case_view(case_id, case, ev):
     return {"case_id": case_id, "record_id": rid, "source_ws": case.get("source_ws"), "field": case.get("field"),
             "kind": case.get("kind"), "bot": case.get("bot_value"), "human": case.get("human_value"),
             "items": items, "reason": row.get("reason"),
+            "control": {"axis": case["ctl_axis"], "value": case.get("ctl_value")} if case.get("ctl_axis") else None,
             "slide_key": "%s|%s|%s" % (case.get("source_ws"), rid, case.get("text_hash") or ""),
             "examples": []}
 

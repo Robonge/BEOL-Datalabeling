@@ -15,7 +15,7 @@ from labelbot.mock import MockChatTransport, MockEmbedTransport
 from labelbot.workspace import CODE_ROOT, Workspace, WorkspaceError
 
 DUMMY_DIR = os.path.join(CODE_ROOT, "dummy pptx files")
-TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.xlsx")
+TAXONOMY = os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json")
 
 
 def _bucket(text):
@@ -220,7 +220,8 @@ class PipelineTest(unittest.TestCase):
             self.ws.config["supabase"].update({"enabled": False, "url": ""})
         self.assertGreater(len(s1.rows), 0)
         self.assertEqual(len(s2.rows), 0)
-        self.assertTrue(all("file_name" not in r and "rel_path" not in r for r in s1.rows))
+        names = {r[0]: r[1] for r in self.con.execute("SELECT file_id, file_name FROM files")}
+        self.assertTrue(all(r["file_name"] == names[r["file_id"]] and "rel_path" not in r for r in s1.rows))
 
 
 class SafetyTest(unittest.TestCase):

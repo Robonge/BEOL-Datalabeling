@@ -1,8 +1,9 @@
-"""taxonomy/taxonomy.xlsx에서 tests/fixtures/default_taxonomy_rows.jsonl을 다시 만든다.
+"""taxonomy/taxonomy.json에서 tests/fixtures/default_taxonomy_rows.jsonl을 다시 만든다.
 
 사용: python tests/tools/dump_taxonomy_fixture.py          fixture를 덮어쓴다
       python tests/tools/dump_taxonomy_fixture.py --check  최신인지 건수만 알린다(쓰지 않음, 다르면 종료 코드 1)
-xlsx는 labelbot.ingest.read_input(DRM 규칙의 유일한 원본 열기 경로)으로 읽는다. 셀 내용은 출력하지 않는다.
+json은 labelbot.ingest.read_input(DRM 규칙의 유일한 원본 열기 경로)으로 읽는다. 셀 내용은 출력하지 않는다.
+행 구성은 tests/test_defaults_taxonomy.doc_rows와 같다.
 """
 import argparse
 import collections
@@ -12,23 +13,14 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
-from labelbot import xlsx  # noqa: E402
+from labelbot import taxonomy  # noqa: E402
 from labelbot.ingest import read_input  # noqa: E402
-
-XLSX_PATH = os.path.join(ROOT, "taxonomy", "taxonomy.xlsx")
-ROWS_PATH = os.path.join(ROOT, "tests", "fixtures", "default_taxonomy_rows.jsonl")
+from tests.test_defaults_taxonomy import JSON_PATH, ROWS_PATH, doc_rows  # noqa: E402
 
 
 def build_lines():
-    wb = xlsx.read_workbook(read_input(XLSX_PATH, None, expect=".xlsx"))
-    lines = []
-    for name in wb.sheet_names:
-        sheet, _ = wb.find(name)
-        if sheet.errors or sheet.warnings:
-            raise SystemExit("[dump] 시트 %s 파싱 오류 %d건, 경고 %d건" % (name, len(sheet.errors), len(sheet.warnings)))
-        for n, cells in sheet.iter_rows():
-            lines.append(json.dumps({"sheet": name, "row": n, "cells": cells}, ensure_ascii=False))
-    return lines
+    doc = taxonomy.decode_doc(read_input(JSON_PATH, None))
+    return [json.dumps(r, ensure_ascii=False) for r in doc_rows(doc)]
 
 
 def current_lines():
@@ -46,7 +38,7 @@ def main():
     new, old = build_lines(), current_lines()
     if a.check:
         diff = sum(((collections.Counter(new) - collections.Counter(old)) + (collections.Counter(old) - collections.Counter(new))).values())
-        print("[dump] xlsx 행 %d, fixture 행 %d, 다른 행 %d(추가·삭제 합, %s)" % (
+        print("[dump] json 행 %d, fixture 행 %d, 다른 행 %d(추가·삭제 합, %s)" % (
             len(new), len(old), diff, "최신" if not diff else "갱신 필요"))
         return 1 if diff else 0
     with open(ROWS_PATH, "w", encoding="utf-8", newline="\n") as f:

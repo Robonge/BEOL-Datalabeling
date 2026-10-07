@@ -38,7 +38,7 @@ MAX_REFS = 5
 DEFAULTS = {"min_count": 2, "min_evidence": 1}
 # 규칙 문장 끝 "근거 위치: …"의 순서와 이름(ledger.EVIDENCE_KINDS의 위치 종류)
 MIX_ORDER = (("doc_title", "문서 제목"), ("chunk_other", "다른 슬라이드"), ("chunk_same", "같은 슬라이드"),
-             ("file_name", "파일명"))
+             ("file_name", "파일명"), ("typed", "직접 입력"))
 # 작업 폴더 이름(경로 구분자·상위 경로 없음). labelbot이 이 이름으로 workspaces/ 아래 DB를 찾는다.
 SAFE_NAME = re.compile(r"^[^\\/:*?\"<>|]+$")
 

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<!-- 시안 A — 정적, 동작 없음. 왼쪽 고정 필터 사이드바 + 가운데 대화 열 + 팝업 중앙 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BEOL 슬라이드 RAG (데모) - 시안 A</title>
+<style>
+:root{
+  --primary-deep:#354690; --primary:#4A5FA8; --primary-soft:#6B82C4;
+  --bg-base:#EDF1F7; --bg-grid:#C8D4E4; --surface:#F6F8FC; --surface-2:#E4EAF3;
+  --text-strong:#1E2D4A; --text-muted:#3F4B60; --accent:#B23A0A; --accent-soft:#FFF0E6;
+  --radius-sm:8px; --radius:12px;
+  --font:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+}
+*{box-sizing:border-box}
+input::placeholder{color:#4B566B;opacity:1}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);font-size:14px;line-height:1.6;letter-spacing:-0.02em;color:var(--text-strong);background:var(--bg-base)}
+button,input{font:inherit;color:inherit;letter-spacing:inherit}
+.app{display:grid;grid-template-rows:auto 1fr auto;height:100vh}
+.top{display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--bg-grid);background:#fff}
+.top h1{margin:0;font-size:22px;letter-spacing:-0.05em}
+.top .badge{font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:0 8px}
+.cols{display:grid;grid-template-columns:280px 1fr;min-height:0}
+/* 사이드바 */
+aside{border-right:1px solid var(--bg-grid);background:var(--surface);overflow:auto;padding:14px 14px 24px}
+aside h2{margin:0 0 10px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.lnk{font-size:12px;color:var(--text-muted);background:none;border:0;cursor:pointer;text-decoration:underline;padding:0}
+details{border-top:1px solid var(--bg-grid);padding:8px 0}
+summary{cursor:pointer;font-weight:700;font-size:14px;display:flex;align-items:center;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▾";margin-right:6px;color:var(--text-muted)}
+summary .cnt{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--accent);margin-right:8px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.chip{border:1px solid var(--bg-grid);background:#fff;border-radius:999px;padding:2px 10px;font-size:12px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
+/* 대화 */
+main{overflow:auto;padding:22px 0 24px}
+.thread{max-width:760px;margin:0 auto;padding:0 24px;display:flex;flex-direction:column;gap:18px}
+.q{align-self:flex-end;max-width:80%;background:var(--primary-deep);color:#fff;border-radius:14px 14px 2px 14px;padding:9px 14px}
+.a{align-self:flex-start;max-width:92%;background:#fff;border:1px solid var(--bg-grid);border-radius:14px 14px 14px 2px;padding:12px 16px;box-shadow:0 2px 8px rgba(53,70,144,.06)}
+.a p{margin:0 0 10px}
+.cite{border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:5px;font-family:var(--mono);font-size:12px;font-weight:700;padding:0 5px;margin:0 1px;cursor:pointer}
+.src{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.src button{border:1px solid var(--bg-grid);background:var(--surface);border-radius:var(--radius-sm);padding:3px 10px;font-size:12px;cursor:pointer}
+.src button b{color:var(--accent);font-family:var(--mono);margin-right:5px}
+.fb{display:flex;gap:6px}
+.fb button{border:1px solid var(--bg-grid);background:#fff;border-radius:var(--radius-sm);padding:2px 10px;cursor:pointer}
+.fb button.on{border-color:var(--primary);background:rgba(74,95,168,.12)}
+/* 입력 */
+.dock{border-top:1px solid var(--bg-grid);background:#fff;padding:12px 20px}
+.dock form{max-width:760px;margin:0 auto;display:flex;gap:8px}
+.dock input{flex:1;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:9px 12px;background:var(--surface)}
+.send{background:var(--accent);color:#fff;border:0;border-radius:var(--radius-sm);padding:0 20px;font-weight:700;cursor:pointer}
+/* 팝업 */
+.ov{position:fixed;inset:0;background:rgba(30,45,74,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#fff;border-radius:var(--radius);width:min(620px,100%);max-height:94vh;overflow:auto;box-shadow:0 20px 60px rgba(30,45,74,.35);padding:16px 18px}
+.mh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.mh h3{margin:0;font-size:18px;letter-spacing:-0.045em}
+.x{border:1px solid var(--bg-grid);background:#fff;border-radius:var(--radius-sm);width:30px;height:30px;cursor:pointer}
+.ph{aspect-ratio:16/9;background:#D5DAE2;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:#3F4B60;font-weight:700;margin:12px 0}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.tag{font-size:12px;border:1px solid var(--primary-soft);color:var(--primary-deep);border-radius:999px;padding:0 9px;background:rgba(107,130,196,.1)}
+.meta{font-size:12px;color:var(--text-muted)}
+.mono{font-family:var(--mono);font-size:12px}
+.body{margin-top:10px;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:8px 10px;background:var(--surface)}
+.body summary{font-size:12px}
+.nav{display:flex;justify-content:space-between;margin-top:12px}
+.nav button{border:1px solid var(--bg-grid);background:#fff;border-radius:var(--radius-sm);padding:5px 14px;font-weight:700;cursor:pointer}
+@media (max-width:900px){.cols{grid-template-columns:220px 1fr}.thread{padding:0 14px}.a,.q{max-width:100%}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><h1>BEOL 슬라이드 RAG (데모)</h1><span class="badge">시안 A</span></header>
+  <div class="cols">
+    <aside>
+      <h2>라벨 필터 <button class="lnk">전체 해제</button></h2>
+      <details open><summary>공정 모듈<span class="cnt">2</span><button class="lnk">모두 해제</button></summary>
+        <div class="chips"><button class="chip on">M2</button><button class="chip on">M3</button><button class="chip">M1</button><button class="chip">V1</button></div></details>
+      <details open><summary>구조/레이어<span class="cnt">1</span><button class="lnk">모두 해제</button></summary>
+        <div class="chips"><button class="chip on">RSBM</button><button class="chip">TaN barrier</button><button class="chip">Ru liner</button></div></details>
+      <details><summary>제품<span class="cnt">0</span><button class="lnk">모두 해제</button></summary>
+        <div class="chips"><button class="chip">Logic A</button><button class="chip">Logic B</button></div></details>
+      <details><summary>세대<span class="cnt">0</span><button class="lnk">모두 해제</button></summary>
+        <div class="chips"><button class="chip">2nm</button><button class="chip">3nm</button></div></details>
+      <details open><summary>결과<span class="cnt">1</span><button class="lnk">모두 해제</button></summary>
+        <div class="chips"><button class="chip on">pending</button><button class="chip">POR</button><button class="chip">fail</button></div></details>
+      <details><summary>불량 모드<span class="cnt">0</span><button class="lnk">모두 해제</button></summary>
+        <div class="chips"><button class="chip">open</button><button class="chip">short</button><button class="chip">void</button></div></details>
+    </aside>
+    <main>
+      <div class="thread">
+        <div class="q">M2 RSBM TaN ALD cycle window 평가 결과 어때?</div>
+        <div class="a">
+          <p>100cy 대비 45cy·50cy에서 Rc가 POR 수준이고 open/short은 없었다<button class="cite">1</button><button class="cite">2</button>. 45cy는 edge 편차가 커서 pending이다<button class="cite">3</button>.</p>
+          <div class="src"><button><b>1</b>RDT6C.67 ET results</button><button><b>2</b>QLDSR040.62 ET results</button><button><b>3</b>M2 ASEI CD wafer map</button><button><b>4</b>RSBM Rc split 요약</button><button><b>5</b>TaN ALD 45cy 후속</button></div>
+          <div class="fb"><button class="on">👍</button><button>👎</button></div>
+        </div>
+        <div class="q">45cy edge 편차는 어느 웨이퍼에서 컸어?</div>
+        <div class="a">
+          <p>WF 4와 WF 7에서 edge 쪽 CD 편차가 컸다<button class="cite">3</button><button class="cite">2</button>.</p>
+          <div class="src"><button><b>1</b>M2 ASEI CD wafer map</button><button><b>2</b>QLDSR040.62 ET results</button><button><b>3</b>RDT6C.67 ET results</button><button><b>4</b>RSBM Rc split 요약</button><button><b>5</b>TaN ALD 45cy 후속</button></div>
+          <div class="fb"><button>👍</button><button>👎</button></div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <div class="dock"><form onsubmit="return false"><input placeholder="질문을 입력하세요" aria-label="질문"><button class="send">전송</button></form></div>
+</div>
+
+<div class="ov" role="dialog" aria-modal="true" aria-label="근거 슬라이드">
+  <div class="modal">
+    <div class="mh"><h3>QLDSR040.62 ET results</h3><button class="x" aria-label="닫기">✕</button></div>
+    <div class="ph">슬라이드 그림</div>
+    <div class="tags"><span class="tag">M2</span><span class="tag">RSBM</span><span class="tag">TaN ALD</span><span class="tag">POR</span></div>
+    <div class="meta">Lot QLDSR040.62 / WF 4, 7 / 작성자 Logic TD ○○○ / 2026-09-18</div>
+    <div class="meta mono" style="margin-top:4px">cosine 0.886 · rrf 0.031 · file_id 3fa9c1d27b84e05a</div>
+    <details class="body"><summary>본문 보기 (접힘)</summary><p class="meta">45cy·50cy 조건에서 Rc 분포가 100cy 대비 동등 수준. open/short fail 없음. edge die 편차는 후속 확인 필요.</p></details>
+    <div class="nav"><button>← 이전 근거</button><button>다음 근거 →</button></div>
+  </div>
+</div>
+</body>
+</html>

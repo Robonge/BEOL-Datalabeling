@@ -3,7 +3,7 @@
 질문 화면이 qa/inbox에 저장한 답 파일(engr_answers_<set_id>.json)을 읽어, 사람이 확정한 초안만 반영한다.
 - rule 초안: pattern_id가 그 질문의 패턴이고 지금 후보·승인분이면 그 패턴(FR-)을 승인하고 문장을 확정 문장으로 바꾼다.
   그 밖에는 MANUAL 규칙(QR-)으로 승인 파일에 더한다. labelbot이 그대로 읽는다(labelbot.feedback._rules_for_run).
-- taxonomy 초안: 질문 폴더 taxonomy_proposals.jsonl에 한 줄(taxonomy 수정 보드의 출처 S7). 봇은 taxonomy.xlsx를 쓰지 않는다.
+- taxonomy 초안: 질문 폴더 taxonomy_proposals.jsonl에 한 줄(taxonomy 수정 보드의 출처 S7). taxonomy.json 반영은 taxonomy 보드가 사람 확정 뒤에 한다.
 - example 초안: 그 질문의 사례 후보(EX-)일 때만 승인한다.
 - 답함·묻지 않음 질문의 패턴 중 승인 파일에 없는 것은 기각(종결)한다. 승인을 파일 전체에서 먼저 하고 종결은 나중에 한다.
 
@@ -92,11 +92,12 @@ def parse(doc):
     return out
 
 
-def _drafts(answer, q):
-    """확정 초안 → (정리한 초안 목록(origin 포함), [사유 코드]). 그 질문의 사례가 아닌 example은 틀린 초안이다."""
+def _drafts(answer, q, axes=None):
+    """확정 초안 → (정리한 초안 목록(origin 포함), [사유 코드]). 그 질문의 사례가 아닌 example은 틀린 초안이다.
+    rule은 범위(축 이름 · 축=값 · 질문 ID)가 없으면 RULE_SCOPE_MISSING이다."""
     good, bad = [], []
     for raw in answer["confirmed"]:
-        d, code = qmodel.check_draft(raw)
+        d, code = qmodel.check_draft(raw, axes, require_scope=True)
         if d is not None and d["type"] == "example" and d["example_id"] not in (q.get("examples") or []):
             d, code = None, "EXAMPLE_NOT_IN_QUESTION"
         if d is None:
@@ -120,6 +121,8 @@ def _rule_stage(r):
     if r.get("kind") in lr.ANSWER_KINDS:
         return "label"
     if r.get("kind") == "MANUAL":
+        if r.get("stage") in qmodel.STAGES:
+            return r["stage"]
         return "label" if r.get("target") == "label" else "classify"
     return "classify"
 
@@ -140,9 +143,22 @@ def _cap(ws_root):
         return DEFAULT_CAP
 
 
+def _axes(ws_root):
+    """활성 축 이름 목록. taxonomy를 읽을 수 없으면(어떤 예외든) None(축 이름 존재 검사만 건너뛴다)."""
+    try:
+        snap = labelbot_ws.snapshot(labelbot_ws.load_taxonomy(ws_root, labelbot_ws.read_config(ws_root)))
+    except Exception:  # noqa: BLE001 - 범위 검사만 건너뛴다. 본문·경로는 남기지 않는다
+        return None
+    return [a["name"] for a in snap["axes"] if a["active"]]
+
+
 def _manual_rule(doc, q, draft, set_id, at, by, res):
-    """rule 초안 하나 → MANUAL 규칙(QR-). target은 3차 라벨링이면 "label", 아니면 축 이름 또는 "classify"."""
-    target = "label" if draft["stage"] == "label" else (draft["target"] or "classify")
+    """rule 초안 하나 → MANUAL 규칙(QR-). stage는 classify|label, target은 그 범위(1차는 축 이름, 3차는 축=값 또는 질문 ID)."""
+    target = draft["target"]
+    if not target:   # 사라진 패턴(PATTERN_GONE)의 문장은 범위가 없으면 규칙으로 만들지 않는다
+        res["rule_scope_missing"] += 1
+        res["invalid"].append({"question_id": q["question_id"], "code": "RULE_SCOPE_MISSING"})
+        return
     rid = manual_rule_id(q.get("fingerprint") or q["question_id"], draft["stage"], target, draft["text"])
     if any(isinstance(r, dict) and r.get("rule_id") == rid for r in doc["rules"]):
         # 이미 같은 규칙이 있다(같은 질문·단계·대상·문장을 다시 확정). ID에 문장이 들어가므로 고칠 것이 없고,
@@ -150,7 +166,7 @@ def _manual_rule(doc, q, draft, set_id, at, by, res):
         return
     impact = q.get("impact") if isinstance(q.get("impact"), dict) else {}
     count = impact.get("records") if isinstance(impact.get("records"), int) else 0
-    rule = {"rule_id": rid, "kind": "MANUAL", "target": target, "from": "", "to": "", "count": count,
+    rule = {"rule_id": rid, "kind": "MANUAL", "stage": draft["stage"], "target": target, "from": "", "to": "", "count": count,
             "text": draft["text"], "enabled": True, "approved_at": at, "approved_by": by,
             "question_id": q["question_id"], "set_id": set_id, "origin": draft["origin"]}
     if rid in doc["rejected"]:
@@ -177,7 +193,7 @@ def _history_row(a, q, drafts, set_id, answers_set_id, reviewer, at, by):
 def apply(paths, policy, answers_path=None, qd=None, rules_path=None, by="screen", now=None):
     """답 파일을 반영한다. 반환(건수·ID·코드만):
     {"answered", "dismissed", "skipped", "rules", "patterns_approved", "patterns_closed", "taxonomy", "examples",
-     "invalid": [{"question_id", "code"}], "not_open": [ID], "remaining", "enabled_rules": {"classify", "label"},
+     "rule_scope_missing"(범위가 없어 거부한 rule 초안 수), "invalid": [{"question_id", "code"}], "not_open": [ID], "remaining", "enabled_rules": {"classify", "label"},
      "cap", "notes": [코드]}
 
     오류는 AnswersError(reason_code): ANSWERS_NOT_FOUND · ANSWERS_TOO_LARGE · ANSWERS_JSON_INVALID ·
@@ -203,8 +219,9 @@ def _apply(paths, policy, answers_path, qd, rules_path, by, now):
     answers_set_id = raw.get("set_id") if isinstance(raw.get("set_id"), str) else ""
     reviewer = qmodel.soft_text(raw.get("reviewer"), qmodel.NAME_MAX) or ""
     cap = _cap(paths.root)
+    axes = _axes(paths.root)
     res = {"answered": 0, "dismissed": 0, "skipped": 0, "rules": 0, "patterns_approved": 0, "patterns_closed": 0,
-           "taxonomy": 0, "examples": 0, "invalid": [], "not_open": [], "remaining": 0,
+           "taxonomy": 0, "examples": 0, "rule_scope_missing": 0, "invalid": [], "not_open": [], "remaining": 0,
            "enabled_rules": {"classify": 0, "label": 0}, "cap": cap, "notes": []}
     rebuilt = False
     with ledger.locked(d):
@@ -238,7 +255,8 @@ def _apply(paths, policy, answers_path, qd, rules_path, by, now):
                 continue
             drafts = []
             if a["action"] == "answer":
-                drafts, bad = _drafts(a, q)
+                drafts, bad = _drafts(a, q, axes)
+                res["rule_scope_missing"] += bad.count("RULE_SCOPE_MISSING")
                 res["invalid"] += [{"question_id": q["question_id"], "code": c} for c in bad]
                 # 확정은 rule·taxonomy 초안이 1개 이상 있어야 한다(사례만으로는 답이 아니다. 화면도 같은 기준)
                 if not any(dr["type"] in ("rule", "taxonomy") for dr in drafts):

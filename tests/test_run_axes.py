@@ -1,6 +1,6 @@
 """화면이 실행 기준 축을 따르는지(pending·removed 축, AXIS_NOT_IN_RUN)와 첫 공통 질문 ID 도출 테스트.
 
-합성 taxonomy(메모리 xlsx)로 mock 실행을 한 번 돌린 뒤, taxonomy에 축을 더하고 빼서 화면 DATA와 apply를 본다.
+합성 taxonomy(임시 폴더의 taxonomy.json)로 mock 실행을 한 번 돌린 뒤, taxonomy에 축을 더하고 빼서 화면 DATA와 apply를 본다.
 """
 import json
 import os
@@ -35,7 +35,7 @@ class RunAxesTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dir = tempfile.mkdtemp(prefix="labelbot_ws_")
-        cls.tax_path = os.path.join(cls.dir, "tax_fixture.xlsx")
+        cls.tax_path = os.path.join(cls.dir, "taxonomy.json")
         with open(cls.tax_path, "wb") as f:
             f.write(build(base_sheets()))
         cfg = {"taxonomy_path": cls.tax_path, "input_root": DUMMY_DIR,

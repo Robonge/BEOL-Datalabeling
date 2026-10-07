@@ -32,7 +32,7 @@ LIST_DIR = os.path.join(CODE_ROOT, "injested-file-list")
 # pipeline.json에 쓰는 값. 기본값과 같은 항목은 DEFAULT_CONFIG에서 가져오고, 이 스킬이 바꾸는 값만 직접 적는다.
 _D = DEFAULT_CONFIG
 PIPELINE = {
-    "taxonomy_path": os.path.join(CODE_ROOT, "taxonomy", "taxonomy.xlsx").replace("\\", "/"),
+    "taxonomy_path": os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json").replace("\\", "/"),
     "input_root": _D["input_root"],
     "llm": {
         "base_url": _D["llm"]["base_url"],

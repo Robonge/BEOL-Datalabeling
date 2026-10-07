@@ -166,7 +166,7 @@ def _axes(st, rec, tax, schema, is_content):
             continue
         for fname, f in _formats_for(schema, "axis", name):
             for v in a["values"]:
-                # taxonomy.xlsx에 있는 값은 패턴보다 우선한다. xlsx에 값을 추가하면 바로 통과한다.
+                # taxonomy.json에 있는 값은 패턴보다 우선한다. taxonomy에 값을 추가하면 바로 통과한다.
                 if tax.is_reserved(v) or tax.canonical_value(name, v) == v:
                     continue
                 if not re.fullmatch(f["pattern"], v):

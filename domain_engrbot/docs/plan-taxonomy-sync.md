@@ -1,5 +1,7 @@
 > 2026-10-06 이름 변경: Engr-bot → Domain-Engr-bot(`domain_engrbot`), code-bot → Code-Engr-bot(`code_engrbot`). 아래 본문은 이력이라 옛 이름을 그대로 둔다.
 
+> 2026-10-07 taxonomy 원본 전환: 아래 계획은 `taxonomy/taxonomy.xlsx` 기준이던 때의 기록이다. 지금 원본은 `taxonomy/taxonomy.json`이고(사람은 taxonomy 보드·편집기로 고친다), 테스트 fixture도 같은 어댑터 경로(`labelbot_ws.load_taxonomy` → `snapshot`)로 json을 읽는다. 아래 본문의 xlsx는 이력이라 그대로 둔다.
+
 # engrbot ↔ 최신 taxonomy.xlsx 동기화 계획
 
 - 상태: **완료** (2026-10-05 실행. engrbot 219개 OK, verifier PASS. labelbot `test_serve`/`test_slides` 4개 실패는 이번 변경과 무관하며 다른 세션이 작업 중인 영역)

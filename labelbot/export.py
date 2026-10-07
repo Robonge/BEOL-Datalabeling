@@ -15,7 +15,7 @@ SCHEMA = [
         ("title", "TEXT", "문서 속성의 제목"),
         ("authored_at", "TEXT", "작성일(YYYY-MM-DD)"),
         ("author", "TEXT", "작성자"),
-        ("memo", "TEXT", "taxonomy.xlsx files 시트의 맥락 메모"),
+        ("memo", "TEXT", "사용 안 함(항상 NULL). 예전 files 시트 맥락 메모 자리로, 하위 호환을 위해 열만 둔다"),
         ("chunk_count", "INTEGER", "chunk 수"),
     ]),
     ("file_locations", "같은 파일(해시)이 놓인 모든 위치. files와 1:N", [
@@ -91,11 +91,9 @@ def export(ws, con, run_id, tax):
     if os.path.exists(db_path):
         os.remove(db_path)
     os.makedirs(os.path.join(out_dir, "images"), exist_ok=True)
-    excluded = {f.file_id for f in tax.files if f.exclude}
     files = [f for f in con.execute(
         "SELECT DISTINCT f.* FROM files f JOIN file_locations l ON l.file_id=f.file_id "
-        "WHERE f.status='ok' AND l.last_seen_run=? ORDER BY f.rel_path", (run_id,))
-        if f["file_id"] not in excluded]
+        "WHERE f.status='ok' AND l.last_seen_run=? ORDER BY f.rel_path", (run_id,))]
     fids = [f["file_id"] for f in files]
     chunks = [dict(r) for r in con.execute(
         "SELECT * FROM chunks WHERE file_id IN (%s) ORDER BY file_id, seq" % ",".join("?" * len(fids)), fids)] if fids else []
@@ -104,7 +102,7 @@ def export(ws, con, run_id, tax):
     try:
         out.execute("PRAGMA journal_mode=DELETE")
         _create(out)
-        _write_files(out, con, files, chunks, {f.file_id: f.memo for f in tax.files})
+        _write_files(out, con, files, chunks)
         bucket = ws.config["supabase"].get("storage_bucket")
         bad = finals.incomplete(con, run_id, labels)  # 대상 축을 못 채운 axis-update chunk는 분류 실패 chunk처럼 쓴다
         for c in chunks:
@@ -126,12 +124,12 @@ def export(ws, con, run_id, tax):
     return db_path
 
 
-def _write_files(out, con, files, chunks, memos):
+def _write_files(out, con, files, chunks):
     for f in files:
         n = sum(1 for c in chunks if c["file_id"] == f["file_id"])
         out.execute("INSERT INTO files VALUES(?,?,?,?,?,?,?,?)", (
             f["file_id"], f["file_name"], f["rel_path"], f["title"], f["authored_at"], f["author"],
-            memos.get(f["file_id"]), n))
+            None, n))
         for loc in con.execute("SELECT * FROM file_locations WHERE file_id=?", (f["file_id"],)):
             out.execute("INSERT INTO file_locations VALUES(?,?,?,?,?)", (
                 loc["file_id"], loc["rel_path"], loc["file_name"], loc["first_seen_run"], loc["last_seen_run"]))

@@ -144,6 +144,11 @@ mark.s{background:rgba(74,95,168,.16);box-shadow:inset 0 -2px 0 var(--primary);c
 .evit{display:flex;gap:6px;align-items:baseline;font-size:12px;margin-top:4px;word-break:break-word}
 .evit .src{font-size:10.5px;font-weight:700;color:var(--primary-deep);border:1px solid var(--primary-soft);border-radius:5px;padding:0 5px;white-space:nowrap}
 .evhint{font-size:11.5px;color:var(--primary-deep)}
+.evbox input.evtype{flex:1;min-width:160px;border:1px solid var(--bg-grid);border-radius:var(--radius-sm);padding:4px 8px;background:var(--bg-base)}
+.evit .src.typed{color:var(--attn-ink);border-color:var(--attn-line);background:var(--attn-bg)}
+.ctl .ctlhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;padding:8px 4px 2px}
+.ctl .ctlhead .tgt{font-weight:700}
+.ctl .ans-o{color:#b42318;border-color:#b42318;background:rgba(180,35,24,.08)}
 .evon{outline:2px dashed var(--primary);outline-offset:3px;cursor:text}
 .ctxwrap{max-height:420px;overflow:auto;padding-right:4px}
 .ctxline{font-size:12px;margin-bottom:4px;word-break:break-all}
@@ -269,6 +274,13 @@ dialog p{margin:0 0 10px;font-size:12.5px;color:var(--text-muted)}
 .lockgrp > summary{cursor:pointer;font-size:12px;color:var(--text-muted);padding:4px}
 .lockgrp > summary:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 .lockgrp .axis > .axhead b{color:var(--text-muted)}
+/* 확인 필요(확신도 낮음·unknown·검증 X·대조 O) 라벨 강조. 나머지는 lockgrp 묶음으로 접는다 */
+:root{--attn-line:var(--warning); --attn-bg:rgba(201,154,59,.08); --attn-ink:#8a6718}
+.axis.attn{border-left:3px solid var(--attn-line);background:var(--attn-bg);padding-left:6px;border-radius:2px}
+.attn-tag{font-size:10px;font-weight:700;color:var(--attn-ink);border:1px solid var(--attn-line);background:var(--attn-bg);border-radius:999px;padding:0 6px;white-space:nowrap}
+.chip.attn{border-color:var(--attn-line);color:var(--attn-ink);background:var(--attn-bg)}
+.chip.attn.on{background:var(--primary);border-color:var(--primary);color:#EDF1F7}
+.lockscreen p{margin:6px 0}
 @media (max-width:860px){
   .cols{grid-template-columns:1fr}
   .item{text-align:left;padding:8px 10px}
@@ -375,7 +387,6 @@ const DATA = /*__DATA__*/null;
   var editAxes = axes.filter(canEdit);
   // axis-update 실행: 대상 축만 고친다. locked 축(이번 축 변경 대상 아님)은 접힌 읽기 전용 묶음, 질문 답 편집 영역은 숨긴다.
   var AXU = DATA.axis_update || null;
-  var firstAcc = editAxes.length ? "a:" + editAxes[0].name : null;
   var qtext = {};
   (DATA.questions || []).forEach(function(q){ qtext[q.qid] = q.text; });
   var chunks = DATA.chunks || [];
@@ -389,12 +400,14 @@ const DATA = /*__DATA__*/null;
   var syns = [];      // {chunk_id, alias, canonical}
   var revisits = [];  // {chunk_id, target, key, reason, proposed, related_values, memo}
   var rvDraft = null; // 열려 있는 재검토 요청 폼의 초안(저장 버튼을 누를 때만 revisits에 반영)
+  var locked = false; // 검수 완료 뒤 true. 화면을 안내로 바꾸고 저장·편집을 막는다.
   var activeReasons = {};
   var onlyTodo = false;
   var onlyRevisit = false;
   var selId = null;
   var pendingAlias = "";
-  // 교정 근거: chunk_id -> {"a:축"|"q:qid": {items:[{source, chunk_id, quote}], reason}}. edits와 같은 저장 키에 둔다.
+  // 교정 근거: chunk_id -> {"a:축"|"q:qid"|"c:대조qid": {items:[{source, chunk_id, quote}], reason}}. edits와 같은 저장 키에 둔다.
+  // source typed는 근거 칸에 직접 친 문장 중 본문·파일명·문서 제목에서 찾지 못한 것이다(chunk_id 없음).
   // DATA.file_ctx가 없으면(예전 화면 데이터) 기능을 숨긴다.
   var evid = {};
   var evMode = null;  // 근거 지정 중이면 {chunk_id, key}. 이때 드래그는 동의어 제안 대신 근거로 잡는다.
@@ -403,7 +416,7 @@ const DATA = /*__DATA__*/null;
   var EV_MAX = DATA.evidence_max || 3;
   var EV_QUOTE_MAX = DATA.evidence_quote_max || 300;
   var EV_REASON_MAX = DATA.evidence_reason_max || 300;
-  var EV_SOURCES = ["chunk", "file_name", "doc_title"];
+  var EV_SOURCES = ["chunk", "file_name", "doc_title", "typed"];
 
   // taxonomy 재검토 요청: DATA에 규칙이 없으면(예전 화면 데이터) 기능을 숨긴다.
   var RV_REASONS = DATA.revisit_reasons || null;
@@ -430,6 +443,7 @@ const DATA = /*__DATA__*/null;
   }
   var saveT = null;
   function save(){
+    if (locked) return;
     clearTimeout(saveT);
     saveT = setTimeout(function(){
       try { window.localStorage.setItem(KEY, JSON.stringify({edits:edits, status:status, syns:syns, revisits:revisits, evid:evid})); } catch(e){}
@@ -449,9 +463,11 @@ const DATA = /*__DATA__*/null;
   }
   function inboxCheck(){
     if (location.protocol === "file:" || !window.fetch) return;
-    fetch("inbox/status", {cache:"no-store"}).then(function(r){ return r.ok ? r.json() : null; })
+    fetch("inbox/status?run=" + encodeURIComponent(DATA.run_id), {cache:"no-store"}).then(function(r){ return r.ok ? r.json() : null; })
       .then(function(o){
         if (!o || !o.ok) return;
+        // 이 실행의 완료 신호가 이미 있으면(검수 완료 뒤 새로 고침) 바로 잠근다. inbox를 다시 쓰지 않는다.
+        if (o.done_signal === true){ lockScreen(null, null); return; }
         inboxOn = true;
         setInbox("체크하면 작업 폴더 inbox에 자동 저장");
         if (o.done && doneBtn){ doneBtn.disabled = false; doneBtn.title = "마지막 교정을 저장하고 반영·적재로 넘깁니다"; }
@@ -459,6 +475,7 @@ const DATA = /*__DATA__*/null;
       }).catch(function(){});
   }
   function inboxSave(){
+    if (locked) return Promise.resolve(false);
     if (!inboxOn) return Promise.resolve(false);
     return fetch("inbox/review", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(buildOutput())})
       .then(function(r){
@@ -485,12 +502,31 @@ const DATA = /*__DATA__*/null;
     fetch("inbox/review/done", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(o)})
       .then(function(r){
         if (!r.ok) throw new Error(String(r.status));
-        setInbox("검수 완료 " + new Date().toTimeString().slice(0, 8) + " · 반영·적재로 넘어갑니다");
-        doneBtn.textContent = "검수 완료됨";
+        lockScreen(new Date().toTimeString().slice(0, 8), o);
         toast("검수 완료를 알렸습니다. 반영·적재가 이어집니다");
       })
-      .catch(function(){ setInbox("검수 완료 전송 실패: 다시 누르거나 채팅으로 '검수 끝났어'라고 알려 주세요", true); })
-      .then(function(){ doneBtn.disabled = false; });
+      .catch(function(){
+        setInbox("검수 완료 전송 실패: 다시 누르거나 채팅으로 '검수 끝났어'라고 알려 주세요", true);
+        doneBtn.disabled = false;
+      });
+  }
+  // 검수 완료 뒤 안내 화면. 본문을 지우고 건수만 보여 준다(교정 내용·본문은 싣지 않는다). 다시 검수하는 길은 없다.
+  // at: 완료 시각(새로 고침으로 잠근 경우 null), o: 완료 때 보낸 출력(없으면 이 브라우저에 남은 상태로 센다).
+  function lockScreen(at, o){
+    if (locked) return;
+    locked = true;
+    clearTimeout(saveT);
+    rvDraft = null; evMode = null;
+    if (zoom.classList.contains("on")) closeZoom();
+    o = o || buildOutput();
+    function n(k){ return Array.isArray(o[k]) ? o[k].length : 0; }
+    root.textContent = "";
+    root.appendChild(h("div", {class:"emptystate lockscreen", role:"status"}, [
+      h("h2", {text:"검수 완료 · 반영·적재 진행 중"}),
+      h("p", {text:"이 탭은 닫아도 됩니다. 교정 반영과 적재는 작업 대화에서 이어집니다."}),
+      h("p", {class:"mono", text:"실행 " + DATA.run_id + (at ? "  ·  완료 " + at : "  ·  완료 신호 확인됨")}),
+      h("p", {text:"교정 " + n("corrections") + "건 · 상태 " + n("chunk_status") + "건 · 동의어 " + n("synonyms") + "건 · 재검토 " + n("revisits") + "건"})
+    ]));
   }
 
   // ---------- bot values / corrections ----------
@@ -498,6 +534,10 @@ const DATA = /*__DATA__*/null;
     if (c.classify_failed) return null;
     var a = c.axes && c.axes[name];
     return a && a.values && a.values.length ? a : null;
+  }
+  function isOX(c, qid){
+    var b = botAnswer(c, qid);
+    return !!b && (b.answer === "O" || b.answer === "X");
   }
   function botAnswer(c, qid){
     if (c.label_failed) return null;
@@ -536,7 +576,15 @@ const DATA = /*__DATA__*/null;
       var b = botAnswer(c, qid);
       if (!b || b.answer !== v) out.push(evAttach(c.chunk_id, "q:" + qid, {chunk_id:c.chunk_id, target:"answer", key:qid, value:v, status:"corrected"}));
     });
+    controlsOf(c).forEach(function(x){
+      var v = e["c:" + x.qid];
+      if (v && v !== x.answer) out.push(evAttach(c.chunk_id, "c:" + x.qid, {chunk_id:c.chunk_id, target:"control", key:x.qid, value:v, status:"corrected"}));
+    });
     return out;
+  }
+  // 대조 질문(Q-CTL-). axis-update 실행·3차 실패 chunk는 대조 질문을 검수하지 않는다.
+  function controlsOf(c){
+    return AXU || c.label_failed ? [] : (c.controls || []).filter(function(x){ return x && x.qid; });
   }
   // 교정 항목에 근거·이유를 붙인다. 있을 때만 키를 넣어, 근거 없는 교정은 예전 출력과 같다.
   function evValid(x){
@@ -983,7 +1031,7 @@ const DATA = /*__DATA__*/null;
       if (rvDraft.dirty) toast("저장하지 않은 재검토 요청 초안을 닫았습니다");
       rvDraft = null;
     }
-    selId = id; pendingAlias = ""; evMode = null; accOpen = firstAcc;
+    selId = id; pendingAlias = ""; evMode = null; accOpen = firstAccFor(byId[id]);
     renderList2(); renderDetail(true);
   }
 
@@ -1126,7 +1174,7 @@ const DATA = /*__DATA__*/null;
     if (evid[cid] && !Object.keys(evid[cid]).length) delete evid[cid];
   }
   function evKeys(c){ // 이 chunk에서 교정된 축·질문 키("a:축", "q:qid")
-    return chunkCorrections(c).map(function(x){ return (x.target === "axis" ? "a:" : "q:") + x.key; });
+    return chunkCorrections(c).map(function(x){ return (x.target === "axis" ? "a:" : x.target === "control" ? "c:" : "q:") + x.key; });
   }
   function evKeyLabel(k){ return k.slice(2); }
   function evSlideNo(c, cid){
@@ -1135,6 +1183,7 @@ const DATA = /*__DATA__*/null;
     return s ? s.slide_no : null;
   }
   function evWhere(c, x){
+    if (x.source === "typed") return "직접 입력";
     if (x.source === "file_name") return "파일명";
     if (x.source === "doc_title") return "문서 제목";
     if (x.chunk_id === c.chunk_id) return "같은 슬라이드";
@@ -1172,6 +1221,39 @@ const DATA = /*__DATA__*/null;
     toast("근거를 넣었습니다 (" + ev.items.length + "/" + EV_MAX + ")");
   }
   function onEvSelect(){ if (evMode) evCapture(); }
+  // 직접 입력한 근거: 지금 슬라이드 → 같은 파일 다른 슬라이드 → 파일명 → 문서 제목 순으로 찾아(서버 인용 검사와 같은 정규화)
+  // 있으면 그 칸 근거로, 없으면 typed 근거로 넣는다.
+  function evNorm(s){
+    return String(s || "").normalize("NFKC").replace(/[‐-―−－﹣]/g, "-").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+  function evLocate(c, q){
+    var ctx = FILE_CTX && FILE_CTX[c.file_id], n = evNorm(q);
+    var slides = ctx ? (ctx.slides || []).slice() : [];
+    if (!slides.some(function(s){ return s.chunk_id === c.chunk_id; })) slides.push({chunk_id:c.chunk_id, title:c.title, text:c.text});
+    slides.sort(function(a, b){ return (a.chunk_id === c.chunk_id ? 0 : 1) - (b.chunk_id === c.chunk_id ? 0 : 1); });
+    for (var i = 0; i < slides.length; i++){
+      if (evNorm(slides[i].title).indexOf(n) >= 0 || evNorm(slides[i].text).indexOf(n) >= 0) return {source:"chunk", chunk_id:slides[i].chunk_id};
+    }
+    if (ctx && evNorm(ctx.file_name).indexOf(n) >= 0) return {source:"file_name"};
+    if (ctx && ctx.doc_title && evNorm(ctx.doc_title).indexOf(n) >= 0) return {source:"doc_title"};
+    return {source:"typed"};
+  }
+  function evAddTyped(c, k, text){
+    var q = String(text || "").replace(/\s+/g, " ").trim(), n = rvLen(q);
+    if (n < 2 || n > EV_QUOTE_MAX){ toast("근거는 2~" + EV_QUOTE_MAX + "자로 입력하세요"); return false; }
+    var ev = evGet(c.chunk_id, k, true);
+    if (ev.items.length >= EV_MAX){ toast("근거는 " + EV_MAX + "개까지 넣을 수 있습니다"); evPrune(c.chunk_id, k); return false; }
+    var item = evLocate(c, q);
+    item.quote = q;
+    if (ev.items.some(function(x){ return x.source === item.source && x.chunk_id === item.chunk_id && x.quote === q; })){
+      toast("이미 넣은 근거입니다"); return false;
+    }
+    ev.items.push(item);
+    if (ev.items.length >= EV_MAX && evMode && evMode.key === k) evMode = null;
+    save(); renderDetail(true);
+    toast(item.source === "typed" ? "본문에 없는 문장이라 '직접 입력' 근거로 넣었습니다" : "본문에서 찾아 '" + evWhere(c, item) + "' 근거로 넣었습니다");
+    return true;
+  }
   function evCopyToOthers(c, k){
     var src = evGet(c.chunk_id, k, false);
     if (!src) return;
@@ -1208,9 +1290,16 @@ const DATA = /*__DATA__*/null;
     ]));
     if (active) box.appendChild(h("div", {class:"row evhint",
       text:"왼쪽 본문 또는 '같은 파일 슬라이드 텍스트'(슬라이드 제목·본문, 파일명, 문서 제목)에서 근거 부분을 드래그하세요."}));
+    if (!full){
+      var ti = h("input", {class:"evtype", type:"text", maxlength:String(EV_QUOTE_MAX * 2), "aria-label":evKeyLabel(k) + " 근거 직접 입력",
+        placeholder:"근거를 직접 입력 (본문에 있으면 그 위치로, 없으면 '직접 입력'으로 저장)"});
+      var addTyped = function(){ evAddTyped(c, k, ti.value); };
+      ti.addEventListener("keydown", function(ev){ if (ev.key === "Enter" && !ev.isComposing){ ev.preventDefault(); addTyped(); } });
+      box.appendChild(h("div", {class:"row"}, [ti, h("button", {class:"btn sm", type:"button", text:"근거로 추가", onclick:addTyped})]));
+    }
     ev.items.forEach(function(x, i){
       box.appendChild(h("div", {class:"evit"}, [
-        h("span", {class:"src", text:evWhere(c, x)}), h("span", {text:"'" + x.quote + "'"}),
+        h("span", {class:"src" + (x.source === "typed" ? " typed" : ""), text:evWhere(c, x)}), h("span", {text:"'" + x.quote + "'"}),
         h("button", {class:"x", type:"button", "aria-label":"근거 삭제", text:"삭제", onclick:function(){
           ev.items.splice(i, 1); evPrune(c.chunk_id, k); save(); renderDetail(true);
         }})
@@ -1418,8 +1507,56 @@ const DATA = /*__DATA__*/null;
     return box;
   }
 
+  // ---------- 확인 필요(attention) ----------
+  // DATA chunk.attention = {axes:{축:[사유]}, questions:{qid:[사유]}}. 이 칸이 없는 예전 화면 데이터는
+  // 확신도 미만(LOW_CONF)과 unknown 값(UNKNOWN)만 화면에서 직접 판정한다. 확인 여부는 강제·추적하지 않는다.
+  var ATTN_LABELS = {LOW_CONF:"확신도 낮음", UNKNOWN:"unknown", VERIFY_X:"검증 X", CONTROL_O:"대조 O", OX_SAMPLE:"표본 확인"};
+  function lowConf(x){
+    return x !== null && x !== undefined && flag.confidence_min !== undefined && x < flag.confidence_min - 1e-12;
+  }
+  function attnList(v){ return Array.isArray(v) ? v : []; }
+  function attnAxis(c, ax){
+    if (!canEdit(ax) || ax.locked) return [];
+    if (c.attention) return attnList(c.attention.axes && c.attention.axes[ax.name]);
+    var b = botAxis(c, ax.name), out = [];
+    if (b && lowConf(b.confidence)) out.push("LOW_CONF");
+    if (b && b.values.indexOf("unknown") >= 0) out.push("UNKNOWN");
+    return out;
+  }
+  function attnQ(c, qid){
+    if (c.attention) return attnList(c.attention.questions && c.attention.questions[qid]);
+    var b = botAnswer(c, qid);
+    return b && lowConf(b.confidence) ? ["LOW_CONF"] : [];
+  }
+  function attnTags(list){
+    return list.map(function(r){ return h("span", {class:"attn-tag", text:ATTN_LABELS[r] || r}); });
+  }
+  function attnCount(c){
+    return editAxes.filter(function(ax){ return attnAxis(c, ax).length; }).length +
+      questionIds(c).filter(function(qid){ return attnQ(c, qid).length; }).length;
+  }
+  // chunk를 고를 때 처음 펼칠 것: 첫 확인 필요 축, 없으면 첫 확인 필요 질문. 확인 필요가 없으면 모두 접는다.
+  function firstAccFor(c){
+    if (!c) return null;
+    var ax = editAxes.filter(function(a){ return attnAxis(c, a).length; })[0];
+    if (ax) return "a:" + ax.name;
+    var q = questionIds(c).filter(function(qid){ return attnQ(c, qid).length; })[0];
+    return q ? "q:" + q : null;
+  }
+  // 확인 필요도 아니고 이번 검수에서 고치지도 않은 축·질문은 "확신도 높음 n개 · 펼치기" 한 줄로 접는다.
+  // 펼침 상태는 chunk·종류("a"·"q")별로 기억해, 클릭마다 다시 그려도 접히지 않는다.
+  var openHigh = {};
+  function calmGroup(c, kind, nAttn, cards){
+    var key = kind + ":" + c.chunk_id;
+    function label(open){ return (nAttn ? "" : "확인 필요 없음 · ") + "확신도 높음 " + cards.length + "개 · " + (open ? "접기" : "펼치기"); }
+    var sum = h("summary", {text:label(!!openHigh[key])});
+    return h("details", {class:"lockgrp", open:openHigh[key] ? "open" : null,
+      ontoggle:function(ev){ openHigh[key] = ev.currentTarget.open; sum.textContent = label(ev.currentTarget.open); }}, [sum].concat(cards));
+  }
+
   function axisCard(c, ax){
-    var wrap = h("div", {class:"axis"});
+    var attn = attnAxis(c, ax);
+    var wrap = h("div", {class:"axis" + (attn.length ? " attn" : "")});
     var multi = !!ax.multi;
     var editable = canEdit(ax);
     var bot = botAxis(c, ax.name);
@@ -1434,10 +1571,11 @@ const DATA = /*__DATA__*/null;
       onclick:function(ev){ if (ev.target.closest("button")) return; accToggle(accKey); },
       onkeydown:function(ev){ if (ev.target !== ev.currentTarget || (ev.key !== "Enter" && ev.key !== " ")) return; ev.preventDefault(); accToggle(accKey); }}, [
       h("span", {class:"caret", text:accOpen === accKey ? "▾" : "▸", "aria-hidden":"true"}),
-      h("b", {text:ax.name}), h("span", {class:"badge", text:ax.kind}), h("span", {class:"badge", text:multi ? "복수 선택" : "단일 선택"}),
+      h("b", {text:ax.name}), h("span", {class:"badge", text:ax.kind}), h("span", {class:"badge", text:multi ? "복수 선택" : "단일 선택"})
+    ].concat(attnTags(attn), [
       changed ? h("span", {class:"changed", text:"교정됨"}) : null, lock ? h("span", {class:"rvbadge", text:lock}) : rvBadge(c, "axis", ax.name),
       h("span", {class:"axsum", text:ax.pending ? "이 실행에 없음" : cur.length ? cur.join(", ") : "값 없음"})
-    ]));
+    ])));
     if (ax.definition) wrap.appendChild(h("div", {class:"axdef", text:ax.definition}));
 
     if (ax.pending) wrap.appendChild(h("div", {class:"note", text:"이 실행 뒤에 taxonomy에 더해진 축이라 라벨이 없고 고칠 수 없습니다. 다시 라벨링하면 값이 붙습니다."}));
@@ -1529,7 +1667,8 @@ const DATA = /*__DATA__*/null;
   }
 
   function questionCard(c, qid){
-    var wrap = h("div", {class:"axis"});
+    var attn = attnQ(c, qid);
+    var wrap = h("div", {class:"axis" + (attn.length ? " attn" : "")});
     var bot = botAnswer(c, qid), cur = curAnswer(c, qid);
     var edited = edits[c.chunk_id] && edits[c.chunk_id]["q:" + qid];
     var changed = edited && (!bot || bot.answer !== edited);
@@ -1540,9 +1679,11 @@ const DATA = /*__DATA__*/null;
       onclick:function(ev){ if (ev.target.closest("button")) return; accToggle(accKey); },
       onkeydown:function(ev){ if (ev.target !== ev.currentTarget || (ev.key !== "Enter" && ev.key !== " ")) return; ev.preventDefault(); accToggle(accKey); }}, [
       h("span", {class:"caret", text:accOpen === accKey ? "▾" : "▸", "aria-hidden":"true"}),
-      h("span", {class:"qid mono", text:qid}), changed ? h("span", {class:"changed", text:"교정됨"}) : null, rvBadge(c, "question", qid),
+      h("span", {class:"qid mono", text:qid})
+    ].concat(attnTags(attn), [
+      changed ? h("span", {class:"changed", text:"교정됨"}) : null, rvBadge(c, "question", qid),
       h("span", {class:"axsum", text:cur || "답 없음"})
-    ]));
+    ])));
     wrap.appendChild(h("div", {class:"qtext", text:qtext[qid] || "(질문 문장 없음)"}));
     if (!c.label_failed){
       var line = h("div", {class:"botline"}, [h("span", {class:"k", text:"봇"})]);
@@ -1570,6 +1711,37 @@ const DATA = /*__DATA__*/null;
     return wrap;
   }
 
+  function controlCard(c, x){
+    var k = "c:" + x.qid, e = edits[c.chunk_id] || {};
+    var cur = e[k] || x.answer || "", changed = !!e[k] && e[k] !== x.answer;
+    var wrap = h("div", {class:"axis ctl"});
+    wrap.appendChild(h("div", {class:"ctlhead"}, [
+      h("span", {class:"tgt", text:(x.axis || "") + " = " + (x.value || "")}),
+      h("span", {class:"qid mono muted", text:x.qid}),
+      changed ? h("span", {class:"changed", text:"교정됨"}) : null
+    ]));
+    wrap.appendChild(h("div", {class:"qtext", text:x.text || x.qid}));
+    var line = h("div", {class:"botline"}, [h("span", {class:"k", text:"봇"}),
+      h("span", {class:"ans" + (x.answer === "O" ? " ans-o" : ""), text:x.answer || "-"}), confEl(x.confidence)]);
+    wrap.appendChild(line);
+    if (x.quote) wrap.appendChild(h("div", {class:"ev", text:x.quote}));
+    var ed = h("div", {class:"edit", role:"group", "aria-label":x.qid + " 대조 답 교정"}, [h("span", {class:"k", text:"교정"})]);
+    ANSWERS.forEach(function(a){
+      ed.appendChild(h("button", {class:"opt" + (a === "판단 불가" ? " sp" : ""), type:"button", "aria-pressed":String(cur === a), text:a,
+        onclick:function(){
+          var e2 = edits[c.chunk_id] || (edits[c.chunk_id] = {});
+          var next = cur === a ? "" : a;
+          if (!next || next === x.answer) delete e2[k]; else e2[k] = next;
+          if (!Object.keys(e2).length) delete edits[c.chunk_id];
+          save(); renderList(); renderDetail(true);
+        }}));
+    });
+    wrap.appendChild(ed);
+    var eb = changed ? evBox(c, k) : null;
+    if (eb) wrap.appendChild(eb);
+    return wrap;
+  }
+
   // ---------- detail ----------
   function renderDetail(keep){
     var evP = document.getElementById("evpane"), decP = document.getElementById("decpane");
@@ -1586,6 +1758,7 @@ const DATA = /*__DATA__*/null;
     var unkWarn = c.unknown_ratio !== null && c.unknown_ratio !== undefined && flag.unknown_ratio_min !== undefined && c.unknown_ratio >= flag.unknown_ratio_min;
     var confWarn = c.min_confidence !== null && c.min_confidence !== undefined && flag.confidence_min !== undefined && c.min_confidence < flag.confidence_min;
     function num(x){ return x === null || x === undefined ? "-" : Number(x).toFixed(2); }
+    var nAttn = attnCount(c);
     detailEl.appendChild(h("div", {class:"dh"}, [
       h("div", {class:"dh-main"}, [
         h("h2", {text:c.file_name}),
@@ -1596,7 +1769,8 @@ const DATA = /*__DATA__*/null;
           var t = tagFor(r); t.textContent = r + " · " + (reasonLabels[r] || ""); t.style.fontSize = "10.5px"; return t;
         })),
         h("span", {class:"metric"}, [h("span", {class:"k", text:"unknown 비율"}), h("b", {class:"mono" + (unkWarn ? " warnc" : ""), text:num(c.unknown_ratio)})]),
-        h("span", {class:"metric"}, [h("span", {class:"k", text:"최소 확신도"}), h("b", {class:"mono" + (confWarn ? " warnc" : ""), text:num(c.min_confidence)})])
+        h("span", {class:"metric"}, [h("span", {class:"k", text:"최소 확신도"}), h("b", {class:"mono" + (confWarn ? " warnc" : ""), text:num(c.min_confidence)})]),
+        h("span", {class:"metric", title:"확신도 낮음·unknown·검증 X·대조 O인 축·질문 수"}, [h("span", {class:"k", text:"확인 필요"}), h("b", {class:"mono" + (nAttn ? " warnc" : ""), text:String(nAttn)})])
       ])
     ]));
 
@@ -1663,26 +1837,14 @@ const DATA = /*__DATA__*/null;
       tb.appendChild(tbody);
       left.appendChild(h("div", {class:"card"}, [h("h3", {text:"추출된 날짜·담당자"}), tb]));
     }
-    // 대조 질문(Q-CTL-): 이 chunk에 붙지 않은 라벨로 만든 질문. 읽기 전용이며 확정 라벨에 들어가지 않는다.
-    // 축 교정으로 이어지므로 판정 칸 맨 위에 둔다.
-    var ctlCard = null;
-    if (!c.label_failed && c.controls && c.controls.length){
-      var ctb = h("table"), cth = h("thead"), ctr0 = h("tr");
-      ["대조 라벨", "질문", "답", "근거"].forEach(function(t){ ctr0.appendChild(h("th", {text:t})); });
-      cth.appendChild(ctr0); ctb.appendChild(cth);
-      var ctbody = h("tbody");
-      c.controls.forEach(function(x){
-        var tr = h("tr");
-        tr.appendChild(h("td", {text:(x.axis || "") + " = " + (x.value || "")}));
-        tr.appendChild(h("td", {text:x.text || x.qid}));
-        tr.appendChild(h("td", {text:x.answer, style:x.answer === "O" ? "font-weight:700;color:#b42318" : ""}));
-        tr.appendChild(h("td", {text:x.quote || ""}));
-        ctbody.appendChild(tr);
-      });
-      ctb.appendChild(ctbody);
-      var ctlCard = h("div", {class:"card"}, [h("h3", {text:"대조 질문 (붙지 않은 라벨)"}),
-        h("div", {class:"note", text:"O가 나온 라벨은 1차 분류가 놓쳤거나 3차가 과하게 판정한 것입니다. 맞으면 아래 축에서 값을 더해 교정하세요."}),
-        ctb]);
+    // 대조 질문(Q-CTL-): 이 chunk에 붙지 않은 라벨로 만든 질문. 답 교정은 확정 라벨에 들어가지 않고
+    // Domain-Engr-bot 검수 결과(품질 신호)로만 간다. 축 교정으로 이어지므로 판정 칸 맨 위에 둔다.
+    var ctls = controlsOf(c), ctlCard = null;
+    if (ctls.length){
+      ctlCard = h("div", {class:"card"}, [h("h3", {text:"대조 질문 (붙지 않은 라벨) " + ctls.length + "개"}),
+        h("div", {class:"note", text:"봇 답이 틀렸으면 답을 고치고 근거를 넣으세요. 대조 답 교정은 Domain-Engr-bot 검수 결과로 가며 라벨은 바꾸지 않습니다. " +
+          "O가 맞아 라벨이 빠진 것이면 아래 축에서 값을 따로 더하세요."})]);
+      ctls.forEach(function(x){ ctlCard.appendChild(controlCard(c, x)); });
     }
 
     // 판정 칸
@@ -1699,24 +1861,37 @@ const DATA = /*__DATA__*/null;
     var naPanel = rvOn ? rvPanel(c, "new_axis", "", null, true) : null;
     if (naPanel) axCard.appendChild(naPanel);
     if (c.classify_failed) axCard.appendChild(h("div", {class:"note", text:"1차 분류가 실패했습니다. 봇 값 없이 판정 칸만 표시합니다."}));
+    // 축 나누기: 확인 필요 ∪ 이번 검수에서 고친 축은 펼친 쪽, 나머지 편집 가능 축은 접힌 묶음. 읽기 전용 축은 지금처럼 펼친 쪽.
+    // 1차 분류가 실패한 chunk는 봇 값이 없어 모든 축을 사람이 채워야 하므로 접지 않는다.
+    var ce = edits[c.chunk_id] || {};
+    var axAttnN = 0, hotAxes = [], calmAxes = [];
+    axes.forEach(function(ax){
+      if (ax.locked) return;
+      if (!canEdit(ax) || c.classify_failed){ hotAxes.push(ax); return; }
+      var a = attnAxis(c, ax).length;
+      if (a) axAttnN++;
+      (a || ce["a:" + ax.name] ? hotAxes : calmAxes).push(ax);
+    });
     var jumpAxes = axes.filter(function(ax){ return !ax.removed && !ax.locked; });
     var nActive = jumpAxes.length;
     if (nActive > 12){
       // 축이 많으면 위에 점프 칩을 두어 아코디언을 길게 내리지 않고 바로 펼친다
       axCard.appendChild(h("div", {class:"chips axjump", role:"group", "aria-label":"축으로 이동"}, jumpAxes.map(function(ax){
-        return h("button", {class:"chip" + (accOpen === "a:" + ax.name ? " on" : ""), type:"button", text:ax.name,
+        return h("button", {class:"chip" + (attnAxis(c, ax).length ? " attn" : "") + (accOpen === "a:" + ax.name ? " on" : ""), type:"button", text:ax.name,
           onclick:function(){
+            if (calmAxes.indexOf(ax) >= 0) openHigh["a:" + c.chunk_id] = true;
             accOpen = "a:" + ax.name; renderDetail(true);
             var el = document.querySelector('#decpane [data-acc="' + accOpen.replace(/"/g, '\\"') + '"]');
             if (el && el.scrollIntoView) el.scrollIntoView({block:"nearest"});
           }});
       })));
     }
-    var locked = axes.filter(function(ax){ return ax.locked; });
-    axes.forEach(function(ax){ if (!ax.locked) axCard.appendChild(axisCard(c, ax)); });
-    if (locked.length) axCard.appendChild(h("details", {class:"lockgrp"}, [
-      h("summary", {text:"이번 축 변경 대상이 아닌 축 " + locked.length + "개 (읽기 전용)"})
-    ].concat(locked.map(function(ax){ return axisCard(c, ax); }))));
+    hotAxes.forEach(function(ax){ axCard.appendChild(axisCard(c, ax)); });
+    if (calmAxes.length) axCard.appendChild(calmGroup(c, "a", axAttnN, calmAxes.map(function(ax){ return axisCard(c, ax); })));
+    var lockedAxes = axes.filter(function(ax){ return ax.locked; });
+    if (lockedAxes.length) axCard.appendChild(h("details", {class:"lockgrp"}, [
+      h("summary", {text:"이번 축 변경 대상이 아닌 축 " + lockedAxes.length + "개 (읽기 전용)"})
+    ].concat(lockedAxes.map(function(ax){ return axisCard(c, ax); }))));
     if (!axes.length) axCard.appendChild(h("div", {class:"muted", text:"축 정의가 없습니다."}));
     right.appendChild(axCard);
 
@@ -1727,7 +1902,19 @@ const DATA = /*__DATA__*/null;
     if (nqPanel) qCard.appendChild(nqPanel);
     if (c.classify_failed) qCard.appendChild(h("div", {class:"note", text:COM_Q ? "분류 실패 chunk는 질문 " + COM_Q + "만 판정합니다." : "분류 실패 chunk라 판정할 공통 질문이 없습니다."}));
     if (c.label_failed) qCard.appendChild(h("div", {class:"note", text:"3차 라벨링이 실패했습니다. 봇 답 없이 판정 칸만 표시합니다."}));
-    qids.forEach(function(q){ qCard.appendChild(questionCard(c, q)); });
+    var qAttnN = 0, hotQ = [], calmQ = [];
+    if (!c.label_failed && !c.classify_failed && qids.some(function(q){ return isOX(c, q); }))
+      qCard.appendChild(h("div", {class:"note", text:"O/X 답은 확신도와 관계없이 모두 펼쳐 둡니다. '표본 확인'은 확신도가 높은 O/X 중 무작위로 고른 카드라 더 꼼꼼히 봐 주세요."}));
+    qids.forEach(function(q){
+      // 3차 라벨링이 실패한 chunk는 봇 답이 없으므로 접지 않는다(분류 실패면 공통 질문 하나뿐이다)
+      if (c.label_failed || c.classify_failed){ hotQ.push(q); return; }
+      var a = attnQ(c, q).length;
+      if (a) qAttnN++;
+      // O/X 답은 확신도가 높아도(0.99여도 틀린다) 접지 않고 늘 펼친 쪽에 둔다. N/A·판단 불가만 접는다.
+      (a || ce["q:" + q] || isOX(c, q) ? hotQ : calmQ).push(q);
+    });
+    hotQ.forEach(function(q){ qCard.appendChild(questionCard(c, q)); });
+    if (calmQ.length) qCard.appendChild(calmGroup(c, "q", qAttnN, calmQ.map(function(q){ return questionCard(c, q); })));
     if (!qids.length) qCard.appendChild(h("div", {class:"muted", text:"이 chunk에 매핑된 질문이 없습니다."}));
     if (!AXU) right.appendChild(qCard);  // axis-update 실행은 2·3차를 다시 돌리지 않으므로 질문 답을 검수하지 않는다
 
@@ -1756,6 +1943,7 @@ const DATA = /*__DATA__*/null;
     }
   }
   document.addEventListener("keydown", function(ev){
+    if (locked) return;
     var t = ev.target && ev.target.tagName;
     if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT" || ev.ctrlKey || ev.metaKey || ev.altKey) return;
     if (zoom.classList.contains("on")){
@@ -1802,7 +1990,7 @@ const DATA = /*__DATA__*/null;
     ]));
     var f = flat(visibleChunks());
     selId = f.length ? f[0].chunk_id : null;
-    accOpen = firstAcc;
+    accOpen = firstAccFor(byId[selId]);
     document.querySelector(".bar").appendChild(filtersEl);   // 목록이 좁은 레일이라 필터는 위 바에 둔다
     renderList(); renderDetail();
     inboxCheck();

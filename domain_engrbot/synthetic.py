@@ -2,8 +2,8 @@
 
 `eval --golden synthetic`과 domain_engrbot 테스트가 같이 쓴다.
 
-- taxonomy: 저장소 taxonomy/taxonomy.xlsx를 어댑터와 같은 경로(read_input → parse_bytes → snapshot)로 읽는다.
-  엑셀을 고치면 다음 실행부터 반영된다.
+- taxonomy: 저장소 taxonomy/taxonomy.json을 어댑터와 같은 경로(read_input → parse_bytes → snapshot)로 읽는다.
+  taxonomy.json을 고치면 다음 실행부터 반영된다.
 - 깨끗한 레코드는 taxonomy 내용과 상관없이 L2 규칙(unknown 비율, 전부 해당 없음)을 만족하게 만든다.
 - 문장 틀마다 지지하는 라벨이 정해져 있다. 정답 레코드는 문장 틀에서 나온다(사외 골든셋).
 - 원본 bytes는 pptx_writer가 io.BytesIO 안에서 만든다. 파일 ID는 그 bytes의 sha256이다.
@@ -18,7 +18,7 @@ from domain_engrbot import model, policy, pptx_writer
 from domain_engrbot.adapters import labelbot_ws
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TAXONOMY_XLSX = os.path.join(REPO_ROOT, "taxonomy", "taxonomy.xlsx")
+TAXONOMY_JSON = os.path.join(REPO_ROOT, "taxonomy", "taxonomy.json")
 UNKNOWN_RATIO = policy.default_policy()["l2"]["unknown_ratio_major"]
 LABELER_RUN_ID = "20261004T000000-fx01"
 FOOTER = "사내 테스트용 더미 자료"
@@ -49,8 +49,18 @@ PEOPLE = ["김민수", "이서연", "박지훈", "최유나", "정다은"]
 
 # ---- taxonomy 스냅샷 --------------------------------------------------------
 
-def taxonomy_snapshot(path=TAXONOMY_XLSX):
-    return labelbot_ws.snapshot(labelbot_ws.load_taxonomy(REPO_ROOT, {"taxonomy_path": path}))
+# 합성 fixture의 동의어는 고정한다. 축·값·질문은 저장소 taxonomy를 따르지만, 동의어는 사람이 언제든 비울 수 있는
+# 데이터라(2026-10-07 전부 삭제) 동의어 검사(L4·L6·judge)를 시험할 최소 쌍을 코드에 둔다. 표준어가 taxonomy에
+# 없는 쌍은 뺀다.
+FIXTURE_SYNONYMS = (("단락", "Short"), ("보이드", "Void"), ("JGV", "JHV"), ("Metal1", "M1"),
+                    ("브릿지", "metal bridge"))
+
+
+def taxonomy_snapshot(path=TAXONOMY_JSON):
+    snap = labelbot_ws.snapshot(labelbot_ws.load_taxonomy(REPO_ROOT, {"taxonomy_path": path}))
+    values = {v["name"] for a in snap["axes"] for v in a["values"]}
+    snap["synonyms"] = [{"alias": a, "canonical": c} for a, c in FIXTURE_SYNONYMS if c in values]
+    return snap
 
 
 def synonym_table(snapshot):

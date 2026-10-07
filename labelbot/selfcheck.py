@@ -84,7 +84,8 @@ def run(ws, probe_llm=False, out=print):
 
 
 def _check_taxonomy(ws, item):
-    tax_ok, detail, tax, d = os.path.isfile(ws.taxonomy_path), "", None, {}
+    tax_ok = os.path.isfile(ws.taxonomy_path) and not ws.taxonomy_path.lower().endswith(".xlsx")
+    detail, tax, d = "", None, {}
     if tax_ok:
         try:
             from labelbot import taxdiff
@@ -101,9 +102,14 @@ def _check_taxonomy(ws, item):
             except Exception:  # work.sqlite 오류는 taxonomy 자체의 실패가 아니다
                 d = {}
                 detail += " diff 알 수 없음"
+            legacy = os.path.splitext(ws.taxonomy_path)[0] + ".xlsx"
+            if os.path.isfile(legacy) and os.path.getmtime(legacy) > os.path.getmtime(ws.taxonomy_path):
+                # 원본은 JSON이다. 예전 xlsx를 고쳐도 반영되지 않는다(실패로 치지 않는다)
+                detail += " WARN TAXONOMY_XLSX_NEWER: 예전 taxonomy.xlsx가 더 최근에 저장됐다(편집은 보드·편집기로)"
     else:
-        detail = "taxonomy/taxonomy.xlsx를 작업 폴더로 복사하세요"
-    item("taxonomy.xlsx", tax_ok, detail)
+        detail = ("TAXONOMY_XLSX_NEEDS_MIGRATION: python -m labelbot taxonomy-migrate --xlsx \"%s\"" % ws.taxonomy_path
+                  if ws.taxonomy_path.lower().endswith(".xlsx") else "pipeline.json taxonomy_path의 taxonomy.json이 없습니다")
+    item("taxonomy.json", tax_ok, detail)
     if tax_ok and tax is not None:
         warns = axis_quality(tax, d)
         # WARN은 실패로 치지 않는다(ok=True). 축 이름과 건수만 낸다.

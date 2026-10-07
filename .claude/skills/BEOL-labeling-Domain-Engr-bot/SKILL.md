@@ -1,6 +1,6 @@
 ---
 name: BEOL-labeling-Domain-Engr-bot
-description: 사람 검수 결과(BEOL-labeling-feedback이 반영한 교정·재검토 요청·검수 등록 동의어)와 누적 교정 장부를 읽고, LLM으로 엔지니어에게 물을 도메인 질문 10개 안팎을 만들어 질문 화면(서버)에 띄운다. 사람이 답하고 초안(규칙 문장·taxonomy 행)을 고쳐 확정한 것만 taxonomy/labeling_rules.json(다음 /BEOL-labeling 프롬프트)과 taxonomy 수정 보드(출처 S7 "엔지니어 답변")로 보낸다. 승인된 규칙·사례 관리(끄기·켜기·문장 수정·승인 취소, 갱신 대기 사례 승인)와 taxonomy 수정 보드(흩어진 taxonomy.xlsx 수정 제안을 한 화면에 모아 붙여넣기 행을 준다)도 맡는다. 봇은 결정을 만들지 않고 taxonomy.xlsx를 쓰지 않는다. 사용자가 "Domain-Engr-bot 돌려줘", "Engr-bot 돌려줘"(옛 이름), "도메인 질문", "엔지니어 질문", "질문 답변", "질문 답변 끝났어", "도메인 지식 반영", "승인 규칙 관리", "규칙 끄기", "taxonomy 수정", "taxonomy 보드", "taxonomy 반영 화면"이라고 하거나 /BEOL-labeling-Domain-Engr-bot을 부르면 이 스킬을 쓴다. 예전 표현("도메인 검수", "QA 검수 끝났어", "라벨링 규칙 검수", "교정 규칙 승인")으로 불러도 이 스킬이 맡되 새 절차(도메인 질문 또는 승인 규칙 관리)로 안내한다. 라벨링 실행은 BEOL-labeling, 사람 검수 반영과 적재는 BEOL-labeling-feedback, 저장소 코드 검수는 BEOL-labeling-Code-Engr-bot이 맡는다.
+description: 사람 검수 결과(BEOL-labeling-feedback이 반영한 교정·재검토 요청·검수 등록 동의어)와 누적 교정 장부를 읽고, LLM으로 엔지니어에게 물을 도메인 질문 10개 안팎을 만들어 질문 화면(서버)에 띄운다. 사람이 답하고 초안(규칙 문장·taxonomy 행)을 고쳐 확정한 것만 taxonomy/labeling_rules.json(다음 /BEOL-labeling 프롬프트)과 taxonomy 수정 보드(출처 S7 "엔지니어 답변")로 보낸다. 승인된 규칙·사례 관리(끄기·켜기·문장 수정·승인 취소, 갱신 대기 사례 승인)와 taxonomy 수정 보드(흩어진 taxonomy 수정 제안을 한 화면에 모으고, 사람이 고쳐 "최종 완료"하면 봇이 taxonomy.json에 쓴다)도 맡는다. 봇은 결정을 만들지 않고, taxonomy.json은 사람이 보드에서 확정한 것만 쓴다. 사용자가 "Domain-Engr-bot 돌려줘", "Engr-bot 돌려줘"(옛 이름), "도메인 질문", "엔지니어 질문", "질문 답변", "질문 답변 끝났어", "도메인 지식 반영", "승인 규칙 관리", "규칙 끄기", "taxonomy 수정", "taxonomy 보드", "taxonomy 반영 화면"이라고 하거나 /BEOL-labeling-Domain-Engr-bot을 부르면 이 스킬을 쓴다. 예전 표현("도메인 검수", "QA 검수 끝났어", "라벨링 규칙 검수", "교정 규칙 승인")으로 불러도 이 스킬이 맡되 새 절차(도메인 질문 또는 승인 규칙 관리)로 안내한다. 라벨링 실행은 BEOL-labeling, 사람 검수 반영과 적재는 BEOL-labeling-feedback, 저장소 코드 검수는 BEOL-labeling-Code-Engr-bot이 맡는다.
 ---
 
 # BEOL-labeling-Domain-Engr-bot: 도메인 질문
@@ -13,6 +13,16 @@ description: 사람 검수 결과(BEOL-labeling-feedback이 반영한 교정·�
 - **② 승인된 규칙 관리**("승인 규칙 관리", "규칙 끄기", "규칙 문장 수정"): 아래 "승인된 규칙 관리"를 따른다.
 - **③ taxonomy 수정 보드**("taxonomy 수정", "taxonomy 보드", "taxonomy 반영 화면", "taxonomy 피드백"): 아래 "taxonomy 수정 보드"를 따른다.
 
+**품질 점검 · 재라벨링 루프에서의 자리**(사용자 결정, 2026-10-07): 이 스킬은 라벨링 파이프라인(`/BEOL-labeling-run-labeling` → BEOL-labeling → feedback)이 자동으로 부르지 않는다. 적재가 끝난 뒤 사람이 따로 시작하는 품질 루프의 앞쪽이다. 하위 스킬은 `/BEOL-taxonomy-dashboard`(③과 같은 보드)다. ①에서 규칙이 확정되면 마무리 보고 끝에 "규칙이 바뀌었으니 `/BEOL-labeling-Code-Engr-bot` 규칙 점검으로 옛 실행을 다시 라벨링할 수 있다"를, 사람이 taxonomy를 저장했다고 하면 "축 점검으로 바뀐 축만 다시 라벨링할 수 있다"를 한 줄 안내한다. Code-Engr-bot을 직접 부르지는 않는다.
+
+```
+[품질 점검 · 재라벨링]
+Domain-Engr-bot ─ 질문 → 답 확정 → labeling_rules.json ─┐
+  └ taxonomy-dashboard ─ 보드 확정 → taxonomy.json ───────┤
+Code-Engr-bot ← 규칙 · 축 변경 감지 ─────────────────────┘
+  ├ rules-update(규칙 범위만)   └ axis-update(바뀐 축만)
+```
+
 예전 표현으로 부르면 이렇게 안내한다. "도메인 검수"는 ①로 진행하며 "도메인 검수는 이제 질문으로 바뀌었다"를 한 줄 알린다. "라벨링 규칙 검수"·"교정 규칙 승인"·"규칙 후보 검수"는 새 후보 승인이 질문 화면으로 합쳐졌으므로 ①로 진행하고, 이미 승인한 규칙을 고치려는 뜻이면 ②로 간다. "QA 검수 끝났어"·"검토 화면 검수 끝났어"·"qa_decisions 반영"은 예전 QA 검토 화면의 반영인데 이 스킬은 그 절차를 더 하지 않는다. 그 사실을 알리고, 질문 화면에서 답을 마친 것이면 ①의 절차 5로 간다.
 
 ```
@@ -22,7 +32,7 @@ description: 사람 검수 결과(BEOL-labeling-feedback이 반영한 교정·�
   → 서버가 qa/inbox에 저장하고 바로 반영(확정분만)한 뒤 닫힌다 → Claude 마무리 보고
        (서버 없이 저장했으면 "질문 답변 끝났어" → 답 파일 확인 → questions apply)
        (a) taxonomy/labeling_rules.json → 다음 /BEOL-labeling 1차 분류·3차 라벨링 프롬프트
-       (b) taxonomy_proposals.jsonl → taxonomy 수정 보드 출처 S7 → 사람이 taxonomy.xlsx에 붙여넣기
+       (b) taxonomy_proposals.jsonl → taxonomy 수정 보드 출처 S7 → 사람이 보드에서 확정해 taxonomy.json에 저장
 ```
 
 ## 고정 값
@@ -97,7 +107,7 @@ description: 사람 검수 결과(BEOL-labeling-feedback이 반영한 교정·�
   - 초안 만들기는 그 질문 문장과 사람이 쓴 자유 답만 보낸다
 - 콘솔과 대화에 본문·파일명·질문 문장·답 내용을 옮기지 않는다. 보고에는 건수, set_id, 사유 코드만 쓴다.
 - 사내 파일을 Read 도구로 열지 않는다. 사내 파일은 DRM이 걸려 있고, 열기는 labelbot의 ingest 한 곳뿐이다(루트 `CLAUDE.md`).
-- 이 봇은 labelbot의 산출, 라벨, 프롬프트 파일, taxonomy.xlsx를 고치지 않는다. 승인 파일은 `questions apply`·`labeling-rules apply`로만 바뀐다.
+- 이 봇은 labelbot의 산출, 라벨, 프롬프트 파일을 고치지 않는다. taxonomy.json은 사람이 보드에서 "최종 완료"한 것만 쓴다. 승인 파일은 `questions apply`·`labeling-rules apply`로만 바뀐다.
 - 답 파일·결정 파일은 사람이 고른 것만 반영한다. 질문 화면 서버의 **답변 완료 · 저장**은 사람이 화면의 확인 창("저장하고 바로 반영합니다")을 거쳐 누르는 것이므로 그 자체가 반영 승인이다(사용자 결정, 2026-10-06). 그 밖의 경로(내려받기·텍스트 붙여넣기·`--no-apply`로 띄운 서버)로 온 답 파일과 결정 파일은 반영하기 전에 항상 `AskUserQuestion`으로 확인받는다.
 
 ## 사람 검수 결과를 입력으로 받는다
@@ -184,7 +194,7 @@ python -m domain_engrbot questions serve --workspace "<WS>" [--port N] [--no-dra
 
 절차 3의 백그라운드 작업이 끝났다는 알림이 오면(또는 사용자가 "질문 답변 끝났어"라고 했는데 서버 출력에 반영 줄이 이미 있으면) 그 작업의 출력 파일을 읽는다. 출력에는 건수·ID·사유 코드만 있다.
 
-- `[questions] 반영: …` 줄과 `[serve] 반영을 마쳐 질문 화면 서버를 닫았다`가 있으면 반영이 끝난 것이다. `AskUserQuestion`·`questions apply`·TaskStop은 하지 않는다(같은 파일을 다시 반영하면 모두 `not_open`이다). 반영 줄을 그대로 전하고, 뒤따르는 JSON 줄(`invalid`·`not_open`·`notes`)은 아래 5-B의 3과 같이 설명한다. `[taxonomy-board] …` 줄이 있으면 보드가 이미 갱신된 것이므로 그 줄을 전하고 S7 붙여넣기를 안내한다(보드 명령은 다시 돌리지 않는다). 그다음 5-B의 6처럼 마무리 보고를 한다.
+- `[questions] 반영: …` 줄과 `[serve] 반영을 마쳐 질문 화면 서버를 닫았다`가 있으면 반영이 끝난 것이다. `AskUserQuestion`·`questions apply`·TaskStop은 하지 않는다(같은 파일을 다시 반영하면 모두 `not_open`이다). 반영 줄을 그대로 전하고, 뒤따르는 JSON 줄(`invalid`·`not_open`·`notes`)은 아래 5-B의 3과 같이 설명한다. `[taxonomy-board] …` 줄이 있으면 보드가 이미 갱신된 것이므로 그 줄을 전하고 보드에서 S7 항목을 확정하라고 안내한다(보드 명령은 다시 돌리지 않는다). 그다음 5-B의 6처럼 마무리 보고를 한다.
 - 반영 줄 없이 끝났으면(사람이 저장하지 않았거나 2시간 timeout) 저장된 답 파일이 있는지 `questions status`로 보고, 있으면 5-B로 간다. 없으면 남은 질문 수만 알리고 끝낸다.
 - 사용자가 "질문 답변 끝났어"라고 했는데 서버가 아직 떠 있으면 출력 파일에서 `[serve] 반영 실패: <코드>` 줄을 본다. 있으면 그 코드를 알리고(오류 코드 안내 표), 화면에서 **다시 저장**을 누르라고 안내한다. 저장 줄도 없으면 아직 저장하지 않은 것이므로 화면의 **답변 완료 · 저장**을 누르라고 안내한다.
 
@@ -229,7 +239,7 @@ python -m domain_engrbot questions serve --workspace "<WS>" [--port N] [--no-dra
    python -m domain_engrbot taxonomy-board
    ```
 
-   `[taxonomy-board] …` 줄을 그대로 전하고, "출처 '엔지니어 답변(S7)' 항목을 보드에서 행 복사해 taxonomy.xlsx에 붙여넣는다"를 안내한다(아래 "taxonomy 수정 보드" 절차 2).
+   `[taxonomy-board] …` 줄을 그대로 전하고, "출처 '엔지니어 답변(S7)' 항목을 보드 카드에서 고치고 반영함·최종 완료로 taxonomy.json에 저장한다"를 안내한다(아래 "taxonomy 수정 보드" 절차 2).
 
 6. 마무리 보고: 반영 줄 한 줄, 승인 파일 [`taxonomy/labeling_rules.json`](taxonomy/labeling_rules.json) 링크, "다음 `/BEOL-labeling` 실행부터 1차 분류·3차 라벨링 프롬프트에 들어간다"는 한 줄, 남은 질문 수(1 이상이면 "다음에 `/BEOL-labeling-Domain-Engr-bot`으로 이어서 답할 수 있다").
 
@@ -276,35 +286,25 @@ python -m domain_engrbot questions serve --workspace "<WS>" [--port N] [--no-dra
 
 오류는 `[오류] <코드>`로 나온다. `DECISIONS_JSON_INVALID`·`DECISIONS_FORMAT_INVALID`·`DECISIONS_DUPLICATE_ID`·`DECISIONS_TOO_LARGE`는 결정 파일이 깨진 것이므로 화면에서 다시 저장해 달라고 한다. `RULES_JSON_INVALID`는 승인 파일을 사람이 고치다 깨진 것이므로 위치만 알리고 고치지 않는다.
 
-## taxonomy 수정 보드 (사용자 결정, 2026-10-05)
+## taxonomy 수정 보드 (사용자 결정, 2026-10-05, 2026-10-07 개정)
 
-taxonomy.xlsx 수정 제안은 여러 곳에 흩어져 있다: **S7 엔지니어 답변**(질문 화면에서 확정한 제안, `workspaces/_domain_engrbot/questions/taxonomy_proposals.jsonl`. 확정한 정의 문장이 붙여넣기 행에 채워져 나온다), Domain-Engr-bot 예전 도메인 검수의 승인 피드백(`feedback.json`)·제안(`proposals.jsonl`)·L6 지표(`taxonomy_candidates.jsonl`), labelbot 후보(`reports/candidates.jsonl`), 재검토 요청(`reports/taxonomy_revisit.jsonl`, `taxonomy/taxonomy_revisit_requests/*.json`), 교정 장부(`synonyms.jsonl`). 보드는 이것을 시트 위치(축·값, 동의어, 질문 ID) 하나로 묶어 대상 시트 열 순서의 붙여넣기 행을 준다. 봇은 taxonomy.xlsx를 쓰지 않고 정의 문장을 지어내지 않는다(LLM 0회). S7 문장은 사람이 질문 화면에서 확정한 것이다. 붙여넣기와 저장은 사람이 한다.
+taxonomy 수정 제안은 여러 곳에 흩어져 있다: **S7 엔지니어 답변**(질문 화면에서 확정한 제안, `workspaces/_domain_engrbot/questions/taxonomy_proposals.jsonl`), Domain-Engr-bot 예전 도메인 검수의 승인 피드백(`feedback.json`)·제안(`proposals.jsonl`)·L6 지표(`taxonomy_candidates.jsonl`), labelbot 후보(`reports/candidates.jsonl`), 재검토 요청(`reports/taxonomy_revisit.jsonl`, `taxonomy/taxonomy_revisit_requests/*.json`), 교정 장부(`synonyms.jsonl`). 보드는 이것을 위치(축·값, 동의어, 질문 ID) 하나로 묶어 카드로 보여 준다. 사람이 카드의 편집 칸을 고치고 반영함·기각을 표시한 뒤 "최종 완료"를 누르면 변경 미리보기를 거쳐 봇이 `taxonomy/taxonomy.json`에 쓴다(원자적 저장, 이력 `taxonomy/taxonomy_history.jsonl`). 봇은 정의 문장을 지어내지 않는다(LLM 0회). 문장은 사람이 질문 화면이나 보드에서 확정한 것이다. 2026-10-07부터 Excel에 붙여넣지 않는다.
+
+절차, 규칙, 오류 코드는 `/BEOL-taxonomy-dashboard` 스킬이 맡는다. 이 스킬에서 ③을 고르면 그 스킬의 절차를 그대로 따른다.
+
+```bash
+python -m domain_engrbot taxonomy-board --serve --open
+```
+
+taxonomy를 직접 보고 고치려면(축·값 트리, 칸 수정, 행 추가·삭제) 편집기를 쓴다: `python -m domain_engrbot taxonomy-editor --open`.
 
 | 파일 | 내용 | 본문 |
 |---|---|---|
-| `workspaces/_domain_engrbot/taxonomy_board/taxonomy_board.html` | 보드 화면. 서버 없이 파일로 연다 | **있음(용어·메모)** |
+| `workspaces/_domain_engrbot/taxonomy_board/taxonomy_board.html` | 보드 화면. 서버(`--serve`)로 열어야 반영된다 | **있음(용어·메모)** |
 | `workspaces/_domain_engrbot/taxonomy_board/taxonomy_board.json` | 화면 데이터(항목, 행 초안, 상태, 출처) | **있음** |
 | `workspaces/_domain_engrbot/taxonomy_board/seen.json` | 문장 편집 항목의 처음 본 대상 행 해시 | 없음 |
 
-화면·json은 위치만 알리고 내용을 읽어 보고하지 않는다. 콘솔 줄(건수·코드·화면 상대 경로)만 전한다.
-
-### 절차
-
-1. 보드를 만든다(LLM 0회). 기본 대상은 `workspaces/` 아래 작업 폴더 전부, 질문 폴더의 taxonomy 제안, 저장소 `taxonomy/taxonomy.xlsx`다.
-
-   ```bash
-   python -m domain_engrbot taxonomy-board --open
-   ```
-
-   특정 작업 폴더만 보려면 `--workspace "<WS>"`를 여러 번 준다. 다른 xlsx는 `--taxonomy <경로>`(읽기만 한다).
-   `[taxonomy-board] 항목 n (미반영 a · 반영됨 b · 기각 c · 먼저 할 일 d · 확인 불가 e), 작업 폴더 n, 출처 S1 n·…` 줄과 화면 위치를 그대로 전한다.
-   `--open`(Windows)은 화면을 왼쪽 절반(Edge 앱 창), taxonomy.xlsx를 오른쪽 절반(Excel)에 띄운다. `OPEN_FAILED <사유>`가 나오면 두 파일을 사람이 직접 연다(종료 코드는 0).
-2. 사람이 화면에서 항목마다 **행 복사**(편집 칸을 먼저 고칠 수 있다)를 눌러 위치 문구대로("A열 빈 행에 추가" 또는 "N행 덮어쓰기") Excel에 붙여넣고 저장한다. 거절할 항목은 **기각 행 복사**로 rejected 시트에 붙인다. 사용 여부 끄기(UNUSED_VALUE)는 그 값 행을 K=`N`으로 덮어쓰는 행이다. 정의·질문 문장 보완은 지금 문장(S7 항목은 엔지니어가 확정한 문장)이 미리 채워진 편집 칸(H~J, 질문 B)을 사람이 고친다. 새 축은 아래 체크리스트를 모두 채워야 한다.
-   - 새 축 체크리스트: ① 축 정의 행 D~G(다중값·계층·중복 알림 제외·종류) 필수 ② H 정의·판정 규칙 ③ 값 행 1개 이상(없으면 비활성) ④ questions 시트에 `새축=값` 적용 대상 질문 행(없으면 사전 점검 WARN) ⑤ 저장 후 `/BEOL-labeling` 재실행(옛 실행은 `/BEOL-labeling-Code-Engr-bot` 축 점검으로 찾아 재라벨링).
-3. 사용자가 반영했다고 하면 1단계 명령을 다시 실행한다. 지금 xlsx와 비교해 반영한 항목은 반영됨, rejected 시트나 Domain-Engr-bot 기각 목록에 있는 항목은 기각됨으로 바뀌고, 화면은 미반영만 기본으로 보여 준다. 먼저 할 일(축 없음, 상위값 없음, 꺼진 값, 다른 표준어로 이미 있는 동의어 등)은 사유를 함께 전한다.
-4. 사용자가 "보드 초기화", "다 반영했어, 지워줘"라고 하면 `python -m domain_engrbot taxonomy-board --reset`을 실행한다. 지금 항목을 모두 화면에서 빼고(`workspaces/_domain_engrbot/taxonomy_board/cleared.json`), 그 뒤에는 같은 제안이 새 실행·새 작업 폴더에서 다시 올라올 때만 다시 보인다. 출처 파일(제안·후보·재검토 요청)은 지우지 않는다. 되돌리려면 `cleared.json`을 지운다.
-
-`TAXONOMY_PARSE_ERROR n건`이면 화면 맨 위에 시트·행·코드가 나온다(사람이 Excel에서 고치는 중일 수 있다). `TAXONOMY_READ_FAILED <사유>`면 상태는 확인 불가로 두고 항목만 보여 준다. 어느 경우든 xlsx는 고치지 않는다.
+화면·json은 위치만 알리고 내용을 읽어 보고하지 않는다. 콘솔 줄(건수·코드·화면 상대 경로)만 전한다. 저장 뒤 재라벨링은 하지 않는다. 사람이 저장했다고 하면 축 점검(`/BEOL-labeling-Code-Engr-bot`)을 한 줄 안내한다.
 
 ## 오류 코드 안내
 
@@ -329,7 +329,7 @@ taxonomy.xlsx 수정 제안은 여러 곳에 흩어져 있다: **S7 엔지니어
 
 - 도메인 검수(`domain_engrbot run`·`review`·`serve`·`golden`·`feedback`·`eval`, L0~L6 검사·judge·L4/L5, QA 검토 화면 `qa_review`): 명령과 코드는 남아 있지만 이 스킬은 부르지 않는다(2026-10-06 사용자 결정).
 - 봇이 답·초안을 대신 확정하는 일, 규칙·사례의 승인·기각을 봇이 정하는 일(사람이 화면에서 확정한 것만 반영한다)
-- taxonomy.xlsx 수정, L4 도메인 규칙 승인(`draft` → `approved`), labelbot 코드·프롬프트 수정
+- taxonomy.json을 사람 확정 없이 고치는 일, L4 도메인 규칙 승인(`draft` → `approved`), labelbot 코드·프롬프트 수정
 - 라벨링 실행: BEOL-labeling
 - 사람 검수 반영과 Supabase 적재: BEOL-labeling-feedback
 - 저장소 코드와 workflow 검수: BEOL-labeling-Code-Engr-bot

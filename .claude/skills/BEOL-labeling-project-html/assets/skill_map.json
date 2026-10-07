@@ -1,0 +1,77 @@
+{
+  "_note": "Appendix(id sA) 스킬 지도. 그룹 → 부모 스킬 → 자식 스킬. 이름은 .claude/skills/ 폴더 이름. 새 스킬을 만들면 여기에 넣는다(빠지면 '미분류'로 표시되고 checks.skills_unmapped에 나온다).",
+  "groups": [
+    {
+      "title": "라벨링 파이프라인",
+      "lead": "run-labeling이 라벨링부터 Supabase 적재까지 잇고, 사람 검수 완료에서만 멈춘다",
+      "color": "#4A5FA8",
+      "skills": [
+        {
+          "name": "BEOL-labeling-run-labeling",
+          "role": "입력 → 라벨링 → 검수 → 적재를 한 번에",
+          "children": [
+            {
+              "name": "BEOL-labeling",
+              "role": "파싱 → 분류 → 라벨링, 검수 화면을 띄움"
+            },
+            {
+              "name": "BEOL-labeling-feedback",
+              "role": "검수 교정 반영 → 임베딩 → Supabase 적재"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "품질 점검 · 재라벨링",
+      "lead": "적재 뒤 사람이 시작하는 루프. 규칙 · taxonomy를 고치면 바뀐 범위만 다시 라벨링한다",
+      "color": "#E08A2E",
+      "skills": [
+        {
+          "name": "BEOL-labeling-Domain-Engr-bot",
+          "role": "엔지니어에게 질문, 확정한 답을 규칙으로",
+          "children": [
+            {
+              "name": "BEOL-taxonomy-dashboard",
+              "role": "taxonomy 수정 제안을 모아 Excel 붙여넣기 행 제공"
+            }
+          ]
+        },
+        {
+          "name": "BEOL-labeling-Code-Engr-bot",
+          "role": "코드 검수(읽기 전용) · 축 · 규칙 변경 감지",
+          "children": [
+            {
+              "name": "BEOL-labeling-rules-update",
+              "role": "라벨링 규칙이 바뀐 범위만 재라벨링(검수 없음)"
+            },
+            {
+              "name": "BEOL-labeling-axis-update",
+              "role": "taxonomy 축이 바뀐 부분만 재라벨링"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "문서 · 발표 · PM 관리",
+      "lead": "최신 실행 수치와 세션 변경 내역을 HTML로 정리한다",
+      "color": "#2BA39A",
+      "skills": [
+        {
+          "name": "BEOL-labeling-workflow",
+          "role": "단계별 workflow HTML 갱신"
+        },
+        {
+          "name": "BEOL-labeling-project-html",
+          "role": "이 발표 HTML의 파일럿 슬라이드 · 스킬 지도 갱신"
+        },
+        {
+          "name": "BEOL-labeling-change-dashboard",
+          "role": "세션별 변경 내역 대시보드"
+        }
+      ]
+    }
+  ],
+  "bridge": "①의 적재가 끝나면 ②를 시작한다. ②에서 Domain-Engr-bot이 규칙을, taxonomy 보드로 사람이 축을 바꾸면 Code-Engr-bot이 감지해 rules-update · axis-update를 부른다"
+}

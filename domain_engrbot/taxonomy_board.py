@@ -1,34 +1,34 @@
-"""taxonomy 수정 보드(taxonomy-board 명령). 흩어진 taxonomy.xlsx 수정 제안을 한 화면에 모은다. LLM 0회.
+"""taxonomy 수정 보드(taxonomy-board 명령). 흩어진 taxonomy.json 수정 제안을 한 화면에 모으고, 사람이 고른 것만 반영한다.
+LLM 0회.
 
 출처(작업 폴더 <WS> 기준):
 - S1 Domain-Engr-bot 승인 피드백: qa/runs/<QA>/feedback/feedback.json의 proposals[](모든 실행)
 - S2 Domain-Engr-bot 제안: 가장 최근 실행의 proposals.jsonl. 기각 목록은 qa/feedback_rejected.jsonl
 - S3 Domain-Engr-bot L6 지표: 가장 최근 실행의 taxonomy_candidates.jsonl(축 지표, 용어 후보)
 - S4 labelbot 후보: reports/candidates.jsonl
-- S5 재검토 요청: reports/taxonomy_revisit.jsonl(누적), taxonomy.xlsx 옆 taxonomy_revisit_requests/*.json(재검토 파일)
+- S5 재검토 요청: reports/taxonomy_revisit.jsonl(누적), taxonomy.json 옆 taxonomy_revisit_requests/*.json(재검토 파일)
 - S6 교정 장부: 장부 폴더 synonyms.jsonl
 - S7 엔지니어 답변: 질문 폴더(장부 폴더의 형제 questions) taxonomy_proposals.jsonl. 사람이 질문 화면에서 확정한 초안이다.
-  같은 항목에 S7이 여럿이면 at이 가장 늦은 것의 문장(정의·포함 예·제외 예·질문 문장·동의어 메모)을 붙여넣기 행에 채운다.
+  같은 항목에 S7이 여럿이면 at이 가장 늦은 것의 문장(정의·포함 예·제외 예·질문 문장·동의어 메모)을 행 초안에 채운다.
 
-- 제안을 시트 위치 키 하나로 묶고, 대상 시트 열 순서의 붙여넣기 행 초안을 만든다. 봇은 문장을 지어내지 않는다
-  (칸에 채우는 문장은 사람이 확정한 S7 문장뿐이다).
-- 지금 taxonomy.xlsx(bytes)의 원시 행 색인으로 상태(open·done·rejected·blocked·unknown)를 정한다. xlsx는 쓰지 않는다.
-- 출력은 out_dir의 taxonomy_board.html·.json, seen.json뿐이다. 작업 폴더에는 아무것도 만들지 않는다.
+- 제안을 시트 위치 키 하나로 묶고, 대상 시트 열 순서의 행 초안을 만든다. 봇은 문장을 지어내지 않는다
+  (칸에 채우는 문장은 사람이 확정한 S7 문장뿐이다). 칸은 원문 그대로다(줄바꿈 유지, 수식 표시 없음).
+- 지금 taxonomy.json(bytes)의 행 색인으로 상태(open·done·rejected·blocked·unknown)를 정한다.
+- 반영: 사람이 카드에서 편집 칸을 고치고 반영함·기각을 표시한 뒤 '최종 완료'를 누르면 미리보기(/board/preview)를
+  보여 주고, 확인하면(/board/finalize) 봇이 taxonomy.json을 고친다(plan_changes·apply_marks). 쓰기는
+  labelbot.taxonomy.save_doc(버전 확인·검증·taxonomy_history.jsonl 이력·원자적 교체)으로만 한다.
+- 출력은 out_dir의 taxonomy_board.html·.json, decisions.json(·cleared.json)뿐이다. 작업 폴더에는 아무것도 만들지 않는다.
 - 항목마다 제안 이유(evidence.whys)와 근거 슬라이드(evidence.slides: 예시 레코드·재검토 chunk를 작업 폴더 work.sqlite에서
   읽기 전용으로 찾은 파일명·슬라이드 번호·제목·미리보기)를 붙인다(resolve_slides).
 - 화면·json에는 용어·메모(본문 표현)·파일명·슬라이드 제목·미리보기가 들어간다. 콘솔에는 건수·코드·화면 상대 경로만 낸다.
 """
 import base64
 import datetime
+import hashlib
 import json
 import os
 import sqlite3
-import subprocess
-import sys
-import time
-import xml.etree.ElementTree as ET
-import zipfile
-import zlib
+import webbrowser
 from pathlib import Path
 
 from domain_engrbot import feedback, io, ledger, model, paths, qmodel, screen
@@ -37,11 +37,15 @@ from domain_engrbot import workspaces as ws_mod
 from domain_engrbot.adapters import labelbot_ws as lb
 
 OUT_DIR = paths.data_path(os.path.join(io.CODE_ROOT, "workspaces"), "taxonomy_board")
-DEFAULT_TAXONOMY = os.path.join(io.CODE_ROOT, "taxonomy", "taxonomy.xlsx")
+DEFAULT_TAXONOMY = os.path.join(io.CODE_ROOT, "taxonomy", "taxonomy.json")
 REQUESTS_DIRNAME = "taxonomy_revisit_requests"  # labelbot.revisit.REQUESTS_DIRNAME와 같다
 TEMPLATE_PATH = os.path.join(screen.PKG_ROOT, "screens", "taxonomy_board.html")
-SCREEN, DOC, SEEN, CLEARED = "taxonomy_board.html", "taxonomy_board.json", "seen.json", "cleared.json"
+SCREEN, DOC, CLEARED = "taxonomy_board.html", "taxonomy_board.json", "cleared.json"
 DECISIONS = "decisions.json"   # 사람이 보드에서 '최종 완료'로 확정한 처리 {항목 ID: {"decision", "at", "prints"}}
+MARKS_MAX = 5000
+CELL_MAX = 20000         # 사람이 고친 칸 하나의 글자 수 상한
+EDIT_KINDS = ("value_def", "axis_def", "overlap", "q_edit")   # 문장을 고치는 항목: 쓸 문장이 있어야 반영한다
+REJECT_REASON = "보드에서 기각"
 DECISION_KINDS = ("applied", "rejected")
 DECISIONS_KIND = "taxonomy_board_decisions"
 
@@ -59,9 +63,8 @@ HUMAN_SOURCES = ("S4R", "S5", "S5F", "S6", "S7")  # 사람이 올린 출처(검�
 S7_LABEL = "엔지니어 답변 문장을 채운 행입니다"
 OTHER_WHERE = "메모를 보고 사람이 정합니다(taxonomy 시트, 질문 문장, 라벨러 프롬프트 중)"
 ENGR_REJECT_HINT = "Domain-Engr-bot 검토 화면에서 제안을 기각합니다(다시 올리지 않음)"
-HIDE_HINT = "기각 행이 없습니다. 반영했거나 필요 없으면 숨김으로 정리합니다"
+HIDE_HINT = "기각하면 결정만 남깁니다(원래 문장이 없어 rejected 목록에 행을 더하지 않습니다)"
 REVISIT_FILE_NOTE = "재검토 파일은 apply 때의 스냅숏이라 화면에서 지운 요청도 남습니다."
-XLSX_CORRUPT = (ET.ParseError, zlib.error, KeyError, zipfile.BadZipFile, ValueError, EOFError)
 # 제안이 올라온 이유(화면 표시용). 재검토 사유는 labelbot.revisit.REASON_LABELS와 같은 문구다.
 PROPOSAL_WHY = {"TERM": "용어 후보", "UNUSED_VALUE": "미사용 값", "AXIS_DEFINITION": "축 정의 점검",
                 "QUESTION_WORDING": "질문 문장 점검", "QUOTE_RULE": "인용 규칙", "FORMAT_RULE": "형식 규칙",
@@ -91,14 +94,8 @@ def _low(v):
 
 
 def _cell(v):
-    """새로 만드는 칸: 탭·줄바꿈은 공백, 수식 시작 문자 앞에 '."""
-    s = v if isinstance(v, str) else ("" if v is None else str(v))
-    return lb.safe_cell(s.replace("\t", " ").replace("\r", " ").replace("\n", " "))
-
-
-def _raw(v):
-    """덮어쓰기 행의 원래 칸: 내용은 그대로 두고 수식 시작 문자 앞에만 '(복사 때 TSV 따옴표로 감싼다)."""
-    return lb.safe_cell(v if isinstance(v, str) else "")
+    """칸 값: 원문 그대로의 문자열(줄바꿈 유지, 수식 표시 없음). None은 빈칸."""
+    return v if isinstance(v, str) else ("" if v is None else str(v))
 
 
 def _ws(v):
@@ -111,6 +108,15 @@ def _id(key):
 
 def _row_hash(rows):
     return model.hash_obj(rows)[:16]
+
+
+class BoardRefused(Exception):
+    """반영 요청 거절. code는 사유 코드, status는 HTTP 상태, issues는 검증 오류 [{"sheet", "row", "code"}],
+    detail은 하위 사유 코드(읽기 실패 등, 없으면 None)."""
+
+    def __init__(self, code, status=400, issues=None, detail=None):
+        Exception.__init__(self, code)
+        self.code, self.status, self.issues, self.detail = code, status, list(issues or []), detail
 
 
 def _off(cells):
@@ -414,36 +420,42 @@ def _question_slides(questions_dir, ledger_dir):
     return out
 
 
-# ---- taxonomy.xlsx 원시 행 색인 ---------------------------------------------------
+# ---- taxonomy.json 행 색인 -------------------------------------------------------
+
+def _code(e):
+    return "%s %s" % (e.reason_code, e.detail) if e.detail else e.reason_code
+
+
+def read_bytes(path):
+    """taxonomy.json bytes. 반환: (bytes 또는 None, 읽기 코드 또는 None)."""
+    if not path or not os.path.isfile(path):
+        return None, "TAXONOMY_MISSING"
+    try:
+        return lb.read_taxonomy_bytes(path), None
+    except model.BundleError as e:
+        return None, _code(e)
+
 
 def load_taxonomy(path=None, data=None):
-    """반환: (색인 또는 None, 파싱 오류 목록, 읽기 코드 또는 None). 색인은 원시 행으로 만든다.
+    """반환: (색인 또는 None, 파싱 오류 목록, 읽기 코드 또는 None). 색인은 JSON 행 목록으로 만든다.
 
-    파싱 오류가 있어도 원시 행을 읽으면 색인으로 판정한다. 원시 행까지 못 읽으면 색인은 None(상태 unknown)이다.
+    검증 오류가 있어도 행 목록을 읽으면 색인으로 판정한다. JSON 자체를 못 읽으면 색인은 None(상태 unknown)이다.
     """
     if data is None:
-        if not path or not os.path.isfile(path):
-            return None, [], "TAXONOMY_MISSING"
-        try:
-            data = lb.read_taxonomy_bytes(path)
-        except model.BundleError as e:
-            return None, [], "%s %s" % (e.reason_code, e.detail) if e.detail else e.reason_code
-    try:
-        _tax, issues = lb.parse_taxonomy_bytes(data)
-    except XLSX_CORRUPT:
-        issues = [{"sheet": None, "row": None, "code": "XLSX_CORRUPT"}]
+        data, code = read_bytes(path)
+        if data is None:
+            return None, [], code
+    _tax, issues = lb.parse_taxonomy_bytes(data)
     try:
         sheets = {k: lb.taxonomy_raw_rows(data, k) for k in ("taxonomy", "questions", "synonyms", "rejected")}
     except model.BundleError as e:
-        return None, issues, "%s %s" % (e.reason_code, e.detail) if e.detail else e.reason_code
-    except XLSX_CORRUPT:
-        return None, issues, "TAXONOMY_PARSE_ERROR XLSX_CORRUPT"
+        return None, issues, _code(e)
     return _index(sheets), issues, None
 
 
 def _index(sheets):
-    idx = {"axes": {}, "axis_order": [], "values": {}, "value_rows": {}, "questions": {}, "q_texts": set(),
-           "synonyms": {}, "rejected": set(), "hashes": {}}
+    idx = {"axes": {}, "axis_order": [], "axis_rows": {}, "values": {}, "value_rows": {}, "questions": {},
+           "q_texts": set(), "synonyms": {}, "rejected": set(), "hashes": {}}
     for name, rows in sheets.items():
         idx["hashes"][name] = _row_hash(rows or [])[:12]
     for n, c in sheets["taxonomy"] or []:
@@ -461,7 +473,7 @@ def _index(sheets):
                 idx["axes"][a] = (n, c)
                 idx["axis_order"].append(a)
             if not _off(c):   # 같은 축 정의 여러 행(labelbot이 정의·예를 합쳐 쓴다)
-                idx.setdefault("axis_rows", {}).setdefault(a, []).append((n, c))
+                idx["axis_rows"].setdefault(a, []).append((n, c))
     for n, c in sheets["questions"] or []:
         qid = _s(c[0])
         if qid and qid not in idx["questions"]:
@@ -521,6 +533,34 @@ def _key(e):
     if k == "term":
         return "term|%s" % _nk(e["term"])
     return "out|%s|%s" % (e["okind"], e["target"])
+
+
+def strict_synonyms(groups, idx):
+    """봇(S4)만 올린 동의어 묶음을 엄밀한 기준으로 거른다. 반환: (남은 묶음, 뺀 수).
+
+    labelbot 후보와 같은 규칙(lb.synonym_reject_code)이다. 같은 표현에 표준어가 둘 이상이면 모두 빼고,
+    모든 실행을 합친 빈도가 SYN_MIN_FREQ 미만이어도 뺀다. 사람·엔지니어 출처가 하나라도 있으면 그대로 둔다.
+    idx가 없으면(taxonomy를 못 읽음) 표준어가 분류 체계에 있는지는 보지 않는다."""
+    vocab = None
+    if idx is not None:
+        vocab = set(idx["axes"]) | {v for (_a, v) in idx["values"]}
+
+    def bot_only(g):
+        return g["e"]["kind"] == "synonym" and all(c["src"] == "S4" for c in g["chips"])
+
+    canon = {}
+    for g in groups:
+        if bot_only(g):
+            canon.setdefault(_low(g["e"]["alias"]), set()).add(_low(g["e"]["canonical"]))
+    keep = []
+    for g in groups:
+        if bot_only(g):
+            e = g["e"]
+            if (lb.synonym_reject_code(e["alias"], e["canonical"], vocab) or len(canon[_low(e["alias"])]) > 1
+                    or sum(c["n"] for c in g["chips"]) < lb.SYN_MIN_FREQ):
+                continue
+        keep.append(g)
+    return keep, len(groups) - len(keep)
 
 
 def _chip(e, rejected):
@@ -603,34 +643,54 @@ def _fold_chips(chips):
 
 # ---- 행 초안 --------------------------------------------------------------------
 
-def _place(sheet, mode, row, readable=True):
+def _place(sheet, mode, row, readable=True, dups=()):
     if mode == "append":
-        return "%s 시트 %s빈 행에 추가" % (sheet, "A열 " if sheet == "taxonomy" else "")
+        return "%s 시트 끝에 새 행 추가" % sheet
     if row is None:
-        return "%s 시트 (%s)" % (sheet, "대상 행 없음" if readable else "행 번호 모름: taxonomy.xlsx 확인 불가")
+        return "%s 시트 (%s)" % (sheet, "대상 행 없음" if readable else "행 번호 모름: taxonomy.json 확인 불가")
+    if dups:
+        return "%s 시트 %d행 덮어쓰기 (같은 값·축의 %s도 함께 고침)" % (sheet, row, ", ".join("%d행" % n for n in dups))
     return "%s 시트 %d행 덮어쓰기" % (sheet, row)
 
 
 def _row(sheet, cells, mode, row=None, editable=(), required=(), label=None, checks=None, changes=None,
-         readable=True, raw=False):
-    """행 초안. raw=False면 새로 만드는 칸(_cell), True면 이미 정리한 칸이다.
-    checks {열: yn|kind|int|target|qid_new|axis|parent}는 화면이 복사 전에 보는 형식 규칙이다."""
-    return {"sheet": sheet, "cells": list(cells) if raw else [_cell(c) for c in cells], "editable": list(editable),
+         readable=True, dups=(), dup_patch=None):
+    """행 초안. cells는 원문 그대로다. checks {열: yn|kind|int|target|qid_new|axis|parent}는 화면이 반영 전에 보는
+    형식 규칙이다. 덮어쓰기 행의 dups는 같은 값·축의 다른 켜진 행 번호, dup_patch {열: 값}은 대상 행을 고칠 때
+    그 행들에도 함께 쓰는 칸이다(labelbot이 같은 값 행의 문장을 합쳐 쓰므로 예전 문장이 남지 않게 한다)."""
+    target = {"mode": mode, "row": row}
+    if dups:
+        target["dups"] = list(dups)
+        target["dup_patch"] = {str(k): v for k, v in sorted((dup_patch or {}).items())}
+    return {"sheet": sheet, "cells": [_cell(c) for c in cells], "editable": list(editable),
             "required": list(required), "checks": {str(k): v for k, v in sorted((checks or {}).items())},
-            "changes": changes or [], "target": {"mode": mode, "row": row},
-            "place": _place(sheet, mode, row, readable), "label": label}
+            "changes": changes or [], "target": target,
+            "place": _place(sheet, mode, row, readable, dups), "label": label}
 
 
-def _over(sheet, found, fallback, readable, editable=(), change=None):
-    """덮어쓰기 행: 원래 칸 그대로(_raw)에 change {열: 값}만 바꾼다. 대상 행이 없으면 fallback 칸."""
-    cells = [_raw(c) for c in found[1]] if found else [_cell(c) for c in fallback]
+def _over(sheet, found, fallback, readable, editable=(), change=None, dups=(), dup_patch=None):
+    """덮어쓰기 행: 지금 행 칸 그대로에 change {열: 값}만 바꾼다. 대상 행이 없으면 fallback 칸.
+    dups [(행 번호, 칸)]는 같은 값·축의 켜진 행들이다(대상 행은 뺀다)."""
+    cells = list(found[1]) if found else [_cell(c) for c in fallback]
     changes = []
     for col, v in sorted((change or {}).items()):
         if found and cells[col] != _cell(v):
             changes.append({"col": col, "from": cells[col], "to": _cell(v)})
         cells[col] = _cell(v)
+    others = [n for n, _c in dups if n != found[0]] if found and dup_patch else []
     return _row(sheet, cells, "overwrite", found[0] if found else None, editable, changes=changes,
-                readable=readable, raw=True)
+                readable=readable, dups=others, dup_patch=dup_patch)
+
+
+def _value_dups(idx, axis, value):
+    return (idx["value_rows"].get((_nk(axis), _nk(value))) or []) if idx else []
+
+
+def _axis_dups(idx, axis):
+    return ((idx.get("axis_rows") or {}).get(_nk(axis)) or []) if idx else []
+
+
+BLANK_DEF = {H: "", I: "", J: ""}
 
 
 def _parent(g):
@@ -681,45 +741,50 @@ def draft(g, idx):
                 cells[col] = v
             it["rows"] = [_row("taxonomy", cells, "append", editable=(2, H, I, J), checks={2: "parent"})]
         fill = fill or ({2: parent} if s7.get("parent") else {})
-        it["reject_row"] = ["값", _cell("%s|%s" % (ax, value)), "", ""]
+        it["reject_row"] = ["값", "%s|%s" % (ax, value), "", ""]
     elif k == "value_off":
         value = _value_name(idx, e["axis"], e["value"])
         it["action"], it["title"] = "disable", "끄기: %s = %s" % (ax, value)
+        # 같은 값의 켜진 행이 여럿이면 모두 끈다(하나라도 켜져 있으면 값이 살아 있다)
         it["rows"] = [_over("taxonomy", _value_row(idx, e["axis"], e["value"]), [ax, value] + [""] * 8 + ["N"],
-                            rd, change={K: "N"})]
+                            rd, change={K: "N"}, dups=_value_dups(idx, e["axis"], e["value"]), dup_patch={K: "N"})]
         it["reject_hint"] = ENGR_REJECT_HINT
     elif k == "value_def":
         value = _value_name(idx, e["axis"], e["value"])
         found = _value_row(idx, e["axis"], e["value"])
         it["title"] = "값 정의 보완: %s = %s" % (ax, value)
-        over = _over("taxonomy", found, [ax, value] + [""] * 9, rd, editable=(H, I, J), change=fill or None)
+        # 덮어쓰기는 예전 정의를 버린다: 같은 값의 다른 켜진 행 H~J도 비운다
+        over = _over("taxonomy", found, [ax, value] + [""] * 9, rd, editable=(H, I, J), change=fill or None,
+                     dups=_value_dups(idx, e["axis"], e["value"]), dup_patch=BLANK_DEF)
         it["rows"] = [over]
-        if fill and found:
+        if found:
+            # 대상 행이 있으면 늘 두 길을 준다(빈 새 행은 반영 때 '쓸 문장 없음'으로 막는다).
             # 같은 값 행을 하나 더 붙이면 labelbot이 두 행의 정의·예를 합쳐 라벨러에 함께 준다
             cells = [ax, value] + [""] * 9
             for col, v in fill.items():
                 cells[col] = v
             add = _row("taxonomy", cells, "append", editable=(H, I, J),
-                       label="빈 행에 추가: %d행 정의와 함께 라벨러에 들어갑니다" % found[0])
+                       label="새 행으로 추가: %d행 정의와 함께 라벨러에 들어갑니다" % found[0])
             over["label"] = "또는 덮어쓰기: %d행의 예전 정의를 버릴 때" % found[0]
             it["rows"] = [add, over]
     elif k == "overlap":
         names = sorted((_value_name(idx, e["axis"], v) for v in e["values"]), key=_nk)
         it["title"] = "겹치는 값 정의: %s = %s ↔ %s" % (ax, names[0], names[1])
-        it["rows"] = [_over("taxonomy", _value_row(idx, e["axis"], v), [ax, v] + [""] * 9, rd, editable=(H, I, J))
-                      for v in names]
+        it["rows"] = [_over("taxonomy", _value_row(idx, e["axis"], v), [ax, v] + [""] * 9, rd, editable=(H, I, J),
+                            dups=_value_dups(idx, e["axis"], v), dup_patch=BLANK_DEF) for v in names]
     elif k == "axis_def":
         found = _axis_row(idx, e["axis"])
         it["title"] = "축 정의 보완: %s" % ax
-        over = _over("taxonomy", found, [ax] + [""] * 10, rd, editable=(H, I, J), change=fill or None)
+        over = _over("taxonomy", found, [ax] + [""] * 10, rd, editable=(H, I, J), change=fill or None,
+                     dups=_axis_dups(idx, e["axis"]), dup_patch=BLANK_DEF)
         it["rows"] = [over]
-        if fill and found:
+        if found:
             # 축 정의 행을 하나 더 붙이면(속성 칸은 비움) labelbot이 두 행의 정의·예를 합쳐 쓴다
             cells = [ax] + [""] * 10
             for col, v in fill.items():
                 cells[col] = v
             add = _row("taxonomy", cells, "append", editable=(H, I, J),
-                       label="빈 행에 추가: %d행 축 정의와 함께 라벨러에 들어갑니다" % found[0])
+                       label="새 행으로 추가: %d행 축 정의와 함께 라벨러에 들어갑니다" % found[0])
             over["label"] = "또는 덮어쓰기: %d행의 예전 정의를 버릴 때" % found[0]
             it["rows"] = [add, over]
         it["reject_hint"] = ENGR_REJECT_HINT if any(c["pid"] for c in g["chips"]) else None
@@ -737,7 +802,7 @@ def draft(g, idx):
         it["group"], it["action"] = "synonyms", "add"
         it["title"] = "동의어: %s → %s" % (_s(e["alias"]), _s(e["canonical"]))
         it["rows"] = [_row("synonyms", [_s(e["alias"]), _s(e["canonical"]), memo], "append", editable=(2,))]
-        it["reject_row"] = ["동의어", _cell("%s|%s" % (_s(e["alias"]), _s(e["canonical"]))), "", ""]
+        it["reject_row"] = ["동의어", "%s|%s" % (_s(e["alias"]), _s(e["canonical"])), "", ""]
     elif k == "q_edit":
         qid = _s(e["qid"])
         found = idx["questions"].get(qid) if idx else None
@@ -752,7 +817,7 @@ def draft(g, idx):
                            required=(0, 1, 2, 3), checks={0: "qid_new", 2: "target", 3: "int"})]
         # 기각 행 내용은 항상 원래 문장이다. 원래 문장이 없으면(NEED_QUESTION) 기각 행을 달지 않는다.
         if text:
-            it["reject_row"] = ["질문", _cell(text), "", ""]
+            it["reject_row"] = ["질문", text, "", ""]
         else:
             it["reject_hint"] = HIDE_HINT
     elif k == "term":
@@ -771,6 +836,8 @@ def draft(g, idx):
     if fill:
         for r in it["rows"]:
             r["label"] = r["label"] or S7_LABEL
+    # 행이 둘이면서 서로 대안인 항목(새 행 추가 ↔ 덮어쓰기, 동의어 행 ↔ 값 행)은 하나를 고른다. 나머지는 모두 쓴다
+    it["pick"] = "one" if len(it["rows"]) > 1 and k != "overlap" else "all"
     return it
 
 
@@ -801,8 +868,8 @@ def apply_cleared(items, cleared, reset=False):
 def apply_decisions(items, decisions):
     """사람이 보드에서 확정한 처리(최종 완료)를 상태에 얹는다. 반환: 남길 decisions.
 
-    - 기각함: 시트가 반영됨으로 본 항목이 아니면 rejected("보드에서 기각함").
-    - 반영함: 시트가 이미 반영됨이면 그대로, 아니면 done("보드에서 반영함", human.unverified=True: 시트에서 자동 확인 안 됨).
+    - 반영함: done("보드에서 반영함"). 시트로 이미 반영됨이면 그 판정을 그대로 둔다.
+    - 기각함: 반영됨·기각됨(rejected 목록 등)으로 이미 판정한 항목이 아니면 rejected("보드에서 기각함").
     - 확정 뒤 새 출처 지문이 붙은 항목(같은 제안이 새 실행에서 다시 올라옴)은 확정을 버리고 다시 판정한다.
       지금 목록에 없는 항목의 확정도 버린다."""
     keep = {}
@@ -813,21 +880,20 @@ def apply_decisions(items, decisions):
         if set(_prints(it)) - set(d.get("prints") or []):
             continue
         keep[it["id"]] = d
-        it["human"] = {"decision": d["decision"], "at": d.get("at") or "", "unverified": False}
-        if it["status"] == "done":
+        it["human"] = {"decision": d["decision"], "at": d.get("at") or ""}
+        if it["status"] == "done" or (d["decision"] == "rejected" and it["status"] == "rejected"):
             continue
         if d["decision"] == "rejected":
             it["status"], it["status_note"] = "rejected", "보드에서 기각함"
         else:
-            it["status"], it["status_note"] = "done", "보드에서 반영함(시트에서 자동 확인되지 않음)"
-            it["human"]["unverified"] = True
+            it["status"], it["status_note"] = "done", "보드에서 반영함"
     return keep
 
 
 def record_decisions(out_dir, marks, now=None):
     """'최종 완료' 요청 {항목 ID: "applied"|"rejected"|None(확정 취소)}을 decisions.json에 더한다.
     지금 보드(taxonomy_board.json)에 있는 항목만 받는다. 반환: 바뀐 수. 잘못된 요청은 ValueError(사유 코드)."""
-    if not isinstance(marks, dict) or len(marks) > 5000:
+    if not isinstance(marks, dict) or len(marks) > MARKS_MAX:
         raise ValueError("DECISIONS_FORMAT_INVALID")
     doc = _json_file(os.path.join(out_dir, DOC), _Bad())
     items = {it["id"]: it for it in (doc or {}).get("items") or [] if isinstance(it, dict) and it.get("id")}
@@ -848,49 +914,36 @@ def record_decisions(out_dir, marks, now=None):
     return n
 
 
-def _edit_status(it, idx, targets, seen, new_seen):
-    """정의·질문 문장 편집 항목: 처음 본 편집 칸(H~J, 질문 B, 공백 정규화)의 해시와 다르면 done(행이 바뀜)."""
+def _target_status(targets):
+    """문장 수정 항목: 대상 행이 하나라도 없으면 blocked. 반영 여부는 보드 확정(decisions)으로만 정한다."""
     if any(t is None for t in targets):
         return "blocked", "대상 행 없음"
-    cols = it["rows"][0]["editable"]
-    h, runs = _row_hash([[_ws(t[1][c]) for c in cols] for t in targets]), _runs(it)
-    old = seen.get(it["id"])
-    if not isinstance(old, dict) or not old.get("hash"):
-        new_seen[it["id"]] = {"hash": h, "runs": runs}
-        return "open", None
-    if set(runs) - set(old.get("runs") or []):
-        new_seen[it["id"]] = {"hash": h, "runs": sorted(set(runs) | set(old.get("runs") or []))}
-        return "open", "새 실행에서 다시 올라옴"
-    if old["hash"] != h:
-        return "done", "행이 바뀜"
     return "open", None
 
 
-def _sheet_status(it, g, idx, seen, new_seen):
+def _sheet_status(it, g, idx):
     e, k = g["e"], g["e"]["kind"]
     if k in ("value_add", "value_off", "value_def", "axis_def", "overlap"):
         ax = _axis_row(idx, e["axis"])
         if ax is None:
-            return "blocked", "시트에 없는 축(먼저 축 정의 행을 더합니다)"
+            return "blocked", "taxonomy에 없는 축(먼저 축 정의 행을 더합니다)"
         if _off(ax[1]):
-            return "blocked", "꺼진 축(축 정의 행의 K가 N)"
+            return "blocked", "꺼진 축(축 정의 행의 사용 여부가 N)"
     if k == "value_add":
         found = _value_row(idx, e["axis"], e["value"])
         if _nk(e["value"]) in lb.TAXONOMY_RESERVED:
             return "blocked", "예약어는 값으로 쓸 수 없습니다"
         if found and not _off(found[1]):
-            return "done", "시트에 있음(%d행)" % found[0]
-        if found:
-            return "blocked", "꺼진 값: K를 비우면 다시 켜짐(%d행)" % found[0]
+            return "done", "taxonomy에 있음(%d행)" % found[0]
         if _parent(g):
             p = _value_row(idx, e["axis"], _parent(g))
             if p is None or _off(p[1]):
-                return "blocked", "시트에 없는 상위값(먼저 상위값 행을 더합니다)"
-        return "open", None
+                return "blocked", "taxonomy에 없는 상위값(먼저 상위값 행을 더합니다)"
+        return "open", ("꺼진 값을 다시 켭니다(%d행)" % found[0]) if found else None
     if k == "value_off":
         found = _value_row(idx, e["axis"], e["value"])
         if found is None:
-            return "blocked", "시트에 없는 값"
+            return "blocked", "taxonomy에 없는 값"
         if _off(found[1]):
             return "done", "이미 꺼짐(%d행)" % found[0]
         return _users(idx, e["axis"], e["value"])
@@ -900,55 +953,55 @@ def _sheet_status(it, g, idx, seen, new_seen):
             st = _s7_status(g, row)
             if st:
                 return st
-        return _edit_status(it, idx, [found], seen, new_seen)
+        return _target_status([found])
     if k == "overlap":
-        return _edit_status(it, idx, [_value_row(idx, e["axis"], v) for v in e["values"]], seen, new_seen)
+        return _target_status([_value_row(idx, e["axis"], v) for v in e["values"]])
     if k == "axis_def":
         found = _axis_row(idx, e["axis"])
         for row in (idx.get("axis_rows") or {}).get(_nk(e["axis"])) or [found]:
             st = _s7_status(g, row)
             if st:
                 return st
-        return _edit_status(it, idx, [found], seen, new_seen)
+        return _target_status([found])
     if k == "q_edit":
         found = idx["questions"].get(_s(e["qid"]))
-        return _s7_status(g, found) or _edit_status(it, idx, [found], seen, new_seen)
+        return _s7_status(g, found) or _target_status([found])
     if k == "new_axis":
         found = _axis_row(idx, e["name"])
-        return ("done", "시트에 있는 축(%d행)" % found[0]) if found else ("open", None)
+        return ("done", "taxonomy에 있는 축(%d행)" % found[0]) if found else ("open", None)
     if k == "synonym":
         found = idx["synonyms"].get(_low(e["alias"]))
         if found is None:
             return "open", None
         if _low(found[1][1]) == _low(e["canonical"]):
-            return "done", "시트에 있음(%d행)" % found[0]
+            return "done", "taxonomy에 있음(%d행)" % found[0]
         return "blocked", "같은 동의어가 다른 표준어로 이미 있음(%d행)" % found[0]
     if k == "q_new":
         if _s(e["text"]) and _low(e["text"]) in idx["q_texts"]:
-            return "done", "같은 문장의 질문이 시트에 있음"
-        return "open", None if _s(e["text"]) else "반영 여부는 자동으로 보지 않습니다(반영 후 숨김)"
+            return "done", "같은 문장의 질문이 taxonomy에 있음"
+        return "open", None
     if k == "term":
         t = _nk(e["term"])
         if any(v == t and not _off(r[1]) for (_a, v), r in idx["values"].items()):
-            return "done", "값으로 시트에 있음"
+            return "done", "값으로 taxonomy에 있음"
         if any(_nk(r[1][0]) == t for r in idx["synonyms"].values()):
-            return "done", "동의어로 시트에 있음"
+            return "done", "동의어로 taxonomy에 있음"
         return "open", None
     return "open", None
 
 
 def _s7_status(g, found):
-    """엔지니어 답변(S7)이 채운 칸이 지금 시트 행과 모두 같으면(공백 정규화) 반영됨. 아니면 None(기존 판정을 따른다)."""
+    """엔지니어 답변(S7)이 채운 칸이 지금 행과 모두 같으면(공백 정규화) 반영됨. 아니면 None(기존 판정을 따른다)."""
     fill = _s7_change(g)
     if not fill or found is None:
         return None
     if all(_ws(found[1][col]) == _ws(v) for col, v in fill.items()):
-        return "done", "답변 문장이 시트에 있음(%d행)" % found[0]
+        return "done", "답변 문장이 taxonomy에 있음(%d행)" % found[0]
     return None
 
 
 def _users(idx, axis, value):
-    """끄려는 값을 쓰는 곳: 켜진 하위값(C열)과 questions 적용 대상(축=값). 있으면 blocked(붙이면 시트 전체가 깨짐)."""
+    """끄려는 값을 쓰는 곳: 켜진 하위값(C열)과 questions 적용 대상(축=값). 있으면 blocked(끄면 검증이 깨짐)."""
     a, v = _nk(axis), _nk(value)
     kids = sum(1 for (ka, _kv), (_n, c) in idx["values"].items() if ka == a and not _off(c) and _nk(c[2]) == v)
     qs = []
@@ -963,7 +1016,7 @@ def _users(idx, axis, value):
 
 
 def _reject_keys(g, it):
-    """rejected 시트 대조 키. 편집과 무관하게 원래 값(처음 본 표기와 시트 표기)으로 만든다."""
+    """rejected 목록 대조 키. 편집과 무관하게 원래 값(처음 본 표기와 taxonomy 표기)으로 만든다."""
     e = g["e"]
     if e["kind"] == "value_add":
         return {_low("%s|%s" % (a, e["value"])) for a in (e["axis"], it["axis"])} | {_low(it["reject_row"][1])}
@@ -974,17 +1027,16 @@ def _reject_keys(g, it):
     return set()
 
 
-def judge(groups, items, idx, seen):
-    """항목마다 status·status_note를 채운다. 반환: 새 seen dict."""
-    new_seen = dict(seen)
+def judge(groups, items, idx):
+    """항목마다 status·status_note를 채운다."""
     for g, it in zip(groups, items):
         if idx is None:
-            it["status"], it["status_note"] = "unknown", "taxonomy.xlsx를 읽지 못해 판정하지 않습니다"
+            it["status"], it["status_note"] = "unknown", "taxonomy.json을 읽지 못해 판정하지 않습니다"
             continue
-        st, note = _sheet_status(it, g, idx, seen, new_seen)
+        st, note = _sheet_status(it, g, idx)
         if st != "done":
             if _reject_keys(g, it) & idx["rejected"]:
-                st, note = "rejected", "rejected 시트에 있음"
+                st, note = "rejected", "rejected 목록에 있음"
             elif it["sources"] and all(c["rejected"] for c in it["sources"]):
                 st, note = "rejected", "Domain-Engr-bot에서 기각"
         it["status"], it["status_note"] = st, note
@@ -996,7 +1048,212 @@ def judge(groups, items, idx, seen):
         if len(lst) > 1:
             for it in lst:
                 it["conflict"] = True
-    return new_seen
+
+
+# ---- 반영(최종 완료: 미리보기 → taxonomy.json 쓰기) ------------------------------------
+# 요청: {"kind": "taxonomy_board_decisions", "base_version", "marks": {ID: "applied"|"rejected"|null},
+#        "edits": {ID: {"choice": 고른 행 번호(pick=one일 때), "rows": [[칸...], ...]}}}
+# 칸은 서버의 행 초안에서 다시 만들고, 사람이 고친 값은 그 행의 editable 열에만 얹는다(나머지 칸은 받지 않는다).
+# 덮어쓰기는 열 단위 패치다: 지금 행과 다른 칸만 바꾸고, 같은 행·열을 두 항목이 다르게 고치면 ITEM_CONFLICT.
+
+REJECT_KINDS = {"value_add": "값", "synonym": "동의어", "q_new": "질문"}   # rejected 목록에 행을 남기는 항목
+
+
+def _check_payload(payload):
+    """반환: (marks, edits, base_version). 형식이 틀리면 BoardRefused(DECISIONS_FORMAT_INVALID)."""
+    if not isinstance(payload, dict) or payload.get("kind") != DECISIONS_KIND:
+        raise BoardRefused("DECISIONS_FORMAT_INVALID")
+    marks, edits = payload.get("marks"), payload.get("edits") or {}
+    if not isinstance(marks, dict) or len(marks) > MARKS_MAX or not isinstance(edits, dict) \
+            or len(edits) > MARKS_MAX or not isinstance(payload.get("base_version"), str):
+        raise BoardRefused("DECISIONS_FORMAT_INVALID")
+    for kind in marks.values():
+        if kind is not None and kind not in DECISION_KINDS:
+            raise BoardRefused("DECISIONS_ITEM_INVALID")
+    return marks, edits, payload["base_version"]
+
+
+def _chosen(it, edit):
+    """반영할 행 index 목록. pick=one이면 고른 행 하나(기본 0)."""
+    if it.get("pick") != "one":
+        return list(range(len(it["rows"])))
+    choice = edit.get("choice", 0) if isinstance(edit, dict) else 0
+    if not isinstance(choice, int) or isinstance(choice, bool) or not 0 <= choice < len(it["rows"]):
+        raise BoardRefused("EDIT_INVALID")
+    return [choice]
+
+
+def _final_cells(r, client):
+    """서버 행 초안 칸에 사람이 고친 editable 열 값만 얹는다."""
+    cells = list(r["cells"])
+    if client is None:
+        return cells
+    if not isinstance(client, list) or len(client) > len(cells):
+        raise BoardRefused("EDIT_INVALID")
+    for c in r["editable"]:
+        if c < len(client):
+            v = client[c]
+            if not isinstance(v, str) or len(v) > CELL_MAX:
+                raise BoardRefused("EDIT_INVALID")
+            cells[c] = v.replace("\r\n", "\n").replace("\r", "\n")
+    return cells
+
+
+def _current(doc, sheet, row):
+    """doc의 행(번호 = index + 2) 칸 리스트. 없거나 객체가 아니면 None."""
+    rows = doc.get(sheet)
+    if not isinstance(rows, list) or row is None or not 2 <= row < len(rows) + 2 or not isinstance(rows[row - 2], dict):
+        return None
+    return lb.row_cells(rows[row - 2], HEADERS[sheet])
+
+
+def _base_cells(r):
+    """행 초안을 만들 때의 지금 행(초안이 바꾼 칸을 되돌린 칸)."""
+    cells = list(r["cells"])
+    for ch in r["changes"]:
+        cells[ch["col"]] = ch["from"]
+    return cells
+
+
+def _add_patch(patches, sheet, row, patch, iid):
+    cur = patches.setdefault((sheet, row), {})
+    for col, v in patch.items():
+        if col in cur and cur[col][0] != v:
+            raise BoardRefused("ITEM_CONFLICT")
+        cur[col] = (v, iid)
+
+
+def _check_synonyms(doc, appends):
+    """붙일 동의어 행끼리, 또는 doc의 동의어와 같은 동의어(_low 비교)가 다른 표준어를 가리키면 ITEM_CONFLICT.
+    파서는 같은 동의어의 첫 행만 쓰므로 둘째 행은 쓰여도 효과가 없다."""
+    seen = {}
+    rows = doc.get("synonyms")
+    for r in rows if isinstance(rows, list) else []:
+        if isinstance(r, dict):
+            c = lb.row_cells(r, HEADERS["synonyms"])
+            if _low(c[0]) and _s(c[1]):
+                seen.setdefault(_low(c[0]), _low(c[1]))
+    for sheet, cells in appends:
+        if sheet != "synonyms" or not _low(cells[0]):
+            continue
+        a, canon = _low(cells[0]), _low(cells[1])
+        if seen.setdefault(a, canon) != canon:
+            raise BoardRefused("ITEM_CONFLICT")
+
+
+def plan_changes(doc, items, marks, edits, today):
+    """확정 표시와 편집으로 새 doc를 만든다(원래 doc는 그대로). 반환: 새 doc.
+    거절: 모르는 항목·반영할 수 없는 상태·필수 칸 빈칸·쓸 문장 없음은 ITEM_NOT_APPLICABLE,
+    같은 칸을 다르게 고치는 두 항목·같은 동의어를 다른 표준어로 붙이는 행은 ITEM_CONFLICT,
+    대상 행이 초안과 다르면 TAXONOMY_CHANGED(409)."""
+    by_id = {it["id"]: it for it in items}
+    for iid in marks:
+        if iid not in by_id:
+            raise BoardRefused("ITEM_NOT_APPLICABLE")
+    patches, appends, rejects = {}, [], []
+    for it in items:
+        kind = marks.get(it["id"])
+        if kind is None:
+            continue
+        iid = it["id"]
+        if kind == "rejected":
+            if it["status"] not in ("open", "blocked"):
+                raise BoardRefused("ITEM_NOT_APPLICABLE")
+            rr = it.get("reject_row")
+            if it["kind"] in REJECT_KINDS and rr and _s(rr[1]):
+                rejects.append([REJECT_KINDS[it["kind"]], rr[1], today, REJECT_REASON, iid])
+            continue
+        if it["status"] != "open":
+            raise BoardRefused("ITEM_NOT_APPLICABLE")
+        if not it["rows"]:
+            continue   # taxonomy 밖 항목: 결정만 남긴다
+        edit = edits.get(iid) if isinstance(edits.get(iid), dict) else {}
+        client_rows = edit.get("rows") if isinstance(edit.get("rows"), list) else []
+        wrote = False
+        for ri in _chosen(it, edit):
+            r = it["rows"][ri]
+            cells = _final_cells(r, client_rows[ri] if ri < len(client_rows) else None)
+            if any(not cells[c].strip() for c in r["required"]):
+                raise BoardRefused("ITEM_NOT_APPLICABLE")
+            no_text = it["kind"] in EDIT_KINDS and r["editable"] and not any(cells[c].strip() for c in r["editable"])
+            if r["target"]["mode"] == "append":
+                if no_text:
+                    raise BoardRefused("ITEM_NOT_APPLICABLE")
+                appends.append((r["sheet"], cells))
+                wrote = True
+                continue
+            row = r["target"]["row"]
+            cur = _current(doc, r["sheet"], row)
+            if row is None:
+                raise BoardRefused("ITEM_NOT_APPLICABLE")
+            if cur is None or cur != _base_cells(r):
+                raise BoardRefused("TAXONOMY_CHANGED", 409)
+            patch = {c: v for c, v in enumerate(cells) if v != cur[c]}
+            if not patch:
+                continue   # 고치지 않은 행(겹치는 값 정의의 한쪽 등)은 쓰지 않는다
+            if no_text:
+                raise BoardRefused("ITEM_NOT_APPLICABLE")
+            _add_patch(patches, r["sheet"], row, patch, iid)
+            dup_patch = {int(c): v for c, v in (r["target"].get("dup_patch") or {}).items()}
+            for d in r["target"].get("dups") or []:
+                dcur = _current(doc, r["sheet"], d)
+                if dcur is None or [_nk(x) for x in dcur[:2]] != [_nk(x) for x in cur[:2]]:
+                    raise BoardRefused("TAXONOMY_CHANGED", 409)
+                dp = {c: v for c, v in dup_patch.items() if dcur[c] != v}
+                if dp:
+                    _add_patch(patches, r["sheet"], d, dp, iid)
+            wrote = True
+        if not wrote:
+            raise BoardRefused("ITEM_NOT_APPLICABLE")
+    _check_synonyms(doc, appends)
+    new = json.loads(json.dumps(doc, ensure_ascii=False))
+    for (sheet, row), patch in sorted(patches.items()):
+        cells = _current(new, sheet, row)
+        for col, (v, _iid) in patch.items():
+            cells[col] = v
+        new[sheet][row - 2] = dict(lb.row_obj(cells, HEADERS[sheet]))
+    for sheet, cells in appends:     # 덮어쓰기(원래 행 번호)를 모두 한 뒤 끝에 붙인다
+        if not isinstance(new.get(sheet), list):
+            new[sheet] = []
+        new[sheet].append(dict(lb.row_obj(cells, HEADERS[sheet])))
+    for cells in rejects:
+        if not isinstance(new.get("rejected"), list):
+            new["rejected"] = []
+        new["rejected"].append(dict(lb.row_obj(cells, lb.REJECTED_HEADER)))
+    return new
+
+
+def apply_marks(out_dir, tax_path, payload, preview, now=None):
+    """미리보기(preview=True) 또는 반영. 보드 문서(taxonomy_board.json)의 항목과 지금 taxonomy.json으로 새 doc를 만든다.
+
+    미리보기 반환: {"ok", "diff", "issues", "version"}(아무것도 쓰지 않는다).
+    반영 반환: {"ok", "changed"(확정 수), "written"(바뀐 행 수), "version"(새 버전)}. 쓰기는 save_doc(by="board")만 한다.
+    저장한 뒤 확정 기록(decisions.json)이 실패하면 ok 그대로 decisions_failed(사유 코드)를 붙인다(쓴 것은 그대로다).
+    읽기·비교·검증·저장은 편집기와 같은 어댑터 commit_taxonomy가 하고 거절 코드도 같다: 파일 없음 TAXONOMY_NOT_FOUND(404),
+    읽기 실패 TAXONOMY_READ_FAILED(500, detail), 버전이 다르면 TAXONOMY_CHANGED(409), 검증 실패 TAXONOMY_INVALID(400, issues,
+    파일 그대로), 쓰기 실패 TAXONOMY_WRITE_FAILED(500). 모두 BoardRefused로 올린다."""
+    marks, edits, base = _check_payload(payload)
+    board = _json_file(os.path.join(out_dir, DOC), _Bad())
+    if not isinstance(board, dict):
+        raise BoardRefused("BOARD_DOC_MISSING", 500)
+    items = [it for it in board.get("items") or [] if isinstance(it, dict) and it.get("id")]
+    if (board.get("taxonomy") or {}).get("version") != base:
+        raise BoardRefused("TAXONOMY_CHANGED", 409)
+    today = (now or datetime.datetime.now().astimezone()).date().isoformat()
+    try:
+        res = lb.commit_taxonomy(tax_path, base, lambda doc: plan_changes(doc, items, marks, edits, today), "board",
+                                 preview=preview)
+    except lb.TaxonomyCommitError as e:
+        raise BoardRefused(e.code, e.status, e.issues, e.detail)
+    diff = res["diff"]
+    if preview:
+        return {"ok": True, "diff": diff, "issues": res["issues"] if diff else [], "version": res["version"]}
+    out = {"ok": True, "changed": 0, "written": len(diff), "version": res["version"]}
+    try:
+        out["changed"] = record_decisions(out_dir, marks, now)
+    except (ValueError, OSError) as e:   # taxonomy.json은 이미 썼다: 거절 대신 경고 코드를 붙인다
+        out["decisions_failed"] = str(e) if isinstance(e, ValueError) else type(e).__name__
+    return out
 
 
 # ---- 문서·화면 --------------------------------------------------------------------
@@ -1122,18 +1379,19 @@ def _axes(items, metrics, idx):
 
 def build(ws_roots, taxonomy_path, out_dir, ledger_dir=None, requests_dir=None, now=None, taxonomy_bytes=None,
           reset=False, questions_dir=None):
-    """화면·json·seen.json(·cleared.json)을 쓴다. reset이면 지금 항목을 모두 초기화한다. 반환: 문서 dict.
-    questions_dir는 S7(엔지니어 답변)을 읽을 질문 폴더다(없으면 S7 없음)."""
+    """화면·json(·cleared.json)을 쓴다. reset이면 지금 항목을 모두 초기화한다. 반환: 문서 dict.
+    questions_dir는 S7(엔지니어 답변)을 읽을 질문 폴더다(없으면 S7 없음). 문서의 taxonomy.version은 읽은
+    taxonomy.json bytes의 sha256이다(반영할 때 이 버전과 지금 파일이 같아야 쓴다)."""
     if requests_dir is None and taxonomy_path:
         requests_dir = os.path.join(os.path.dirname(os.path.abspath(taxonomy_path)), REQUESTS_DIRNAME)
     raw, metrics, rejected, bad = collect(ws_roots, ledger_dir, requests_dir, questions_dir)
-    idx, issues, read_code = load_taxonomy(taxonomy_path, taxonomy_bytes)
-    seen_path = os.path.join(out_dir, SEEN)
-    seen = _json_file(seen_path, _Bad()) or {}
-    seen = seen if isinstance(seen, dict) else {}
-    groups = merge(raw, rejected)
+    data, read_code = (taxonomy_bytes, None) if taxonomy_bytes is not None else read_bytes(taxonomy_path)
+    idx, issues = None, []
+    if data is not None:
+        idx, issues, read_code = load_taxonomy(data=data)
+    groups, n_syn_filtered = strict_synonyms(merge(raw, rejected), idx)
     items = [draft(g, idx) for g in groups]
-    new_seen = judge(groups, items, idx, seen)
+    judge(groups, items, idx)
     cleared_path = os.path.join(out_dir, CLEARED)
     cleared = _json_file(cleared_path, _Bad()) or {}
     items, cleared, n_cleared = apply_cleared(items, cleared if isinstance(cleared, dict) else {}, reset)
@@ -1145,29 +1403,28 @@ def build(ws_roots, taxonomy_path, out_dir, ledger_dir=None, requests_dir=None, 
         if kept != decisions:
             io.write_json(dec_path, kept)
     previews = resolve_slides(items, ws_roots)
-    counts ={s: sum(1 for it in items if it["status"] == s) for s in STATUSES}
+    counts = {s: sum(1 for it in items if it["status"] == s) for s in STATUSES}
     sources = {c: 0 for c in SOURCE_CODES}
     for e in raw:
         sources[e["src"][:2]] += 1
     doc = {
         "kind": "taxonomy_board",
         "generated_at": (now or datetime.datetime.now().astimezone()).isoformat(timespec="seconds"),
-        "taxonomy": {"file": os.path.basename(taxonomy_path or "") or "taxonomy.xlsx", "read_code": read_code,
+        "taxonomy": {"file": os.path.basename(taxonomy_path or "") or "taxonomy.json", "read_code": read_code,
                      "readable": idx is not None, "issues": issues,
+                     "version": hashlib.sha256(data).hexdigest() if data is not None else None,
                      "sheet_hashes": dict(sorted(idx["hashes"].items())) if idx else {}},
         "columns": {"taxonomy": TAX_COLS, "synonyms": SYN_COLS, "questions": Q_COLS, "rejected": REJ_COLS},
         "counts": counts, "sources": sources, "source_rows_invalid": bad,
         "workspaces": [os.path.basename(os.path.normpath(r)) for r in ws_roots],
         "axes": _axes(items, metrics, idx), "items": items,
         "targets": _targets(idx), "axis_names": _axes_on(idx), "question_ids": sorted(idx["questions"]) if idx else [],
-        "notes": {"revisit_file": REVISIT_FILE_NOTE}, "cleared": n_cleared, "previews": previews,
+        "notes": {"revisit_file": REVISIT_FILE_NOTE}, "cleared": n_cleared, "synonyms_filtered": n_syn_filtered, "previews": previews,
     }
     if reset:
         io.write_json(cleared_path, cleared)
     io.write_json(os.path.join(out_dir, DOC), doc)
     io.write_text(os.path.join(out_dir, SCREEN), render(doc))
-    if idx is not None:
-        io.write_json(seen_path, new_seen)
     return doc
 
 
@@ -1179,69 +1436,15 @@ def render(doc):
     return tpl.replace(screen.DATA_MARK, screen.embed(doc), 1)
 
 
-# ---- 창 배치(--open, Windows) ------------------------------------------------------
+# ---- 브라우저로 열기(--open) ----------------------------------------------------------
 
-def _browser():
-    roots = [os.environ.get(k) for k in ("ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA")]
-    for rel in (("Microsoft", "Edge", "Application", "msedge.exe"), ("Google", "Chrome", "Application", "chrome.exe")):
-        for r in roots:
-            if r and os.path.isfile(os.path.join(r, *rel)):
-                return os.path.join(r, *rel)
-    return None
-
-
-def open_side_by_side(html_path, xlsx_path, readable=True, platform=None, wait=15.0):
-    """HTML을 Edge 앱 창으로 화면 왼쪽 절반에, xlsx를 기본 프로그램으로 오른쪽 절반에 띄운다. 반환: None 또는 사유 코드.
-    xlsx를 읽을 수 있고 확장자가 .xlsx일 때만 기본 프로그램으로 연다(NOT_XLSX)."""
-    if not readable or not str(xlsx_path).lower().endswith(".xlsx"):
-        return "NOT_XLSX"
-    if (platform or sys.platform) != "win32":
-        return "OPEN_UNSUPPORTED"
-    import ctypes
-    from ctypes import wintypes
-
-    user32 = ctypes.windll.user32
+def open_board(target):
+    """보드(서버 주소 또는 html 파일)를 기본 브라우저로 연다. 반환: None 또는 사유 코드."""
+    url = target if "://" in str(target) else Path(os.path.abspath(target)).as_uri()
     try:
-        user32.SetProcessDPIAware()
-        rect = wintypes.RECT()
-        if not user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0):  # SPI_GETWORKAREA
-            return "WORKAREA_FAILED"
-        x, y, w, h = rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
-        half = w // 2
-        browser = _browser()
-        if browser is None:
-            return "BROWSER_NOT_FOUND"
-        target = html_path if "://" in str(html_path) else Path(os.path.abspath(html_path)).as_uri()
-        subprocess.Popen([browser, "--new-window", "--app=" + target,
-                          "--window-position=%d,%d" % (x, y), "--window-size=%d,%d" % (half, h)])
-        os.startfile(os.path.abspath(xlsx_path))
-    except OSError:
+        return None if webbrowser.open(url) else "BROWSER_NOT_FOUND"
+    except webbrowser.Error:
         return "OPEN_FAILED"
-    found = []
-    proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
-
-    def each(hwnd, _lparam):
-        n = user32.GetWindowTextLengthW(hwnd)
-        if n and user32.IsWindowVisible(hwnd):
-            buf = ctypes.create_unicode_buffer(n + 1)
-            user32.GetWindowTextW(hwnd, buf, n + 1)
-            t = buf.value.lower()
-            if "taxonomy" in t and "excel" in t:
-                found.append(hwnd)
-                return False
-        return True
-
-    cb = proc(each)
-    end = time.monotonic() + wait
-    while not found and time.monotonic() < end:
-        user32.EnumWindows(cb, 0)
-        if not found:
-            time.sleep(0.5)
-    if not found:
-        return "EXCEL_WINDOW_NOT_FOUND"
-    user32.ShowWindow(found[0], 9)  # SW_RESTORE
-    user32.SetWindowPos(found[0], 0, x + half, y, w - half, h, 0x0004 | 0x0040)  # SWP_NOZORDER | SWP_SHOWWINDOW
-    return None
 
 
 # ---- 명령 ----------------------------------------------------------------------
@@ -1297,7 +1500,7 @@ def _label(path):
 
 
 def main_cli(args, say):
-    """건수·코드·화면 상대 경로만 낸다. xlsx를 못 읽어도 종료 코드는 0이다(상태 unknown)."""
+    """건수·코드·화면 상대 경로만 낸다. taxonomy.json을 못 읽어도 종료 코드는 0이다(상태 unknown)."""
     try:
         roots = workspace_roots(getattr(args, "workspace", None))
     except model.BundleError as e:
@@ -1319,6 +1522,8 @@ def main_cli(args, say):
             % (doc["cleared"], CLEARED))
     elif doc["cleared"]:
         say("[taxonomy-board] 초기화로 숨긴 항목 %d" % doc["cleared"])
+    if doc.get("synonyms_filtered"):
+        say("[taxonomy-board] 엄밀한 동의어 기준으로 뺀 봇 동의어 후보 %d" % doc["synonyms_filtered"])
     c, s = doc["counts"], doc["sources"]
     say("[taxonomy-board] 항목 %d (미반영 %d · 반영됨 %d · 기각 %d · 먼저 할 일 %d · 확인 불가 %d), 작업 폴더 %d, 출처 %s" % (
         len(doc["items"]), c["open"], c["done"], c["rejected"], c["blocked"], c["unknown"], len(roots),
@@ -1335,34 +1540,61 @@ def main_cli(args, say):
     if getattr(args, "serve", False):
         def rebuild():
             return build(roots, tax_path, out_dir, ledger_dir=led, questions_dir=qmodel.qdir(led))["counts"]
-        return serve_board(html_path, out_dir, rebuild, tax_path, t["readable"], getattr(args, "open", False), say)
+        return serve_board(html_path, out_dir, rebuild, tax_path, getattr(args, "open", False), say)
     if getattr(args, "open", False):
-        code = open_side_by_side(html_path, tax_path, readable=t["readable"])
+        code = open_board(html_path)
         if code:
             say("[taxonomy-board] OPEN_FAILED %s" % code)
     return 0
 
 
-def serve_board(html_path, out_dir, rebuild, tax_path, readable, open_windows, say, port=None):
-    """보드 서버(127.0.0.1)를 열고 Ctrl+C까지 기다린다. 화면의 '최종 완료'가 decisions.json에 확정을 더하고
-    taxonomy.xlsx를 다시 읽어 보드를 새로 만든다. open_windows면 서버 주소를 왼쪽, xlsx를 오른쪽에 띄운다."""
+def board_handlers(out_dir, tax_path, rebuild, now=None):
+    """보드 서버의 미리보기·반영 처리. 반환: (preview(payload), finalize(payload)) → (HTTP 상태, 응답 dict).
+    버전이 달라 거절하면 보드를 다시 만들어 둔다(화면을 새로고침하면 새 버전으로 이어 한다).
+    저장한 뒤 보드 다시 만들기가 실패하면 200에 counts None, rebuild_failed(예외 이름)를 붙인다(쓴 것은 그대로다)."""
+    def run(payload, preview):
+        try:
+            res = apply_marks(out_dir, tax_path, payload, preview, now=now)
+        except BoardRefused as e:
+            if e.code == "TAXONOMY_CHANGED":
+                try:
+                    rebuild()
+                except Exception:   # 다시 만들기 실패는 거절 응답을 바꾸지 않는다
+                    pass
+            body = {"ok": False, "code": e.code, "issues": e.issues}
+            if e.detail:
+                body["detail"] = e.detail
+            return e.status, body
+        if not preview:
+            try:
+                res["counts"] = rebuild()
+            except Exception as e:   # 이미 저장했으니 실패 응답으로 바꾸지 않는다. 사유는 예외 이름만
+                res["counts"], res["rebuild_failed"] = None, type(e).__name__
+        return 200, res
+    return (lambda payload: run(payload, True)), (lambda payload: run(payload, False))
+
+
+def serve_board(html_path, out_dir, rebuild, tax_path, open_browser, say, port=None):
+    """보드 서버(127.0.0.1)를 열고 Ctrl+C까지 기다린다. 화면의 '최종 완료'가 미리보기(/board/preview)를 거쳐
+    taxonomy.json에 쓰고(/board/finalize) 보드를 새로 만든다. open_browser면 서버 주소를 브라우저로 연다."""
     import threading
     from domain_engrbot import serve as serve_mod
 
-    def record(marks):
-        return record_decisions(out_dir, marks)
+    preview, finalize = board_handlers(out_dir, tax_path, rebuild)
     try:
-        srv = serve_mod.make_board_server(html_path, record, rebuild, serve_mod.BOARD_PORT if port is None else port)
+        srv = serve_mod.make_board_server(html_path, preview, finalize,
+                                          serve_mod.BOARD_PORT if port is None else port)
     except OSError:
         if port is not None:
             raise
-        srv = serve_mod.make_board_server(html_path, record, rebuild, 0)
+        srv = serve_mod.make_board_server(html_path, preview, finalize, 0)
     url = "http://127.0.0.1:%d/" % srv.server_address[1]
-    say("[taxonomy-board] 보드 서버: %s (최종 완료 → %s, 끝내려면 Ctrl+C)" % (url, DECISIONS))
+    say("[taxonomy-board] 보드 서버: %s (최종 완료 → 미리보기 → %s에 쓰기, 끝내려면 Ctrl+C)"
+        % (url, os.path.basename(tax_path)))
     th = threading.Thread(target=srv.serve_forever, daemon=True)
     th.start()
-    if open_windows:
-        code = open_side_by_side(url, tax_path, readable=readable)
+    if open_browser:
+        code = open_board(url)
         if code:
             say("[taxonomy-board] OPEN_FAILED %s" % code)
     try:

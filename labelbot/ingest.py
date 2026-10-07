@@ -80,7 +80,7 @@ def iter_inputs(root):
             yield full, rel, util.nfc(fn)
 
 
-def collect(ws, con, run_id, input_root, only_ext=None, log=None, excluded=()):
+def collect(ws, con, run_id, input_root, only_ext=None, log=None):
     """입력 루트를 훑어 b64 저장과 files·file_locations 기록. 반환: 이번 실행에서 본 file_id 목록.
 
     pipeline.json include_file_ids(파일 ID 접두 목록)가 있으면 그 파일만 수집한다(사외 PoC 범위 제한용).
@@ -97,7 +97,7 @@ def collect(ws, con, run_id, input_root, only_ext=None, log=None, excluded=()):
             continue
         data = read_input(full, None)
         fid = util.sha256_bytes(data)
-        if (include and not fid.startswith(include)) or fid in excluded:
+        if include and not fid.startswith(include):
             continue
         bp = b64_path(ws, fid)
         if not os.path.exists(bp):

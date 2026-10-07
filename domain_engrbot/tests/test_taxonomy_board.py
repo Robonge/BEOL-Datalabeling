@@ -1,7 +1,7 @@
-"""taxonomy 수정 보드 테스트: 출처 병합, 행 초안, 상태 판정, 파싱 오류, 결정성, 화면, CLI.
+"""taxonomy 수정 보드 테스트: 출처 병합, 행 초안, 상태 판정, 검증 오류, 결정성, 화면, CLI, 반영(미리보기·쓰기).
 
-taxonomy는 tests/xlsx_writer로 메모리에서 만든 bytes를 주입한다(디스크에 .xlsx를 쓰지 않는다).
-작업 폴더·장부·재검토 파일은 코드 폴더 밖 임시 폴더에 만든다. 저장소 taxonomy.xlsx는 연기 테스트 하나만 읽는다.
+taxonomy는 메모리에서 만든 taxonomy.json bytes를 주입하거나, 반영 테스트에서는 임시 폴더에 쓴 taxonomy.json을 쓴다.
+작업 폴더·장부·재검토 파일은 코드 폴더 밖 임시 폴더에 만든다. 저장소 taxonomy.json은 읽지 않는다.
 """
 import contextlib
 import datetime
@@ -12,12 +12,9 @@ import shutil
 import re
 import tempfile
 import unittest
-import zlib
 from unittest import mock
 
 from domain_engrbot import cli, io, ledger, taxonomy_board as tb
-from domain_engrbot.adapters import labelbot_ws
-from tests import xlsx_writer as xw
 
 TAX_HEAD = ["축", "값", "상위값", "다중값", "계층", "중복 알림 제외", "종류", "정의·판정 규칙", "포함 예", "제외 예", "사용 여부"]
 TAX_ROWS = [
@@ -32,15 +29,26 @@ TAX_ROWS = [
 NOW = datetime.datetime(2026, 10, 5, 12, 0, 0, tzinfo=datetime.timezone.utc)
 
 
+Q_HEAD = ["질문 ID", "문장", "적용 대상", "우선순위"]
+REJ_HEAD = ["종류", "내용", "기각일", "사유", "출처"]
+
+
+def _objs(head, rows):
+    return [dict(zip(head, r + [""] * (len(head) - len(r)))) for r in rows]
+
+
+def tax_doc(rows=None, questions_head=None):
+    """테스트용 taxonomy.json 문서(행 객체 목록). 행 번호 = index + 2."""
+    return {"version": 1,
+            "taxonomy": _objs(TAX_HEAD, rows or TAX_ROWS),
+            "questions": _objs(questions_head or Q_HEAD, [["Q1", "결함이 있나?", "공통", "1"],
+                                                          ["Q2", "CMP 공정인가?", "공정=CMP", "2"]]),
+            "synonyms": _objs(["동의어", "표준어", "메모"], [["씨엠피", "CMP", ""]]),
+            "rejected": _objs(REJ_HEAD, [["값", "공정|거절값", "2026-10-01", ""], ["질문", "거절할 질문?", "2026-10-01", ""]])}
+
+
 def tax_bytes(rows=None, questions_head=None):
-    return xw.build([
-        ("taxonomy", [TAX_HEAD] + (rows or TAX_ROWS)),
-        ("questions", [questions_head or ["질문 ID", "문장", "적용 대상", "우선순위"], ["Q1", "결함이 있나?", "공통", "1"],
-                       ["Q2", "CMP 공정인가?", "공정=CMP", "2"]]),
-        ("synonyms", [["동의어", "표준어", "메모"], ["씨엠피", "CMP", ""]]),
-        ("rejected", [["종류", "내용", "기각일", "사유"], ["값", "공정|거절값", "2026-10-01", ""],
-                      ["질문", "거절할 질문?", "2026-10-01", ""]]),
-    ])
+    return json.dumps(tax_doc(rows, questions_head), ensure_ascii=False, indent=1).encode("utf-8")
 
 
 def _jsonl(path, rows):
@@ -106,7 +114,7 @@ def make_sources(tmp):
         _cand("new_value", "없는축|값"),
         _cand("new_value", "공정|옛값"),
         _cand("new_value", "공정|=수식"),
-        _cand("synonym", "식각기|식각"),
+        _cand("synonym", "식각기|식각", source="review"),  # 사람 등록(봇 후보면 엄밀 기준에서 빠진다)
         _cand("synonym", "씨 엠피|CMP"),
         _cand("synonym", "씨엠피|cmp", source="review"),
         _cand("question", "거절할 질문?"),
@@ -175,12 +183,26 @@ class TaxonomyBoardTest(unittest.TestCase):
         self.assertEqual(it["action"], "disable")
 
     def test_axis_definition_row(self):
+        """대상 행이 있으면 엔지니어 답변이 없어도 늘 '새 행으로 추가'와 '덮어쓰기' 둘을 준다(R2)."""
         it = self.item(self.build(), "tax.axis.def|공정")
-        row = it["rows"][0]
+        self.assertEqual((it["pick"], [r["target"]["mode"] for r in it["rows"]]), ("one", ["append", "overwrite"]))
+        self.assertEqual(it["rows"][0]["cells"], ["공정"] + [""] * 10)
+        row = it["rows"][1]
         self.assertEqual(row["editable"], [7, 8, 9])
         self.assertEqual(row["cells"], TAX_ROWS[0])
         self.assertEqual(row["target"], {"mode": "overwrite", "row": 2})
         self.assertTrue(any("비율" in m for m in it["context"]["metrics"]))
+
+    def test_value_definition_offers_both_without_answer(self):
+        """값 정의 보완도 엔지니어 답변(S7) 없이 대상 행이 있으면 '새 행으로 추가'·'덮어쓰기' 둘을 준다."""
+        path = os.path.join(self.roots[1], "reports", "taxonomy_revisit.jsonl")
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(_revisit("c6", "axis", "공정", "AMBIGUOUS_DEF", related=["식각"]), ensure_ascii=False) + "\n")
+        it = self.item(self.build(), "tax.value.def|공정|식각")
+        self.assertEqual((it["pick"], [r["target"]["mode"] for r in it["rows"]]), ("one", ["append", "overwrite"]))
+        self.assertEqual(it["rows"][0]["cells"], ["공정", "식각"] + [""] * 9)
+        self.assertEqual(it["rows"][1]["target"]["row"], 4)
+        self.assertIn("4행", it["rows"][0]["label"])
 
     def test_status_sheet(self):
         doc = self.build()
@@ -188,27 +210,21 @@ class TaxonomyBoardTest(unittest.TestCase):
         self.assertEqual(self.item(doc, "tax.value.add|공정|거절값")["status"], "rejected")
         self.assertEqual(self.item(doc, "tax.value.add|없는축|값")["status"], "blocked")
         off = self.item(doc, "tax.value.add|공정|옛값")
-        self.assertEqual(off["status"], "blocked")
+        self.assertEqual((off["status"], off["status_note"]), ("open", "꺼진 값을 다시 켭니다(5행)"))
         self.assertEqual(off["action"], "overwrite")
         self.assertEqual(off["rows"][0]["target"], {"mode": "overwrite", "row": 5})
         self.assertEqual(off["rows"][0]["cells"][10], "")
         self.assertEqual(self.item(doc, "syn|씨엠피|cmp")["status"], "done")
 
-    def test_edit_row_hash_change_is_done(self):
+    def test_edit_items_open_until_board_decision(self):
+        """문장 수정 항목은 행이 바뀌어도 추측하지 않는다(seen.json 지문 없음). 보드 확정으로만 반영됨이 된다."""
         doc = self.build()
         self.assertEqual(self.item(doc, "tax.axis.def|공정")["status"], "open")
         rows = [list(r) for r in TAX_ROWS]
         rows[0][7] = "공정 정의를 고쳤다"
         doc = self.build(tax_bytes(rows))
-        it = self.item(doc, "tax.axis.def|공정")
-        self.assertEqual((it["status"], it["status_note"]), ("done", "행이 바뀜"))
-        self.assertEqual(self.item(doc, "tax.value.overlap|공정|cmp|식각")["status"], "open")
-        # 같은 제안이 새 실행에서 다시 올라오면 기준 해시를 다시 잡고 미반영으로 돌린다.
-        run2 = os.path.join(self.roots[0], "qa", "runs", "QA-2")
-        _json(os.path.join(run2, "manifest.json"), {})
-        _jsonl(os.path.join(run2, "proposals.jsonl"), [_prop("p-axis", "AXIS_DEFINITION", "axis:공정", {"axis": "공정"})])
-        doc = self.build(tax_bytes(rows))
         self.assertEqual(self.item(doc, "tax.axis.def|공정")["status"], "open")
+        self.assertFalse(os.path.exists(os.path.join(self.out, "seen.json")))
 
     def test_missing_axis_and_engr_rejected(self):
         doc = self.build()
@@ -247,23 +263,25 @@ class TaxonomyBoardTest(unittest.TestCase):
         self.assertEqual(term["rows"][0]["required"], [1])
         self.assertEqual(self.item(doc, "tax.value.add|공정|증착")["group"], "taxonomy")
 
-    def test_formula_escaped(self):
+    def test_cells_are_raw_text(self):
+        """Excel 붙여넣기용 표시(수식 앞 ')는 없다. 칸은 원문 그대로다."""
         it = self.item(self.build(), "tax.value.add|공정|=수식")
-        self.assertEqual(it["rows"][0]["cells"][1], "'=수식")
+        self.assertEqual(it["rows"][0]["cells"][1], "=수식")
+        self.assertEqual(it["reject_row"], ["값", "공정|=수식", "", ""])
 
     def test_parse_error_unknown(self):
-        doc = self.build(b"not a zip file")
+        doc = self.build(b"not json")
         self.assertFalse(doc["taxonomy"]["readable"])
-        self.assertTrue(doc["taxonomy"]["issues"])
-        self.assertTrue(all(set(i) == {"sheet", "row", "code"} for i in doc["taxonomy"]["issues"]))
+        self.assertEqual(doc["taxonomy"]["read_code"], "TAXONOMY_PARSE_ERROR TAXONOMY_JSON_INVALID")
+        self.assertEqual(doc["taxonomy"]["issues"], [{"sheet": None, "row": None, "code": "TAXONOMY_JSON_INVALID"}])
         self.assertTrue(doc["items"])
         self.assertEqual({it["status"] for it in doc["items"]}, {"unknown"})
-        self.assertFalse(os.path.exists(os.path.join(self.out, tb.SEEN)))  # 읽지 못한 실행은 seen을 쓰지 않는다
+        self.assertEqual(doc["taxonomy"]["version"], tb.hashlib.sha256(b"not json").hexdigest())
 
-    def test_header_error_still_judged(self):
+    def test_validation_error_still_judged(self):
         doc = self.build(tax_bytes(questions_head=["질문", "문장", "적용 대상", "우선순위"]))
         self.assertTrue(doc["taxonomy"]["readable"])
-        self.assertIn("HEADER_MISMATCH", {i["code"] for i in doc["taxonomy"]["issues"]})
+        self.assertIn("QUESTION_ID_EMPTY", {i["code"] for i in doc["taxonomy"]["issues"]})
         self.assertEqual(self.item(doc, "tax.value.add|공정|cmp")["status"], "done")
 
     def test_reset_clears_until_new_source(self):
@@ -275,7 +293,8 @@ class TaxonomyBoardTest(unittest.TestCase):
         self.assertEqual(self.build()["items"], [])           # 다시 실행해도 비어 있다
         # 같은 제안이 새 QA 실행에서 다시 올라오면 그 항목만 다시 보인다
         it = before["items"][0]
-        cleared = json.load(open(os.path.join(self.out, tb.CLEARED), encoding="utf-8"))
+        with open(os.path.join(self.out, tb.CLEARED), encoding="utf-8") as f:
+            cleared = json.load(f)
         cleared[it["id"]] = cleared[it["id"]][1:] if len(cleared[it["id"]]) > 1 else []
         _json(os.path.join(self.out, tb.CLEARED), cleared)
         self.assertEqual([x["id"] for x in self.build()["items"]], [it["id"]])
@@ -301,29 +320,29 @@ class TaxonomyBoardTest(unittest.TestCase):
         before = [_files(r) for r in self.roots]
         self.build()
         self.assertEqual([_files(r) for r in self.roots], before)
-        self.assertEqual(sorted(os.listdir(self.out)), [tb.SEEN, tb.SCREEN, tb.DOC])
+        self.assertEqual(sorted(os.listdir(self.out)), [tb.SCREEN, tb.DOC])
         with open(os.path.join(self.out, tb.SCREEN), encoding="utf-8") as f:
             html = f.read()
         self.assertNotIn("/*__DATA__*/null", html)
-        self.assertNotIn("http", html.lower())
+        self.assertNotIn("http", html.lower().replace("http-equiv", ""))   # 외부 주소 없음(CSP meta 속성 이름만 뺀다)
         self.assertEqual(html.count("</script>"), 1)
         self.assertIn("taxonomy_board", html)
         with open(tb.TEMPLATE_PATH, encoding="utf-8") as f:
             tpl = f.read()
         self.assertEqual(tpl.count("/*__DATA__*/null"), 1)
-        self.assertNotIn("http", tpl.lower())
+        self.assertNotIn("http", tpl.lower().replace("http-equiv", ""))
 
     def test_cli_unreadable_taxonomy_exit_0(self):
         bad = os.path.join(self.tmp, "bad.json")
         with open(bad, "w", encoding="utf-8") as f:
-            f.write("{}")
+            f.write("not json")
         buf = std_io.StringIO()
         with contextlib.redirect_stdout(buf):
             code = cli.main(["taxonomy-board", "--workspace", self.roots[0], "--workspace", self.roots[1],
                              "--taxonomy", bad, "--out-dir", self.out])
         text = buf.getvalue()
         self.assertEqual(code, 0)
-        self.assertIn("TAXONOMY_READ_FAILED", text)
+        self.assertIn("TAXONOMY_PARSE_ERROR TAXONOMY_JSON_INVALID", text)
         self.assertIn("작업 폴더 2", text)
         self.assertNotIn(self.tmp, text)
         with open(os.path.join(self.out, tb.DOC), encoding="utf-8") as f:
@@ -337,16 +356,19 @@ class TaxonomyBoardTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("WORKSPACE_NOT_FOUND", buf.getvalue())
 
-    def test_open_unsupported(self):
-        self.assertEqual(tb.open_side_by_side("a.html", "b.xlsx", platform="linux"), "OPEN_UNSUPPORTED")
+    def test_open_board_uses_browser(self):
+        with mock.patch.object(tb.webbrowser, "open", return_value=True) as op:
+            self.assertIsNone(tb.open_board("http://127.0.0.1:8795/"))
+            self.assertIsNone(tb.open_board(os.path.join(self.tmp, "taxonomy_board.html")))
+        self.assertEqual(op.call_args_list[0][0][0], "http://127.0.0.1:8795/")
+        self.assertTrue(op.call_args_list[1][0][0].startswith("file:"))
+        with mock.patch.object(tb.webbrowser, "open", return_value=False):
+            self.assertEqual(tb.open_board("http://127.0.0.1:1/"), "BROWSER_NOT_FOUND")
+        self.assertFalse(hasattr(tb, "open_side_by_side"))
 
-    def test_repo_taxonomy_smoke(self):
-        idx, _issues, code = tb.load_taxonomy(tb.DEFAULT_TAXONOMY)
-        if not os.path.isfile(tb.DEFAULT_TAXONOMY):
-            self.assertEqual(code, "TAXONOMY_MISSING")
-            return
-        self.assertIsNone(code)
-        self.assertTrue(idx["axis_order"])
+    def test_default_taxonomy_is_json(self):
+        self.assertEqual(os.path.basename(tb.DEFAULT_TAXONOMY), "taxonomy.json")
+        self.assertEqual(tb.load_taxonomy(os.path.join(self.tmp, "none.json"))[2], "TAXONOMY_MISSING")
 
 
 class RoundOneFixTest(unittest.TestCase):
@@ -385,8 +407,8 @@ class RoundOneFixTest(unittest.TestCase):
         self.assertNotIn(["공정", "옛값"], doc["targets"])  # 꺼진 값은 적용 대상이 될 수 없다
         with open(tb.TEMPLATE_PATH, encoding="utf-8") as f:
             tpl = f.read()
-        self.assertIn('it.status !== "open"', tpl)          # 묶음 복사는 미반영만(먼저 할 일·확인 불가 제외)
-        self.assertIn('it.status === "blocked"', tpl)       # 먼저 할 일 행 복사는 확인 창
+        self.assertIn('it.status !== "open"', tpl)          # 반영함은 미반영만
+        self.assertIn('it.status === "blocked"', tpl)       # 먼저 할 일은 기각만
 
     def test_parent_axis_checks_and_bulk_qid_dedup(self):
         doc = self.build()
@@ -400,7 +422,6 @@ class RoundOneFixTest(unittest.TestCase):
             tpl = f.read()
         self.assertIn('rule === "parent"', tpl)
         self.assertIn('rule === "axis"', tpl)
-        self.assertIn("qids[q]", tpl)                        # 묶음 복사에서 같은 새 질문 ID는 한 번만
 
     def test_4_reject_rows_use_original(self):
         doc = self.build()
@@ -412,17 +433,6 @@ class RoundOneFixTest(unittest.TestCase):
         self.assertEqual(cand["status"], "rejected")
         with open(tb.TEMPLATE_PATH, encoding="utf-8") as f:
             self.assertNotIn("content_cell", f.read())
-
-    def test_5_seen_hash_uses_edit_cells_whitespace_normalized(self):
-        self.build()
-        rows = [list(r) for r in TAX_ROWS]
-        rows[0][7] = "  공정   정의 "   # 공백만 바뀜
-        rows[0][3] = "N"                  # 편집 칸 밖(D)
-        doc = self.build(tax_bytes(rows))
-        self.assertEqual(self.item(doc, "tax.axis.def|공정")["status"], "open")
-        rows[0][8] = "공정 포함을 고쳤다"
-        doc = self.build(tax_bytes(rows))
-        self.assertEqual(self.item(doc, "tax.axis.def|공정")["status"], "done")
 
     def test_6_overwrite_keeps_original_cells(self):
         doc = self.build()
@@ -437,8 +447,10 @@ class RoundOneFixTest(unittest.TestCase):
         self.assertEqual(cells[7], "식각 정의\n둘째 줄")
         with open(tb.TEMPLATE_PATH, encoding="utf-8") as f:
             tpl = f.read()
-        self.assertIn("function tsvCell", tpl)
-        self.assertEqual(tpl.count("tsvRow("), 4)  # 정의 1 + 행 복사·기각 행·묶음 복사
+        for gone in ("tsvRow", "copyText", "행 복사", "기각 행 복사", "Excel", "xlsx", "시트 미확인"):
+            self.assertNotIn(gone, tpl)
+        for need in ("board/preview", "board/finalize", "base_version", "prefers-color-scheme:dark", 'type = "radio"'):
+            self.assertIn(need, tpl)
 
     def test_7_missing_row_place(self):
         doc = self.build()
@@ -464,33 +476,15 @@ class RoundOneFixTest(unittest.TestCase):
         self.assertEqual(os.path.normcase(d), os.path.normcase(os.path.join(ledger.WORKSPACES_DIR, "_domain_engrbot",
                                                                             "ledger_alt")))
 
-    def test_10_open_requires_readable_xlsx(self):
-        self.assertEqual(tb.open_side_by_side("a.html", "b.json", readable=True), "NOT_XLSX")
-        self.assertEqual(tb.open_side_by_side("a.html", "b.xlsx", readable=False), "NOT_XLSX")
-
-    def test_11_corrupt_xlsx(self):
-        with mock.patch.object(labelbot_ws, "parse_taxonomy_bytes", side_effect=zlib.error("x")), \
-                mock.patch.object(labelbot_ws, "taxonomy_raw_rows", side_effect=KeyError("x")):
-            doc = self.build()
-            bad = os.path.join(self.tmp, "bad.json")
-            with open(bad, "w", encoding="utf-8") as f:
-                f.write("{}")
-            buf = std_io.StringIO()
-            with mock.patch.object(labelbot_ws, "read_taxonomy_bytes", return_value=b"PK"), \
-                    contextlib.redirect_stdout(buf):
-                code = cli.main(["taxonomy-board", "--workspace", self.roots[0], "--taxonomy", bad,
-                                 "--out-dir", self.out])
-        self.assertEqual(doc["taxonomy"]["read_code"], "TAXONOMY_PARSE_ERROR XLSX_CORRUPT")
-        self.assertEqual(doc["taxonomy"]["issues"], [{"sheet": None, "row": None, "code": "XLSX_CORRUPT"}])
-        self.assertEqual({it["status"] for it in doc["items"]}, {"unknown"})
-        self.assertEqual(code, 0)
-        self.assertIn("TAXONOMY_PARSE_ERROR XLSX_CORRUPT", buf.getvalue())
-        self.assertNotIn("Traceback", buf.getvalue())
+    def test_11_corrupt_json(self):
         good = bytearray(tax_bytes())
         for k in range(len(good) // 3, len(good) // 3 + 40):
             good[k] ^= 0x5A
-        doc = self.build(bytes(good))  # 실제 손상 bytes도 예외 없이 끝난다
-        self.assertIn(doc["taxonomy"]["readable"], (True, False))
+        doc = self.build(bytes(good))  # 손상 bytes도 예외 없이 끝난다
+        self.assertFalse(doc["taxonomy"]["readable"])
+        self.assertEqual({it["status"] for it in doc["items"]}, {"unknown"})
+        doc = self.build(json.dumps({"taxonomy": "x"}).encode("utf-8"))   # 구조 오류: 행 목록이 아님
+        self.assertIn("TAXONOMY_JSON_INVALID", {i["code"] for i in doc["taxonomy"]["issues"]})
 
     def test_12_out_dir_warning(self):
         self.assertEqual(tb.out_dir_warning(os.path.join(io.CODE_ROOT, "domain_engrbot", "x")), "OUT_DIR_NOT_IGNORED")
@@ -549,7 +543,7 @@ S7_ROWS = [
 
 
 class S7Test(unittest.TestCase):
-    """출처 S7(엔지니어 답변): 질문 폴더 taxonomy_proposals.jsonl → 항목과 붙여넣기 행의 문장 칸."""
+    """출처 S7(엔지니어 답변): 질문 폴더 taxonomy_proposals.jsonl → 항목과 행 초안의 문장 칸."""
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="domain_engrbot_tboard_s7_")
@@ -607,7 +601,7 @@ class S7Test(unittest.TestCase):
         self.assertEqual(qn["rows"][0]["cells"][1], "새 질문입니까?")
         # 답변 문장이 이미 시트와 같으면 반영됨
         ad = self.item(doc, "tax.axis.def|상태")
-        self.assertEqual((ad["status"], ad["status_note"]), ("done", "답변 문장이 시트에 있음(6행)"))
+        self.assertEqual((ad["status"], ad["status_note"]), ("done", "답변 문장이 taxonomy에 있음(6행)"))
         self.assertEqual(doc["sources"]["S7"], 10)
         self.assertEqual(doc["source_rows_invalid"], 3)
         plain = re.compile(r"(?<!니)다(\)|\.|$)")
@@ -674,10 +668,11 @@ class FinalizeTest(unittest.TestCase):
         self.assertEqual(tb.record_decisions(self.out, {a["id"]: "applied", r["id"]: "rejected"}), 2)
         doc2 = self.build()
         by = {it["id"]: it for it in doc2["items"]}
-        self.assertEqual((by[a["id"]]["status"], by[a["id"]]["human"]["unverified"]), ("done", True))
+        self.assertEqual((by[a["id"]]["status"], by[a["id"]]["status_note"]), ("done", "보드에서 반영함"))
+        self.assertNotIn("unverified", by[a["id"]]["human"])
         self.assertEqual(by[r["id"]]["status"], "rejected")
         self.assertEqual(doc2["counts"]["open"], doc["counts"]["open"] - 2, "표시 안 한 항목은 미반영으로 남는다")
-        tb.record_decisions(self.out, {a["id"]: None})   # 확정 취소 → 시트 기준으로 다시 판정
+        tb.record_decisions(self.out, {a["id"]: None})   # 확정 취소 → 다시 판정
         self.assertEqual({it["id"]: it for it in self.build()["items"]}[a["id"]]["status"], "open")
         with self.assertRaises(ValueError):
             tb.record_decisions(self.out, {"0" * 16: "applied"})
@@ -692,48 +687,420 @@ class FinalizeTest(unittest.TestCase):
         self.assertEqual(tb.apply_decisions(items, decisions), {})
         self.assertEqual(items[0]["status"], "open")
 
-    def test_board_server_finalize_roundtrip(self):
+
+def _prints_minus_one(it):
+    """확정 당시에는 지금 출처 하나가 없었던 것처럼(= 새 출처가 붙음) 지문 목록을 만든다."""
+    return tb._prints(it)[1:]
+
+
+class ApplyTest(unittest.TestCase):
+    """반영: 카드 편집·반영함·기각 → 미리보기(/board/preview) → taxonomy.json 쓰기(/board/finalize)."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="domain_engrbot_tboard_apply_")
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.roots, self.led, self.req = make_sources(self.tmp)
+        self.out = os.path.join(self.tmp, "out")
+        self.tax = os.path.join(self.tmp, "tax", "taxonomy.json")
+        self.hist = os.path.join(self.tmp, "tax", "taxonomy_history.jsonl")
+        self.write_tax()
+
+    def write_tax(self, rows=None, data=None):
+        os.makedirs(os.path.dirname(self.tax), exist_ok=True)
+        with open(self.tax, "wb") as f:
+            f.write(data if data is not None else tax_bytes(rows))
+
+    def file_bytes(self):
+        with open(self.tax, "rb") as f:
+            return f.read()
+
+    def file_doc(self):
+        return json.loads(self.file_bytes().decode("utf-8"))
+
+    def build(self, qd=None):
+        return tb.build(self.roots, self.tax, self.out, ledger_dir=self.led, requests_dir=self.req, now=NOW,
+                        questions_dir=qd)
+
+    def item(self, doc, key):
+        found = [it for it in doc["items"] if it["key"] == key]
+        self.assertEqual(len(found), 1, key)
+        return found[0]
+
+    def payload(self, doc, marks, edits=None, base=None):
+        return {"kind": tb.DECISIONS_KIND, "base_version": doc["taxonomy"]["version"] if base is None else base,
+                "marks": marks, "edits": edits or {}}
+
+    def apply(self, doc, marks, edits=None, preview=False, base=None):
+        return tb.apply_marks(self.out, self.tax, self.payload(doc, marks, edits, base), preview, now=NOW)
+
+    def refused(self, code, doc, marks, edits=None, preview=True, base=None):
+        with self.assertRaises(tb.BoardRefused) as cm:
+            self.apply(doc, marks, edits, preview, base)
+        self.assertEqual(cm.exception.code, code)
+        return cm.exception
+
+    def standard(self, doc):
+        """값 추가 1, 끄기 1, 용어(동의어 행 선택) 1, 동의어 기각 1."""
+        add, off = self.item(doc, "tax.value.add|공정|증착"), self.item(doc, "tax.value.off|상태|정상")
+        syn, term = self.item(doc, "syn|씨 엠피|cmp"), self.item(doc, "term|플라즈마")
+        marks = {add["id"]: "applied", off["id"]: "applied", term["id"]: "applied", syn["id"]: "rejected"}
+        edits = {term["id"]: {"choice": 0, "rows": [["플라즈마", "CMP", "후보"], [""] * 11]}}
+        return marks, edits, syn
+
+    def test_preview_lists_rows_and_writes_nothing(self):
+        doc = self.build()
+        before = self.file_bytes()
+        marks, edits, syn = self.standard(doc)
+        res = self.apply(doc, marks, edits, preview=True)
+        self.assertEqual((res["ok"], res["issues"], res["version"]), (True, [], doc["taxonomy"]["version"]))
+        got = {(d["sheet"], d["op"], d["row"]) for d in res["diff"]}
+        self.assertEqual(got, {("taxonomy", "add", 9), ("taxonomy", "edit", 7), ("synonyms", "add", 3),
+                               ("rejected", "add", 4)})
+        by = {(d["sheet"], d["op"]): d for d in res["diff"]}
+        self.assertEqual((by[("taxonomy", "add")]["after"]["축"], by[("taxonomy", "add")]["after"]["값"]), ("공정", "증착"))
+        self.assertEqual((by[("taxonomy", "edit")]["before"]["사용 여부"], by[("taxonomy", "edit")]["after"]["사용 여부"]),
+                         ("", "N"))
+        self.assertEqual(by[("rejected", "add")]["after"], {"종류": "동의어", "내용": "씨 엠피|CMP", "기각일": "2026-10-05",
+                                                           "사유": "보드에서 기각", "출처": syn["id"]})
+        self.assertEqual(self.file_bytes(), before)
+        self.assertFalse(os.path.exists(self.hist))
+        self.assertFalse(os.path.exists(os.path.join(self.out, tb.DECISIONS)))
+
+    def test_finalize_writes_history_and_rebuild_shows_status(self):
+        doc = self.build()
+        old = self.file_doc()
+        marks, edits, syn = self.standard(doc)
+        res = self.apply(doc, marks, edits)
+        self.assertEqual((res["ok"], res["changed"], res["written"]), (True, 4, 4))
+        self.assertEqual(res["version"], tb.hashlib.sha256(self.file_bytes()).hexdigest())
+        new = self.file_doc()
+        self.assertEqual((new["taxonomy"][-1]["축"], new["taxonomy"][-1]["값"]), ("공정", "증착"))
+        self.assertEqual(new["taxonomy"][5]["사용 여부"], "N")
+        self.assertEqual(new["synonyms"][-1], {"동의어": "플라즈마", "표준어": "CMP", "메모": "후보"})
+        with open(self.hist, encoding="utf-8") as f:
+            lines = [json.loads(x) for x in f.read().splitlines() if x.strip()]
+        self.assertEqual(len(lines), 1)
+        self.assertEqual((lines[0]["by"], lines[0]["version"]), ("board", doc["taxonomy"]["version"]))
+        self.assertEqual(lines[0]["doc"]["taxonomy"], old["taxonomy"])
+        doc2 = self.build()
+        self.assertEqual(doc2["taxonomy"]["version"], res["version"])
+        self.assertEqual(self.item(doc2, "tax.value.add|공정|증착")["status"], "done")
+        self.assertEqual(self.item(doc2, "tax.value.off|상태|정상")["status"], "done")
+        self.assertEqual(self.item(doc2, "term|플라즈마")["status"], "done")
+        self.assertEqual(self.item(doc2, "syn|씨 엠피|cmp")["status"], "rejected")
+        # 새 버전으로 다시 반영할 수 있다(두 번째 최종 완료가 늘 409가 되지 않는다)
+        ax = self.item(doc2, "tax.axis.def|공정")
+        self.assertTrue(self.apply(doc2, {ax["id"]: "rejected"})["ok"])
+
+    def test_version_conflict_409_and_board_rebuilt(self):
+        doc = self.build()
+        marks, edits, _syn = self.standard(doc)
+        e = self.refused("TAXONOMY_CHANGED", doc, marks, edits, base="0" * 64)
+        self.assertEqual(e.status, 409)
+        # 다른 화면이 저장해 파일이 바뀌면 보드의 버전도 맞지 않는다
+        rows = [list(r) for r in TAX_ROWS]
+        rows[0][7] = "편집기가 고친 정의"
+        self.write_tax(rows)
+        before = self.file_bytes()
+        self.refused("TAXONOMY_CHANGED", doc, marks, edits, preview=False)
+        self.assertEqual(self.file_bytes(), before)
+        preview, _finalize = tb.board_handlers(self.out, self.tax, lambda: self.build()["counts"], now=NOW)
+        st, body = preview(self.payload(doc, marks, edits))
+        self.assertEqual((st, body["ok"], body["code"]), (409, False, "TAXONOMY_CHANGED"))
+        with open(os.path.join(self.out, tb.DOC), encoding="utf-8") as f:
+            self.assertEqual(json.load(f)["taxonomy"]["version"], tb.hashlib.sha256(before).hexdigest())
+
+    def test_validation_refusal_leaves_file_unchanged(self):
+        doc = self.build()
+        qn = [it for it in doc["items"] if it["kind"] == "q_new" and it["status"] == "open"][0]
+        marks, edits = {qn["id"]: "applied"}, {qn["id"]: {"rows": [["Q1", "두께가 있나?", "공통", "3"]]}}
+        res = self.apply(doc, marks, edits, preview=True)
+        self.assertIn("QUESTION_ID_DUPLICATE", {i["code"] for i in res["issues"]})
+        before = self.file_bytes()
+        e = self.refused("TAXONOMY_INVALID", doc, marks, edits, preview=False)
+        self.assertEqual(e.status, 400)
+        self.assertIn({"sheet": "questions", "row": 4, "code": "QUESTION_ID_DUPLICATE"}, e.issues)
+        self.assertEqual(self.file_bytes(), before)
+        self.assertFalse(os.path.exists(self.hist))
+        self.assertFalse(os.path.exists(os.path.join(self.out, tb.DECISIONS)))
+
+    def test_blank_text_refused_for_edit_items(self):
+        doc = self.build()
+        ov = self.item(doc, "tax.value.overlap|공정|cmp|식각")
+        self.assertEqual(ov["pick"], "all")
+        self.refused("ITEM_NOT_APPLICABLE", doc, {ov["id"]: "applied"})     # 메모만 있고 고친 문장 없음
+        cmp_row = list(ov["rows"][0]["cells"])
+        blank = list(cmp_row)
+        blank[7] = ""
+        self.refused("ITEM_NOT_APPLICABLE", doc, {ov["id"]: "applied"}, {ov["id"]: {"rows": [blank, None]}})
+        cmp_row[7] = "CMP와 식각을 가르는 새 정의"
+        res = self.apply(doc, {ov["id"]: "applied"}, {ov["id"]: {"rows": [cmp_row]}}, preview=True)
+        self.assertEqual([(d["op"], d["row"]) for d in res["diff"]], [("edit", 3)])
+        self.assertEqual(res["diff"][0]["after"]["정의·판정 규칙"], "CMP와 식각을 가르는 새 정의")
+        ax = self.item(doc, "tax.axis.def|공정")
+        self.refused("ITEM_NOT_APPLICABLE", doc, {ax["id"]: "applied"})      # 빈 새 행: 쓸 문장 없음
+        self.refused("ITEM_NOT_APPLICABLE", doc, {ax["id"]: "applied"}, {ax["id"]: {"choice": 1}})   # 지금 행과 같음
+        new_def = list(ax["rows"][1]["cells"])
+        new_def[7] = "여러 줄 정의\n둘째 줄"
+        res = self.apply(doc, {ax["id"]: "applied"}, {ax["id"]: {"choice": 1, "rows": [None, new_def]}}, preview=True)
+        self.assertEqual([(d["op"], d["row"]) for d in res["diff"]], [("edit", 2)])
+        self.assertEqual(res["diff"][0]["after"]["정의·판정 규칙"], "여러 줄 정의\n둘째 줄")   # 줄바꿈 유지
+        res = self.apply(doc, {ax["id"]: "applied"}, {ax["id"]: {"choice": 0, "rows": [new_def]}}, preview=True)
+        self.assertEqual([(d["op"], d["row"]) for d in res["diff"]], [("add", 9)])        # 새 행으로 추가
+
+    def test_duplicate_rows_overwrite_and_disable_all(self):
+        rows = TAX_ROWS + [["공정", "CMP", "", "", "", "", "", "CMP 둘째 정의", "CMP 둘째 포함", "", ""],   # 9
+                           ["상태", "정상", "", "", "", "", "", "정상 둘째", "", "", ""]]                    # 10
+        self.write_tax(rows)
+        doc = self.build()
+        ov = self.item(doc, "tax.value.overlap|공정|cmp|식각")
+        self.assertEqual(ov["rows"][0]["target"], {"mode": "overwrite", "row": 3, "dups": [9],
+                                                   "dup_patch": {"7": "", "8": "", "9": ""}})
+        self.assertIn("9행", ov["rows"][0]["place"])
+        off = self.item(doc, "tax.value.off|상태|정상")
+        self.assertEqual(off["rows"][0]["target"]["dups"], [10])
+        cmp_row = list(ov["rows"][0]["cells"])
+        cmp_row[7] = "새 CMP 정의"
+        marks = {ov["id"]: "applied", off["id"]: "applied"}
+        res = self.apply(doc, marks, {ov["id"]: {"rows": [cmp_row]}}, preview=True)
+        edits = {d["row"]: d for d in res["diff"]}
+        self.assertEqual(sorted(edits), [3, 7, 9, 10])
+        self.assertEqual((edits[9]["after"]["정의·판정 규칙"], edits[9]["after"]["포함 예"]), ("", ""))
+        self.assertEqual((edits[7]["after"]["사용 여부"], edits[10]["after"]["사용 여부"]), ("N", "N"))
+        self.apply(doc, marks, {ov["id"]: {"rows": [cmp_row]}})
+        new = self.file_doc()["taxonomy"]
+        self.assertEqual((new[1]["정의·판정 규칙"], new[7]["정의·판정 규칙"], new[7]["값"]), ("새 CMP 정의", "", "CMP"))
+
+    def test_same_cell_two_items_conflict(self):
+        qd = os.path.join(self.tmp, "questions")
+        _jsonl(os.path.join(qd, "taxonomy_proposals.jsonl"), S7_ROWS)
+        doc = self.build(qd)
+        vd, ov = self.item(doc, "tax.value.def|공정|cmp"), self.item(doc, "tax.value.overlap|공정|cmp|식각")
+        self.assertEqual((vd["pick"], [r["target"]["mode"] for r in vd["rows"]]), ("one", ["append", "overwrite"]))
+        cmp_row = list(ov["rows"][0]["cells"])
+        cmp_row[7] = "다른 정의"
+        marks = {vd["id"]: "applied", ov["id"]: "applied"}
+        self.refused("ITEM_CONFLICT", doc, marks, {vd["id"]: {"choice": 1}, ov["id"]: {"rows": [cmp_row]}})
+        # 새 행으로 추가를 고르면 같은 칸을 건드리지 않는다
+        res = self.apply(doc, marks, {vd["id"]: {"choice": 0}, ov["id"]: {"rows": [cmp_row]}}, preview=True)
+        self.assertEqual(sorted((d["op"], d["row"]) for d in res["diff"]), [("add", 9), ("edit", 3)])
+
+    def test_synonym_alias_conflict_refused(self):
+        """같은 동의어를 다른 표준어로 붙이는 두 행, 또는 doc에 이미 다른 표준어로 있는 동의어는 ITEM_CONFLICT."""
+        doc = self.build()
+        a, b = self.item(doc, "syn|식각기|식각"), self.item(doc, "syn|식각기|에칭")
+        self.assertEqual((a["status"], b["status"]), ("open", "open"))
+        before = self.file_bytes()
+        self.refused("ITEM_CONFLICT", doc, {a["id"]: "applied", b["id"]: "applied"}, preview=False)
+        self.assertEqual(self.file_bytes(), before)
+        self.assertTrue(self.apply(doc, {a["id"]: "applied", b["id"]: "rejected"}, preview=True)["ok"])
+        # doc의 동의어와 부딪치는 행(용어 후보의 동의어 행): 표준어가 다르면 거절, 대소문자만 다르면 통과
+        term = self.item(doc, "term|플라즈마")
+        cur = tax_doc()
+        cur["synonyms"].append({"동의어": "플라즈마", "표준어": "식각", "메모": ""})
+        marks = {term["id"]: "applied"}
+        with self.assertRaises(tb.BoardRefused) as cm:
+            tb.plan_changes(cur, doc["items"], marks, {term["id"]: {"choice": 0, "rows": [["플라즈마", "CMP", ""]]}},
+                            "2026-10-05")
+        self.assertEqual(cm.exception.code, "ITEM_CONFLICT")
+        cur["synonyms"][-1]["표준어"] = "cmp"
+        new = tb.plan_changes(cur, doc["items"], marks, {term["id"]: {"choice": 0, "rows": [["플라즈마", "CMP", ""]]}},
+                              "2026-10-05")
+        self.assertEqual(new["synonyms"][-1]["표준어"], "CMP")
+        # 이미 다른 표준어로 있는 동의어 항목은 판정에서 막힌다(반영함은 ITEM_NOT_APPLICABLE)
+        self.write_tax(data=json.dumps(dict(tax_doc(), synonyms=tax_doc()["synonyms"] + [
+            {"동의어": "식각기", "표준어": "건식식각", "메모": ""}]), ensure_ascii=False).encode("utf-8"))
+        doc2 = self.build()
+        a2 = self.item(doc2, "syn|식각기|식각")
+        self.assertEqual(a2["status"], "blocked")
+        self.refused("ITEM_NOT_APPLICABLE", doc2, {a2["id"]: "applied"})
+
+    def test_decisions_failure_after_save_is_ok_with_warning(self):
+        doc = self.build()
+        marks, edits, _syn = self.standard(doc)
+        _preview, finalize = tb.board_handlers(self.out, self.tax, lambda: self.build()["counts"], now=NOW)
+        with mock.patch.object(tb, "record_decisions", side_effect=PermissionError("잠김")):
+            st, body = finalize(self.payload(doc, marks, edits))
+        self.assertEqual((st, body["ok"], body["written"], body["changed"], body["decisions_failed"]),
+                         (200, True, 4, 0, "PermissionError"))
+        self.assertEqual(body["version"], tb.hashlib.sha256(self.file_bytes()).hexdigest(), "저장은 그대로 남는다")
+        self.assertFalse(os.path.exists(os.path.join(self.out, tb.DECISIONS)))
+
+    def test_reject_appends_rejected_row_only_for_values_synonyms_questions(self):
+        doc = self.build()
+        add, ax = self.item(doc, "tax.value.add|공정|증착"), self.item(doc, "tax.axis.def|공정")
+        out = self.item(doc, "out|OTHER|axis:공정")
+        res = self.apply(doc, {add["id"]: "rejected", ax["id"]: "rejected", out["id"]: "rejected"})
+        self.assertEqual(res["written"], 1)
+        rej = self.file_doc()["rejected"][-1]
+        self.assertEqual(rej, {"종류": "값", "내용": "공정|증착", "기각일": "2026-10-05", "사유": "보드에서 기각",
+                               "출처": add["id"]})
+        doc2 = self.build()
+        self.assertEqual(self.item(doc2, "tax.value.add|공정|증착")["status_note"], "rejected 목록에 있음")
+        self.assertEqual(self.item(doc2, "tax.axis.def|공정")["status_note"], "보드에서 기각함")
+        self.assertEqual(self.item(doc2, "out|OTHER|axis:공정")["status"], "rejected")
+
+    def test_decision_cancel(self):
+        doc = self.build()
+        ax = self.item(doc, "tax.axis.def|공정")
+        cells = list(ax["rows"][1]["cells"])
+        cells[7] = "새 공정 정의"
+        self.apply(doc, {ax["id"]: "applied"}, {ax["id"]: {"choice": 1, "rows": [None, cells]}})
+        doc2 = self.build()
+        self.assertEqual(self.item(doc2, "tax.axis.def|공정")["status_note"], "보드에서 반영함")
+        res = self.apply(doc2, {ax["id"]: None})
+        self.assertEqual((res["changed"], res["written"]), (1, 0))
+        doc3 = self.build()
+        self.assertEqual(self.item(doc3, "tax.axis.def|공정")["status"], "open")
+        self.assertEqual(self.file_doc()["taxonomy"][0]["정의·판정 규칙"], "새 공정 정의")   # 쓴 내용은 그대로
+
+    def test_server_trusts_only_editable_cells_and_refuses_bad_items(self):
+        doc = self.build()
+        add = self.item(doc, "tax.value.add|공정|증착")
+        res = self.apply(doc, {add["id"]: "applied"}, {add["id"]: {"rows": [["다른축", "증착X", "", "Y"] + [""] * 7]}},
+                         preview=True)
+        after = res["diff"][0]["after"]
+        self.assertEqual((after["축"], after["값"], after["다중값"]), ("공정", "증착", ""))
+        blocked = self.item(doc, "tax.value.add|없는축|값")
+        self.assertEqual(blocked["status"], "blocked")
+        self.refused("ITEM_NOT_APPLICABLE", doc, {blocked["id"]: "applied"})
+        self.assertTrue(self.apply(doc, {blocked["id"]: "rejected"}, preview=True)["ok"])   # 먼저 할 일도 기각은 된다
+        self.refused("ITEM_NOT_APPLICABLE", doc, {"0" * 16: "applied"})
+        done = self.item(doc, "tax.value.add|공정|cmp")
+        self.refused("ITEM_NOT_APPLICABLE", doc, {done["id"]: "rejected"})
+        out = self.item(doc, "out|OTHER|axis:공정")
+        res = self.apply(doc, {out["id"]: "applied"}, preview=True)     # taxonomy 밖: 결정만 남긴다
+        self.assertEqual(res["diff"], [])
+        self.refused("DECISIONS_ITEM_INVALID", doc, {add["id"]: "maybe"})
+        with self.assertRaises(tb.BoardRefused) as cm:
+            tb.apply_marks(self.out, self.tax, {"kind": tb.DECISIONS_KIND, "marks": {}}, True)
+        self.assertEqual(cm.exception.code, "DECISIONS_FORMAT_INVALID")
+        term = self.item(doc, "term|플라즈마")
+        self.refused("EDIT_INVALID", doc, {term["id"]: "applied"}, {term["id"]: {"choice": 5}})
+        self.refused("EDIT_INVALID", doc, {add["id"]: "applied"}, {add["id"]: {"rows": [[1] * 11]}})
+        # 용어의 값 행을 고르면 축이 필수다
+        self.refused("ITEM_NOT_APPLICABLE", doc, {term["id"]: "applied"}, {term["id"]: {"choice": 1}})
+
+    def test_board_server_endpoints(self):
         import http.client
         import threading
         from domain_engrbot import serve
         doc = self.build()
-        target = next(it for it in doc["items"] if it["status"] == "open")
-
-        def rebuild():
-            return self.build()["counts"]
-        srv = serve.make_board_server(os.path.join(self.out, tb.SCREEN), lambda m: tb.record_decisions(self.out, m),
-                                      rebuild, 0)
+        preview, finalize = tb.board_handlers(self.out, self.tax, lambda: self.build()["counts"], now=NOW)
+        srv = serve.make_board_server(os.path.join(self.out, tb.SCREEN), preview, finalize, 0)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         self.addCleanup(srv.server_close)
         self.addCleanup(srv.shutdown)
         port = srv.server_address[1]
         host = "127.0.0.1:%d" % port
 
-        def post(body, origin=True):
+        def post(path, body, origin=True, ctype="application/json", length=None):
             c = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
             raw = json.dumps(body).encode("utf-8")
-            hdr = {"Content-Type": "application/json", "Host": host}
+            hdr = {"Content-Type": ctype, "Host": host, "Content-Length": str(length or len(raw))}
             if origin:
-                hdr["Origin"] = "x://" + host
-            c.request("POST", "/board/finalize", raw, hdr)
+                hdr["Origin"] = "http://" + host
+            c.request("POST", path, raw, hdr)
             r = c.getresponse()
             return r.status, json.loads(r.read().decode("utf-8"))
 
         c = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
         c.request("GET", "/", headers={"Host": host})
         self.assertEqual(c.getresponse().status, 200)
-        self.assertEqual(post({"kind": "taxonomy_board_decisions", "marks": {target["id"]: "applied"}}, origin=False)[0], 403)
-        self.assertEqual(post({"kind": "x", "marks": {}})[0], 400)
-        st, body = post({"kind": "taxonomy_board_decisions", "marks": {target["id"]: "applied"}})
-        self.assertEqual((st, body["ok"], body["changed"]), (200, True, 1))
-        self.assertEqual(body["counts"]["open"], doc["counts"]["open"] - 1)
-        with open(os.path.join(self.out, tb.DECISIONS), encoding="utf-8") as f:
-            self.assertEqual(json.load(f)[target["id"]]["decision"], "applied")
+        marks, edits, _syn = self.standard(doc)
+        body = self.payload(doc, marks, edits)
+        self.assertEqual(post("/board/preview", body, origin=False)[0], 403)
+        self.assertEqual(post("/board/finalize", body, ctype="text/plain")[0], 415)
+        self.assertEqual(post("/board/preview", body, length=serve.BOARD_MAX_BODY + 1)[0], 413)
+        self.assertEqual(post("/board/preview", dict(body, kind="x"))[0], 400)
+        self.assertEqual(post("/board/other", body)[0], 404)
+        st, res = post("/board/preview", body)
+        self.assertEqual((st, res["ok"], len(res["diff"])), (200, True, 4))
+        st, res = post("/board/finalize", body)
+        self.assertEqual((st, res["ok"], res["written"]), (200, True, 4))
+        self.assertEqual(res["counts"]["open"], doc["counts"]["open"] - 4)
+        st, res = post("/board/finalize", body)               # 옛 버전으로 다시 보내면 거절
+        self.assertEqual((st, res["code"]), (409, "TAXONOMY_CHANGED"))
+        qn = [it for it in doc["items"] if it["kind"] == "q_new" and it["status"] == "open"][0]
+        with open(os.path.join(self.out, tb.DOC), encoding="utf-8") as f:
+            fresh = json.load(f)
+        bad = self.payload(fresh, {qn["id"]: "applied"}, {qn["id"]: {"rows": [["Q1", "두께?", "공통", "3"]]}})
+        st, res = post("/board/finalize", bad)
+        self.assertEqual((st, res["code"]), (400, "TAXONOMY_INVALID"))
+        self.assertTrue(res["issues"])
 
+    def test_shared_commit_error_codes(self):
+        """편집기와 같은 commit_taxonomy 거절 코드: 쓰기 실패 500, 읽기 실패 500(detail), 파일 없음 404."""
+        doc = self.build()
+        marks, edits, _syn = self.standard(doc)
+        _preview, finalize = tb.board_handlers(self.out, self.tax, lambda: self.build()["counts"], now=NOW)
+        before = self.file_bytes()
+        with mock.patch.object(tb.lb, "save_taxonomy_doc", side_effect=PermissionError("잠김")):
+            st, body = finalize(self.payload(doc, marks, edits))
+        self.assertEqual((st, body["ok"], body["code"]), (500, False, "TAXONOMY_WRITE_FAILED"))
+        self.assertEqual(self.file_bytes(), before)
+        self.assertFalse(os.path.exists(os.path.join(self.out, tb.DECISIONS)), "쓰기 실패면 결정도 남기지 않는다")
+        self.write_tax(data=b"{not json")
+        e = self.refused("TAXONOMY_READ_FAILED", doc, marks, edits)
+        self.assertEqual((e.status, e.detail), (500, "TAXONOMY_JSON_INVALID"))
+        os.remove(self.tax)
+        st, body = finalize(self.payload(doc, marks, edits))
+        self.assertEqual((st, body["code"]), (404, "TAXONOMY_NOT_FOUND"))
 
-def _prints_minus_one(it):
-    """확정 당시에는 지금 출처 하나가 없었던 것처럼(= 새 출처가 붙음) 지문 목록을 만든다."""
-    return tb._prints(it)[1:]
+    def test_rebuild_failure_after_save_is_200(self):
+        doc = self.build()
+        marks, edits, _syn = self.standard(doc)
+
+        def broken():
+            raise RuntimeError("셀 내용이 든 문장")
+        _preview, finalize = tb.board_handlers(self.out, self.tax, broken, now=NOW)
+        st, body = finalize(self.payload(doc, marks, edits))
+        self.assertEqual((st, body["ok"], body["written"], body["counts"], body["rebuild_failed"]),
+                         (200, True, 4, None, "RuntimeError"))
+        self.assertEqual(body["version"], tb.hashlib.sha256(self.file_bytes()).hexdigest(), "저장은 그대로 남는다")
+
+    def test_board_server_bad_bodies_and_catch_all(self):
+        import http.client
+        import threading
+        from domain_engrbot import serve
+
+        def boom(_payload):
+            raise ValueError("셀 내용이 든 문장")
+        srv = serve.make_board_server(os.path.join(self.out, tb.SCREEN), boom, boom, 0)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.server_close)
+        self.addCleanup(srv.shutdown)
+        host = "127.0.0.1:%d" % srv.server_address[1]
+
+        def post(raw):
+            c = http.client.HTTPConnection("127.0.0.1", srv.server_address[1], timeout=10)
+            c.request("POST", "/board/preview", raw, {"Content-Type": "application/json", "Host": host,
+                                                      "Origin": "http://" + host})
+            r = c.getresponse()
+            out = r.status, json.loads(r.read().decode("utf-8"))
+            c.close()
+            return out
+        deep = b"[" * 200000   # 아주 깊은 중첩: json.loads가 RecursionError
+        self.assertEqual(post(deep), (400, {"ok": False, "code": "DECISIONS_JSON_INVALID"}))
+        buf = std_io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            st, body = post(json.dumps({"kind": serve.BOARD_KIND}).encode("utf-8"))
+        self.assertEqual((st, body["code"], body["detail"]), (500, "BOARD_FAILED", "ValueError"))
+        self.assertNotIn("셀 내용", buf.getvalue())
+
+    def test_index_has_axis_rows(self):
+        self.assertEqual(tb._index({"taxonomy": [], "questions": [], "synonyms": [], "rejected": []})["axis_rows"], {})
+
+    def test_screens_carry_csp_meta(self):
+        """file://로 열어도 CSP가 걸린다: 헤더(serve.CSP)와 같은 정책(meta가 무시하는 frame-ancestors만 뺀다)."""
+        from domain_engrbot import serve, taxonomy_editor
+        want = "; ".join(d for d in serve.CSP.split("; ") if not d.startswith("frame-ancestors"))
+        for path in (tb.TEMPLATE_PATH, taxonomy_editor.SCREEN):
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
+            m = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]*)">', text)
+            self.assertIsNotNone(m, path)
+            self.assertEqual(m.group(1), want)
 
 
 class EvidenceTest(unittest.TestCase):
@@ -817,3 +1184,25 @@ class EvidenceTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StrictSynonymTest(unittest.TestCase):
+    """봇(S4)만 올린 동의어는 엄밀 기준(labelbot과 같은 규칙)으로 거르고, 사람 출처가 섞이면 둔다."""
+
+    @staticmethod
+    def group(alias, canonical, srcs, n=2):
+        return {"e": {"kind": "synonym", "alias": alias, "canonical": canonical},
+                "chips": [{"src": s, "n": n} for s in srcs]}
+
+    def test_filters_bot_only(self):
+        idx = {"axes": {"구조": 1}, "values": {("구조", "m1"): 1, ("구조", "v1"): 1}}
+        groups = [self.group("메탈원", "M1", ["S4"]),             # 통과
+                  self.group("메탈일", "M1", ["S4"], n=1),        # 1회뿐
+                  self.group("M1 trench", "M1", ["S4"]),          # 좁은 개념
+                  self.group("메탈 라인", "배선", ["S4"]),          # 분류 체계에 없는 표준어
+                  self.group("비아원", "V1", ["S4"]), self.group("비아원", "M1", ["S4"]),   # 표준어 둘
+                  self.group("메탈 라인", "배선", ["S4", "S6"])]    # 사람 출처가 섞임
+        keep, n = tb.strict_synonyms(groups, idx)
+        self.assertEqual([(g["e"]["alias"], [c["src"] for c in g["chips"]]) for g in keep],
+                         [("메탈원", ["S4"]), ("메탈 라인", ["S4", "S6"])])
+        self.assertEqual(n, 5)

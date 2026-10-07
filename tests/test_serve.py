@@ -122,6 +122,28 @@ class ServeTests(unittest.TestCase):
         # 교정 파일이 신호보다 먼저 쓰였다.
         self.assertLessEqual(os.stat(path).st_mtime, os.stat(sig).st_mtime)
 
+    def test_status_reports_done_signal_per_run(self):
+        rid = "ds-" + uuid.uuid4().hex[:12]
+        path = os.path.join(self.root, "inbox", "review_%s.json" % rid)
+        sig = os.path.join(self.root, "signals", "review_done_%s.json" % rid)
+        self.addCleanup(lambda: os.path.isfile(path) and os.remove(path))
+        self.addCleanup(lambda: os.path.isfile(sig) and os.remove(sig))
+
+        def status(query):
+            code, body = self.req("GET", "/inbox/status" + query)
+            self.assertEqual(code, 200)
+            return json.loads(body)
+
+        self.assertIs(status("?run=" + rid)["done_signal"], False)
+        code, _ = self.req("POST", "/inbox/review/done", {"kind": "review", "run_id": rid, "corrections": []})
+        self.assertEqual(code, 200)
+        self.assertIs(status("?run=" + rid)["done_signal"], True)
+        # run이 없거나 형식이 틀리면 키를 넣지 않는다.
+        for q in ("", "?run=", "?run=..%2Fx", "?other=" + rid):
+            out = status(q)
+            self.assertTrue(out["done"], q)
+            self.assertNotIn("done_signal", out, q)
+
     def test_done_rejects(self):
         cases = [
             (dict(path="/inbox/compare/done", body={"kind": "compare", "run_id": RUN}), 404),

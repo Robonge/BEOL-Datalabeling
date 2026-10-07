@@ -84,6 +84,9 @@ DEFAULT_CONFIG = {
         "exclude_same_file": True,
     },
     "parse": {"image_min_bytes": 2048, "boilerplate_ratio": 0.6},
+    # rules-update(labelbot/rulesupdate.py): 다시 라벨한 (chunk, 축·질문) 중 값이 바뀐 비율이 max_change_ratio를 넘으면
+    # push-vectors가 적재를 멈춘다(RULES_CHANGE_RATIO_HIGH, --force로 보낸다). 다시 라벨한 수가 min_relabels 미만이면 보지 않는다.
+    "rules_update": {"max_change_ratio": 0.3, "min_relabels": 10},
 }
 
 
@@ -185,7 +188,11 @@ class Workspace:
         p = self.config.get("taxonomy_path")
         if p and not os.path.isabs(p):
             p = os.path.join(self.root, p)
-        return p or self.path("taxonomy.xlsx")
+        if p:
+            return p
+        # 지정이 없으면 작업 폴더의 taxonomy.json. 예전 taxonomy.xlsx만 있으면 그 경로를 돌려 변환 안내(NEEDS_MIGRATION)가 뜨게 한다
+        legacy = self.path("taxonomy.xlsx")
+        return legacy if os.path.isfile(legacy) and not os.path.isfile(self.path("taxonomy.json")) else self.path("taxonomy.json")
 
     @property
     def input_root(self):

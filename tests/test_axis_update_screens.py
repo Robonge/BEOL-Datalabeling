@@ -1,6 +1,6 @@
 """axis-update 화면 회귀: 검수 화면의 대상 축 잠금(US-006)과 축 변경 현황판 axis_update.html(US-007).
 
-test_axis_update와 같은 합성 taxonomy(메모리 xlsx)·mock 실행으로 기준 실행 A(검수 확인 1건)와 axis-update 실행 B를 만든다.
+test_axis_update와 같은 합성 taxonomy(임시 폴더의 taxonomy.json)·mock 실행으로 기준 실행 A(검수 확인 1건)와 axis-update 실행 B를 만든다.
 현황판은 검수 전(B 교정 없음)과 검수 뒤(B 교정·확인·완료 신호)를 한 번씩 만들어 DATA를 비교한다.
 슬라이드 JPG는 합성 JPEG 머리 bytes를 slide_images/<sha256>.b64로 하나만 넣어 이미지·근사 미리보기 두 경로를 본다.
 """
