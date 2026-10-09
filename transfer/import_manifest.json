@@ -1,0 +1,4442 @@
+{
+ "release_label": "beol-import-20261010-1ab9e3b",
+ "source_commit": "1ab9e3bca053ddb49d02778ea622bdcaf93e36ea",
+ "created_at": "2026-10-09T16:51:25Z",
+ "files": [
+  {
+   "path": ".claude/launch.json",
+   "size": 949,
+   "sha256": "5da6ab0a370fac0bcb4903b05a1b9a77f94859763bd6c33f2c2ef2ed7f4ce67c",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-Code-Engr-bot/SKILL.md",
+   "size": 19598,
+   "sha256": "bf30d5acfa5595e69077045cbc2837b931541ac535089f5d846208544b45c3b0",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-Domain-Engr-bot/SKILL.md",
+   "size": 38908,
+   "sha256": "be965f228d0a4925615df8d6b4c90e9500e073263e4b13c95085c0268b509f0e",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-Domain-Engr-bot/scripts/collect_qa_decisions.py",
+   "size": 6119,
+   "sha256": "c37933664bcb7bf85442abb17494d40be755eadfbcca6e56064aa3901c19f5b9",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-RAG-html/SKILL.md",
+   "size": 5517,
+   "sha256": "934d666a874267c29f1f0683bf4005adafdc16c954f1080c3b330df9d5e1581e",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-axis-update/SKILL.md",
+   "size": 12890,
+   "sha256": "e19863a31ff1b3700895f15499fb7606b54756144c1c1de4e0df731b2c57c040",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-change-dashboard/SKILL.md",
+   "size": 7138,
+   "sha256": "8ebf1f7516e166e54d00f88e11bb17de15211786d54245d991e326088a770df2",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-daily-report/SKILL.md",
+   "size": 5194,
+   "sha256": "91aafaee03303335c3391ea5aa5bf704e09403ce7a52b65103e89a5bf47dfc65",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-feedback/SKILL.md",
+   "size": 26307,
+   "sha256": "0457d0cf896c84342b73fd3a119e22dfb8f84b635a2e648926495de73f03e173",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-feedback/scripts/collect_inbox.py",
+   "size": 3628,
+   "sha256": "1f2718a37391d1b7501135767dd2ab082a75f0d0bd089099deec89b1c484cca7",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-feedback/scripts/wait_review_done.py",
+   "size": 6262,
+   "sha256": "8d9ab2c1f2f34f8d1adab5889b1e6699cf2f7eb4b919cb2ba784f7bd96607537",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-project-html/SKILL.md",
+   "size": 11713,
+   "sha256": "f42e7609359fc006e712d0fb12f491eb7ecc4beef3edac0eecf966419e7a7945",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-project-html/assets/skill_map.json",
+   "size": 3474,
+   "sha256": "b0ae94a3dec4d2a937d8b9aeecb8f3c610d18b96fcf94eb6cbf45ca872df5e55",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-project-html/scripts/build_project_html.py",
+   "size": 22532,
+   "sha256": "5b8821c53f9e45a099552eade2ca0d4f097cd819be98e0a869d9c8d0a8671902",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-rules-update/SKILL.md",
+   "size": 15149,
+   "sha256": "3772e719fd458949a78e37fbbf0350acb802012212d9fbc7696499ea70f8d123",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-run-labeling/SKILL.md",
+   "size": 5375,
+   "sha256": "bd167ed2528e1fb9a78196e44a41c98a041d6d6f0af8b4a605b5270d8cfa7315",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-workflow/SKILL.md",
+   "size": 10561,
+   "sha256": "b006e04e946b479a726a9cb8e3f670035a2fdb619d71aef987e43037127a2fd2",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-workflow/assets/workflow_template.html",
+   "size": 81427,
+   "sha256": "1bb2dadef47679a522d69e67eb8b7bc9d43f212541c55c1ee8d43c8daf61569d",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling-workflow/scripts/build_workflow.py",
+   "size": 10980,
+   "sha256": "33d3e2c68ebf45577e130aaa0315eac666f01ced61f0fbb61aa449367b529afc",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling/SKILL.md",
+   "size": 23377,
+   "sha256": "edfdf0f79e42b1b8cfc46b8054a638eb9345fcddd44db720948ec6e71b0c77ce",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling/scripts/init_workspace.py",
+   "size": 8769,
+   "sha256": "4761c54f86a386bb8ec4123356c59e28aee3d57d49288a0a1f5addfde36af0b1",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling/scripts/record_ingested.py",
+   "size": 2894,
+   "sha256": "0d6d4d519a4a68480078783eb15d970dd9c0d3ae71ca0261b7c30d8f1619a470",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling/scripts/serve_screens.py",
+   "size": 761,
+   "sha256": "ee09e8dbc4d069ff72da2e34eacb5ce7e54ff31811f20425b3e6c44b73b7c480",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-labeling/scripts/summary.py",
+   "size": 6127,
+   "sha256": "77d1eab6f1917fbdcc47e622ba6dca69a346ec0238c89d78b2e5be2044d1c8a7",
+   "class": "code"
+  },
+  {
+   "path": ".claude/skills/BEOL-taxonomy-dashboard/SKILL.md",
+   "size": 12453,
+   "sha256": "a33c3d24f479c34a41112d6c375f8b039e5d80154ab8c76ebf48017a6543e72b",
+   "class": "code"
+  },
+  {
+   "path": ".env.example",
+   "size": 929,
+   "sha256": "1350db648d572d64e997b09193a785f6c8a6e9f24d068911934ee8c5c738496f",
+   "class": "code"
+  },
+  {
+   "path": ".gitattributes",
+   "size": 171,
+   "sha256": "ddb512fafd835980cba6a97ae382491d525fe54dd8cc52fe7a8955f7b9eedd54",
+   "class": "code"
+  },
+  {
+   "path": ".gitignore",
+   "size": 832,
+   "sha256": "bc36c5a05bbd7ea8f817dfbf394717da8420ba44f576fc2aed4f2892dd44bf00",
+   "class": "code"
+  },
+  {
+   "path": ".impeccable/config.json",
+   "size": 386,
+   "sha256": "06993cb3dc9691370c093c6aab52eaf75ebe3d5ba50e4105660a94d22a650520",
+   "class": "code"
+  },
+  {
+   "path": ".impeccable/design.json",
+   "size": 36129,
+   "sha256": "3734d76ab80f7d1bb1b31a88dbc69e203f56d72cad1a569b3e966e2fd60ca2a2",
+   "class": "code"
+  },
+  {
+   "path": ".impeccable/surfaces/rag-beol-rag-html.md",
+   "size": 4547,
+   "sha256": "4e1305c0fc276fb909158f65fa5cf3d66f4996481ad82c9f77849100a68f3bb5",
+   "class": "code"
+  },
+  {
+   "path": ".roo/rules/00-beol-governing.md",
+   "size": 5273,
+   "sha256": "8d4832d5872355a6698109c70484043747e38f0840e40738fdad98b61faf7bcc",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/.generated.json",
+   "size": 3206,
+   "sha256": "abde7db494a99a5e16b7164b99698c8c38b2efd515471834f6e48be82ee1cad4",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-backup-ops/SKILL.md",
+   "size": 3932,
+   "sha256": "0fed618db9b99b51847bb818fbdf6d5d6a8c96f23762e53d3db0f4bd88300ef3",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-drm-probe/SKILL.md",
+   "size": 2926,
+   "sha256": "6cda56b48a35b8741b0307dd555ade9a4df2affb5d725f8940c4bd69260739f4",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-env-setup/SKILL.md",
+   "size": 5372,
+   "sha256": "deec748886e3bbf27b36f157887f1e3340d9919a727b7da5c5556a52305056d2",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-import-verify/SKILL.md",
+   "size": 3479,
+   "sha256": "aff269801a4e3d53690385904b59082daa7a3be818053cb97129327c2be5754b",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling-axis-update/SKILL.md",
+   "size": 15604,
+   "sha256": "93d6608364593d6f42e4845f98f64bf1cdec58dd6fc6169fb85eb5c7d176dfb7",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling-code-engr-bot/SKILL.md",
+   "size": 21088,
+   "sha256": "ca5bc53734536a95e615ac1e67341d7bff068d1eb2938efe5b65683de0dfb484",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling-daily-report/SKILL.md",
+   "size": 6333,
+   "sha256": "c6a21ff79105b8d814df859cbd12755de62e9ca797b8552122c86499ffb5708f",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling-domain-engr-bot/SKILL.md",
+   "size": 41353,
+   "sha256": "86a693d1f564903a20f9547241579e5fe92785035bc5bfa2490389aa4a4077e0",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling-feedback/SKILL.md",
+   "size": 27357,
+   "sha256": "16ab66e097a5dedf24b24f11a2821c5730b7d1264a2d5ae784775a7cf1d482b5",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling-project-html/SKILL.md",
+   "size": 12782,
+   "sha256": "db130238c445d98e973473460924ed3c7c1370e18d4ed2ce7557bfc7b6d44537",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling-rag-html/SKILL.md",
+   "size": 4336,
+   "sha256": "7ea4309a6449584dfbc553a3b665ff3b5784a02d4f4cba60b560762fa5061837",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling-rules-update/SKILL.md",
+   "size": 17326,
+   "sha256": "fb4dda0497cc0e84e630f7c5351a87a8424c6e3a6826416993dc458c0704daa4",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling-run-labeling/SKILL.md",
+   "size": 7671,
+   "sha256": "b25d940d29f64dbc286fdb6791dca1c8ea7f596702501c5702304bc0ef17c0ff",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling-workflow/SKILL.md",
+   "size": 12049,
+   "sha256": "d0dfcf6aadc9afd1f5620c79551de36a4ae887b01e762b460af362e330f854e2",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-labeling/SKILL.md",
+   "size": 24488,
+   "sha256": "d7e9bfe65504963fed0706265797191ff13d1e646deb5b306753b6d53ee06a9d",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-proxy-measure/SKILL.md",
+   "size": 4275,
+   "sha256": "c4e7b8bf4d54ce7db5a1272bdacb847990fd9fdb3f5f4af45856c2c98275074d",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-release-accept/SKILL.md",
+   "size": 4829,
+   "sha256": "36a7c0707fb0de68d6cfbf17fd9ff9ceac657772a6f0ba4b2f2ba864b5cc22e0",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-taxonomy-dashboard/SKILL.md",
+   "size": 13722,
+   "sha256": "f6e0ae0bc60ca0b53dfffc92868c7c3b6d4e52907ec75cd243a1fd9e6dbfb343",
+   "class": "code"
+  },
+  {
+   "path": ".roo/skills/beol-upgrade-carry/SKILL.md",
+   "size": 4976,
+   "sha256": "29fc693b07555866e5407924c24b09569f9038c75bbf7744ef12f6bbb9bc2fd2",
+   "class": "code"
+  },
+  {
+   "path": ".superdesign/design-system.md",
+   "size": 6502,
+   "sha256": "b6262cfae3190eee99563a2cc01b1584cc54a7c82a30f1caf65c81f4ec2c1707",
+   "class": "code"
+  },
+  {
+   "path": ".superdesign/init/components.md",
+   "size": 37586,
+   "sha256": "fdc4180d4f5bab79927cf19423db63993d38d12fcfd08233da29bab3022fb3c7",
+   "class": "code"
+  },
+  {
+   "path": ".superdesign/init/extractable-components.md",
+   "size": 6739,
+   "sha256": "62b90400349c7d1de837105f01c5213b8b75aab6f61c353809f24183f11b4f79",
+   "class": "code"
+  },
+  {
+   "path": ".superdesign/init/layouts.md",
+   "size": 36666,
+   "sha256": "f0a8959618ed1e46a68b254b079681eccdf8e2d38649be6fbb7e1f9fde3ccf70",
+   "class": "code"
+  },
+  {
+   "path": ".superdesign/init/pages.md",
+   "size": 4789,
+   "sha256": "df1393794ad4dc07ab6f787a52ba0a002298b94645594a37cd3a31c29dcfa274",
+   "class": "code"
+  },
+  {
+   "path": ".superdesign/init/routes.md",
+   "size": 19433,
+   "sha256": "8d9d186fe3a4593f3dda38caa033e3d8326bdf3cb806db6db10939315899b979",
+   "class": "code"
+  },
+  {
+   "path": ".superdesign/init/theme.md",
+   "size": 15543,
+   "sha256": "97c03cd44cf875688247355baaffe60da66493226c3305253a78128106ee1ccf",
+   "class": "code"
+  },
+  {
+   "path": "CLAUDE.md",
+   "size": 3546,
+   "sha256": "84d309fbd6fed546e1a15d102f3403569ba0bd0ea192ea001116453a6cac9223",
+   "class": "code"
+  },
+  {
+   "path": "CLOSED_NETWORK_RUNBOOK.md",
+   "size": 13173,
+   "sha256": "331cba076fba87c81c830d0dcaa4fc96465738dc2696479751840e6a4e106872",
+   "class": "code"
+  },
+  {
+   "path": "CLOUD_SETUP.md",
+   "size": 13458,
+   "sha256": "1b197da8aa99c2b6d1b28388a812918d1a7308cfa142f1ae662415cbb9d03b32",
+   "class": "code"
+  },
+  {
+   "path": "DESIGN.md",
+   "size": 21945,
+   "sha256": "2341d011800543607eb84ab32f24d403be0ae268dfa7b73a1adad40964f0071b",
+   "class": "code"
+  },
+  {
+   "path": "PRD.md",
+   "size": 114443,
+   "sha256": "60fcad40cbaf913b4ab7d727d72d7829b154c5a36aa29bff2446c76063614f84",
+   "class": "code"
+  },
+  {
+   "path": "PRODUCT.md",
+   "size": 5044,
+   "sha256": "9ddb580f6b41ebe1c01eb2fc534b235a542b824f251efd85a3f19b59637982d3",
+   "class": "code"
+  },
+  {
+   "path": "README.md",
+   "size": 22109,
+   "sha256": "11c19bc733a63f9ba352fdaa3d517a3788afb48d864e6c4908e8b326daa87f14",
+   "class": "code"
+  },
+  {
+   "path": "change-dashboard/README.md",
+   "size": 2865,
+   "sha256": "75e39ca9d9b416c1c4cfd092138c8b517e64aaa0d1bef5b987d1ae2357a561ed",
+   "class": "code"
+  },
+  {
+   "path": "change-dashboard/collect.py",
+   "size": 12871,
+   "sha256": "16f206dcf57f8afac79afd1ccfd1ab2d51931eeed8110a2fa3ca614d1460f328",
+   "class": "code"
+  },
+  {
+   "path": "change-dashboard/render.py",
+   "size": 32206,
+   "sha256": "25382fae5e07ad3eaac9d623223dd0e95b28a0275f1328be81b6c45f5960a444",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/__init__.py",
+   "size": 100,
+   "sha256": "a65d1f39e672b4b1c52db2550c6fb2839f46bfe59280f509ba90f8361a484c8c",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/__main__.py",
+   "size": 64,
+   "sha256": "165b96d56c40836f0e1e6aaa719b0a7c3c39517abdc0dc4da428f15f7cbc7597",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/checks/__init__.py",
+   "size": 100,
+   "sha256": "c535622c8167f9a551d517df5f076e0bcdb110b78683bbb901b776d6c1742b1d",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/checks/c1_governing.py",
+   "size": 10084,
+   "sha256": "e8c47ae72d6bc26f7c9e327fbdc5577a42a9d2d1ab0dd0eef94b4fb652f7f8eb",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/checks/c2_stack.py",
+   "size": 4586,
+   "sha256": "2b59d82f58f792ac4e4e3bdbd850cc608b4a39d21ef79ffb5aac12689cee0cf0",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/checks/c3_workflow.py",
+   "size": 8811,
+   "sha256": "5d6a5dcb9e1e6b30124ce0799741a3b5ba6567474ada60a3ea62d2a77b0feee4",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/checks/c4_hygiene.py",
+   "size": 4033,
+   "sha256": "58c47673960930f6c034f2ab83a3b3b0ca6d6414479685e755e76a8ded5c91ec",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/cli.py",
+   "size": 3159,
+   "sha256": "1f9e9086eae2998a0847f9fe322449137a39326ed78e6b08b9f643f6410a95f5",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/defaults/policy.json",
+   "size": 1440,
+   "sha256": "2f9701f2a9792be1829596d550c2f0d5f10e28163cc886c32c347f305ad3d9bc",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/docs/rules.md",
+   "size": 1553,
+   "sha256": "1ddb3e7e749eab802406cd68c956ce63522d29c89bf8fe0af09629242f8a887d",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/model.py",
+   "size": 1318,
+   "sha256": "c1c25b031db2d94ced729af0fddd58ebe36279877f34a9204eb63a7332873bd4",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/registry.py",
+   "size": 2311,
+   "sha256": "44db3c6c3bd7dc4ec9dd3d167798b4fb65bf080fbd532b60164dc481ab1d04d1",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/report.py",
+   "size": 3737,
+   "sha256": "b924ed25b5e17cdfcd000a9232758644d51d1c665a062cfdc7afb8fa9394fbc1",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/review.py",
+   "size": 2499,
+   "sha256": "be1fbc4c46d8029bc6988ddd4327dc3bf461d89bed4e9fd76910d447be7cefb1",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/scan.py",
+   "size": 6728,
+   "sha256": "e2168326e6a5a1b9a4fe2506430c01bce6e7a93d6cf7528466570a79103b263e",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/tests/__init__.py",
+   "size": 40,
+   "sha256": "11bfbb481351a17cbaa6f1c2e3f1e9f8a27dbe61d13f1344560ff78fd7a034c9",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/tests/test_c1.py",
+   "size": 5362,
+   "sha256": "d9f12419f059aa15b7f09f7075985a2afb15150e11a7f1ba2ae1f8637953f1a9",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/tests/test_c2.py",
+   "size": 3756,
+   "sha256": "354c8b774889ab81047a5c64d7293caf4c78a3739c39d52298e11a6bf34fbcf9",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/tests/test_c3.py",
+   "size": 6337,
+   "sha256": "748a12d303c7d911db4995dbede60dadbc0b51ff03d4da7c522708ad97d3ac04",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/tests/test_c4.py",
+   "size": 3632,
+   "sha256": "c77dc7dc3bc9ad1ff98613fbf3e9768543a41075264843ad96fe6c82ce30fc31",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/tests/test_cli.py",
+   "size": 5443,
+   "sha256": "9de5df89bf09e9303f4eb7e38906048ff814db8bc948c1ace8176d981676f7d4",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/tests/test_core.py",
+   "size": 8634,
+   "sha256": "49d3f1199cc7d1cdf85651eddd4ffaa5175f8b64b3ed7d7cfe34f4ed39c2457c",
+   "class": "code"
+  },
+  {
+   "path": "code_engrbot/tests/test_glob.py",
+   "size": 4435,
+   "sha256": "2af0e6ec8262feeea41309f02d368734bcc3a574983fc6a95cbfdfc75228534f",
+   "class": "code"
+  },
+  {
+   "path": "config/doctor_targets.example.json",
+   "size": 2492,
+   "sha256": "8f2453926359eca8b3d2749ed7b24b6341563cb2c367f775b117bdc3323ed822",
+   "class": "code"
+  },
+  {
+   "path": "daily_report.py",
+   "size": 20943,
+   "sha256": "2d48d304803b1db1d9bafd2add6a7af7afb5591008c441addac45e9776133758",
+   "class": "code"
+  },
+  {
+   "path": "design.md.md",
+   "size": 36699,
+   "sha256": "ad09e2829a86c75fdc232dd81dbbc3f61757e5525858c8605420d3801bbeb33c",
+   "class": "code"
+  },
+  {
+   "path": "docs/beol-ax-webapp.superdesign.html",
+   "size": 152235,
+   "sha256": "67c953296fd7b96f2b38fe43cf9df88a2d828c4fa3ee0188c1ab9a40a7f828b0",
+   "class": "code"
+  },
+  {
+   "path": "docs/code-review-plan-2026-10-05.md",
+   "size": 14802,
+   "sha256": "199ea5de1ca70250fdbd561fc5ce5bc3f8fe57f02a65059d19d81754dd420340",
+   "class": "code"
+  },
+  {
+   "path": "docs/data_labeling_4th.html",
+   "size": 52009,
+   "sha256": "e0cf0d978b9227097f65a6c73c979ccbf8ebf1cf44da7518fbdd388aef328cce",
+   "class": "code"
+  },
+  {
+   "path": "docs/feedback_loop_report.md",
+   "size": 7714,
+   "sha256": "54b93ef7a0e66f3731353f966b717cb8a4643fb9cceef281bee7874fd58bea3c",
+   "class": "code"
+  },
+  {
+   "path": "docs/plan-question-variation.md",
+   "size": 7879,
+   "sha256": "abc79c779276e629bf746f20498b2ace37ed7bd89b6af7074f18259a99c9e15e",
+   "class": "code"
+  },
+  {
+   "path": "docs/project_intro.html",
+   "size": 130676,
+   "sha256": "b5727359deef42e1af2d7fde5a8c551aada9008a4314bb61c85f5b67a2efbe7b",
+   "class": "state"
+  },
+  {
+   "path": "docs/showreel/BEOL_AX_showreel_15s.mp4",
+   "size": 24490531,
+   "sha256": "a833611f10e68d89c6122e73226715d2b5ab36fb2b88acd21ff547cf90a94d8d",
+   "class": "media"
+  },
+  {
+   "path": "docs/showreel/COPY.md",
+   "size": 5312,
+   "sha256": "64029b8ac53327ce759c9938f9fb3ae2c9f88c4e51ba918eff88af099156e3c4",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/README.md",
+   "size": 7080,
+   "sha256": "b100e47798fafc2dbba2548d831730f3fcd839f1e990e762630a852f0bdd2d2e",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/STORYBOARD.md",
+   "size": 56256,
+   "sha256": "719c15c8921a043ea2882f3a9094cdbc1b515e26c7f12ad61cd1718f442a0713",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/STYLE.md",
+   "size": 24440,
+   "sha256": "41ab4bb2d740eaa7f9eb7e1bc167e74da46408db69c2ff2c131966b6ab52f164",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/engine.js",
+   "size": 50105,
+   "sha256": "0215d3680a410e92a01790cd62612bfe3183c16f8bd5bd63cb3a39b7514b1039",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/reel.css",
+   "size": 6857,
+   "sha256": "b3a4af67c35c859af88779ca7ff1cf4fef2811381bd34e63ef66f1d8c4e0b87f",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/scenes/01_hook.js",
+   "size": 9681,
+   "sha256": "50dd78c0f2f1aefe15840288f10d0f55a0c639dc31f66a0bf3bd67e1ab01ec40",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/scenes/02_overview.js",
+   "size": 18978,
+   "sha256": "ed6b8bc1fd98fca02be5fcced5db0e16c4cf1cc629f2c36146669a4f786b6141",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/scenes/03_label.js",
+   "size": 9654,
+   "sha256": "2bb9966984d641f0ecf1b5a1e6087b63cb0b7e67d9dfddf57abba3c0388dd48b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/scenes/04_verify.js",
+   "size": 20150,
+   "sha256": "373b9814ba65b4a82c8f29400bcc96e3322d1ac2f7ed39b327ad5f52ac5a6102",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/scenes/05_learn.js",
+   "size": 15412,
+   "sha256": "9374044944cacbfc7854aecc5d1c24c67e245fb5eb3e590ac3e948a35cfbaa74",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/scenes/06_vault.js",
+   "size": 19196,
+   "sha256": "204650396959b51e996345c1af47bbd9378a96ba490f87b3c849593a4bc68878",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/scenes/07_close.js",
+   "size": 21510,
+   "sha256": "b4777c3ef2132aef39d02b28e3cde4f861b5fc8af0353b0b6a2eba9d1ee381a8",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/showreel.html",
+   "size": 2914,
+   "sha256": "ef0d36c58d39af342fbf309fe4916c7bb4592f9ec3fc4c879c5be68529c3cd74",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/tools/render.py",
+   "size": 44975,
+   "sha256": "18681e8c40f41617b24b7f50841795091d1df85dffc57a7f53010b7c08374eb5",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/tools/sound.py",
+   "size": 38493,
+   "sha256": "e8d2ab59cd311c73eff2bf114c124e67761010e76cffb9f0687f6c91758aa43e",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/ui.js",
+   "size": 22721,
+   "sha256": "a11b0ec15cfd946f23bbe7759f197ac31f9dd8d9fbeb808dcffbccfc6b22a077",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/LICENSE",
+   "size": 1081,
+   "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+   "class": "text-other"
+  },
+  {
+   "path": "docs/showreel/vendor/three/VENDOR.json",
+   "size": 272,
+   "sha256": "3648d574be9facc6e56ae5ed3fd50439eb78f9ac8f4280fee0314f3243b9c0bf",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/build/three.core.js",
+   "size": 1458113,
+   "sha256": "9edde002b066a9a05676a6127f67735b62baf399bdea529f2f7e31657da769e6",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/build/three.module.js",
+   "size": 662772,
+   "sha256": "9052042d676cb0fdc1ddfefe193053f34b7ac0513a616fdac4535d49987812ea",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/curves/CurveExtras.js",
+   "size": 15979,
+   "sha256": "4f2a7fe5bc59ccea70576c24cd9845cf41ea2c358e006057c007c4e34cf95a88",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/curves/NURBSCurve.js",
+   "size": 3888,
+   "sha256": "bef2607618a7778455e71a1f0bd206951c382d313e2e245808cc7d3533d60fb6",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/curves/NURBSSurface.js",
+   "size": 2687,
+   "sha256": "a7ff303addd765da8c85ceabb2e3248a970144021cd52b2cb8f177e34aeaa244",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/curves/NURBSUtils.js",
+   "size": 10802,
+   "sha256": "c6bd7c4137d585098923f189687898ea3e8762ea3ecbe255d749a56353894379",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/curves/NURBSVolume.js",
+   "size": 2945,
+   "sha256": "c51db69b23db33911d4e9b666b33143a71f41554c56b7d4f6dd60974bee5cb4a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/environments/ColorEnvironment.js",
+   "size": 1401,
+   "sha256": "f17a9824d3deadd199bbfc17672636ddc79bb9cc0940a8942ca77c8239576e0a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/environments/DebugEnvironment.js",
+   "size": 2621,
+   "sha256": "e311ce2332fc924087beaedac01ba8e1f5b1ff7971f138fcdd5db96df0a15abd",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/environments/RoomEnvironment.js",
+   "size": 4960,
+   "sha256": "55f466192cc84298755a424c5e040345006b2ee1455589b3b54126c2ea4123f4",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/geometries/BoxLineGeometry.js",
+   "size": 3082,
+   "sha256": "5f4bd99627f84e1fe81cf1927ca867ac2968c9354d5e54b11849d0887170ad51",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/geometries/ConvexGeometry.js",
+   "size": 1710,
+   "sha256": "f52f4c5f0cc42eaef25d7330e912693ae1d7a9b0df0a599cd35f5854e9ecb34e",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/geometries/DecalGeometry.js",
+   "size": 10100,
+   "sha256": "6b2da6ea840926dfb0278841f96067c02964c73644c7f189720e89fe9baa2b10",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/geometries/LoftGeometry.js",
+   "size": 8761,
+   "sha256": "e49b03dc9b057fe4ba1a12e3a5dabd99d28ede21ce7ea87394efedeb8b4a5e53",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/geometries/ParametricFunctions.js",
+   "size": 2938,
+   "sha256": "7d533863edda651735af91c613927b7681bbe5179fce1141fcfe6592ea3f88d9",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/geometries/ParametricGeometry.js",
+   "size": 3808,
+   "sha256": "f25b69d9f8a5a7f8e206bb151875609349dabaf9bd81830779033ed2521e8a7a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/geometries/RoundedBoxGeometry.js",
+   "size": 6470,
+   "sha256": "c5feab96123858ed8823c889b238dc8734adab7e760e3cfd21e7f3f2f3e348e3",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/geometries/TeapotGeometry.js",
+   "size": 18843,
+   "sha256": "05dfda4e24db0b48a3cc9c10b54c37ca4017921bd123175b0e57d72403227cd1",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/geometries/TextGeometry.js",
+   "size": 3312,
+   "sha256": "edf69c1cd6087c84d020156d1adbb29b40b098e4cbe8da4c0c36bbadc58dceac",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/lines/Line2.js",
+   "size": 1486,
+   "sha256": "69dd2120d4df14208796acf199f80a64d37e042cfa65dc2b98286694b2954194",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/lines/LineGeometry.js",
+   "size": 3479,
+   "sha256": "b7ec6b0011e3b09dc72e17cfd8e8945295cb2bc8c8aa9aa19e47119680bdad7e",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/lines/LineMaterial.js",
+   "size": 14020,
+   "sha256": "d4517001f9d7b3e885ea5baa930de0077351e885db52ef4565cde4c7dd17eb23",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/lines/LineSegments2.js",
+   "size": 11477,
+   "sha256": "fcbc20f576e88343cea12131f49b7003d7ab44ede422fcb694e567456022f7a0",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/lines/LineSegmentsGeometry.js",
+   "size": 6893,
+   "sha256": "471f0a954a0c9c59d3d151392f424142a9164a722802f63b371971378a84a1b1",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/lines/Wireframe.js",
+   "size": 2981,
+   "sha256": "0f8b84215e857f83e8ce0e106df0f605469d9b6acf4d72bdbb3ae887f71f8ea6",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/lines/WireframeGeometry2.js",
+   "size": 1081,
+   "sha256": "b540ca152b38de6197849e9cc51a669f93b3ae4822c6030c589e9914320ced50",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/lines/webgpu/Line2.js",
+   "size": 1212,
+   "sha256": "3169cb8dc3d5db876f59907851dfd5e50235585d7b4b8ff127823f9a54f7a56b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/lines/webgpu/LineSegments2.js",
+   "size": 11017,
+   "sha256": "b9f84e92c97c23ebd6b9fe216b5a1946a2d4f965ef817a459afa7f38c25ca6d2",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/lines/webgpu/Wireframe.js",
+   "size": 2455,
+   "sha256": "ae2ac3aaaa7cc00e68075e21a34663cee9ea84231eec84edb2021ceb1d438061",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/math/Capsule.js",
+   "size": 3543,
+   "sha256": "be54c3c58483a7f6b0184dbc6ffdcea58ac13515a7d9fd19ed675b9edfc5f319",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/math/ColorConverter.js",
+   "size": 1487,
+   "sha256": "316925abf09f332ab8f1d55dcb6f55bf491e199360a46ab8f60d721c0904cf5a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/math/ColorSpaces.js",
+   "size": 4290,
+   "sha256": "cc35c01c793cd17ccded7bc8142abffd3ce0d60dd6de8d5d216983bd05aee262",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/math/ConvexHull.js",
+   "size": 32974,
+   "sha256": "7b7d53ed4533556f555440676d2cbc3680ffab32b1a910c79c9a522019bd3a06",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/math/ImprovedNoise.js",
+   "size": 3034,
+   "sha256": "d3821241e25bf0c8bfc13cec941924573bbaaf8f599a4fa07d60664b97832b39",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/math/Lut.js",
+   "size": 6688,
+   "sha256": "04d047d96f17302f2d7a20f439c0583a3e037bc0e7e40c276c1dee618dc9533c",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/math/MeshSurfaceSampler.js",
+   "size": 8161,
+   "sha256": "a70ab7a8f28b96cd51f09b7c4d5987167bdc23b91b2a26134766a180751aee43",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/math/OBB.js",
+   "size": 13862,
+   "sha256": "3297db79bdf0a33525ef06fe7478fd921dcffb7699df1059e189bbdf2c0fae58",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/math/Octree.js",
+   "size": 18175,
+   "sha256": "b2f3830ac340938771e5982ff25e09cb806aadc6bfb33f0a8bcad5d56cd41a42",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/math/SimplexNoise.js",
+   "size": 15148,
+   "sha256": "4b1455617135e6b477de76244de07547d95570643379b72f4758e50161b06072",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/GaussianSplat.js",
+   "size": 32105,
+   "sha256": "ea3f148d39413ef31781cdbb1c97a8972b2dce01ef5eebe6ef800c2b1ba7ab42",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/GroundedSkybox.js",
+   "size": 1980,
+   "sha256": "86e13051e05cb5beed632a377abc9eff13fd7cae10f1f5fb4d8cc41ce1cf2681",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/Lensflare.js",
+   "size": 11110,
+   "sha256": "f313c7d783dd25b29194e51aeed046ff9f52716d226b66984dc90aa925d00447",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/LensflareMesh.js",
+   "size": 9723,
+   "sha256": "3e5767b9a11e4ae9d4ec7d22cb9168f5abe4cb849f086bf2d833455c34620332",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/MarchingCubes.js",
+   "size": 40408,
+   "sha256": "fe9c6ace2c079bf540befd164ce492de98c820d8b86a722b1060833d42ad9c80",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/Reflector.js",
+   "size": 10943,
+   "sha256": "57836df976f02a474b2dcfbb6609bca8bde0ccc6e77159ad8e418fa11c065d3b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/ReflectorForSSRPass.js",
+   "size": 12033,
+   "sha256": "3198dd0f966779837a85b8905370612f44389029f8b700bc2b19c0a3b58d1896",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/Refractor.js",
+   "size": 10176,
+   "sha256": "512c4ec056b8af3c7aa24f80a74d606dfd10c06697686b2b73df8dbe7f2f9d78",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/ShadowMesh.js",
+   "size": 3288,
+   "sha256": "e28c3440a3dfd9377ac52ce38501712b4441216384947954761d9e1481aa4bf5",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/Sky.js",
+   "size": 11526,
+   "sha256": "34121b60a3bd9adc004a5a637f6135e9d2b72757eeb9e476ae1988fe2db6a9fb",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/SkyMesh.js",
+   "size": 12862,
+   "sha256": "453215002329fa8a84920045898fcb7c274795992eb6fba43576f41cfacd8585",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/Water.js",
+   "size": 12894,
+   "sha256": "3386670ba86003a32f5efe449041bd108d4cf1e0661849caa814741a2aaf395b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/Water2.js",
+   "size": 10459,
+   "sha256": "80180ce0b031169883e14a79374e2c4d899b7726a1af4897dd7a9efc9d9240f7",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/Water2Mesh.js",
+   "size": 5908,
+   "sha256": "c42decb79f2a73d8cd4e2c629db109f9837e5ad2d28d4ef1b5afd9998ea5e849",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/objects/WaterMesh.js",
+   "size": 5850,
+   "sha256": "e2f5d0a50ac00b1c1817ea68ea43697cfb168ce30bbb9e4cc4a2b44fca23c92b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/AfterimagePass.js",
+   "size": 4388,
+   "sha256": "8cc0c8724a674a649d438c932e0b5f287e7d02f9fc35f627b669180bf4d2cc01",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/BloomPass.js",
+   "size": 6445,
+   "sha256": "5dcc005e8782003124a3e1406bbc37ce9b014791e263692fb098a81fc9c45e2a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/BokehPass.js",
+   "size": 5531,
+   "sha256": "5b9b0bc5cee6e24b2417da95f40eb2d178943c2ffbacbc4c2993a89d0597bfb3",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/ClearPass.js",
+   "size": 2167,
+   "sha256": "69c525e8e3be28999453177a9d0bd1771d27a4d04378307242802fec84301bcb",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/CubeTexturePass.js",
+   "size": 3519,
+   "sha256": "3cc339151ad8deb69cbe7fab5c9d70d3190afc1446554256f4149791f7ff438f",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/DotScreenPass.js",
+   "size": 2941,
+   "sha256": "ef8fc81f6697a76abf42fe8a5e16343c7254b8ece68f2f2eb7a20190c86e3fe1",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/EffectComposer.js",
+   "size": 8501,
+   "sha256": "4e079a5886152d7e529a59aef644e968ab4d32c6a33ce016b36bf29b2eac26f7",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/FXAAPass.js",
+   "size": 738,
+   "sha256": "aa4e87a28f57e5508405730ee6bc09775b33acd3e87b3b24ef0d722b71e9d33a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/FilmPass.js",
+   "size": 2684,
+   "sha256": "709a6e640b5ced2449e458d57656173208e81af064e414b9c6f775cbf1287ed2",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/GTAOPass.js",
+   "size": 19910,
+   "sha256": "a277f848d1035c751c54d9706e579aeb74689126ced25723e53d52ac3f26f445",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/GlitchPass.js",
+   "size": 4305,
+   "sha256": "8329d0656ce595dc70cf5d7c80c4ab0b7021bf906cea714f4aace77d56e67731",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/HalftonePass.js",
+   "size": 2882,
+   "sha256": "af7b1a9b82992c194d3a59ba15d74b4146231f7fbdc37345d4191ec974726aa9",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/LUTPass.js",
+   "size": 2230,
+   "sha256": "aef64d31e2528d25bccc00dd0c2d5aaf0a1d10f8ff9c7b66cfb48aeaba54987f",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/MaskPass.js",
+   "size": 4694,
+   "sha256": "7cd08eee9d5d6f5578beaddbdcbe9c384f6873810af27f22ab7db3ceeb127aa3",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/OutlinePass.js",
+   "size": 23272,
+   "sha256": "8eb486b1436432cf6f080c4a55b027f6d56b3ea66a9735c140a8be986107667b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/OutputPass.js",
+   "size": 4184,
+   "sha256": "02e4a261af34de71338185e9e87f0cbe5cba9115608d984363e1269dec1d2272",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/Pass.js",
+   "size": 4218,
+   "sha256": "444b409c235ead986893c472e720da1b779a56985c7d10b279c7944b52bd61c5",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/RenderPass.js",
+   "size": 4280,
+   "sha256": "817f6c3cdcd0fd41515d112359ea0532568eefb5aabd3b33903957ebca1b8a6a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/RenderPixelatedPass.js",
+   "size": 8151,
+   "sha256": "7da0c022251a23fecc717d9b9ae438ba53c31b2e579facae559e6f50ac979444",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/RenderTransitionPass.js",
+   "size": 5847,
+   "sha256": "215c71157f95965a82bfb4d8c70fb023e2b3102ab83e5c26bc1d3dd30bd26d4a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/SAOPass.js",
+   "size": 13105,
+   "sha256": "fc66f83abeb26d6b6cf82680d9fe2e49158f7ed0bdf26ab2449267ccc1edfa79",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/SMAAPass.js",
+   "size": 50379,
+   "sha256": "1a96804b8cb33ba76a67f9a8e77f2d5e2bf47b1a5c9a8476901aa75e24acb85c",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/SSAARenderPass.js",
+   "size": 8150,
+   "sha256": "cd2b8e83b32e806091117dfbeff1f8f4e78df0175a4a3acd865b9989df1c420b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/SSAOPass.js",
+   "size": 13463,
+   "sha256": "2f9c02a53e09917d039c07c5bd7a110f1ce39bc5ab2affa316ea94f5198ec586",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/SSRPass.js",
+   "size": 23300,
+   "sha256": "7d02386b7e54fd245ebb1f4329918e65cfe8c292a74e33edeb506b8a0935ee1f",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/SavePass.js",
+   "size": 2998,
+   "sha256": "408f2375ce09797499edcc73be2d57b68db4080937775e333497db1489138781",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/ShaderPass.js",
+   "size": 3228,
+   "sha256": "e2500a5913b26bbf5148ceaae644c6edcff06a18b01494ee37bf856353d2ab9d",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/TAARenderPass.js",
+   "size": 6487,
+   "sha256": "463dbda5d1f0f401b3575f60eddd2a84234ff5be44d29a3dc41129c34aba0f47",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/TexturePass.js",
+   "size": 2920,
+   "sha256": "402cfcdda8e69db5f0faa778c51b97fc2ec740846a088d169f555fc3403b7d7d",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/postprocessing/UnrealBloomPass.js",
+   "size": 15397,
+   "sha256": "ba8f2fcadfa6588384c9473498f974d81d120f02f0e63a0e59c265202a006b5a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/renderers/CSS2DRenderer.js",
+   "size": 7990,
+   "sha256": "256abfc6ae1aa20eb83c10d7a0e26534527df65872e4d52da6354bee78288c34",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/renderers/CSS3DRenderer.js",
+   "size": 11126,
+   "sha256": "cd1f6bfaff0e2efa8a95b8cca6e96b0eea957d6a6057d875de8bab720b49057b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/renderers/Projector.js",
+   "size": 26709,
+   "sha256": "0fe563bfb05700f4b136a446355da0cec285f7d584e77b2196f70c850b7ef325",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/renderers/SVGRenderer.js",
+   "size": 17795,
+   "sha256": "e830d97bb42d10cdc7ab41165c57d3494a60d9747b3ea4393c38764151ea4151",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/ACESFilmicToneMappingShader.js",
+   "size": 2141,
+   "sha256": "47b2114c8b76e7e1b077ba1fbff949a092461072a07600cfea27c7c6b486f71e",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/AfterimageShader.js",
+   "size": 1048,
+   "sha256": "fb842ae657379a6ee3b431bd864b4e4956d36df14daf502bf6ffecdbf14de8bb",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/BasicShader.js",
+   "size": 523,
+   "sha256": "df365e491471e506d3665b58efbaf1e07618f18ade42cfae68843438ec72cc07",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/BleachBypassShader.js",
+   "size": 1356,
+   "sha256": "09309e11465b488fede34a85e1ee5e1610e3e9e5ec09cb7f91cdd0ee353c5a8c",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/BlendShader.js",
+   "size": 920,
+   "sha256": "6a437abf3ac314fef109209fc7c8809864d1ee18e52d2864a3f2309ec1b5d394",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/BokehShader.js",
+   "size": 5934,
+   "sha256": "bd8525158e3574a803f2e2ce5d5e263349a80ee41bf789e71446b9caa256aa9a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/BokehShader2.js",
+   "size": 9865,
+   "sha256": "2aa29eebe47bff7fb5fe059df1be3e94430e3498ae14da947166979452145b65",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/BrightnessContrastShader.js",
+   "size": 1275,
+   "sha256": "9c72d86e39c9436d291b92210003073e6c1d8a791f05c723221d799eb4867ac0",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/ColorCorrectionShader.js",
+   "size": 1024,
+   "sha256": "f40ee720d3cbfd8526d1f85ce8c4a2832f926e36a34926c6b2fb04d96322c430",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/ColorifyShader.js",
+   "size": 834,
+   "sha256": "73993a34f2b5036c618d9bb0c7413cb7a15c3fc9bf2ca5f649a17e4cae4ed45b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/ConvolutionShader.js",
+   "size": 1281,
+   "sha256": "bad71ed02351acb701e62e21a9d11f044c2c689d924d714061edb756fbea8ace",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/CopyShader.js",
+   "size": 729,
+   "sha256": "a33057d5ac91c43304c186ac0e8816e62bb2ed471d3a00ff3018dfd5c0389718",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/DOFMipMapShader.js",
+   "size": 1092,
+   "sha256": "835cae7d3c44ac9b32143d5e213df29a12571d96406d114ba1bc957e82f36856",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/DepthLimitedBlurShader.js",
+   "size": 4187,
+   "sha256": "c1594724212f6842fb4ccbbf72d686e2770a6213fe5ff4dbb13335897f6c7ade",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/DigitalGlitch.js",
+   "size": 2525,
+   "sha256": "873b9b39114ff174ca533be1e998a8c2db925e2fb9808e953c60167813432c63",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/DotScreenShader.js",
+   "size": 1378,
+   "sha256": "959a2e0ea3d4a89d67754e417c56bd67abd632427d51fab19361003cd0ca7cef",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/ExposureShader.js",
+   "size": 791,
+   "sha256": "82a611e3b59922f75db1e0aaa86a7113f92915e5e896315b47d6c59288510928",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/FXAAShader.js",
+   "size": 6815,
+   "sha256": "b8303d179f9d5d40a052483e8cfb49c29afb6e60396080e472a6950b51700dac",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/FilmShader.js",
+   "size": 1227,
+   "sha256": "744c619c70f949af5d3f0f9edb27573743ab9ad12869e7c306ffb3d0caff7bb5",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/FocusShader.js",
+   "size": 2467,
+   "sha256": "2171570ccc0ecf3977028bba803bd9eef0ea9a2715cbd610ed6dd0535a550bc9",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/FreiChenShader.js",
+   "size": 3153,
+   "sha256": "5b17d604dc9861f8a424ea07a89c225989e0c922bf2f7a083065fa19b3a8f355",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/GTAOShader.js",
+   "size": 12166,
+   "sha256": "cdea7be60452f61105375d2c18e4da2e8ce7b39a89246b1bb8fbf79319d58cfd",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/GammaCorrectionShader.js",
+   "size": 818,
+   "sha256": "e73c9ab25b0262c97838355701154c272c792b71f03756a1f7d504c4fca3ab25",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/HalftoneShader.js",
+   "size": 9187,
+   "sha256": "c3c75173fb0b539c7dfaf296770da520816b8bcf6263e185da0fb1fb35a11032",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/HorizontalBlurShader.js",
+   "size": 1667,
+   "sha256": "a155715ca3bfe4fd1f9efc51f189fecd5c53160df47dd571a7d5936dc436ab0c",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/HorizontalTiltShiftShader.js",
+   "size": 1792,
+   "sha256": "772f0865e95c4ecd7e6b016191b5d544d23ea4f048ff0efdc33898ee52fb3fa2",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/HueSaturationShader.js",
+   "size": 1678,
+   "sha256": "5b2f1ee9cdb847c6f8b3196cf9912f12eb1361706e312aa54d0c61578c9886df",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/KaleidoShader.js",
+   "size": 1194,
+   "sha256": "dfc1431e2e6b328c724c614a997e3496e9db027c0685f8a228f5b9003e65a81a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/LuminosityHighPassShader.js",
+   "size": 1291,
+   "sha256": "5044f780b6e6cf863947f64c36fe1587132f7fbe395ada863cd1e5f0388dcf1e",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/LuminosityShader.js",
+   "size": 768,
+   "sha256": "32f164b72b1590a9be95be1ecc768fc496de4337370401267d104b12934d9a84",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/MirrorShader.js",
+   "size": 1066,
+   "sha256": "4d8002c804b34d135a54e773bf1808d813b67fc8b1eb688d87907293b1e1404a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/NormalMapShader.js",
+   "size": 1165,
+   "sha256": "66273de182be159471d74beefdc303494c3e3b1d247af390f0882214d4bb8f9a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/OutputShader.js",
+   "size": 1876,
+   "sha256": "353479f77a8d7e2629d49ccac9fc2f5dbfdda5442e0adf867b00377a2fcb0cb2",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/PoissonDenoiseShader.js",
+   "size": 7080,
+   "sha256": "61da074a9ad8b2139dd164c96b8b62c299f056ce06c216e1f707c5151d997602",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/RGBShiftShader.js",
+   "size": 1288,
+   "sha256": "69e7872f4719533013da7ca2a0bbbf9f369bc85a6efb6db76361a75fd4816b8b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/SAOShader.js",
+   "size": 5313,
+   "sha256": "ca43e4a87db2d856ff6ad0f5466e3c92b132b520fe50133c9b708911ae473a5f",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/SMAAShader.js",
+   "size": 15002,
+   "sha256": "48ce320a6bf5c33806c4fa13ade7e3ab199f7856838d36b05ae82204db8a1c15",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/SSAOShader.js",
+   "size": 6968,
+   "sha256": "034dad98927ed8f2677a19ce56d4da1212ce5070ed2666157106025dc260bb55",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/SSRShader.js",
+   "size": 9891,
+   "sha256": "59dcf87b90af519cdeb66088957b72c6b79c7b95ef574b4cdeda788bf3f80822",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/SepiaShader.js",
+   "size": 1098,
+   "sha256": "b7994fb98e6f37bf163ae3454b61a837170449f9ebc2fee515c7b39481bcd16e",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/SobelOperatorShader.js",
+   "size": 2546,
+   "sha256": "553abd07b89b64eeacd67d99be66bd873d63b0dcedd4d5db76dfa8e66b697af9",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/SubsurfaceScatteringShader.js",
+   "size": 3264,
+   "sha256": "60d14b64cb46dfd51c0818949bd44f7d2c48e3fc12e3b5c6a769f1816a4cd9cd",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/TechnicolorShader.js",
+   "size": 1043,
+   "sha256": "76069639082a38869d7eff6d7f86ac31304ace10e44161085ec8f4563c73b617",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/ToonShader.js",
+   "size": 7147,
+   "sha256": "650cf00e7309e8721218e1cb92c1f1a5870a6161151e1cb54865dfaaa5de5014",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/TriangleBlurShader.js",
+   "size": 1461,
+   "sha256": "c0ce699bf1d5a10a5ad7cea1439a6f8f491a4ad274d9578caf247f5eb2fb0726",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/UnpackDepthRGBAShader.js",
+   "size": 972,
+   "sha256": "9307301a3d5e8c4b3ae2653b07b0b332567f5fee45774c4723160fd0ea132837",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/VelocityShader.js",
+   "size": 3173,
+   "sha256": "9511c43bd858727f82e1316e5c6861427e6279c764b053ac3a1033dc075fbf92",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/VerticalBlurShader.js",
+   "size": 1639,
+   "sha256": "67792abdf08ba2305fc2a2f45ca151f55b66a82f5aebbe45230246cdb72181d7",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/VerticalTiltShiftShader.js",
+   "size": 1779,
+   "sha256": "96bed3fafdea8370d1330dc9854f9d604a6def8554db554368c917ee66403742",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/VignetteShader.js",
+   "size": 1049,
+   "sha256": "5b122990efab55aa39ac5c72a09bc840e572773f5037b9127acfc8e31ee08b83",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/VolumeShader.js",
+   "size": 9284,
+   "sha256": "b1bd15947ccf8b5c5f38e599779775a32213d77354d4377154ff74a5dccf0082",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/shaders/WaterRefractionShader.js",
+   "size": 2046,
+   "sha256": "cad67ed479d112d787281b1ab37561659a50d5fad6ad951a2d9f89a45f229cf5",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/BufferGeometryUtils.js",
+   "size": 37712,
+   "sha256": "9fb63427ce6641fa14fd0baff9cc4d1b5f9c3d85fd084bf2e90e803c44ec1797",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/CameraUtils.js",
+   "size": 3204,
+   "sha256": "9d3fd8e3dbc94f50a45acf41b18a8f1d14254af403e90a19573036d127567def",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/ColorUtils.js",
+   "size": 1652,
+   "sha256": "016c9556fb486cb8dd0e7a3d7ccdc074f7ac3ce09624db75c2463ec82739a19a",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/GaussianSplatUtils.js",
+   "size": 5586,
+   "sha256": "4b9b010149b3e1a7673de37638365e937e005a03ba706e4cd81301b717d30f54",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/GeometryCompressionUtils.js",
+   "size": 13014,
+   "sha256": "0bb16305a0ed75a582e41361a17601fe460efa514af0fd470385f965cce10be6",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/GeometryUtils.js",
+   "size": 5593,
+   "sha256": "649f315d948f16bf32f43b86b3d96f05c9ffe36304ca6c94cf45ea35084d9864",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/LDrawUtils.js",
+   "size": 6055,
+   "sha256": "aaf8a11994c2e3a2e435d5e95842a5bb5501747ee4bcb59aa62fe4d2cea55dde",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/SceneOptimizer.js",
+   "size": 10275,
+   "sha256": "9ca2e875cadd48af46d787a2f6bed8ebba3233992ff74b178997cb8c44aab34e",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/SceneUtils.js",
+   "size": 8634,
+   "sha256": "d2d1673d80cdb919232f8e22fd341f79ec5b6f1c8d7df3fe884ceb8c8fbedc07",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/ShadowMapViewer.js",
+   "size": 6249,
+   "sha256": "d80ad3d17ecdc7dd2ec4a9aed66cc4ca5765af049012e0ca2d628a5d91f512cd",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/ShadowMapViewerGPU.js",
+   "size": 5981,
+   "sha256": "8cc8b462c005e9539e8c977d4f1b96582061578adab7dd9697654fe27cc225bf",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/SkeletonUtils.js",
+   "size": 11535,
+   "sha256": "b1632a703206c3d830de9fcbe515696770d04b71a15ee6b50afa6d2c3298c86f",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/SortUtils.js",
+   "size": 3354,
+   "sha256": "a69012ad02b7dbdfca8d5384453a3a17c4c8e7c3fbedfa3b1f948c1ef121bf99",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/UVsDebug.js",
+   "size": 3427,
+   "sha256": "67869b5c32f8fc4729b5a2a56d00c5a5db60c1d10f8a169c9cba8e84c1865e92",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/WebGLTextureUtils.js",
+   "size": 3075,
+   "sha256": "8434508ea5496e4958405d794241d371ef518ceb62b4f8a6a8a812878d82a1b1",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/WebGPUTextureUtils.js",
+   "size": 2280,
+   "sha256": "ddcb8051dc946e53163094c8f68304f549540f498aee35e7f2bfc784ce8ab47b",
+   "class": "code"
+  },
+  {
+   "path": "docs/showreel/vendor/three/examples/jsm/utils/WorkerPool.js",
+   "size": 3110,
+   "sha256": "5ac7095fd566bc9ae48376055fd66edf27cb9ebbf9e1269dc206bfd4933ae9eb",
+   "class": "code"
+  },
+  {
+   "path": "docs/snapshots/project_intro_20261007-035353.html",
+   "size": 125143,
+   "sha256": "4e13ef9a6cbcfb527897a92a8d4655e232231566f8adaec349c09f6f623467f3",
+   "class": "code"
+  },
+  {
+   "path": "docs/snapshots/project_intro_20261007-150406.html",
+   "size": 129429,
+   "sha256": "e6c162a705eac8fb13537e7c60677652352fd190689881c5efc3a84bfa8bbd1c",
+   "class": "code"
+  },
+  {
+   "path": "docs/snapshots/project_intro_20261007-151623.html",
+   "size": 129544,
+   "sha256": "3d5b6e894f1d98c6e25351ba7296e3c4b018bba9bcc67010922a5ec6357a708e",
+   "class": "code"
+  },
+  {
+   "path": "docs/snapshots/project_intro_20261007-152427.html",
+   "size": 129691,
+   "sha256": "ed5cc688f8bfb349ec9825e9ed5556bab1fa2ed79c94e1f5c605c278d78477a3",
+   "class": "code"
+  },
+  {
+   "path": "docs/snapshots/project_intro_20261007-195826.html",
+   "size": 130795,
+   "sha256": "4f6955583a6c40958dc8e803ad29471f9af0ad9e25c8cd9a2a5c764ffc5d4cc5",
+   "class": "code"
+  },
+  {
+   "path": "docs/snapshots/project_intro_20261008-002537.html",
+   "size": 131173,
+   "sha256": "23e194672f91d6d937b50334627daa43918d1c2baae0f74b7b94df785b53de10",
+   "class": "code"
+  },
+  {
+   "path": "docs/snapshots/project_intro_20261008-075526.html",
+   "size": 130676,
+   "sha256": "b5727359deef42e1af2d7fde5a8c551aada9008a4314bb61c85f5b67a2efbe7b",
+   "class": "code"
+  },
+  {
+   "path": "docs/snapshots/user_flow_20261007-195826.html",
+   "size": 419470,
+   "sha256": "239472ae125efc8bfb243248b99d44e53e14e7e2936067103492a35cd96b8f22",
+   "class": "code"
+  },
+  {
+   "path": "docs/snapshots/user_flow_20261008-002537.html",
+   "size": 419470,
+   "sha256": "239472ae125efc8bfb243248b99d44e53e14e7e2936067103492a35cd96b8f22",
+   "class": "code"
+  },
+  {
+   "path": "docs/snapshots/user_flow_20261008-075526.html",
+   "size": 419470,
+   "sha256": "239472ae125efc8bfb243248b99d44e53e14e7e2936067103492a35cd96b8f22",
+   "class": "code"
+  },
+  {
+   "path": "docs/supabase_schema.md",
+   "size": 19838,
+   "sha256": "04b60a46cc3ffcd49a614014b7ff20b7791bf47f91188f99a07b24fb8b5be255",
+   "class": "code"
+  },
+  {
+   "path": "docs/user_flow.html",
+   "size": 419470,
+   "sha256": "239472ae125efc8bfb243248b99d44e53e14e7e2936067103492a35cd96b8f22",
+   "class": "state"
+  },
+  {
+   "path": "docs/workflow.html",
+   "size": 100784,
+   "sha256": "2730089f524464a3f9b7d6be1d8c00824c46c737a29519e219f8cbf5ccc691ca",
+   "class": "state"
+  },
+  {
+   "path": "domain_engrbot/__init__.py",
+   "size": 162,
+   "sha256": "6e46290f839e6d73aff51e6e2be45ba5cbc4fdf5554bc2086cbefbb3ac371b4e",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/__main__.py",
+   "size": 66,
+   "sha256": "003b227aa23f181620274ef26f5f252180944a8c1e62e900d34bb95652fa2a3d",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/adapters/__init__.py",
+   "size": 89,
+   "sha256": "3fc14992e9975073c99d99704e16ce6a9adb9b158604d5ea9f42778840d06f9c",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/adapters/bundle_files.py",
+   "size": 2678,
+   "sha256": "bd25b5a0ea232d906d21da298db3b081c408d69019ffc474162bbffc222b44c2",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/adapters/labelbot_ws.py",
+   "size": 29160,
+   "sha256": "85eba4b93e2c05c2cc44f7f760dc7cdb42419c57baa8d3f16112a7be983f7ff9",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/answers.py",
+   "size": 19707,
+   "sha256": "207742613ea6ea45eb1f58fea84d4494409d5ef9b6e1eafb398edecd6a1d7df0",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/checks/__init__.py",
+   "size": 116,
+   "sha256": "1a124165ea6dd213c10abd5020b35f383422ed4da506f1461009f6abcfc44862",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/checks/l0_parse.py",
+   "size": 12184,
+   "sha256": "3f49138d0d97f48ec5092d8fcfb331d5133cdd59a833e1f3b83919c94d4463b2",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/checks/l1_schema.py",
+   "size": 13364,
+   "sha256": "d2601af08739da13b1ffd7081ad898375cd3239219a127a3461175248edb1426",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/checks/l2_taxonomy.py",
+   "size": 5452,
+   "sha256": "d3542112a16485302c62c2092036df3a15d9f08da0955f67a4e6a3042f6af24f",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/checks/l3a_span.py",
+   "size": 7809,
+   "sha256": "4073e939ca1f09b5310d30f6597686576f08b98b5cb5616d8df9cd996266c2fb",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/checks/l3b_judge.py",
+   "size": 774,
+   "sha256": "70720a4f50815f21c28e95c8a0b4375b7efcc56e3581f753a3f72ffac0808e3c",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/checks/l4_domain.py",
+   "size": 7523,
+   "sha256": "05d1a798e930b31f40edeb71616ff146e95974a588d665d2ca279a6c2e9d28a5",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/checks/l5_crossdoc.py",
+   "size": 2308,
+   "sha256": "396accc8b06181dc758b7e3ac48f9d76b019ee4703ca23e2a4e42b3e959a2638",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/checks/l6_batch.py",
+   "size": 9306,
+   "sha256": "1acc5612396864e68e9b7154c3d2966430f348a74bfe4a8a82e045dfedbc20ae",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/cli.py",
+   "size": 18544,
+   "sha256": "07b75cdcba7199a41331b27c572e0b8d56ca6401cc47bb140dbf6d973d67cd87",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/codes.py",
+   "size": 2615,
+   "sha256": "3b116b417ccda9380c8bcaed78709bb3377bbe0bdd84d8b1098b4d3cf0383c03",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/defaults/domain_rules.json",
+   "size": 1108,
+   "sha256": "e8cfe4fb0186415dc24f0488bb6a0e998566958ca5685f72d191e6c93b91f1e0",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/defaults/issue_codes.json",
+   "size": 8665,
+   "sha256": "32cd514db301ff2613a67df0f8450bb661adf6d241745dd7edf3b1e85dafe3c0",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/defaults/policy.json",
+   "size": 2129,
+   "sha256": "04b136f03623debb1a90e82f98586686f86cbf1a1b8244ddd0433a4c58b3dd69",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/defaults/schema.json",
+   "size": 1047,
+   "sha256": "f0f5053e189bccb84cf159a7a3366b7f6d863da76849f3c41977a26736316925",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/docs/issue_codes.md",
+   "size": 7293,
+   "sha256": "6564de0478fb3664745ff91b9a278cb3d16a0f9736b39b3aca0cfc29467c0504",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/docs/l0_dummy_measurement.md",
+   "size": 3776,
+   "sha256": "91198a7c686db8268c79284883e271ef46ffc48426742a1764077fac0f94fc58",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/docs/plan-bot-split-exec.md",
+   "size": 21335,
+   "sha256": "1f9d274431d0458d97f1c41eb7c96977804470bcccc9d40080d16611c6e9ab59",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/docs/plan-bot-split.md",
+   "size": 21930,
+   "sha256": "0c156f10e439256bdb3c291623b5e767f977aa1e9e9e2ae76bc2217f37c519d3",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/docs/plan-correction-evidence.md",
+   "size": 8382,
+   "sha256": "50e22a7c6144e6b1fc38ddbbe3a09e8b933ccad973a60c66dc56a4b623c34ba7",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/docs/plan-labeling-return.md",
+   "size": 9105,
+   "sha256": "c1190872167aa8fc315b94a446ef1cada7205d6bb2e8886d0c9f2215532b2c49",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/docs/plan-ledger.md",
+   "size": 23052,
+   "sha256": "34334e140d40f3b36c78730d8692b6a8d5c3486b285e7c3869177309c020002b",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/docs/plan-question-loop-impact.md",
+   "size": 13043,
+   "sha256": "0bf5eb2428556df0b7d8f57d9dee49d421c7392edeccbb675ecfab5bdb09c059",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/docs/plan-question-loop.md",
+   "size": 37667,
+   "sha256": "5a32f7de3e650f3440e39fe5f3513c59a99508444e257d75c2f0342411e760cd",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/docs/plan-taxonomy-sync.md",
+   "size": 10882,
+   "sha256": "52ce05f1825a546e1bc7b0dc2c44cede942403ce8c4013026de6907e84bf0418",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/domain_engrbot_plan.md",
+   "size": 97004,
+   "sha256": "41ebd732a3acc2b5fee7708307de21c0c027f28217aec0706d826ac9f2aa3043",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/domain_rules.py",
+   "size": 4464,
+   "sha256": "60b35f9e6aba2f3b1374fd5eeae40ccb3982a78077e5321ad0c589a6ebe3573b",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/engine.py",
+   "size": 9654,
+   "sha256": "e99b709fcf7fd95e4fc404047c34f3d2fccfba07c9a2e4582ac6ec388c9c9fbb",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/feedback.py",
+   "size": 14884,
+   "sha256": "8e9ec1246a626dd21dcdf6cc3785b190c748ec79731d66d1c29c55e4f58bfeaf",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/golden.py",
+   "size": 13908,
+   "sha256": "24d7bd373267d4323188e96bf4b93aa2753ad1ec07ef115b529e5ffd48898e10",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/harness.py",
+   "size": 20331,
+   "sha256": "e82e410d1c152a7b20ee1db68dd0645819487afc9cc8cf4acbf071e13bb07b4a",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/io.py",
+   "size": 6793,
+   "sha256": "8f849b44ae922f3db3213d59c4d74741b91cb29b2efa8500e62b1a42fce06d1a",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/judge.py",
+   "size": 20442,
+   "sha256": "0864c2ec7e13da32cefbba0c7a0b79919dc627dd33125f6e7f6d9300f6fa5058",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/labeling_review.py",
+   "size": 18679,
+   "sha256": "2c6dfcd28ed696f0765c0d7ceb77bdd59b9caaa97b3769a83161f1ec597f75b0",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/labeling_rules.py",
+   "size": 29032,
+   "sha256": "7308e000a12d0fbcb039bc755df6bf4722da106e327f862561b1c9d44d8e452d",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/ledger.py",
+   "size": 48377,
+   "sha256": "acd13705f795aa23be9c6336a10d02d66847865a2250bd1cff1dbdf465fd6247",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/llm.py",
+   "size": 5282,
+   "sha256": "21d9754df003ae55b094e87aec0e15a81a4af21b675421bb9ad2d11fa5ae39a1",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/llm_http.py",
+   "size": 3867,
+   "sha256": "2a7539d5eb9b4bcf0291f7fbbb0e882b796b6c23d48bf96727c6029f824ee763",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/model.py",
+   "size": 8793,
+   "sha256": "edcaa2893a7bdb9230f1d8b11a9bf2223e969eb8f19f00c151e223a3f5392955",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/normalize.py",
+   "size": 3936,
+   "sha256": "51f3c921837d00757a2d4c84ba44f3e22243a2d597773f9ac260c21fe8bf541b",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/paths.py",
+   "size": 776,
+   "sha256": "3c7cfa28df8ca48c765cbb5e0b50fcd407416448a65272789489f5b561e47430",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/policy.py",
+   "size": 11082,
+   "sha256": "8da21a2164f0472838df8a4179a2f5bece6796a4c5b26db2dfca353192b0d71c",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/pptx_writer.py",
+   "size": 9128,
+   "sha256": "36beb7a3bb5d082840a34980cfd27ce8b50ad7ec5a69c46dd95c2e102adee633",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/prompts/engr_draft.md",
+   "size": 3011,
+   "sha256": "5f8ab25f09971842d43af005a629063d525e5ea04353cca61fa4fe241dfe4b6c",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/prompts/engr_questions.md",
+   "size": 7492,
+   "sha256": "27537854c59894a08805a4ff4c973bbbdc80076934f922edfdd6fbe7690d1438",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/prompts/qa_judge.md",
+   "size": 1222,
+   "sha256": "9af2680888c4a482750fafe936dfb867f2116e585b5b9b6c06ebf3367ccfa663",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/proposals.py",
+   "size": 7852,
+   "sha256": "64b86c176594503d0b2d786606f3f9d6a674391e18084c34af696c7fdd734976",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/qmodel.py",
+   "size": 17490,
+   "sha256": "588cfd071c5360066d42c430e203de2562b5a9a731c1f9ec93bdbd7a854bf08b",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/question_screen.py",
+   "size": 10172,
+   "sha256": "612666abc4a9e70531456851fbef170a053541d84af111d3f1eb3db36019ffd8",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/questions.py",
+   "size": 43781,
+   "sha256": "68fc71518b54986e7f297bf8efe0b3117dcae5842790649256b531045404024e",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/queue.py",
+   "size": 3152,
+   "sha256": "0388a37a24d39fb69d9855caa6664ee1e4444dc071f7bb2de6135f335a57899d",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/rawextract.py",
+   "size": 10341,
+   "sha256": "325f32648ef915ee10e80f4cb15c3b00a8f4715cc36a6b8fd76057a4b41fc2f5",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/registry.py",
+   "size": 1700,
+   "sha256": "c00a6a4447d5920cb03b54ef2651d5da53a50f20e2d88981ea843fb8fbeb66b1",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/report.py",
+   "size": 27502,
+   "sha256": "51443c5c72d8ed2826eedbf11f888f17d74b226e752d6672d92fecff12695061",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/runner.py",
+   "size": 15714,
+   "sha256": "ac78e030ee2fcb921b603fd135b775d167aa2f059102e06359a8251201f27c37",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/screen.py",
+   "size": 12357,
+   "sha256": "8f953d143375b3d9db71be8c5a2659d8149aebee5f440b9a87749b3199049822",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/screens/engr_questions.html",
+   "size": 64721,
+   "sha256": "583476914584f6f0c520e4a78ccdfe9aa993a6311dbb5e8b0b638838d1d90a79",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/screens/labeling_review.html",
+   "size": 29702,
+   "sha256": "cd7d93b01e834c3e24c22aa355aecd3b98b9b63e46053163f2499cf6fbccf340",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/screens/qa_review.html",
+   "size": 52514,
+   "sha256": "70899902021097bb838ddc292d89066fbb25627d7e1aa667a37d4b9c5e4464ff",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/screens/taxonomy_board.html",
+   "size": 86372,
+   "sha256": "f83f831ddc839068772ea6b5826b3ee85d17549e737c5bf1a8dc9e204db94303",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/screens/taxonomy_editor.html",
+   "size": 52643,
+   "sha256": "e754e6c618090b8acf07383d2d8459442423e563fc2ab86e390411e227ee6c9f",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/serve.py",
+   "size": 28084,
+   "sha256": "0b2824de065073b8b172934f85bec6738eed031a95c46300036b5d510b96c76e",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/stats.py",
+   "size": 8036,
+   "sha256": "ad06ca8e21689ea1d4a1ab52544eaa2958f7e83b5ca32a51484f65e3ade8375c",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/synthetic.py",
+   "size": 16004,
+   "sha256": "425eb1c871a0c5983d2fc34a9da8581b83d264cb9ac4a083ee6abc3e16d94584",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/taxonomy_board.py",
+   "size": 88847,
+   "sha256": "e689b47f68f3b19c79766ecc6cd1e89aaee6947d417a4aef3dea82c1ece3f07b",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/taxonomy_editor.py",
+   "size": 12371,
+   "sha256": "9ed4ce4a4ff75bba04203a9d419349331c72e7406b41094efe4d64e3e8a2f279",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/__init__.py",
+   "size": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/clean/console.md",
+   "size": 188,
+   "sha256": "728815ebb3f76567c990906c668d2b5bfd049022b1f26bb9279bbecf20e39c0c",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/clean/feedback.json",
+   "size": 217,
+   "sha256": "afa33c15694867f305f92227ed17660028b55b8d0e0127bbf92f589280d131f0",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/clean/feedback.md",
+   "size": 736,
+   "sha256": "65928d5c84e77e2f1a58f976bf64ad31d7e6bdcfef0041370ca47ad7c7fc4731",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/clean/manifest.json",
+   "size": 1563,
+   "sha256": "84f088af0ea755be7d70131ad5a162b48690fded7c4ddae2f9219bdee7c6ad72",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/clean/report.json",
+   "size": 5825,
+   "sha256": "20925915a9bb35f01d293d5c6d39187999a43cb40003e1568a1270393a518771",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/clean/report.md",
+   "size": 3161,
+   "sha256": "2dedf40bc8e5186ebbf9705c6fd24b81fcecb941c91e1bd9d0a4dc3221bd70a5",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/clean/review.html",
+   "size": 62656,
+   "sha256": "65212f14202e1538625789e836e236bd379e06fa108aecadb96c8af0cfa05a56",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/clean/review_queue.jsonl",
+   "size": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/clean/taxonomy_candidates.md",
+   "size": 2421,
+   "sha256": "d108b11171b3db73dce232ed685ef0081529b5ef861e825945466c9a8419a8c4",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/clean/verdicts.jsonl",
+   "size": 27289,
+   "sha256": "8680bdaee6c8207f5a0766cf203e566a4dc0f4b78f9a8f208712575505643c84",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/defects/console.md",
+   "size": 189,
+   "sha256": "d60f70a4a7b75e1347b45dd30aa664347c958e76ccfec318a6c8635e05e42f4f",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/defects/feedback.json",
+   "size": 2269,
+   "sha256": "78b7076b9c3407c9c38e493773809ccf39525c14dc02c46a4a036a386a6ea340",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/defects/feedback.md",
+   "size": 1009,
+   "sha256": "7ca9835702aeed7612184987393af987a3191bf11ac88980c49d37a954a323c9",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/defects/manifest.json",
+   "size": 1585,
+   "sha256": "184e86db0a8196c46baba8c963d37ccf2f45e15adf9142d2cb53a9245ccd115c",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/defects/report.json",
+   "size": 6424,
+   "sha256": "c0c9e5e9c2020d1c89697db616b61330a653351384e3d1e323a4f569d3f80108",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/defects/report.md",
+   "size": 3303,
+   "sha256": "067d698cfcace400b4b50b50d70bebf0d2f71d31a8c9f0a1706c87ae5f49c2dd",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/defects/review.html",
+   "size": 110412,
+   "sha256": "ef0bcb8fa96d67e5bd5187a256c510872d2cf0461ca057a57c22f710ccaa068e",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/defects/review_queue.jsonl",
+   "size": 743,
+   "sha256": "503f60de298a2302d1ca85acdc81ba581f0fa9423cf4bff0b7b29662cff27b19",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/defects/taxonomy_candidates.md",
+   "size": 787,
+   "sha256": "b6a497d7ae9817f7849338dc318fb730f26ab9d968d13d1801bcddd36964a1ff",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/defects/verdicts.jsonl",
+   "size": 94049,
+   "sha256": "2e2cd01214285638cb7385d2c552938a349ab40c7cd567ee9d09ba04353f9241",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/eval/console.md",
+   "size": 123,
+   "sha256": "cff15289d3d41882749259f219300b75e17c8abe6e83b21ab4b6799a695e9fb1",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/eval/eval.json",
+   "size": 9238,
+   "sha256": "4eaaf0cdb0fb3388e699d15a9472b8991527c525c8fe0acd652bfe6c90479c0d",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/golden_outputs/eval/eval.md",
+   "size": 3628,
+   "sha256": "22de3f5d506e4a1cef6d31cd14bb482261fa4eb4f751c8a36a422b9f0bd48a98",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/helpers.py",
+   "size": 459,
+   "sha256": "14159842879be6c975672d2b2103b6d32a8fc55379b992b9ee45d09e86186e61",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/reviewfix.py",
+   "size": 4785,
+   "sha256": "d893c087bab6864308f6f057b8580883543f672c0f6d27c38761dc3220c8a1bf",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_adapter.py",
+   "size": 16374,
+   "sha256": "4d84621966804ba6faded74f7427329a0ef2ed03730a4c254396d121acc4e6d4",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_core.py",
+   "size": 14843,
+   "sha256": "bb2e1cf601ec7c337621b29a993e16eaeed0381db4266972f654a5d115870a18",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_fixture_taxonomy.py",
+   "size": 3666,
+   "sha256": "605cfc81924568505400280664e8b692c195d6bf956456be04ebebca7dd69ba3",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_golden_feedback.py",
+   "size": 20612,
+   "sha256": "2bcd4651a325a121d0b1e7075472b9e9a2d6e199261ef37b09c2fc09e0864c17",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_golden_outputs.py",
+   "size": 11247,
+   "sha256": "d4cd6427a4027873b264341697387bdf949731a8d7b137fe1ac497060f756ee6",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_harness.py",
+   "size": 4365,
+   "sha256": "f516a508962c473c6f7bef03f8573e83939da15141c5791785fab33698aeca95",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_integration.py",
+   "size": 10486,
+   "sha256": "dbc600a4573c99d47cbd9fef52648b60bc20761c6ccca487af47787799087d49",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_judge.py",
+   "size": 29623,
+   "sha256": "ffbf560db8a1f9cb982b1056eee0cb1a22c63ed141e9c6ae743089ab5077585d",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_l0.py",
+   "size": 30255,
+   "sha256": "393e94046b0f11c2c2f346f5b436c6e8452f01a8c65738ca6f7ab3b6e1271636",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_l4.py",
+   "size": 11422,
+   "sha256": "8c42c9b89870248a23d07cbab5c12e138e72a0d146e87c95619074c4568654c7",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_l5.py",
+   "size": 4516,
+   "sha256": "2bfc4c8d03a0248875fe6a574725e7e58e1d36286ff7c782173b2a7f12bf9eed",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_l6_report.py",
+   "size": 27657,
+   "sha256": "52cbb05c6fcb8e06c563adfbae6ffe829f84eb5131fb1f42929831348696f45f",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_labeling_review.py",
+   "size": 18299,
+   "sha256": "fb8b6f9ba95694081598466b035ad5fedfc5fa2c39b03398dffd5d0259367a64",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_labeling_rules.py",
+   "size": 14542,
+   "sha256": "44fc538af9e8ced21993cdb4f8b23db50b470882fd3f3f79994801426aa3e1c4",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_layers.py",
+   "size": 22238,
+   "sha256": "9f1ed1ebf218e5426cbc9ebcb0333c312135192e1b8766a3c948ce3c6905ee4f",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_ledger.py",
+   "size": 54056,
+   "sha256": "10f5c05d1ee156df4aedc8db038dcb0b7afb201380fee29a34be165083969481",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_ledger_consume.py",
+   "size": 24569,
+   "sha256": "166826462ee707fd0a387c136227f4be41908f660db254689281d579ba082f5b",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_ledger_control.py",
+   "size": 9318,
+   "sha256": "2caef808e0c4bd8d53a3ef28adf0986f46fc327d7f0940103d53fedc38e9a9d5",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_question_answers.py",
+   "size": 41994,
+   "sha256": "3bcf22941ac882aaa6ce40067a02398aaae17efff3c54d13fc9b1c4305191e82",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_question_screen.py",
+   "size": 32478,
+   "sha256": "ff5a2f97e97bf0f5da2690f789c214f9dd4391e2ac55e691318e1dc6d8f11879",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_questions.py",
+   "size": 44610,
+   "sha256": "8c2bc89fd3745b7c60715a54dd37245585f0d99f31a438ac073d697b53ee946e",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_queue_screen.py",
+   "size": 11571,
+   "sha256": "65073682b79053b446527b2298f89dc03b86d407176fca3d73d956cde1e67264",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_serve_workspaces.py",
+   "size": 8750,
+   "sha256": "2dd7fcb75b8f8dc6de2761001f97da3581757573027ee2ec107bf3efc16f6cb5",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_taxonomy_board.py",
+   "size": 80342,
+   "sha256": "944374ca573455ae8c2d5d7472fd1fbadb4a7790f99fa87c48953888bb89fffa",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/tests/test_taxonomy_editor.py",
+   "size": 16730,
+   "sha256": "a45e1ba46f145f0463e35a142dab5330eb40ddaf7b9576517b736a7843c91f61",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/textmatch.py",
+   "size": 2842,
+   "sha256": "135f7601392df57a2132c12a2da24a7faf6e3ea7b09f05441e0c535f581d50aa",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/trace.py",
+   "size": 411,
+   "sha256": "324e4749a49ee53b7bc887d5d0288b528be4c7b9c5351e54042ce4e55c6c7004",
+   "class": "code"
+  },
+  {
+   "path": "domain_engrbot/workspaces.py",
+   "size": 6772,
+   "sha256": "835e21ed9ff4d10af6f6ab48d27dfc87988583156f84c6ed0e69eceea7240157",
+   "class": "code"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260101_QSPFT087.6D M1 Ru depo SiN HM Line AR split 평가.pptx",
+   "size": 507588,
+   "sha256": "4423bc3d9637e844bd13e9e3115ffc0770c42d630493dbfafb47f2057c93dd6b",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260101_RXD3I.62 M3 via etch over-etch 120%, 70% 조건 평가.pptx",
+   "size": 217029,
+   "sha256": "93a0d0b8cbaa3f7638982dfdc4aa8bc8385f9347172c0fcc44fa4032710a6741",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260105_RNN9NC.6B M2 Ru depo Ru etch split 평가.pptx",
+   "size": 208371,
+   "sha256": "d51c5ae348b6c75f7757f9ab2a973c96dbe0684bd8b2145f6f39f546a5fb8ae6",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260106_RQJJ7B.62 F4 via barrier Bottomless TaN 적용 Rc 개선 평가.pptx",
+   "size": 161781,
+   "sha256": "800a55dee1ef587cdfb052377dd752bf967d567e03e4c52d71d1cf55606dc6d8",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260114_RQMD6.66 I1 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx",
+   "size": 218918,
+   "sha256": "aaa8c62ed2fb8ffca93838852b4c39fd70391c76c0fe43638ae0e764490fb6da",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260115_RDX5TA.6C V1 신규 chamber 호환 평가.pptx",
+   "size": 288302,
+   "sha256": "6f4058f488d42640773e271d12907c085235b2788557cfc63d48c6cda306f3f2",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260115_RNC8N.69 V1 via barrier RSBM(PA) 적용 Rc 개선 평가.pptx",
+   "size": 248053,
+   "sha256": "9ed0d0d79e6e505d751b9b622b5f97f44bcd167a673b5e91ebd38256c37fb472",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260116_QOAWC088.64 M2 Ru etch SiN HM 조건 (SiN 22) 평가.pptx",
+   "size": 315748,
+   "sha256": "620bf0c713cb458bfefa90c334048da8f4a95b01a31335c0248e4b3af9c87b75",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260119_QFYOL088.6C VA Ru 증착 방식 (CVD Ru, PVD+SLA 20us) 저항 평가.pptx",
+   "size": 437912,
+   "sha256": "fe0342472f50495118a1fdf4b5b7aab04f4548d958320616fbbdd39ffa97b59a",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260119_RNRS2.6B VA Ru etch ALE Line AR split 평가.pptx",
+   "size": 593656,
+   "sha256": "018ef9ed39f0db4fb8a3ec3b8d86df063e33ee3d481039a929cf78f4dfa5a733",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260121_QLDSR040.62 M1 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx",
+   "size": 212865,
+   "sha256": "fe8e2ea15a78a17258ab9be77ebf33fa7e4f2fa34ae0654c2a065e21a5cc57b6",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260126_QDKXW093.69 M1 Line AR Airgap split 평가.pptx",
+   "size": 223382,
+   "sha256": "ac3d2c8077540c44a7f647255f90b02383597e3656d3c9f1e9a5ff841a49ed48",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260302_QEQMN045.65 M2 trench etch recipe 변경 (T3+tilt trim, T7) 평가.pptx",
+   "size": 451305,
+   "sha256": "1201181a122907beb951dbc87e6592389316b3bede4bfd19fd49b44eb3ddee18",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260303_QRNGU000.6D M2 ALE Ru depo Airgap split 평가.pptx",
+   "size": 194920,
+   "sha256": "09dee672a36ab5768c46f41b14028c0b595293d0b2e09879f4f7c387d4fba9b6",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260304_QWHSW069.6A M1 Trench etch CMP OP split 평가.pptx",
+   "size": 358239,
+   "sha256": "76ee42b4aa9bee1be4e9b65b87681cc64b719da9403aa916f74fee549b268921",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260320_QGJIC025.6B VA Ru line 간 Airgap+cap opt 적용 평가.pptx",
+   "size": 205406,
+   "sha256": "f2f901ed1c5a54c1659c6b58ed6bde0f41a50c3d56a03a17067c3e7a083d2730",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260324_RDD2O.68 M1 Ru direct metal etch (Long ME, RIE+IBE trim, Segmented E-C) 평가.pptx",
+   "size": 273715,
+   "sha256": "db986d31c2db2ac3ecae5546169b2bb5c1487a1d002a66dc58fb6bb4cd3857e1",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260325_QERSF094.6B I1 Trench etch OE scheme split 평가.pptx",
+   "size": 352753,
+   "sha256": "60fe7710b892c7de1a5b9af7b1af1943f1a2e859c48fa3bcb1f0f4b7cb527479",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260401_RNRZ6.67 M1 trench etch MHM 박막화 (Al2O3 cap, TiN SiN, TiN SiN dual) 평가.pptx",
+   "size": 338940,
+   "sha256": "65f812b8d5c975a9934a4e8abac4082a304b0bda8407de07385b0dabf5de898d",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260402_RQE8IA.6C F4 trench etch bias 350V, 600V, pulsed 조건 평가 (PID 영향).pptx",
+   "size": 389845,
+   "sha256": "aa1f1969f455ef74bbf7b18e35283ea0424fee17513b1929bc12ed93ba322fea",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260410_QIXJA058.65 M3 Ru liner O2-ALD 계면 산화 억제 평가.pptx",
+   "size": 158833,
+   "sha256": "758f27cbb6adf5ad77da83be67980651b83b78f6bb641a3182cfb3740b473b0a",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260428_QWVBA036.65 I1 MHM LK depo split 평가.pptx",
+   "size": 292791,
+   "sha256": "7a9fe608586764766a4fe72ad6ad666be893361671f703907fde1ed736f1a685",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260429_RNQ5G.6A V2 trench etch recipe 변경 (High-bias ME, T7) 평가.pptx",
+   "size": 187873,
+   "sha256": "e31d07a1544302c4970d98a1df125281f7b8e6f1879aea0d4393ee8ad6b3db41",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260501_RQDK5.6D V2 Ru liner 2-step H2 O2, Wet+O2 계면 산화 억제 평가.pptx",
+   "size": 496637,
+   "sha256": "41029dadc55243521361d0636d7fee8e5f1a945b244423dae51c2323d0f8e2f0",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260505_QNIUN011.68 V2 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx",
+   "size": 368333,
+   "sha256": "8a7f924a62a9b3ab1dbeccc07703a400132d36231bf5c50d4bdbd4680a08fb6d",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260506_RQK6O.66 I2 trench etch recipe 변경 (T12) 평가.pptx",
+   "size": 322402,
+   "sha256": "d282fdc098ffe7ddb19d0eb3eb25971715261dd509d4b71a2ee207a57cb60ae4",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260508_QYVEO014.6B V1 SAV, Trench-first 적용 평가.pptx",
+   "size": 497261,
+   "sha256": "92456f56b297f3200921d2570ac5e8a452f781e9f8c073c79686fd612c53c398",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260508_RXR7Q.6D I1 Ru liner Wet+O2 계면 산화 억제 평가.pptx",
+   "size": 337879,
+   "sha256": "3ca5b8221bd6022f400822f5b61cb76e96f4be65ad765f376d6bd4e4113562c6",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260521_QUZJZ093.67 VA Ru line AR 3.0, AR 4.0 고종횡비 평가.pptx",
+   "size": 364742,
+   "sha256": "9a78f96303e3c7c8482b8ab1018a2731ee4147571ecb2b99087f37258039aae5",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260521_QWMJM070.67 I2 BM barrier liner 변경 (Co liner, TaN 1.4, TaN 1.7) 평가.pptx",
+   "size": 352797,
+   "sha256": "eb00f3e53484d468840bcf0b7e8e982f38a71ddce810a3622fb2c52ff5c80995",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260525_QLCNI057.62 M1 trench etch 호환 평가.pptx",
+   "size": 468976,
+   "sha256": "b81e54f4af5d4cb14262a82c2b02b2c7be04f75439c538537676ac5eb69b1ce6",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260527_QJMIN040.66 VA Ru via 접촉 저항 개선 평가.pptx",
+   "size": 194923,
+   "sha256": "ce8f4df55b88a34f0894ae4605b9900c5b6433acd0d82fd6e25624096df99e44",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260612_RXO1KC.6C I1 Trench etch BM LK depo split 평가.pptx",
+   "size": 450235,
+   "sha256": "79fc84897816b7a677c65ea5605b87c4e01ea95ad6f3cdebb1e65b3395097b65",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260622_RQUT4B.62 M3 ASD inhibitor (ODT, PEM) 적용 평가.pptx",
+   "size": 245385,
+   "sha256": "39dfd6be6f5d4121d3522aacdfa38b3221613d72195211caebfb19d3bb358cf3",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260625_RQJD8C.6D F4 Ru liner 2-step H2 O2, Wet+O2 계면 산화 억제 평가.pptx",
+   "size": 452893,
+   "sha256": "71038ad8ded8585dacefdcab1ba8ba8617aa9c787a7f4d260840808ea3e5821d",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260626_RDT6C.67 M2 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx",
+   "size": 344043,
+   "sha256": "ad6375224d18ad6bd86f5178a762ada3a038bf387e690f43d3245804aa5cf82e",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260703_RNJB8C.67 I2 LK depo 막질 변경 (HCLK, HDLK+HMDS, ULK-B, pSiCOH) 호환 평가.pptx",
+   "size": 370809,
+   "sha256": "47ab1b55727d5cb4f4893cee8f7d42be90266e768d128d9a72731858cfb56132",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260709_QYSFM057.65 M1 ALE Ru etch split 평가.pptx",
+   "size": 165956,
+   "sha256": "f8f4e9896635c65317e197235cd283290bfa945fdea3e04e1bc3f431a7b0d6bc",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260721_QAPSU080.1 M1 Airgap Line AR split 평가.pptx",
+   "size": 416030,
+   "sha256": "e1f91b73c8fab6f94530e6d96e05e2d9cb006d19b5086a86b134860b16b77b85",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260722_QRQMX093.64 F4 Trench etch CMP OP split 평가.pptx",
+   "size": 455380,
+   "sha256": "3e98672179a48f054c9afe8264cd19cc4183ea1571266f177cd44f15239e209f",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260813_RNER4A.64 I2 via chamfer 개선 평가.pptx",
+   "size": 144715,
+   "sha256": "27e0667e7e8470bc399e70d6986b1fad9576e2368c9d83e64f5f0959808dfb48",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260826_QZPPX058.6D M2 Trench etch Via OE split 평가.pptx",
+   "size": 360905,
+   "sha256": "2e7b4340d06c4d037a9af876780b7f6703da082a416cec3a6d8a06b25af59b0b",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260828_QAJPS025.61 M2 Ru line AR 4.0 고종횡비 평가.pptx",
+   "size": 396483,
+   "sha256": "a972ef8949998c9fb51748c2c31170da47df099ed7427069783fa622d1a70d82",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260828_QQJIG034.6C I2 ALD cycle Via OE split 평가.pptx",
+   "size": 595352,
+   "sha256": "740c1b2351f5b7829e5bcd53c6fd928ece76dd9b9e49cdfddcb3465e2845611c",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260904_RQB3A.61 I1 Ru liner Trench etch split 평가.pptx",
+   "size": 217884,
+   "sha256": "0e4e8563c38b9bd5565337afdd6b3b4625601b668e00820e16a155ec65c5be64",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260910_RDNC9B.6B M1 ASD inhibitor (ODT, PEM, Propargylamine) 적용 평가.pptx",
+   "size": 512729,
+   "sha256": "e431cf31a553c2655ee0673161a4daf13fd33e4756fb882ec77c3babcb9c062d",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260921_QFICN095.68 I2 LK depo CMP OP Via OE split 평가.pptx",
+   "size": 566561,
+   "sha256": "9a89f4715d9f48c899e1ceb2222c9ffc757ff94f5e7f8fd09e07093973339643",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/260930_QGAZX051.6D VA Ru direct metal etch (Long ME, RIE+IBE trim, Segmented E-C) 평가.pptx",
+   "size": 519577,
+   "sha256": "6a6c86c1f4a23ef55e4074473b5ebcbaf44e5eb04e9e89e600e2720af7344017",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/261001_QIBRX055.63 M3 BM barrier liner 변경 (TaN 1.4) 평가.pptx",
+   "size": 157860,
+   "sha256": "a65c89f00669cbb90ea55cb1ae291d9bfc6c9608b620491a0c158b403822aef5",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/261001_RQV6C.1 V2 Ru liner 2-step H2 O2, Wet+O2 계면 산화 억제 평가.pptx",
+   "size": 206649,
+   "sha256": "1bbf1a8835a11b8b3b7dbb12296d79c8bbe3495aad3708b7151ccd43fda8b140",
+   "class": "office"
+  },
+  {
+   "path": "dummy pprx files_2nd revised/sample pptx.pptx",
+   "size": 78027,
+   "sha256": "17bbc094c2d4f13b4296b66fbc4b23c67b36240b933a926592fe35f942206ba9",
+   "class": "office"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-020234.json",
+   "size": 1030,
+   "sha256": "963b938afb332c04b4effe559a3831b2b3e787ab37ea4307436fd7f5dc3b03f9",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-023720.json",
+   "size": 684,
+   "sha256": "8dd7a067c2d6ce2ebab83ab6dd456a32727f1f2f95eb10be2870913af7895dac",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-025439.json",
+   "size": 633,
+   "sha256": "0749354c9841357cd1c409d41ab254b4b6bfcf96dde364658403259ec5f34efb",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-034316.json",
+   "size": 710,
+   "sha256": "23881a94a45777d7bd30314ca14ac4cf12262c0e44f5753a628dada7ae8a3642",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-041826.json",
+   "size": 684,
+   "sha256": "aea1b9bb0a8ebff1573571c1441312cb6b7ecaf2aa509b16367cfec4f624248b",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-113123.json",
+   "size": 447,
+   "sha256": "6df292a5b3ef37ad9bd42d4aa76fd668694575fb23b96cf42d7b5dde9272d581",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-165508.json",
+   "size": 766,
+   "sha256": "d0e329ec6b77ce9a1d53a75ba0e3d805ec5b373e76dc2069f2f239170127e1c0",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-195048.json",
+   "size": 532,
+   "sha256": "fdd7e2e942136a88b5f713034734dd5421df858725a7555d44afccd9254e50dc",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-222213.json",
+   "size": 532,
+   "sha256": "45cd91b67ae7882e0897af18596cba838ff7826c215bcd889b72064484490944",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-232910.json",
+   "size": 762,
+   "sha256": "2bd2fd77c8d4f4abc1d79c77f28b2c7fc46eae3e3dc21ab67a5cb43c33731a7b",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261006-134010.json",
+   "size": 762,
+   "sha256": "a2bb1d04e8d8d1589c630558c786a2a841cabdf13fc8982a6f1b7d531a91b347",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261006-235203.json",
+   "size": 1132,
+   "sha256": "3d344fe4db466dc6f2da8db835e0beb751e45dc3e1741dd28212e3015c2871b1",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261007-025935.json",
+   "size": 999,
+   "sha256": "1fa4878bc71b30738801666aed4ec64d433c8e42999ea17341d39fa6e6066bd0",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261007-124653.json",
+   "size": 846,
+   "sha256": "bbbb1901402ba6ef928bd03b65f3848cec7737a1a9b5b234e0eba784c280aa25",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261007-195113.json",
+   "size": 1996,
+   "sha256": "a30b8a9f8208f380b0cf5fdd686794b98d6fa03bf33444ac5f14a57b5331c045",
+   "class": "state"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261008-013403.json",
+   "size": 336,
+   "sha256": "3eacd8d111d49ed245afc4f7281c92358d7c69d24d4072a67e40ac06f4e5a1bd",
+   "class": "state"
+  },
+  {
+   "path": "labelbot/__init__.py",
+   "size": 150,
+   "sha256": "11b086b9b003055bac03fc3ec6001833d6180796c6fe07bdeea76d43111e5557",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/__main__.py",
+   "size": 91,
+   "sha256": "01385cbbf256fef447c3b350706940e45d4e749b9ce4b48cc9065b1b603ee35f",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/alerts.py",
+   "size": 2624,
+   "sha256": "7c1e011e218c81bef7e5e0a4b92fffebeb37f98879b7401b57f4316442cdd64a",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/axisboard.py",
+   "size": 7693,
+   "sha256": "2f996d76f0fcdb800742a65c488e86d35869309879e7f2ca4b0aa582ec438425",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/axisupdate.py",
+   "size": 16169,
+   "sha256": "3d976d53c6ba07938c511f318ad3410e50a1db15287ae872f8d77cbfaf1b1b67",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/candidates.py",
+   "size": 7962,
+   "sha256": "6616ecd78bcac8031894a566b79ff84b32360e1ef69cba23ce0e9f2b4d3eb4e1",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/cdp.py",
+   "size": 13097,
+   "sha256": "e369f24e25e552627faf9f9bd40b8476bb60e14da0fe8507cb0da1a1651c6468",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/chunker.py",
+   "size": 1549,
+   "sha256": "c02638fc70fc3f414e9dd2d828c9cfbf37c8c752474be6896637474a51814d34",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/classify.py",
+   "size": 10180,
+   "sha256": "e5ad4d584e191da7f66b1e0e11fa07f45e36374e3a6bae66baaff22a8ba498c9",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/cli.py",
+   "size": 20521,
+   "sha256": "c26845f3b3f9a6b5701f4c2f95eb940563ae87b1ae27632f8a56ebca7c8acd31",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/dashboard.py",
+   "size": 13246,
+   "sha256": "f9e09307ed5349c66dc75d7641c6082664b12e999dd2c41479f6e0be9018f6e4",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/docmeta.py",
+   "size": 6636,
+   "sha256": "7d22e4bdb59dbc55794407e78cb0be280271315f0269ef5c0b6d327a662b9104",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/docx_parser.py",
+   "size": 6452,
+   "sha256": "295a377a6a088828f87ee506149b0132778388056d3e862155216b1d7f6bae65",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/embed.py",
+   "size": 3309,
+   "sha256": "e457fa1b7180963ab07d377a839c7503de60f0b8bd9eaecdbe555f6f87f40fd2",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/export.py",
+   "size": 13197,
+   "sha256": "c1c4d8ba4b9f667b834647a055cb7c69dd2b85a0fdf2eca5c03e57049fce9f27",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/feedback.py",
+   "size": 26574,
+   "sha256": "022fdecc583cf67cd03438f358c7a0e1d54f03a2d0f6f9ab3dbfeea9906857cc",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/finals.py",
+   "size": 8085,
+   "sha256": "a27a5f4fa7fc43c50377ab079659d7fd432118a16e2e285424fc6a095e794092",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/ingest.py",
+   "size": 8988,
+   "sha256": "4ce4f161157931de8dc3a53ac313c806508cfbec7702f4b2fa62368b631ac657",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/label.py",
+   "size": 7899,
+   "sha256": "7b098a9ce157df6b80a8dc513febe0f8c08d658e6102f005ad01f915dc5cebc3",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/llm.py",
+   "size": 11962,
+   "sha256": "4d272b65ca5586080433ea4eb8b5c4b291be4d722a9a7d235be7c80d4c5e23cb",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/milestones.py",
+   "size": 8611,
+   "sha256": "c908696b98d04b2235cb3c3da77fd458c1b4bca9caa12849d6977cb38a9ed211",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/mock.py",
+   "size": 2875,
+   "sha256": "81d420e05c661411320f27a12803146fd873b750e43cd2792dfb628fa6e866fd",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/ooxml.py",
+   "size": 5581,
+   "sha256": "0e8f1aeb9fd78cead345ad992f57d31a8d05187c37d501488631d6cbe188fd40",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/pipeline.py",
+   "size": 35983,
+   "sha256": "681f3245c9c794d423e25f8bb8323dab3f56fa22059940393e0158acdd1123e5",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/pptx_parser.py",
+   "size": 23024,
+   "sha256": "582947061121028e462baf3a3a7c3bac2501a720bbe8a25792e45acbd935461c",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/probe.py",
+   "size": 3175,
+   "sha256": "8449bb323e68a3c8326f40d45e54ddb7b8ecdc7989b851a55700a64db4253893",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/prompts.py",
+   "size": 1282,
+   "sha256": "12db34c02ef0a7808c53616a7d1027dd2cfe477b8126824b348601189da78626",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/questions.py",
+   "size": 15718,
+   "sha256": "e5321d2d89f84813b6ed4b77b280bce8924e10f267097ac99ba8baddb7c46ca8",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/reason_codes.py",
+   "size": 48605,
+   "sha256": "ffc72bfafaee65b4a72aee66a7d6b4806684c80ff8e99497d8a9298e91c53386",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/report.py",
+   "size": 6759,
+   "sha256": "e7550646ccc48bedc8301746f6f48abbf2f72b56de86e0648f5dc93da3e0d46b",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/review.py",
+   "size": 41108,
+   "sha256": "645196fce76b9fb5753a510327527a3a89f5ce80bbf856ed7699cc89eb505b5e",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/revisit.py",
+   "size": 27597,
+   "sha256": "7ff61713169d46740ebde027b3bb802c3f8af8ce0a2fb8763774988770386f4e",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/rulesboard.py",
+   "size": 4660,
+   "sha256": "478ddeeb62aa6948c6e3575231b7cfdd8a6f0d40b198028cdb47eb689f99dc87",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/rulesdiff.py",
+   "size": 14694,
+   "sha256": "57d205501409a4a7711eed4c7cf16ca86bd4508fa81d62e00e685ad502fa6dbc",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/rulesupdate.py",
+   "size": 18374,
+   "sha256": "8cb4a8d983c9724e5dbae92393897499492de0052003e29a16a8c82221f1c8aa",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/runchain.py",
+   "size": 3980,
+   "sha256": "9bb68394787054af511f8cbc95e5da865fca5500c0e379c406496e97614382c6",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/screens/axis_update.html",
+   "size": 21972,
+   "sha256": "bc0c196ba1016596e14d79ff2605c9f15afe261fac7a8931f524129bea1c4934",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/screens/compare.html",
+   "size": 23440,
+   "sha256": "381680ea4be2c913a33622fec6ae325623fa06ac9b17a30d64b92bd1f8d4c991",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/screens/results.html",
+   "size": 43733,
+   "sha256": "37ee8a82b18f91078525a808b3de84799866e73bb4751d8067afd85b31d26ad0",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/screens/review.html",
+   "size": 115282,
+   "sha256": "df2815fa59d285d58504977b1166b1ab70019bcefb63d42b9cacadbdbec26f4f",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/screens/rules_update.html",
+   "size": 21135,
+   "sha256": "a28b5c6decc60b12aca3954dbb90510b1a39c47b85481684a013ceae701cb6f7",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/screens/slide_preview.css",
+   "size": 883,
+   "sha256": "e3b9c23051960bd09aab3924dac3b258308d2c3c9d48da5507d5d66fbb7ec64d",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/screens/slide_preview.js",
+   "size": 2398,
+   "sha256": "6f015136b0f6831c83459725435cdd3ccd5d818255180d3fc250757ca18e1218",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/screens/slides.html",
+   "size": 1921,
+   "sha256": "80a186d13d932470339129dc8cd0462b46576fd0dfddfa5cefbddc24665a630f",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/selfcheck.py",
+   "size": 8675,
+   "sha256": "8ed0c20d2d0784fcd3c52a47992ef88030f1190ab5d854c66827c64740affef2",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/serve.py",
+   "size": 13247,
+   "sha256": "63c4831792871a0c25cd4fe702c299e247790a72b925f74d1a1c6604d99324a1",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/slidecards.py",
+   "size": 2178,
+   "sha256": "4662021e5594b4ff2224302fca0a3f349f1ba5705780dff9bea5ddb4969916ef",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/slideimg.py",
+   "size": 10328,
+   "sha256": "18e337483dcff6fa0285ae4587b759dbf59917f228d232198137bfe61140ca16",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/slidepush.py",
+   "size": 5040,
+   "sha256": "441535c1ae5b8fbac126a987afd7a5cee7a59c65f2432c16e59501b3c959f9d9",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/status.py",
+   "size": 12350,
+   "sha256": "a38c15c01c37fa4ffa946266976856ffb8b41373bdd2e78f4012c2cc19da1b3f",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/store.py",
+   "size": 9362,
+   "sha256": "559fdedd1b5587a5f47e38fdc7793faa380b4d49993cddfbbf87aec90a6b5e8e",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/synonyms.py",
+   "size": 3857,
+   "sha256": "86201816de59194ab003e49e24ed8ef7544afde36be894bc207fb609e30f6ff6",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/taxdiff.py",
+   "size": 5232,
+   "sha256": "69d1c9b15681f34b9cd9b4a6dbd8c47668558617fbc431e3688a6918adf508eb",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/taxmigrate.py",
+   "size": 7612,
+   "sha256": "43fc0b81451ee4c0c0f605e59078f173dacaf555fce253f5c9ae6d2335b3239c",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/taxonomy.py",
+   "size": 27334,
+   "sha256": "84624cfc13b3dfdebe6451f2e976a49b35ffb208f1a219eaf963f41ed355ef27",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/textnorm.py",
+   "size": 4298,
+   "sha256": "09e42916f4d6a9f1cb4b282af2653079f3c8d4e550369da1b20b407fdceae8a5",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/trace.py",
+   "size": 18178,
+   "sha256": "1268a8576947f367a2ab3f03d83cededc5c803a23be6ad7938db69ffff1c0023",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/util.py",
+   "size": 2554,
+   "sha256": "bb6620559ad2f45fd03f5a6225fa5da3c183b25b5f1258464416248b95abe019",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/vectorpush.py",
+   "size": 8532,
+   "sha256": "ebc9cb166676c087ff4b2787f33d94639af4c6436c476c37c5f7bb644769dac0",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/workspace.py",
+   "size": 7625,
+   "sha256": "5897c496839b333e51d80a6e2650ca79472b15ff5a3f0d9b265c910c46de79da",
+   "class": "code"
+  },
+  {
+   "path": "labelbot/xlsx.py",
+   "size": 10681,
+   "sha256": "dd6590f46239cf4debadcb49d0007667b561228476df091c27b670b97e596010",
+   "class": "code"
+  },
+  {
+   "path": "nightly_run.py",
+   "size": 11370,
+   "sha256": "f646309f4fdb4062e63d316dc65458841d59bd08a2a9020490fbdd7edfd92ef1",
+   "class": "code"
+  },
+  {
+   "path": "parshing test files/260101_QSPFT087.6D M1 Ru depo SiN HM Line AR split 평가.pptx",
+   "size": 507588,
+   "sha256": "4423bc3d9637e844bd13e9e3115ffc0770c42d630493dbfafb47f2057c93dd6b",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260101_RXD3I.62 M3 via etch over-etch 120%, 70% 조건 평가.pptx",
+   "size": 217029,
+   "sha256": "93a0d0b8cbaa3f7638982dfdc4aa8bc8385f9347172c0fcc44fa4032710a6741",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260105_RNN9NC.6B M2 Ru depo Ru etch split 평가.pptx",
+   "size": 208371,
+   "sha256": "d51c5ae348b6c75f7757f9ab2a973c96dbe0684bd8b2145f6f39f546a5fb8ae6",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260106_RQJJ7B.62 F4 via barrier Bottomless TaN 적용 Rc 개선 평가.pptx",
+   "size": 161781,
+   "sha256": "800a55dee1ef587cdfb052377dd752bf967d567e03e4c52d71d1cf55606dc6d8",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260114_RQMD6.66 I1 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx",
+   "size": 218918,
+   "sha256": "aaa8c62ed2fb8ffca93838852b4c39fd70391c76c0fe43638ae0e764490fb6da",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260115_RDX5TA.6C V1 신규 chamber 호환 평가.pptx",
+   "size": 288302,
+   "sha256": "6f4058f488d42640773e271d12907c085235b2788557cfc63d48c6cda306f3f2",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260115_RNC8N.69 V1 via barrier RSBM(PA) 적용 Rc 개선 평가.pptx",
+   "size": 248053,
+   "sha256": "9ed0d0d79e6e505d751b9b622b5f97f44bcd167a673b5e91ebd38256c37fb472",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260116_QOAWC088.64 M2 Ru etch SiN HM 조건 (SiN 22) 평가.pptx",
+   "size": 315748,
+   "sha256": "620bf0c713cb458bfefa90c334048da8f4a95b01a31335c0248e4b3af9c87b75",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260119_QFYOL088.6C VA Ru 증착 방식 (CVD Ru, PVD+SLA 20us) 저항 평가.pptx",
+   "size": 437912,
+   "sha256": "fe0342472f50495118a1fdf4b5b7aab04f4548d958320616fbbdd39ffa97b59a",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260119_RNRS2.6B VA Ru etch ALE Line AR split 평가.pptx",
+   "size": 593656,
+   "sha256": "018ef9ed39f0db4fb8a3ec3b8d86df063e33ee3d481039a929cf78f4dfa5a733",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260121_QLDSR040.62 M1 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx",
+   "size": 212865,
+   "sha256": "fe8e2ea15a78a17258ab9be77ebf33fa7e4f2fa34ae0654c2a065e21a5cc57b6",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260126_QDKXW093.69 M1 Line AR Airgap split 평가.pptx",
+   "size": 223382,
+   "sha256": "ac3d2c8077540c44a7f647255f90b02383597e3656d3c9f1e9a5ff841a49ed48",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260302_QEQMN045.65 M2 trench etch recipe 변경 (T3+tilt trim, T7) 평가.pptx",
+   "size": 451305,
+   "sha256": "1201181a122907beb951dbc87e6592389316b3bede4bfd19fd49b44eb3ddee18",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260303_QRNGU000.6D M2 ALE Ru depo Airgap split 평가.pptx",
+   "size": 194920,
+   "sha256": "09dee672a36ab5768c46f41b14028c0b595293d0b2e09879f4f7c387d4fba9b6",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260304_QWHSW069.6A M1 Trench etch CMP OP split 평가.pptx",
+   "size": 358239,
+   "sha256": "76ee42b4aa9bee1be4e9b65b87681cc64b719da9403aa916f74fee549b268921",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260320_QGJIC025.6B VA Ru line 간 Airgap+cap opt 적용 평가.pptx",
+   "size": 205406,
+   "sha256": "f2f901ed1c5a54c1659c6b58ed6bde0f41a50c3d56a03a17067c3e7a083d2730",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260324_RDD2O.68 M1 Ru direct metal etch (Long ME, RIE+IBE trim, Segmented E-C) 평가.pptx",
+   "size": 273715,
+   "sha256": "db986d31c2db2ac3ecae5546169b2bb5c1487a1d002a66dc58fb6bb4cd3857e1",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260325_QERSF094.6B I1 Trench etch OE scheme split 평가.pptx",
+   "size": 352753,
+   "sha256": "60fe7710b892c7de1a5b9af7b1af1943f1a2e859c48fa3bcb1f0f4b7cb527479",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260401_RNRZ6.67 M1 trench etch MHM 박막화 (Al2O3 cap, TiN SiN, TiN SiN dual) 평가.pptx",
+   "size": 338940,
+   "sha256": "65f812b8d5c975a9934a4e8abac4082a304b0bda8407de07385b0dabf5de898d",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260402_RQE8IA.6C F4 trench etch bias 350V, 600V, pulsed 조건 평가 (PID 영향).pptx",
+   "size": 389845,
+   "sha256": "aa1f1969f455ef74bbf7b18e35283ea0424fee17513b1929bc12ed93ba322fea",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260410_QIXJA058.65 M3 Ru liner O2-ALD 계면 산화 억제 평가.pptx",
+   "size": 158833,
+   "sha256": "758f27cbb6adf5ad77da83be67980651b83b78f6bb641a3182cfb3740b473b0a",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260428_QWVBA036.65 I1 MHM LK depo split 평가.pptx",
+   "size": 292791,
+   "sha256": "7a9fe608586764766a4fe72ad6ad666be893361671f703907fde1ed736f1a685",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260429_RNQ5G.6A V2 trench etch recipe 변경 (High-bias ME, T7) 평가.pptx",
+   "size": 187873,
+   "sha256": "e31d07a1544302c4970d98a1df125281f7b8e6f1879aea0d4393ee8ad6b3db41",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260501_RQDK5.6D V2 Ru liner 2-step H2 O2, Wet+O2 계면 산화 억제 평가.pptx",
+   "size": 496637,
+   "sha256": "41029dadc55243521361d0636d7fee8e5f1a945b244423dae51c2323d0f8e2f0",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260505_QNIUN011.68 V2 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx",
+   "size": 368333,
+   "sha256": "8a7f924a62a9b3ab1dbeccc07703a400132d36231bf5c50d4bdbd4680a08fb6d",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260506_RQK6O.66 I2 trench etch recipe 변경 (T12) 평가.pptx",
+   "size": 322402,
+   "sha256": "d282fdc098ffe7ddb19d0eb3eb25971715261dd509d4b71a2ee207a57cb60ae4",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260508_QYVEO014.6B V1 SAV, Trench-first 적용 평가.pptx",
+   "size": 497261,
+   "sha256": "92456f56b297f3200921d2570ac5e8a452f781e9f8c073c79686fd612c53c398",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260508_RXR7Q.6D I1 Ru liner Wet+O2 계면 산화 억제 평가.pptx",
+   "size": 337879,
+   "sha256": "3ca5b8221bd6022f400822f5b61cb76e96f4be65ad765f376d6bd4e4113562c6",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260521_QUZJZ093.67 VA Ru line AR 3.0, AR 4.0 고종횡비 평가.pptx",
+   "size": 364742,
+   "sha256": "9a78f96303e3c7c8482b8ab1018a2731ee4147571ecb2b99087f37258039aae5",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260521_QWMJM070.67 I2 BM barrier liner 변경 (Co liner, TaN 1.4, TaN 1.7) 평가.pptx",
+   "size": 352797,
+   "sha256": "eb00f3e53484d468840bcf0b7e8e982f38a71ddce810a3622fb2c52ff5c80995",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260525_QLCNI057.62 M1 trench etch 호환 평가.pptx",
+   "size": 468976,
+   "sha256": "b81e54f4af5d4cb14262a82c2b02b2c7be04f75439c538537676ac5eb69b1ce6",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260527_QJMIN040.66 VA Ru via 접촉 저항 개선 평가.pptx",
+   "size": 194923,
+   "sha256": "ce8f4df55b88a34f0894ae4605b9900c5b6433acd0d82fd6e25624096df99e44",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260612_RXO1KC.6C I1 Trench etch BM LK depo split 평가.pptx",
+   "size": 450235,
+   "sha256": "79fc84897816b7a677c65ea5605b87c4e01ea95ad6f3cdebb1e65b3395097b65",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260622_RQUT4B.62 M3 ASD inhibitor (ODT, PEM) 적용 평가.pptx",
+   "size": 245385,
+   "sha256": "39dfd6be6f5d4121d3522aacdfa38b3221613d72195211caebfb19d3bb358cf3",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260625_RQJD8C.6D F4 Ru liner 2-step H2 O2, Wet+O2 계면 산화 억제 평가.pptx",
+   "size": 452893,
+   "sha256": "71038ad8ded8585dacefdcab1ba8ba8617aa9c787a7f4d260840808ea3e5821d",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260626_RDT6C.67 M2 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx",
+   "size": 344043,
+   "sha256": "ad6375224d18ad6bd86f5178a762ada3a038bf387e690f43d3245804aa5cf82e",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260703_RNJB8C.67 I2 LK depo 막질 변경 (HCLK, HDLK+HMDS, ULK-B, pSiCOH) 호환 평가.pptx",
+   "size": 370809,
+   "sha256": "47ab1b55727d5cb4f4893cee8f7d42be90266e768d128d9a72731858cfb56132",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260709_QYSFM057.65 M1 ALE Ru etch split 평가.pptx",
+   "size": 165956,
+   "sha256": "f8f4e9896635c65317e197235cd283290bfa945fdea3e04e1bc3f431a7b0d6bc",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260721_QAPSU080.1 M1 Airgap Line AR split 평가.pptx",
+   "size": 416030,
+   "sha256": "e1f91b73c8fab6f94530e6d96e05e2d9cb006d19b5086a86b134860b16b77b85",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260722_QRQMX093.64 F4 Trench etch CMP OP split 평가.pptx",
+   "size": 455380,
+   "sha256": "3e98672179a48f054c9afe8264cd19cc4183ea1571266f177cd44f15239e209f",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260813_RNER4A.64 I2 via chamfer 개선 평가.pptx",
+   "size": 144715,
+   "sha256": "27e0667e7e8470bc399e70d6986b1fad9576e2368c9d83e64f5f0959808dfb48",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260826_QZPPX058.6D M2 Trench etch Via OE split 평가.pptx",
+   "size": 360905,
+   "sha256": "2e7b4340d06c4d037a9af876780b7f6703da082a416cec3a6d8a06b25af59b0b",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260828_QAJPS025.61 M2 Ru line AR 4.0 고종횡비 평가.pptx",
+   "size": 396483,
+   "sha256": "a972ef8949998c9fb51748c2c31170da47df099ed7427069783fa622d1a70d82",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260828_QQJIG034.6C I2 ALD cycle Via OE split 평가.pptx",
+   "size": 595352,
+   "sha256": "740c1b2351f5b7829e5bcd53c6fd928ece76dd9b9e49cdfddcb3465e2845611c",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260904_RQB3A.61 I1 Ru liner Trench etch split 평가.pptx",
+   "size": 217884,
+   "sha256": "0e4e8563c38b9bd5565337afdd6b3b4625601b668e00820e16a155ec65c5be64",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260910_RDNC9B.6B M1 ASD inhibitor (ODT, PEM, Propargylamine) 적용 평가.pptx",
+   "size": 512729,
+   "sha256": "e431cf31a553c2655ee0673161a4daf13fd33e4756fb882ec77c3babcb9c062d",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260921_QFICN095.68 I2 LK depo CMP OP Via OE split 평가.pptx",
+   "size": 566561,
+   "sha256": "9a89f4715d9f48c899e1ceb2222c9ffc757ff94f5e7f8fd09e07093973339643",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/260930_QGAZX051.6D VA Ru direct metal etch (Long ME, RIE+IBE trim, Segmented E-C) 평가.pptx",
+   "size": 519577,
+   "sha256": "6a6c86c1f4a23ef55e4074473b5ebcbaf44e5eb04e9e89e600e2720af7344017",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/261001_QIBRX055.63 M3 BM barrier liner 변경 (TaN 1.4) 평가.pptx",
+   "size": 157860,
+   "sha256": "a65c89f00669cbb90ea55cb1ae291d9bfc6c9608b620491a0c158b403822aef5",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/261001_RQV6C.1 V2 Ru liner 2-step H2 O2, Wet+O2 계면 산화 억제 평가.pptx",
+   "size": 206649,
+   "sha256": "1bbf1a8835a11b8b3b7dbb12296d79c8bbe3495aad3708b7151ccd43fda8b140",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/BEOL_Ru_Interconnect_Deep_Dive.pptx",
+   "size": 113844,
+   "sha256": "6234f202a3513ea93578fd55f748ace730de683cfb342264890da9be3db45578",
+   "class": "office"
+  },
+  {
+   "path": "parshing test files/sample pptx.pptx",
+   "size": 78027,
+   "sha256": "17bbc094c2d4f13b4296b66fbc4b23c67b36240b933a926592fe35f942206ba9",
+   "class": "office"
+  },
+  {
+   "path": "plan.md",
+   "size": 134715,
+   "sha256": "c600e3183da74a6cebd7b9a6590dd593bf8d9063efce706bb3dc45e9041c15c6",
+   "class": "code"
+  },
+  {
+   "path": "prompts/_classify_evidence.md",
+   "size": 276,
+   "sha256": "06153627f1cdfb08a20b6be5ffda46b9365dc9849ed594e5b04b86415cea1c04",
+   "class": "code"
+  },
+  {
+   "path": "prompts/_classify_feedback.md",
+   "size": 388,
+   "sha256": "b376dd89735059a254979a1361627f5cd9020414c777c3f4014e3be4abb32776",
+   "class": "code"
+  },
+  {
+   "path": "prompts/_classify_values.md",
+   "size": 1719,
+   "sha256": "9425fb55358746f320929ad4e4eaa7f3804e79b55ea3d28e7442291b29277208",
+   "class": "code"
+  },
+  {
+   "path": "prompts/classify.md",
+   "size": 1186,
+   "sha256": "a03db4a7339fc871a5cf1bf0cc72fb4f1969b764955097f3f06ed474b1bea2de",
+   "class": "code"
+  },
+  {
+   "path": "prompts/classify_partial.md",
+   "size": 1504,
+   "sha256": "aca13ff19b52f4e57cff9ff4641493798f06842e0da7ee45c7d95cc58b85e053",
+   "class": "code"
+  },
+  {
+   "path": "prompts/label.md",
+   "size": 3023,
+   "sha256": "05e366aeb97124ce4474fd039ac9816927d8993cf4bceeb4805faa4535167467",
+   "class": "code"
+  },
+  {
+   "path": "prompts/question_gen.md",
+   "size": 3347,
+   "sha256": "607ae4a2d4342e39c3bb9cf2e49312cbcd0684fcafda64e168a717463f27b057",
+   "class": "code"
+  },
+  {
+   "path": "rag/assets/showreel.mp4",
+   "size": 26094460,
+   "sha256": "9181f3e983fc4b272a039757f167b533769971c3032a3c30e0f7e50036d34111",
+   "class": "media"
+  },
+  {
+   "path": "rag/beol_rag.html",
+   "size": 83083,
+   "sha256": "5ab620ce861e02fb649c7233a6e105ff2a5c007b6b1b7439943a3c55381fea84",
+   "class": "state"
+  },
+  {
+   "path": "rag/eval/baseline_openai_20261010.jsonl",
+   "size": 1519771,
+   "sha256": "efc4da7e7d9e208a08eff826abe8e870e70f95bbeeddc1df2a94fa495061b0b9",
+   "class": "code"
+  },
+  {
+   "path": "rag/eval/baseline_openai_20261010_summary.json",
+   "size": 1174,
+   "sha256": "1fb85fde64851da2753548cf23a281ea345d339d3a16eaefe37a5ee7ce99adf6",
+   "class": "code"
+  },
+  {
+   "path": "rag/eval/golden_questions.jsonl",
+   "size": 18297,
+   "sha256": "755e478a40648df638dae4f7aecf1f44ab3d3517728ee2ba36e61705d645508f",
+   "class": "code"
+  },
+  {
+   "path": "rag/functions/beol-rag-ask/index.ts",
+   "size": 13992,
+   "sha256": "c8dbc324318211387a841dba188109ce4af9b40bbf2263a3deae5e40145286d8",
+   "class": "code"
+  },
+  {
+   "path": "rag/functions/beol-rag-ask/lib.ts",
+   "size": 18345,
+   "sha256": "38c1cbe968d5d67064374f8fb4bf508f01e5a6d9c650efa3ee776f9217db9468",
+   "class": "code"
+  },
+  {
+   "path": "rag/mockups/layout-a.html",
+   "size": 9877,
+   "sha256": "b6079feb7b87662ed67f122fe0a4bfd59dd0b0d93f7cd8c409a8900aa9687382",
+   "class": "code"
+  },
+  {
+   "path": "rag/mockups/layout-b.html",
+   "size": 10558,
+   "sha256": "665b30d95408eb4bf4926e2f04fee51dd36ca9187b125c9ede7d5c2e787cf48d",
+   "class": "code"
+  },
+  {
+   "path": "rag/mockups/layout-c.html",
+   "size": 10417,
+   "sha256": "90a09329aeb2769e51839c5c8333eaa6a35a212afc810973cb78dc1e2a89afd5",
+   "class": "code"
+  },
+  {
+   "path": "requirements-poc.txt",
+   "size": 641,
+   "sha256": "363907f6dfacda23da55fb0b2a328d643d48a6df65e5965008e68438880837e9",
+   "class": "text-other"
+  },
+  {
+   "path": "requirements.txt",
+   "size": 652,
+   "sha256": "7163a4925909068c0b0532cb51cdace7e97e92b2d22e7f5ea207ff9316919eb2",
+   "class": "text-other"
+  },
+  {
+   "path": "taxonomy/labeling_rules.json",
+   "size": 62373,
+   "sha256": "813fc8249500639ed071b10aa18e459aea24e0c16fbffdc9fe653d9639a06870",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy.json",
+   "size": 31364,
+   "sha256": "4036994e9c81039181c30c21fb83cf3d5b7af1dee610e15c420a6caa446145e8",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy.xlsx",
+   "size": 20707,
+   "sha256": "a59550e629500d9a697b2a5b2dbec33c724dc395919c57e7c9447ff4051b3495",
+   "class": "office"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/.gitkeep",
+   "size": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261005_021649.html",
+   "size": 2953,
+   "sha256": "62ac278234df48fa56d6a476cc47e15d26656494bda04f03d458bbc5e4294945",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261005_021649.json",
+   "size": 2169,
+   "sha256": "348deae60a56b6ed55d4edde924e7fdddf226c4a84f98f3625a59f2fb1c29bdd",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261005_021649.md",
+   "size": 1814,
+   "sha256": "50b9c39ec0259b4036badc5a6f9ef13619b8a98a66779ad6c0916c0454c5450c",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261007_130724.html",
+   "size": 2112,
+   "sha256": "33a0ee94964bdf9822af2fb6ca03fd644ed8644075307ae3579467bfe609c1b4",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261007_130724.json",
+   "size": 1218,
+   "sha256": "32dbad39949ffee2be9018dbeae86d89cc93fef77c024043b7545dc29b22922b",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261007_130724.md",
+   "size": 1517,
+   "sha256": "06fd6e610414661235cafc6534e84c9ebc706dc88f8961e766919dfc9d08c4b8",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261007_133045.html",
+   "size": 2112,
+   "sha256": "9e8eff08398a606401d3efa85116df9d12f3c4956e0f867804ffe69304c10e3a",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261007_133045.json",
+   "size": 1218,
+   "sha256": "8dc8717884a466bc9358b2c08bd5cda31b4f4c03d7e18545e7e9d4df86adfe09",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261007_133045.md",
+   "size": 1517,
+   "sha256": "d7198ae74b71ffd77243053afe56dd66d53a2b6661311279db6e03b05c2938a3",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261007_211434.html",
+   "size": 2828,
+   "sha256": "6539de753a37ab7160e8940b694e66704e508b1223f6550e86c2ac54bfb1f9c3",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261007_211434.json",
+   "size": 2204,
+   "sha256": "5a5598678dac6455703c74eecd25ed1a213a0e8a43879a122828e76a445c46ad",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261007_211434.md",
+   "size": 1660,
+   "sha256": "4717f9cd9be6969397ca65dc47ff267230756a7e3c694a8ca1ae6403dea11625",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261008_015246.html",
+   "size": 2415,
+   "sha256": "dd8cd923c9b7b4931a3f5988ac36d514bea32796bbf025f381ebf6c7a1e29962",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261008_015246.json",
+   "size": 1371,
+   "sha256": "0cbc9d9c1300c913159f7f643e124bce46c4191612db28ca435e3c3d4737f3de",
+   "class": "state"
+  },
+  {
+   "path": "taxonomy/taxonomy_revisit_requests/taxonomy_revisit_20261008_015246.md",
+   "size": 1407,
+   "sha256": "fea2fb0f48f176a235c7fa7c4c96244162a81d0884a0032fea04454327553f37",
+   "class": "state"
+  },
+  {
+   "path": "tests/__init__.py",
+   "size": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "class": "code"
+  },
+  {
+   "path": "tests/_dummy.py",
+   "size": 679,
+   "sha256": "71b392177b44ad1cb596970aba04bc6a7337c7057113fd3e108a5859e3f707db",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/__init__.py",
+   "size": 116,
+   "sha256": "1fe8f14f2392399242cb8e47666a4099709f68780369bfff24e0235689da1613",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/_support.py",
+   "size": 3418,
+   "sha256": "11ddc29a41cd0a56d67e37b81b31e15a088279cb5f95a50efe0dd96cf2053ace",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/snapshots/cli_code_engrbot.json",
+   "size": 636,
+   "sha256": "bf7a57338fcee0ed1f6fc1c8e8fe0e66f2a2ce9072f5f7b9095a86ca07a65c93",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/snapshots/cli_domain_engrbot.json",
+   "size": 11246,
+   "sha256": "0420201378bd36f6b4367f0e36d42afa0d96693de1d14b443a34f8c4b6caf4ae",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/snapshots/cli_labelbot.json",
+   "size": 10660,
+   "sha256": "fe64f354f3e8ed0570f4c24a177b2f0ea867d7f5e79d11a88e64a39bb70e2186",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/snapshots/constants.json",
+   "size": 7814,
+   "sha256": "c4d15914a3729b4b70e6191941231146bc866189ce30f77dbe878753d243844b",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/snapshots/domain_engrbot_issue_codes.json",
+   "size": 7526,
+   "sha256": "307d210a58b03e0ec0cb2f69e8127014a27443eabce5bee3198e25bb0f5254b5",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/snapshots/labelbot_symbols_used_by_domain_engrbot.json",
+   "size": 7689,
+   "sha256": "462de073e3d04e5ad36a099dd8b22bcefb6c737db5c57ab483dc995ab188a675",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/snapshots/milestone_ids.json",
+   "size": 564,
+   "sha256": "c84bdb09ab364891f0385c00c758e9f115a779b5bc0e2f5ce5706b0558d26272",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/snapshots/schema_labeling_sqlite.json",
+   "size": 11697,
+   "sha256": "f110fbafdc7e2e9c8337e9d1aeaa78b655ed480e232467cb8de48a75c7ad3527",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/snapshots/schema_work_sqlite.json",
+   "size": 6983,
+   "sha256": "dc509fb91d9f2ee0c3eeb24b4909a800f691c1266c4ca0aac8cd34dc641f6347",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/snapshots/skill_scripts_help.json",
+   "size": 3362,
+   "sha256": "5d5dbb388f68084e55a45eba964ea0f6203e5ced6cb31b8ba3e37a023db4a128",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/test_contract_cli.py",
+   "size": 2050,
+   "sha256": "f81863fc73c2fb28fe3002ee59301de75275ae2820c81650dd3833014d0546aa",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/test_contract_constants.py",
+   "size": 3291,
+   "sha256": "db8e9ce1df85f9dd36488a65f34b5d23a574160181778ade8b4e97ef04578fb1",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/test_contract_labelbot_api.py",
+   "size": 3648,
+   "sha256": "31f3227f0ac080e19889e742c1cc5b13c77baedcf4ebd31b8015b324d60cb8ff",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/test_contract_milestones.py",
+   "size": 1680,
+   "sha256": "e904fffb6d7d780db3da48c9004447c7a5c44319cb8845bd09d9980a538d5911",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/test_contract_schema.py",
+   "size": 3458,
+   "sha256": "7f75af9b10115c2be5f5fe18814c3584c57f2847875b415f889313a7b35408fc",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/test_contract_skill_commands.py",
+   "size": 2146,
+   "sha256": "50a6c95df6ed7ba7c6c84cbce2b051c51435605cdae5f053bcae59c6f3e7c00e",
+   "class": "code"
+  },
+  {
+   "path": "tests/contracts/test_contract_skill_scripts.py",
+   "size": 1623,
+   "sha256": "c382dd75f95c2a934b25a08f7e415de36527eb7ee1804452805645f5adf324d6",
+   "class": "code"
+  },
+  {
+   "path": "tests/fixtures/default_taxonomy_rows.jsonl",
+   "size": 17895,
+   "sha256": "db49c072f35ba8a5c6f5260c5efb6dc60fc2c4370f2fd9a5999e8cc9becf90c4",
+   "class": "code"
+  },
+  {
+   "path": "tests/gold/dummy_hashes.jsonl",
+   "size": 23267,
+   "sha256": "286037c7ba81a83e08fd0eb246998f9c9222a77c1efec20206505c600d5b3724",
+   "class": "code"
+  },
+  {
+   "path": "tests/golden_run/SCHEMA.md",
+   "size": 6517,
+   "sha256": "a6b292f79cf944b2b8b7439cf3e55f31ff1afd5f2d53402f208495de05786e19",
+   "class": "code"
+  },
+  {
+   "path": "tests/golden_run/baseline_report_cmd.md",
+   "size": 6429,
+   "sha256": "01e55d3512edbd4fb3ea08f8665b3927762d99b02be576b3032befb646940203",
+   "class": "code"
+  },
+  {
+   "path": "tests/golden_run/baseline_run.md",
+   "size": 6429,
+   "sha256": "01e55d3512edbd4fb3ea08f8665b3927762d99b02be576b3032befb646940203",
+   "class": "code"
+  },
+  {
+   "path": "tests/golden_run/snapshot.json",
+   "size": 6011,
+   "sha256": "8024ae05f10f22f2fe7b2d73c4385d41aa2b04dd27bdb3ecad75cde68f391d2d",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_axis_update.py",
+   "size": 40433,
+   "sha256": "37f691300a6f77ca07250f9bfe261ff59406bd7368fbb41de94040101be5a87b",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_axis_update_screens.py",
+   "size": 9866,
+   "sha256": "a51b104ec14155ed0df1e6f14269c75cee8bdce8f0e71dfc545bd72aeb5a51ce",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_beol_doctor.py",
+   "size": 17338,
+   "sha256": "e6920520b3d341e50b5a73ef856d2030429b128c01e6ccba8983e14467836bc1",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_candidates.py",
+   "size": 1511,
+   "sha256": "07f59fcc750c50919d5a3794fd0557e459101351795b3f58304a48990d9920a5",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_cloud_migrate_paths.py",
+   "size": 8944,
+   "sha256": "843f2e3d5a678b6cb565c16c88443c5755176eebd550b3069f483ddfc593a731",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_controls.py",
+   "size": 19233,
+   "sha256": "7fac634c3cac6d45e166757adf4131640cd9ec4beb9460ad2e1730ca0f4fbbbc",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_defaults_taxonomy.py",
+   "size": 2865,
+   "sha256": "8d503bcf5996a7bb12bb35dcbf695e3f6f24ce372762f961f97ed808b66a62c5",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_docmeta.py",
+   "size": 5778,
+   "sha256": "f52d3b2401b7c6ab1cfa06e51339b090252fd9e3af1f6d8116288a68291a51f8",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_feedback.py",
+   "size": 17408,
+   "sha256": "882bae6de6d8ce32ccd01e3884e75f30e4a2fd955b88c57ef2b9b5796f549424",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_golden_run.py",
+   "size": 7590,
+   "sha256": "7b37832211258d413405c3d856ca8e77192fd751ad149e5921eca9bad2fcb586",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_import_tools.py",
+   "size": 24466,
+   "sha256": "db54897326360d365824bfc39ec289b54e7723f6e69c27d97f0daf8211ccbaa0",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_init_workspace.py",
+   "size": 2646,
+   "sha256": "6ebd1cfe61ff472b99ece5fb5a44d0e0f155359a061604f36740d3fdbe452123",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_llm_guard.py",
+   "size": 6327,
+   "sha256": "5bad1577f63624fb9b34a502b63741f29e717188790ceba513bbe09189dde091",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_milestones.py",
+   "size": 7164,
+   "sha256": "e0da7b26532ca4d61991e45a4196c38adfcd7753c0a57745b7fc54c38bd4c28d",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_new_axis_flow.py",
+   "size": 10765,
+   "sha256": "b2bf064adaf5e7e280625d7a089fe54ca8c41d34ec9988a99b7b8b9a4cdaa720",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_parsers.py",
+   "size": 19775,
+   "sha256": "090a5ae37ea7f0ae25964099ce591fcf84a8c66ebd2b1949c0b7700dc5f2e4a9",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_pipeline.py",
+   "size": 16629,
+   "sha256": "9a3a06c7f5514e1398e4fe955dd9c849401bef60ddd953c2a131d911560c52cc",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_prepush_scan.py",
+   "size": 5765,
+   "sha256": "3d9ebafc0cbfb5b2c163fc9a6f66f60da152fd3c0ea85cf2e77649a2c92d91c7",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_proxy_env.py",
+   "size": 12559,
+   "sha256": "46645cec7f9923aac4b1702defd1f9215d5d4f4ad75e9cb000e2c5e5c9a4bf3a",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_question_rules_contract.py",
+   "size": 6350,
+   "sha256": "72029f83567c882ad767fadb5de46ab43c96383b7209c298b7b29022d8b55175",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_rag_eval.py",
+   "size": 16378,
+   "sha256": "892879e8fcb36cea7c0cfd6f123b34133e583323e7bc42709e93c6ed2fa67e07",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_rag_ui.py",
+   "size": 18871,
+   "sha256": "20a83e702f8a0225953fadca9699ae4d0f6ab3f0a78436d72fdddc0261a9e34d",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_reason_codes.py",
+   "size": 8626,
+   "sha256": "ab0ee5ea0dd9d26578eb6333920be9318d84930b85197d715a1e8bce719d3b0a",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_rename_guard.py",
+   "size": 5069,
+   "sha256": "fab4bd686616064019b37be78fa3b3fd7a992f4ecaa03b2a4b74064d41891c0b",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_review_attention.py",
+   "size": 6893,
+   "sha256": "86a4de4f80fe6ae3b4a5d6e7e085e4dbc98a88abe658c8cb1514530348d3d70c",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_review_evidence.py",
+   "size": 14894,
+   "sha256": "b94579e4bbe46b8a488e7381aff3396e47cf133b079e269c94987f1fc52ae398",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_revisit.py",
+   "size": 49658,
+   "sha256": "475547fefb360458e0d39fc55fe00635e5d1e06469d52a0c1c97ea3ffed5293b",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_roo_skills.py",
+   "size": 11170,
+   "sha256": "1d183a7026283894d95461ed12f5c3eb7d0b5201241894460277b25a11dd4f55",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_rules_board.py",
+   "size": 7497,
+   "sha256": "aaa91b4a1feed066c2569e2b1256e8653a1e69c857fcfef5d38841f09ed1a993",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_rules_update.py",
+   "size": 40761,
+   "sha256": "098e5fefa53f0894a4b3f5d6bb779bb8f02f74c9698bcc414a09606115d6c08b",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_run_axes.py",
+   "size": 8348,
+   "sha256": "ef60937255e6ffa517b8155043a37192cf7a34f9dfe0db5501de58bacb5e7eae",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_screens.py",
+   "size": 12733,
+   "sha256": "e327ee3bb55156b4d93ab88ff019604d749be530e79e95b2791b59425060706f",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_selfcheck.py",
+   "size": 1737,
+   "sha256": "5e5185d24b15175e3ef28df1e6942724a41271a11ee18a364a91c53f591fbf8f",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_serve.py",
+   "size": 12498,
+   "sha256": "79e567b26627ce59794d06ce2bd39d5616615e79ce712124f13e8c775a21fef3",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_slides.py",
+   "size": 18290,
+   "sha256": "1bc109b65a9af3d68c75748fefad2031e618971b009e8b75ac70c399d22541b8",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_status.py",
+   "size": 12001,
+   "sha256": "4f876fc2cfab9d63191b8211751880f00ef7ba45d18d0721d90f8c95295912be",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_synonym_candidates.py",
+   "size": 3278,
+   "sha256": "09bd282711e0ef8f48698fe3bbb7a7669dca3ef028f4936b94ab748550ebb704",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_synonyms.py",
+   "size": 4985,
+   "sha256": "64ce0e8c9cfd23ed9b9e427e7819d6122e86181b0d6a98a4b6005873a6ebd3aa",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_taxdiff.py",
+   "size": 12773,
+   "sha256": "825dbab338bf9bfbac747bdee41ef55d9e8906b8108c97b5dd8d60ce9505453b",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_taxonomy.py",
+   "size": 27508,
+   "sha256": "74fbd2fc9e7c36718595e2faec67d1ffbebf9262609350cef36bf754ca5463eb",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_taxonomy_store.py",
+   "size": 8386,
+   "sha256": "ac44fa1646c63a7b015bef8b001372ce2ac99d16507201610bc9e0910b72b4ea",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_trace.py",
+   "size": 17837,
+   "sha256": "97dd376618a8be294730ecc1800eaefd41a49db067dfe2788cf0b004f3842165",
+   "class": "code"
+  },
+  {
+   "path": "tests/tools/dump_taxonomy_fixture.py",
+   "size": 2082,
+   "sha256": "77272a9baea30bdf1ff7ae6d67d702583c57038303e2167ff9f14591b1ed2b37",
+   "class": "code"
+  },
+  {
+   "path": "tests/xlsx_writer.py",
+   "size": 8244,
+   "sha256": "b8019040fa88666e8a092a496ab7d1f1c6c6686163e94d77ed0f5194059e6aad",
+   "class": "code"
+  },
+  {
+   "path": "tools/beol_doctor.py",
+   "size": 59808,
+   "sha256": "b62b5b73b746b9081ac8c9faf6cd04b5e3d34f7802693a7fa43e0290a3886435",
+   "class": "code"
+  },
+  {
+   "path": "tools/beol_status.py",
+   "size": 827,
+   "sha256": "b34641efd5d690f0a02cbf2976389661e8200a6a7f78294a87a4ad6d19aabecc",
+   "class": "code"
+  },
+  {
+   "path": "tools/carry_state.py",
+   "size": 16811,
+   "sha256": "025073c10c7ec76521aa657901e76876740c7e0752c4d8758130f90a2b6e7bd8",
+   "class": "code"
+  },
+  {
+   "path": "tools/cloud_migrate_paths.py",
+   "size": 10934,
+   "sha256": "e600185c9c72e245634a927d85f26bff3420f2388f079cf5e6c4cf3d5bfcf41d",
+   "class": "code"
+  },
+  {
+   "path": "tools/gen_roo_skills.py",
+   "size": 49029,
+   "sha256": "a1734188f79ab8aab8baec7b23f83edd68bc9138064dc68e928ede1c172df2ca",
+   "class": "code"
+  },
+  {
+   "path": "tools/make_import_manifest.py",
+   "size": 14066,
+   "sha256": "ba0ee1be60a5e9842822c7e43bddbbbe3f02bba5f18a56ed6d1f4ede410c551b",
+   "class": "code"
+  },
+  {
+   "path": "tools/prepush_scan.py",
+   "size": 10341,
+   "sha256": "a67e2d8c2bd5f51223356c9e0b78b32e18ccee18bc2cdef5f1efab356de50291",
+   "class": "code"
+  },
+  {
+   "path": "tools/rag_eval.py",
+   "size": 31284,
+   "sha256": "9e5f0dd5aeb73373af03b32eba20082adf6b5b54e17ccdb3ca886c27c2a1350c",
+   "class": "code"
+  },
+  {
+   "path": "tools/verify_import.py",
+   "size": 11152,
+   "sha256": "e3a18e00f90e5915d81715aa38459654de18e3103b949df9b076f3320e0da162",
+   "class": "code"
+  },
+  {
+   "path": "transfer/download_list.json",
+   "size": 3971,
+   "sha256": "114ca210c4d854def7c7b7f155fbd26928950b8ab657d3006934c4c537d07c41",
+   "class": "code"
+  },
+  {
+   "path": "transfer/prepush_allow.json",
+   "size": 317,
+   "sha256": "355f410ec747ad7d5286b75db6e00857c9c5238cfee4d0dacfc9f097eb4d2cda",
+   "class": "code"
+  }
+ ],
+ "state_paths": [
+  {
+   "glob": "taxonomy/taxonomy.json",
+   "tracked": true
+  },
+  {
+   "glob": "taxonomy/labeling_rules.json",
+   "tracked": true
+  },
+  {
+   "glob": "taxonomy/taxonomy_revisit_requests/*",
+   "tracked": true
+  },
+  {
+   "glob": "injested-file-list/*.json",
+   "tracked": true
+  },
+  {
+   "glob": "docs/project_intro.html",
+   "tracked": true
+  },
+  {
+   "glob": "docs/user_flow.html",
+   "tracked": true
+  },
+  {
+   "glob": "docs/workflow.html",
+   "tracked": true
+  },
+  {
+   "glob": "rag/beol_rag.html",
+   "tracked": true
+  },
+  {
+   "glob": "taxonomy/taxonomy_history.jsonl",
+   "tracked": false
+  },
+  {
+   "glob": "workspaces/",
+   "tracked": false
+  },
+  {
+   "glob": "workspaces/_site/",
+   "tracked": false
+  },
+  {
+   "glob": "docs/snapshots/*",
+   "tracked": false
+  }
+ ],
+ "state_overrides": [],
+ "test_modules": [
+  "code_engrbot/tests/test_c1.py",
+  "code_engrbot/tests/test_c2.py",
+  "code_engrbot/tests/test_c3.py",
+  "code_engrbot/tests/test_c4.py",
+  "code_engrbot/tests/test_cli.py",
+  "code_engrbot/tests/test_core.py",
+  "code_engrbot/tests/test_glob.py",
+  "domain_engrbot/tests/test_adapter.py",
+  "domain_engrbot/tests/test_core.py",
+  "domain_engrbot/tests/test_fixture_taxonomy.py",
+  "domain_engrbot/tests/test_golden_feedback.py",
+  "domain_engrbot/tests/test_golden_outputs.py",
+  "domain_engrbot/tests/test_harness.py",
+  "domain_engrbot/tests/test_integration.py",
+  "domain_engrbot/tests/test_judge.py",
+  "domain_engrbot/tests/test_l0.py",
+  "domain_engrbot/tests/test_l4.py",
+  "domain_engrbot/tests/test_l5.py",
+  "domain_engrbot/tests/test_l6_report.py",
+  "domain_engrbot/tests/test_labeling_review.py",
+  "domain_engrbot/tests/test_labeling_rules.py",
+  "domain_engrbot/tests/test_layers.py",
+  "domain_engrbot/tests/test_ledger.py",
+  "domain_engrbot/tests/test_ledger_consume.py",
+  "domain_engrbot/tests/test_ledger_control.py",
+  "domain_engrbot/tests/test_question_answers.py",
+  "domain_engrbot/tests/test_question_screen.py",
+  "domain_engrbot/tests/test_questions.py",
+  "domain_engrbot/tests/test_queue_screen.py",
+  "domain_engrbot/tests/test_serve_workspaces.py",
+  "domain_engrbot/tests/test_taxonomy_board.py",
+  "domain_engrbot/tests/test_taxonomy_editor.py",
+  "tests/contracts/test_contract_cli.py",
+  "tests/contracts/test_contract_constants.py",
+  "tests/contracts/test_contract_labelbot_api.py",
+  "tests/contracts/test_contract_milestones.py",
+  "tests/contracts/test_contract_schema.py",
+  "tests/contracts/test_contract_skill_commands.py",
+  "tests/contracts/test_contract_skill_scripts.py",
+  "tests/test_beol_doctor.py",
+  "tests/test_candidates.py",
+  "tests/test_cloud_migrate_paths.py",
+  "tests/test_defaults_taxonomy.py",
+  "tests/test_docmeta.py",
+  "tests/test_import_tools.py",
+  "tests/test_init_workspace.py",
+  "tests/test_llm_guard.py",
+  "tests/test_milestones.py",
+  "tests/test_prepush_scan.py",
+  "tests/test_proxy_env.py",
+  "tests/test_question_rules_contract.py",
+  "tests/test_rag_eval.py",
+  "tests/test_rag_ui.py",
+  "tests/test_reason_codes.py",
+  "tests/test_rename_guard.py",
+  "tests/test_review_attention.py",
+  "tests/test_review_evidence.py",
+  "tests/test_roo_skills.py",
+  "tests/test_screens.py",
+  "tests/test_selfcheck.py",
+  "tests/test_serve.py",
+  "tests/test_synonym_candidates.py",
+  "tests/test_synonyms.py",
+  "tests/test_taxdiff.py",
+  "tests/test_taxonomy.py",
+  "tests/test_taxonomy_store.py",
+  "tests/test_trace.py"
+ ],
+ "download_list_sha256": "114ca210c4d854def7c7b7f155fbd26928950b8ab657d3006934c4c537d07c41"
+}
