@@ -1,0 +1,12 @@
+[
+ {
+  "path": "domain_engrbot/tests/test_judge.py",
+  "pattern_id": "KEY_SK",
+  "line_sha256": "802fb487ba54e35c5cdeeb5f3681f306454bfaae64eaed220ef9ca8766f8e54e"
+ },
+ {
+  "path": "rag/beol_rag.html",
+  "pattern_id": "KEY_JWT",
+  "line_sha256": "d1f920e6d9920f0cd03c4b9e2c346431cf4d0f8e944946b10e93bba256104704"
+ }
+]

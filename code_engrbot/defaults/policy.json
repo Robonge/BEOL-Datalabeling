@@ -21,6 +21,6 @@
     "cli_modules": {"labelbot": "labelbot/cli.py", "domain_engrbot": "domain_engrbot/cli.py", "code_engrbot": "code_engrbot/cli.py"},
     "doc_globs": [".claude/skills/*/SKILL.md", "README.md"],
     "contract": {"required": "domain_engrbot/adapters/labelbot_ws.py", "tables": "labelbot/store.py"},
-    "labelbot_import_allowed": ["domain_engrbot/adapters/labelbot_ws.py", "domain_engrbot/io.py", "domain_engrbot/llm_http.py"]
+    "labelbot_import_allowed": ["domain_engrbot/adapters/labelbot_ws.py", "domain_engrbot/io.py", "domain_engrbot/llm_http.py", "domain_engrbot/trace.py"]
   }
 }

@@ -7,13 +7,20 @@ import argparse
 import datetime
 import json
 import os
+import re
 import sys
 
-from domain_engrbot import io, model
+from domain_engrbot import io, model, trace
+
+_CODE = re.compile(r"[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+")
 
 
 def say(msg):
+    """stdout 한 줄. "[오류] <코드>" 줄이면 그 코드를 지금 마일스톤의 사유로 남긴다(반환값은 그대로)."""
     print(msg, file=sys.stdout, flush=True)
+    if msg.startswith("[오류] "):
+        m = _CODE.search(msg)
+        trace.fail_code(m.group(0) if m else "RC_1")
 
 
 def _parser():
@@ -233,6 +240,7 @@ def _questions(args, paths):
 
 
 def main(argv=None):
+    """명령 하나를 마일스톤(M11 DOMAIN_QA, taxonomy 보드·편집기 M12, 목록 M00) 안에서 돌린다."""
     from domain_engrbot import policy as policy_mod
     from domain_engrbot import runner
 
@@ -240,6 +248,14 @@ def main(argv=None):
     if not args.cmd:
         _parser().print_help()
         return 2
+    milestones = trace.milestones
+    key = ("domain_engrbot", args.cmd, getattr(args, "action", None) if args.cmd in ("baseline", "golden") else None)
+    ws = getattr(args, "workspace", None)
+    return trace.run(milestones.lookup(*key)[0], lambda: _main(args, policy_mod, runner),
+                     workspace=ws if isinstance(ws, str) else None, quiet=milestones.is_quiet(*key))
+
+
+def _main(args, policy_mod, runner):
     commands = {"run": _run, "report": _report, "baseline": _baseline, "review": _review, "golden": _golden,
                 "feedback": _feedback, "eval": _eval, "intake": _ledger, "ledger": _ledger,
                 "labeling-rules": _labeling_rules, "serve": _serve, "questions": _questions}

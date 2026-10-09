@@ -2,13 +2,14 @@
 
 xlsx는 ingest.read_input(시그니처 확인)으로만 읽는다. 변환 뒤 시트 해시(taxonomy·questions·synonyms)를
 예전 xlsx 규칙(머리글 행 + 정의 열만 자른 원시 행)으로 따로 계산해 JSON 쪽과 같은지 대조한다.
-작업 폴더 pipeline.json의 taxonomy_path가 변환한 xlsx를 가리키면 새 JSON 경로로 바꾼다.
+작업 폴더 pipeline.json의 taxonomy_path가 변환한 xlsx를 가리키면 새 JSON 경로로 바꾼다
+(JSON과 작업 폴더가 모두 저장소 안이면 작업 폴더 기준 상대경로, 아니면 절대경로).
 출력·로그에는 건수·코드·행 번호만 낸다(셀 내용은 내지 않는다).
 """
 import json
 import os
 
-from labelbot import ingest, taxonomy, util, xlsx
+from labelbot import ingest, taxonomy, util, workspace, xlsx
 
 CONFIG_NAME = "pipeline.json"
 
@@ -83,6 +84,15 @@ def _workspace_configs(workspaces_root, xlsx_path):
     return out, skipped
 
 
+def _stored_path(target, ws_dir):
+    """pipeline.json에 적을 경로: 대상·작업 폴더가 모두 저장소(CODE_ROOT) 안이면 작업 폴더 기준 상대경로(/ 구분)."""
+    target = os.path.abspath(target)
+    root = workspace.CODE_ROOT
+    if workspace.is_inside(target, root) and workspace.is_inside(ws_dir, root):
+        return os.path.relpath(target, os.path.abspath(ws_dir)).replace("\\", "/")
+    return target.replace("\\", "/")
+
+
 def _same_path(a, b):
     return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
 
@@ -129,7 +139,7 @@ def migrate(xlsx_path, out_path=None, workspaces_root=None, force=False):
         util.write_text(out_path, taxonomy.dump_doc(doc))
     ws_done = []
     for name, cfg_path, cfg in configs:
-        cfg["taxonomy_path"] = os.path.abspath(out_path).replace("\\", "/")
+        cfg["taxonomy_path"] = _stored_path(out_path, os.path.dirname(cfg_path))
         util.write_text(cfg_path, json.dumps(cfg, ensure_ascii=False, indent=2) + "\n")
         ws_done.append(name)
     return {

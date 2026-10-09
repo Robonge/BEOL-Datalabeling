@@ -1,0 +1,78 @@
+{
+ "_설명": "폐쇄망 설치 파일 목록. 다운로드는 사용자가 사내 PC에서 직접 한다(로컬은 목록만). 받은 파일의 sha256은 반입 폴더(압축 해제 폴더 밖) transfer-received.json에 {name, url, size, sha256, published_checksum_match}로 적는다. 배포판을 모르면 variant 후보를 모두 받는다. expected_size·published_checksum이 null이면 사내 PC에서 받은 뒤 공식 페이지의 값과 대조해 채운다.",
+ "_checked_at": "2026-10-10",
+ "entries": [
+  {
+   "name": "chrome-for-testing-linux64",
+   "version": "155.0.8059.39",
+   "url": "https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.39/linux64/chrome-linux64.zip",
+   "expected_size": null,
+   "published_checksum": null,
+   "variant": "linux64 (Stable, 압축 해제형 — 배포판 무관)",
+   "purpose": "슬라이드 이미지 렌더(labelbot slide-images, render.browser_path). 버전·URL은 https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json 의 channels.Stable 기준(2026-10-09 시점). 사내 PC에서 같은 JSON을 다시 열어 최신 Stable로 바꿔도 된다"
+  },
+  {
+   "name": "chromium",
+   "version": "미러 제공 버전",
+   "url": "사내 apt 미러 (apt-get install chromium)",
+   "expected_size": null,
+   "published_checksum": null,
+   "variant": "debian/ubuntu (deb, 패키지 이름 chromium 또는 chromium-browser)",
+   "purpose": "Chrome for Testing 대신 쓸 수 있는 미러 패키지(미러에 있으면 다운로드 불필요)"
+  },
+  {
+   "name": "chromium",
+   "version": "미러 제공 버전",
+   "url": "사내 yum/dnf 미러 (dnf install chromium, EPEL)",
+   "expected_size": null,
+   "published_checksum": null,
+   "variant": "rhel/rocky/alma (rpm)",
+   "purpose": "Chrome for Testing 대신 쓸 수 있는 미러 패키지(미러에 있으면 다운로드 불필요)"
+  },
+  {
+   "name": "fonts-noto-cjk",
+   "version": "미러 제공 버전",
+   "url": "사내 apt 미러 (apt-get install fonts-noto-cjk)",
+   "expected_size": null,
+   "published_checksum": null,
+   "variant": "debian/ubuntu (deb)",
+   "purpose": "한글 렌더용 Noto Sans CJK 폰트(미러에 있으면 아래 .otf 불필요)"
+  },
+  {
+   "name": "google-noto-sans-cjk-ttc-fonts",
+   "version": "미러 제공 버전",
+   "url": "사내 yum/dnf 미러 (dnf install google-noto-sans-cjk-ttc-fonts)",
+   "expected_size": null,
+   "published_checksum": null,
+   "variant": "rhel/rocky/alma (rpm, .ttc)",
+   "purpose": "한글 렌더용 Noto Sans CJK 폰트(미러에 있으면 아래 .otf 불필요)"
+  },
+  {
+   "name": "NotoSansCJKkr-Regular.otf",
+   "version": "Sans2.004",
+   "url": "https://github.com/notofonts/noto-cjk/raw/Sans2.004/Sans/OTF/Korean/NotoSansCJKkr-Regular.otf",
+   "expected_size": null,
+   "published_checksum": null,
+   "variant": "otf (배포판 무관, ~/.local/share/fonts에 복사 후 fc-cache -f)",
+   "purpose": "미러에 CJK 폰트 패키지가 없을 때. 태그가 바뀌었으면 https://github.com/notofonts/noto-cjk/releases 에서 최신 Sans 태그로 바꾼다"
+  },
+  {
+   "name": "NotoSansCJKkr-Bold.otf",
+   "version": "Sans2.004",
+   "url": "https://github.com/notofonts/noto-cjk/raw/Sans2.004/Sans/OTF/Korean/NotoSansCJKkr-Bold.otf",
+   "expected_size": null,
+   "published_checksum": null,
+   "variant": "otf (배포판 무관)",
+   "purpose": "굵은 글씨 렌더. Regular와 같은 태그로 받는다"
+  },
+  {
+   "name": "Python-3.14.2.tgz",
+   "version": "3.14.2",
+   "url": "https://www.python.org/ftp/python/3.14.2/Python-3.14.2.tgz",
+   "expected_size": null,
+   "published_checksum": null,
+   "variant": "소스(배포판 무관, 빌드 의존 패키지는 CLOUD_SETUP.md E06·E08)",
+   "purpose": "본체 실행 Python. 미러에 3.14.2가 없을 때 소스 빌드. 공식 sha256은 https://www.python.org/downloads/release/python-3142/ 의 Files 표에서 확인해 transfer-received.json과 대조"
+  }
+ ]
+}

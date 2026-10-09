@@ -1,10 +1,11 @@
 """taxonomy.json 저장(save_doc: 버전 확인·검증·이력·잠금)·변경 미리보기(diff_docs)·xlsx 1회 변환(taxmigrate) 테스트."""
 import json
 import os
+import shutil
 import tempfile
 import unittest
 
-from labelbot import taxmigrate, taxonomy, util
+from labelbot import taxmigrate, taxonomy, util, workspace
 from tests.test_taxonomy import base_sheets, build_xlsx, tax_row, to_doc
 
 
@@ -116,6 +117,23 @@ class MigrateTest(unittest.TestCase):
         with self.assertRaises(taxmigrate.MigrateError) as cm:
             taxmigrate.migrate(self.xlsx, out, self.ws)
         self.assertEqual(cm.exception.reason_code, "OUT_EXISTS")
+
+    def test_migrate_inside_repo_writes_relative_path(self):
+        """JSON과 작업 폴더가 저장소 안(workspaces/ 아래 임시 폴더)이면 작업 폴더 기준 상대경로로 쓴다."""
+        os.makedirs(workspace.WORKSPACES_DIR, exist_ok=True)
+        base = tempfile.mkdtemp(prefix="_test_taxmigrate_", dir=workspace.WORKSPACES_DIR)
+        try:
+            xlsx_path = os.path.join(base, "tax_fixture.b64")
+            shutil.copyfile(self.xlsx, xlsx_path)
+            wsroot = os.path.join(base, "ws")
+            os.makedirs(os.path.join(wsroot, "w1"))
+            util.write_text(os.path.join(wsroot, "w1", "pipeline.json"), json.dumps({"taxonomy_path": xlsx_path}))
+            res = taxmigrate.migrate(xlsx_path, os.path.join(base, "taxonomy.json"), wsroot)
+            self.assertEqual(res["workspaces"], ["w1"])
+            with open(os.path.join(wsroot, "w1", "pipeline.json"), encoding="utf-8") as f:
+                self.assertEqual(json.load(f)["taxonomy_path"], "../../taxonomy.json")
+        finally:
+            shutil.rmtree(base, ignore_errors=True)
 
     def test_migrate_refuses_invalid_xlsx(self):
         s = base_sheets()

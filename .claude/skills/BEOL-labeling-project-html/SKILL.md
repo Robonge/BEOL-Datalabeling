@@ -42,7 +42,7 @@ description: 프로젝트 소개 발표 HTML(docs/project_intro.html, 슬라이�
 
 ## 고정 값
 
-- 코드 폴더: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 명령은 여기서 실행한다.
+- 코드 폴더: 저장소 루트(`git rev-parse --show-toplevel`, 이 SKILL.md 기준 ../../..). 명령은 여기서 실행한다.
 - 원본 · 출력: `docs/project_intro.html`(제자리 갱신). 다른 경로는 `--out`.
 - 사본: `docs/snapshots/project_intro_<YYYYMMDD-HHMMSS>.html`. 끄려면 `--no-snapshot`.
 - 작업 폴더: 인자로 받는다. 없으면 `workspaces/261004_BEOL_*` 중 `work.sqlite`가 가장 최근에 바뀐 폴더. 실행은 `--run`, 없으면 그 폴더 `runs` 표의 가장 최근 `run` 실행.

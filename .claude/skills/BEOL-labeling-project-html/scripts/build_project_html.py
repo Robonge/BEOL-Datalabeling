@@ -444,4 +444,7 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.path.insert(0, str(CODE_ROOT))
+    from labelbot import trace  # noqa: E402  마일스톤 M21(stderr 줄, stdout JSON 불변)
+
+    sys.exit(trace.run_main("M21", main))

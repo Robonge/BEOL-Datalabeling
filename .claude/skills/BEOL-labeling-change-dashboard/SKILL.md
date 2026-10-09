@@ -15,7 +15,7 @@ collect.py로 사실 수집 → facts 읽고 summary.json 작성 → render.py�
 
 ## 고정 값
 
-- 저장소: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 모든 명령은 저장소 루트에서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
+- 저장소: 저장소 루트(`git rev-parse --show-toplevel`, 이 SKILL.md 기준 ../../..). 모든 명령은 저장소 루트에서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
 - 스크립트: `change-dashboard/collect.py`, `change-dashboard/render.py`. 둘 다 표준 라이브러리만 쓴다. 세부 설명은 `change-dashboard/README.md`에 있다.
 - 출력:
   - `change-dashboard/data/<stamp>_facts.json`: 수집 사실

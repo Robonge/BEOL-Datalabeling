@@ -104,18 +104,27 @@ def main():
         # 대시보드에서 시작한 검수: 시작 신호 뒤에 눌린 완료면 이 스크립트보다 먼저 눌렸어도 받는다.
         since = _mtime(start_path)
     print("[wait] 검수 %s 신호 대기 시작 run_id=%s" % ("시작" if is_start else "완료", a.run), file=sys.stderr, flush=True)
-    while time.time() - start < a.timeout:
-        if os.path.isfile(path) and os.stat(path).st_mtime > since:
-            time.sleep(0.5)  # 서버가 이름 바꾸기를 끝낼 시간
-            out, _ = read(path)
-            out.update({"run_id": a.run, "waited_s": int(time.time() - start)})
-            print(json.dumps(out, ensure_ascii=False))
-            return 0
-        time.sleep(a.interval)
+    try:
+        while time.time() - start < a.timeout:
+            if os.path.isfile(path) and os.stat(path).st_mtime > since:
+                time.sleep(0.5)  # 서버가 이름 바꾸기를 끝낼 시간
+                out, _ = read(path)
+                out.update({"run_id": a.run, "waited_s": int(time.time() - start)})
+                print(json.dumps(out, ensure_ascii=False))
+                return 0
+            time.sleep(a.interval)
+    except KeyboardInterrupt:
+        # 사람이 대기를 끊었다: 실패가 아니다(종료 코드 0, stdout JSON 없음)
+        from labelbot import trace
+
+        trace.aborted("M05", a.workspace)
+        return 0
     print(json.dumps({"started" if is_start else "done": False, "run_id": a.run, "code": "WAIT_TIMEOUT",
                       "waited_s": int(time.time() - start)}))
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    from labelbot import trace  # noqa: E402  마일스톤 M05(stderr 줄, stdout JSON 불변)
+
+    sys.exit(trace.run_main("M05", main))

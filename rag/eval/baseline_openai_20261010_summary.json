@@ -1,0 +1,53 @@
+{
+  "answer_calls": 144,
+  "answers": {
+    "calls_failed": 0,
+    "calls_ok": 144,
+    "expected_cited_rate": 0.479167,
+    "expected_in_hits_rate": 0.395833,
+    "latency_ms_max": 35547,
+    "latency_ms_median": 17784,
+    "term_hit_mean": 0.738583,
+    "term_hit_question_spread_mean": 0.042245,
+    "term_hit_run_max": 0.748922,
+    "term_hit_run_means": [
+      0.725774,
+      0.748922,
+      0.741052
+    ],
+    "term_hit_run_min": 0.725774
+  },
+  "answers_per_question": 3,
+  "ask_k": 5,
+  "date": "20261010",
+  "embedding_model": "text-embedding-3-small",
+  "errors": {},
+  "exact_ks": [
+    5,
+    10
+  ],
+  "n_local_chunks": 73,
+  "n_questions": 48,
+  "questions_file": "rag/eval/golden_questions.jsonl",
+  "questions_sha256": "755e478a40648df638dae4f7aecf1f44ab3d3517728ee2ba36e61705d645508f",
+  "retrieval": {
+    "exact": {
+      "mrr": 0.458978,
+      "n": 48,
+      "recall@10": 0.729167,
+      "recall@5": 0.5625
+    },
+    "rpc": {
+      "mrr": 0.242088,
+      "n": 48,
+      "n_failed": 0,
+      "recall@5": 0.395833,
+      "recall@8": 0.520833
+    }
+  },
+  "rpc_ks": [
+    5,
+    8
+  ],
+  "workspace": "261004_BEOL_parshing-test-files_20261007-195113"
+}

@@ -100,11 +100,38 @@ def get_json(url, headers, timeout, ca_file=None):
     return _open(req, timeout, ca_file)
 
 
-def _open(req, timeout, ca_file):
+ALLOWED_HOSTS_ENV = "BEOL_ALLOWED_HOST_SUFFIXES"
+_LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
+
+
+def _host_allowed(host, spec=None):
+    """외부 전송 가드 판정. spec 기본값은 env. loopback은 항상 허용, env 비어 있으면 가드 꺼짐."""
+    host = (host or "").strip().lower().rstrip(".")
+    if host in _LOOPBACK_HOSTS:
+        return True
+    if spec is None:
+        spec = os.environ.get(ALLOWED_HOSTS_ENV, "")
+    if not spec.strip():
+        return True
+    for raw in spec.split(","):
+        suffix = raw.strip().lower().strip(".")
+        if suffix and (host == suffix or host.endswith("." + suffix)):
+            return True
+    return False
+
+
+def _guard(url):
+    """허용 목록 밖이면 요청 전에 EXTERNAL_BLOCKED. 호스트·URL 값은 예외·로그에 담지 않는다."""
+    if not _host_allowed(urllib.parse.urlsplit(url or "").hostname):
+        raise CallFailed("EXTERNAL_BLOCKED")
+
+
+def _send(req, timeout, ca_file):
+    """가드를 거쳐 한 번 요청한다. 반환: (status, 응답 헤더 dict, 본문 bytes). 실패는 CallFailed."""
+    _guard(req.full_url)
     try:
         with build_opener(ca_file).open(req, timeout=timeout) as resp:
-            raw = resp.read()
-            return resp.status, (json.loads(raw.decode("utf-8")) if raw.strip() else None)
+            return resp.status, dict(resp.headers.items()), resp.read()
     except urllib.error.HTTPError as e:
         if 300 <= e.code < 400:
             raise CallFailed("HTTP_REDIRECT_REFUSED")
@@ -115,11 +142,23 @@ def _open(req, timeout, ca_file):
         if isinstance(getattr(e, "reason", None), (socket.timeout, TimeoutError)):
             raise CallFailed("TIMEOUT")
         raise CallFailed("NETWORK_ERROR")
-    except ValueError:
-        raise CallFailed("RESPONSE_NOT_JSON")
     except (OSError, http.client.HTTPException):
         # 연결 끊김·불완전 응답 등. 실행 전체를 멈추지 않고 그 호출만 실패로 남긴다.
         raise CallFailed("NETWORK_ERROR")
+
+
+def _open(req, timeout, ca_file):
+    status, _headers, raw = _send(req, timeout, ca_file)
+    try:
+        return status, (json.loads(raw.decode("utf-8")) if raw.strip() else None)
+    except ValueError:
+        raise CallFailed("RESPONSE_NOT_JSON")
+
+
+def request(method, url, headers=None, data=None, timeout=60, ca_file=None):
+    """범용 HTTP 요청(S3·ragsrv 등). 같은 가드·opener를 쓴다. 반환: (status, 응답 헤더 dict, 본문 bytes)."""
+    req = urllib.request.Request(url, data=data, headers=headers or {}, method=method.upper())
+    return _send(req, timeout, ca_file)
 
 
 def auth_headers(cfg, key):

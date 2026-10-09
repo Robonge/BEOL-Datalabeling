@@ -12,6 +12,12 @@ BEOL-labeling-feedback 스킬이 이 신호를 보고 반영·적재로 넘어�
 결과 대시보드의 "검수 시작" 버튼은 POST /signals/review_start를 보낸다. 서버는
 signals/review_start_<실행 ID>.json에 시작 신호(실행 ID, 시각, 파싱 대조 여부만)를 쓰고,
 BEOL-labeling이 걸어 둔 대기가 이 신호를 보고 BEOL-labeling-feedback을 시작한다.
+
+역방향 프록시(폐쇄망 서버의 /absproxy/<포트>/ 경로나 사내 도메인) 뒤에서 쓸 때만 env로 넓힌다. 둘 다 없으면 지금과 같다.
+- BEOL_ALLOWED_HOSTS: 쉼표로 나눈 호스트 이름(포트 무관). loopback에 더해 Host로 받고, Origin으로는 포트·Host와
+  상관없이 받는다(Host를 localhost로 바꿔 넘기는 프록시). X-Forwarded-Host는 허용 목록 안일 때만 Origin 대조에 쓴다.
+- BEOL_PATH_PREFIX: 요청 경로 앞에서 떼는 접두어(예: /absproxy/8771). 접두어를 떼지 않고 넘기는 프록시용이다.
+  화면은 상대 주소(fetch("inbox/…"))만 쓰므로 접두어 아래에서도 그대로 동작한다.
 """
 import datetime
 import functools
@@ -23,12 +29,62 @@ import sys
 import threading
 import urllib.parse
 
-from labelbot import util
+from labelbot import trace, util
 
 KINDS = ("review", "compare")
 MAX_BODY = 5 * 1024 * 1024
 MAX_START_BODY = 4 * 1024
 _RUN_ID = re.compile(r"^[0-9A-Za-z-]{1,64}$")
+LOOPBACK = ("127.0.0.1", "localhost", "::1")
+MILESTONE = "M05"  # 서버 스레드에서 trace에 명시해 넘긴다
+
+
+def _hostname(value):
+    """'host[:port]'·'[IPv6]:port'에서 소문자 호스트 이름만 뗀다. 없으면 ''."""
+    v = (value or "").strip().lower()
+    if v.startswith("["):
+        return v[1:].partition("]")[0]
+    return v if v.count(":") > 1 else v.partition(":")[0]
+
+
+def env_hosts():
+    """env BEOL_ALLOWED_HOSTS(쉼표, 포트 무관)의 호스트 이름 집합. 미설정이면 빈 집합."""
+    return {h for h in (_hostname(x) for x in os.environ.get("BEOL_ALLOWED_HOSTS", "").split(",")) if h}
+
+
+def host_allowed(host):
+    """Host 헤더(포트 무관)가 loopback 또는 BEOL_ALLOWED_HOSTS인가. DNS 재바인딩으로 들어온 요청을 막는다."""
+    name = _hostname(host)
+    return bool(name) and (name in LOOPBACK or name in env_hosts())
+
+
+def origin_allowed(origin, host, fwd_host=None):
+    """POST의 Origin 확인. Origin이 없으면 거절한다(Host는 host_allowed로 따로 본다).
+    - Origin의 host:port가 Host와 같으면 허용(지금까지의 같은 출처 규칙. loopback의 다른 포트는 다른 앱이라 거절).
+    - X-Forwarded-Host가 허용 목록 안이면 Host 대신 그것과도 대조한다(Host를 바꿔 넘기는 프록시).
+    - Origin의 호스트가 BEOL_ALLOWED_HOSTS에 있으면 포트·Host와 상관없이 허용한다(프록시 주소)."""
+    if not origin:
+        return False
+    hp = origin.split("://", 1)[-1]
+    if hp == host:
+        return True
+    fwd = (fwd_host or "").split(",")[0].strip()
+    if fwd and host_allowed(fwd) and hp == fwd:
+        return True
+    return _hostname(hp) in env_hosts()
+
+
+def strip_prefix(path):
+    """env BEOL_PATH_PREFIX(예: /absproxy/8771)를 요청 경로 앞에서 뗀다. 접두어가 없는 경로는 그대로 둔다."""
+    p = os.environ.get("BEOL_PATH_PREFIX", "").strip().rstrip("/")
+    if not p:
+        return path
+    if not p.startswith("/"):
+        p = "/" + p
+    if path != p and not path.startswith((p + "/", p + "?")):
+        return path
+    rest = path[len(p):]
+    return rest if rest.startswith("/") else "/" + rest
 
 
 def done_signal_path(ws_root, run_id):
@@ -56,6 +112,8 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     def _json(self, code, obj):
+        if code >= 400 and self.command == "POST":
+            trace.post_failed(MILESTONE, obj.get("code"), workspace=self.ws_root)
         body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -85,15 +143,21 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             return self.end_headers()
         return super().do_HEAD()
 
+    def parse_request(self):
+        # 경로 매칭(do_GET·do_POST)과 파일 찾기(translate_path) 전에 프록시 접두어를 뗀다.
+        ok = super().parse_request()
+        if ok:
+            self.path = strip_prefix(self.path)
+        return ok
+
     def _local_host(self):
-        # Host를 로컬 이름(포트 무관)으로 묶어 DNS 재바인딩으로 들어온 요청을 막는다. Host가 없으면 거절한다.
-        return (self.headers.get("Host") or "").rsplit(":", 1)[0].lower() in ("127.0.0.1", "localhost")
+        # Host를 로컬 이름(포트 무관)이나 BEOL_ALLOWED_HOSTS로 묶어 DNS 재바인딩으로 들어온 요청을 막는다. Host가 없으면 거절한다.
+        return host_allowed(self.headers.get("Host"))
 
     def _same_origin(self):
         if not self._local_host():
             return False
-        origin = self.headers.get("Origin")
-        return bool(origin) and origin.split("://", 1)[-1] == self.headers.get("Host")
+        return origin_allowed(self.headers.get("Origin"), self.headers.get("Host"), self.headers.get("X-Forwarded-Host"))
 
     def _read_json(self, limit):
         """같은 출처·JSON·크기 검사를 거친 요청 본문. 반환: (dict 또는 None, 오류 응답 인자 또는 None)."""
@@ -188,12 +252,18 @@ def make_server(ws_root, port, host="127.0.0.1"):
 
 
 def serve(ws, port):
-    srv = make_server(ws.root, port)
+    try:
+        srv = make_server(ws.root, port)
+    except OSError as e:
+        if trace.port_in_use(e):
+            return trace.port_fail(MILESTONE, port)
+        raise
     print("[serve] 127.0.0.1:%d screens/ 제공, 교정 JSON은 inbox/에 저장" % srv.server_address[1], flush=True)
+    trace.serving(MILESTONE, "http://127.0.0.1:%d/" % srv.server_address[1])
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
-        pass
+        trace.aborted(MILESTONE, ws.root)
     finally:
         srv.server_close()
     return 0

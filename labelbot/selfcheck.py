@@ -11,6 +11,7 @@ from labelbot.llm import CallFailed, get_json, read_key
 
 EXTS = (".b64", ".sqlite", ".json", ".jsonl", ".html", ".md", ".log")
 PROBE_SENTENCE = "Reply with JSON {\"ok\": true}"
+XLSX_NEWER_TOLERANCE_S = 2.0
 
 
 def write_roundtrip(root, writer=None):
@@ -103,7 +104,8 @@ def _check_taxonomy(ws, item):
                 d = {}
                 detail += " diff 알 수 없음"
             legacy = os.path.splitext(ws.taxonomy_path)[0] + ".xlsx"
-            if os.path.isfile(legacy) and os.path.getmtime(legacy) > os.path.getmtime(ws.taxonomy_path):
+            # 새 checkout·ZIP 해제는 xlsx를 json보다 몇 ms 늦게 쓴다 → 2초 여유
+            if os.path.isfile(legacy) and os.path.getmtime(legacy) > os.path.getmtime(ws.taxonomy_path) + XLSX_NEWER_TOLERANCE_S:
                 # 원본은 JSON이다. 예전 xlsx를 고쳐도 반영되지 않는다(실패로 치지 않는다)
                 detail += " WARN TAXONOMY_XLSX_NEWER: 예전 taxonomy.xlsx가 더 최근에 저장됐다(편집은 보드·편집기로)"
     else:

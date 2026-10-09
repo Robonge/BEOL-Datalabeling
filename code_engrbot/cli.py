@@ -44,8 +44,20 @@ def _cmd_review(args):
         review_id, result["verdict"], c["critical"], c["major"], c["minor"], c["info"], c["suppressed"])
     print(line + (" errors=%d" % errors if errors else ""))
     if result["verdict"] == "REQUEST_CHANGES":
+        _fail_code("REVIEW_REQUEST_CHANGES")
         return 1
+    if errors:
+        _fail_code("REVIEW_ERRORS")
     return 2 if errors else 0
+
+
+def _fail_code(code):
+    """마일스톤(M20)에 사유를 남긴다. labelbot.trace가 없으면 아무 일도 하지 않는다(반환값은 그대로)."""
+    try:
+        from labelbot import trace
+    except ImportError:
+        return
+    trace.fail_code(code)
 
 
 def _cmd_rules(args):
@@ -69,7 +81,11 @@ def main(argv=None):
     u.add_argument("--out", default="code_engrbot/docs/rules.md")
     u.set_defaults(fn=_cmd_rules)
     args = p.parse_args(argv)
-    return args.fn(args)
+    try:
+        from labelbot import trace
+    except ImportError:  # labelbot 없이 code_engrbot만 쓸 때
+        return args.fn(args)
+    return trace.run("M20", lambda: args.fn(args))  # M20 CODE_REVIEW: 시작·완료·실패 줄은 stderr
 
 
 if __name__ == "__main__":

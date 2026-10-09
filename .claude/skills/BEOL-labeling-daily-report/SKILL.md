@@ -15,7 +15,7 @@ description: 밤사이 Code-Engr-bot·Domain-Engr-bot 자동 실행(nightly_run.
 
 ## 고정 값
 
-- 저장소: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 모든 명령은 저장소 루트에서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
+- 저장소: 저장소 루트(`git rev-parse --show-toplevel`, 이 SKILL.md 기준 ../../..). 모든 명령은 저장소 루트에서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
 - 스크립트:
   - `nightly_run.py`: 두 봇을 돌리고 아침 목록을 남긴다. 예약(작업 스케줄러)은 사용자가 따로 건다.
   - `daily_report.py`: 목록을 HTML로 만든다.

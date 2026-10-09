@@ -14,7 +14,7 @@ import os
 import threading
 import webbrowser
 
-from domain_engrbot import io, model, serve
+from domain_engrbot import io, model, serve, trace
 from domain_engrbot.adapters import labelbot_ws as lb
 
 EDITOR_PORT = 8796   # 고정 포트(보드 8795 옆). 쓰고 있으면 OS가 고른 빈 포트로 연다
@@ -149,6 +149,7 @@ def save(tax_path, payload, lock=None):
 # ---- 서버 ---------------------------------------------------------------------------
 
 class _EditorHandler(serve._BaseHandler):
+    milestone = "M12"
     tax_path = None
     screen = None
     lock = None
@@ -221,8 +222,10 @@ def serve_editor(tax_path, say, port=None, open_browser=False):
         return 1
     try:
         srv = make_editor_server(tax_path, EDITOR_PORT if port is None else port)
-    except OSError:
+    except OSError as e:
         if port is not None:
+            if trace.port_in_use(e):
+                return trace.port_fail("M12", port)
             raise
         srv = make_editor_server(tax_path, 0)
     d = state["doc"]
@@ -230,9 +233,13 @@ def serve_editor(tax_path, say, port=None, open_browser=False):
         len(d["taxonomy"]), len(d["questions"]), len(d["synonyms"]), len(state["issues"]), len(state["warnings"])))
     url = "http://127.0.0.1:%d/" % srv.server_address[1]
     say("[taxonomy-editor] 편집기: %s (저장 → taxonomy.json, 끝내려면 Ctrl+C)" % url)
+    trace.serving("M12", url)
     th = threading.Thread(target=srv.serve_forever, daemon=True)
     th.start()
-    if open_browser:
+    if open_browser and serve.no_browser():
+        # BEOL_NO_BROWSER=1이거나 디스플레이가 없으면 열지 않고 주소만 낸다.
+        say("[taxonomy-editor] NO_BROWSER 브라우저로 직접 여세요: %s" % url)
+    elif open_browser:
         try:
             webbrowser.open(url)
         except Exception:   # 브라우저를 못 열어도 서버는 계속 연다
@@ -241,7 +248,7 @@ def serve_editor(tax_path, say, port=None, open_browser=False):
         while th.is_alive():
             th.join(0.5)
     except KeyboardInterrupt:
-        pass
+        trace.aborted("M12")
     finally:
         srv.shutdown()
         srv.server_close()

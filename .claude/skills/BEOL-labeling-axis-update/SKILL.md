@@ -31,7 +31,7 @@ taxonomy-diff는 축 정의 문장(H열) 변경을 감지하지 않는다. 정�
 
 ## 고정 값
 
-- 코드 폴더: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
+- 코드 폴더: 저장소 루트(`git rev-parse --show-toplevel`, 이 SKILL.md 기준 ../../..). 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
 - 작업 폴더 `<WS>`: 인자로 받는다(BEOL-labeling-Code-Engr-bot이 넘긴다). 없으면 사용자가 말한 입력 폴더의 최신 작업 폴더(최신 라벨 실행 시각 기준)를 쓰고, 어느 폴더인지 보고에 적는다.
 - 화면 서버: `.claude/launch.json`에서 `--workspace`가 `<WS>`인 항목(`screens-<slug>`, 그 항목의 `port`).
 - 현황판: `<WS>\screens\axis_update.html`. 검수 화면은 `review.html`(대상 축만 편집).

@@ -118,7 +118,8 @@ class ServeTests(unittest.TestCase):
         self.assertEqual(s["counts"], {"edits": 2, "status": 1, "syns": 0, "revisits": 1})
         # 신호에는 건수만 있고 교정 본문·메모는 없다.
         self.assertNotIn("메모", raw)
-        self.assertNotIn("c1", raw)
+        # chunk_id는 JSON 문자열 값으로만 새어 나올 수 있다. 따옴표째 본다(무작위 run_id 16진수에 c1이 섞여도 오탐하지 않게).
+        self.assertNotIn('"c1"', raw)
         # 교정 파일이 신호보다 먼저 쓰였다.
         self.assertLessEqual(os.stat(path).st_mtime, os.stat(sig).st_mtime)
 

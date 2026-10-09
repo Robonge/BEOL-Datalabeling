@@ -24,8 +24,8 @@ description: 사람이 검수 화면에서 "검수 완료"를 누른 뒤(또는 
 
 ## 고정 값
 
-- 코드 폴더: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
-- 작업 폴더 `<WS>`와 실행 ID `<RUN>`: 인자로 받는다(`검수 완료 <WS> run=<RUN> …`). 없으면 이 대화에서 `/BEOL-labeling`이 쓴 작업 폴더를 쓴다. 그것도 모르면 `C:\Users\dltkd\Desktop\261004 BEOL AX day2\workspaces\261004_BEOL_*` 중 `work.sqlite`가 있고 가장 최근에 바뀐 폴더를 고르고, 어느 폴더를 골랐는지 보고에 적는다. `<RUN>`은 인자에 없으면 0단계의 `summary.py` `run_id`다.
+- 코드 폴더: 저장소 루트(`git rev-parse --show-toplevel`, 이 SKILL.md 기준 ../../..). 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
+- 작업 폴더 `<WS>`와 실행 ID `<RUN>`: 인자로 받는다(`검수 완료 <WS> run=<RUN> …`). 없으면 이 대화에서 `/BEOL-labeling`이 쓴 작업 폴더를 쓴다. 그것도 모르면 저장소 루트의 `workspaces/261004_BEOL_*` 중 `work.sqlite`가 있고 가장 최근에 바뀐 폴더를 고르고, 어느 폴더를 골랐는지 보고에 적는다. `<RUN>`은 인자에 없으면 0단계의 `summary.py` `run_id`다.
 - 화면 서버: `.claude/launch.json`에서 `runtimeArgs`의 `--workspace`가 `<WS>`인 항목. 이름은 `screens-<입력 폴더 slug>`, 포트는 그 항목의 `port`다(`init_workspace.py`가 등록한다).
 - 교정 파일 위치: `<WS>\inbox\review_<실행ID>.json`, `<WS>\inbox\compare_<실행ID>.json`.
 - 완료 신호: `<WS>\signals\review_done_<실행ID>.json`. 검수 화면의 **검수 완료** 버튼을 누르면 화면 서버가 마지막 교정을 inbox에 저장하고 이 파일을 쓴다. 내용은 실행 ID, 시각, 건수(`edits`·`status`·`syns`·`revisits`)뿐이다. `/BEOL-labeling`이 이 신호를 기다리고, 오면 이 스킬을 부른다.

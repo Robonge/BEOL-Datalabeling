@@ -26,7 +26,7 @@ description: BEOL 라벨링 워크플로(입력 → 준비·수집·파싱 → 1
 
 ## 고정 값
 
-- 코드 폴더: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
+- 코드 폴더: 저장소 루트(`git rev-parse --show-toplevel`, 이 SKILL.md 기준 ../../..). 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
 - 출력: `docs/workflow.html`(덮어쓴다). 사용자가 다른 경로를 말하면 `--out`.
 - 작업 폴더: 인자로 받는다. 없으면 이 대화에서 `/BEOL-labeling`이 쓴 작업 폴더, 그것도 없으면 스크립트가 `workspaces/261004_BEOL_*`(실행마다 `_YYYYMMDD-HHMMSS`가 붙은 새 폴더) 중 `work.sqlite`가 가장 최근에 바뀐 폴더를 고른다.
 - 중복 확인 기준: 코드 폴더의 `injested-file-list/*.json`(BEOL-labeling이 실행 후 기록). HTML에는 목록 파일 수와 건너뛴 건수(`skip_file_names` 개수)만 넣고 파일명은 넣지 않는다.

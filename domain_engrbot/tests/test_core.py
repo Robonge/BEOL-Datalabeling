@@ -10,7 +10,7 @@ from domain_engrbot.registry import Check
 from domain_engrbot.tests.helpers import run, small_bundle
 
 PKG = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LABELBOT_ALLOWED = {"adapters/labelbot_ws.py", "io.py", "llm_http.py"}
+LABELBOT_ALLOWED = {"adapters/labelbot_ws.py", "io.py", "llm_http.py", "trace.py"}  # trace.py: 마일스톤 추적 shim(L3c)
 
 
 class _Fake(object):

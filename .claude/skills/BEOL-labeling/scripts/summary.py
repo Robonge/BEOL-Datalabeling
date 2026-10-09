@@ -97,4 +97,6 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    from labelbot import trace  # noqa: E402  마일스톤 M00(stderr 줄, stdout JSON 불변)
+
+    sys.exit(trace.run_main("M00", main, quiet=True))

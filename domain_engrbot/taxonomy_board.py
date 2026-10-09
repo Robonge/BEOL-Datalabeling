@@ -32,7 +32,7 @@ import sqlite3
 import webbrowser
 from pathlib import Path
 
-from domain_engrbot import feedback, io, ledger, model, paths, qmodel, screen
+from domain_engrbot import feedback, io, ledger, model, paths, qmodel, screen, trace
 from domain_engrbot import policy as policy_mod
 from domain_engrbot import workspaces as ws_mod
 from domain_engrbot.adapters import labelbot_ws as lb
@@ -1539,8 +1539,14 @@ def render(doc):
 # ---- 브라우저로 열기(--open) ----------------------------------------------------------
 
 def open_board(target):
-    """보드(서버 주소 또는 html 파일)를 기본 브라우저로 연다. 반환: None 또는 사유 코드."""
+    """보드(서버 주소 또는 html 파일)를 기본 브라우저로 연다. 반환: None 또는 사유 코드.
+    BEOL_NO_BROWSER=1이거나 디스플레이가 없으면 열지 않고 주소만 출력한다(None)."""
+    from domain_engrbot import serve as serve_mod
+
     url = target if "://" in str(target) else Path(os.path.abspath(target)).as_uri()
+    if serve_mod.no_browser():
+        print("[taxonomy-board] NO_BROWSER 브라우저로 직접 여세요: %s" % url, flush=True)
+        return None
     try:
         return None if webbrowser.open(url) else "BROWSER_NOT_FOUND"
     except webbrowser.Error:
@@ -1691,13 +1697,16 @@ def serve_board(html_path, out_dir, rebuild, tax_path, open_browser, say, port=N
     try:
         srv = serve_mod.make_board_server(html_path, preview, finalize,
                                           serve_mod.BOARD_PORT if port is None else port)
-    except OSError:
+    except OSError as e:
         if port is not None:
+            if trace.port_in_use(e):
+                return trace.port_fail("M12", port)
             raise
         srv = serve_mod.make_board_server(html_path, preview, finalize, 0)
     url = "http://127.0.0.1:%d/" % srv.server_address[1]
     say("[taxonomy-board] 보드 서버: %s (최종 완료 → 미리보기 → %s에 쓰기, 끝내려면 Ctrl+C)"
         % (url, os.path.basename(tax_path)))
+    trace.serving("M12", url)
     th = threading.Thread(target=srv.serve_forever, daemon=True)
     th.start()
     if open_browser:
@@ -1708,7 +1717,7 @@ def serve_board(html_path, out_dir, rebuild, tax_path, open_browser, say, port=N
         while th.is_alive():
             th.join(0.5)
     except KeyboardInterrupt:
-        pass
+        trace.aborted("M12")
     finally:
         srv.shutdown()
         srv.server_close()

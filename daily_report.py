@@ -13,8 +13,10 @@ import json
 import os
 import sys
 import webbrowser
+from pathlib import Path
 
 import nightly_run
+from labelbot import trace  # noqa: E402  nightly_run이 코드 폴더를 sys.path에 넣는다
 
 ROOT = nightly_run.ROOT
 OUT_DIR = nightly_run.OUT_DIR
@@ -329,6 +331,10 @@ def main(argv=None):
     p.add_argument("--recent", type=int, default=3, help="nightly_run을 돌릴 때 점검할 최근 작업 폴더 수")
     p.add_argument("--open", action="store_true", help="만든 HTML을 브라우저로 연다")
     args = p.parse_args(argv)
+    return trace.run("M18", lambda: _main(args))  # M18 NIGHTLY_REPORT(stderr 줄)
+
+
+def _main(args):
 
     day = datetime.date.today().strftime("%Y%m%d")
     if args.run or not os.path.exists(os.path.join(OUT_DIR, day, "morning_queue.jsonl")):
@@ -350,7 +356,13 @@ def main(argv=None):
             fh.write(page)
     print("daily report: %s" % os.path.relpath(paths[1], ROOT))
     if args.open:
-        webbrowser.open("file:///" + paths[1].replace("\\", "/"))
+        url = Path(paths[1]).resolve().as_uri()
+        # BEOL_NO_BROWSER=1이거나 디스플레이가 없으면(Windows·macOS가 아니고 DISPLAY·WAYLAND_DISPLAY 없음) 주소만 낸다.
+        headless = sys.platform not in ("win32", "darwin") and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+        if os.environ.get("BEOL_NO_BROWSER") == "1" or headless:
+            print("브라우저로 직접 여세요: %s" % url)
+        else:
+            webbrowser.open(url)
     return 0
 
 

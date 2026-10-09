@@ -4,7 +4,7 @@ import json
 import os
 import sys
 
-from labelbot import store
+from labelbot import milestones, status, store, trace
 from labelbot.workspace import Workspace, WorkspaceError, load_env_file
 
 
@@ -55,36 +55,60 @@ def _parser():
     mg.add_argument("--xlsx", help="변환할 xlsx(기본: 코드 폴더 taxonomy/taxonomy.xlsx)")
     mg.add_argument("--out", help="쓸 JSON(기본: xlsx와 같은 폴더·이름의 .json)")
     mg.add_argument("--force", action="store_true", help="JSON이 이미 있으면 덮어쓴다")
+    st = sub.add_parser("status", help="마일스톤 상태 표: 처음 실패한 단계·사유 코드·다음에 할 일(읽기 전용)")
+    status.add_status_args(st)
+    cd = sub.add_parser("codes", help="사유 코드 카탈로그(원인·조치)와 진입점 → 마일스톤 표")
+    status.add_codes_args(cd)
     return p
 
 
 def main(argv=None):
+    """모든 출구(taxonomy-migrate, 작업 폴더 오류, 작업 폴더 명령, 실행 명령)를 마일스톤 하나로 감싼다.
+    argparse 종료(SystemExit)는 그대로 지나가고, 잡히지 않은 예외는 실패 블록 + 종료 코드 1이다.
+    run은 run_all의 M01–M04가 각자 줄을 내므로 CLI 줄을 내지 않는다(실패만 M01로 받는다)."""
     args = _parser().parse_args(argv)
+    key = ("labelbot", args.command)
+    quiet = milestones.is_quiet(*key) or args.command == "run"
+    return trace.run(milestones.lookup(*key)[0], lambda: _main(args), quiet=quiet, defer=True)
+
+
+def _main(args):
+    if args.command == "status":
+        return status.cmd_status(args)
+    if args.command == "codes":
+        return status.cmd_codes(args)
     load_env_file()
     if args.command == "taxonomy-migrate":
+        trace.begin()
         return _cmd_taxonomy_migrate(args)
     try:
         ws = Workspace(args.workspace)
     except WorkspaceError as e:
         msg = {"WORKSPACE_INSIDE_CODE": "작업 폴더는 코드 폴더의 workspaces/ 아래에만 둘 수 있습니다."}.get(str(e), str(e))
         print("[오류] %s" % msg, file=sys.stderr)
+        trace.fail_code(trace.safe_code(str(e)) or "WORKSPACE_INVALID")  # 작업 폴더가 없으니 workspaces/_trace/에 기록
         return 2
+    trace.set_workspace(ws)
     from labelbot.pipeline import PipelineError
 
     try:
         if args.command in _WS_COMMANDS:
+            trace.begin()
             return _WS_COMMANDS[args.command](ws, args)
         con = store.connect(ws.work_db)
         try:
             run_id = getattr(args, "run", None) or _default_run(con)
             if args.command != "apply" and not run_id:
-                raise PipelineError("실행 기록이 없습니다. 먼저 run 또는 ingest를 실행하세요.")
+                raise PipelineError("실행 기록이 없습니다. 먼저 run 또는 ingest를 실행하세요.", reason_code="RUN_RECORD_MISSING")
+            trace.set_run(run_id)
+            trace.begin()
             rc = _RUN_COMMANDS[args.command](ws, con, run_id, args)
         finally:
             con.close()
         return rc or 0
     except PipelineError as e:
         print("[오류] %s" % e, file=sys.stderr)
+        trace.fail_code(e.reason_code or "PIPELINE_ERROR", e.detail)
         return 1
 
 
@@ -102,6 +126,8 @@ def _cmd_selfcheck(ws, args):
     from labelbot import selfcheck
 
     ok, _ = selfcheck.run(ws, probe_llm=args.probe_llm)
+    if not ok:
+        trace.fail_code("SELFCHECK_FAILED")
     return 0 if ok else 1
 
 
@@ -130,6 +156,7 @@ def _cmd_taxonomy_migrate(args):
         res = taxmigrate.migrate(src, os.path.abspath(args.out) if args.out else None, WORKSPACES_DIR, force=args.force)
     except taxmigrate.MigrateError as e:
         print("[오류] %s%s" % (e.reason_code, " %s" % e.detail if e.detail else ""), file=sys.stderr)
+        trace.fail_code(e.reason_code, trace.safe_code(e.detail))
         return 1
     r, d = res["rows"], res["dropped"]
     print("[taxonomy-migrate] taxonomy %d행 · questions %d행 · synonyms %d행 · rejected %d행, 시트 해시 같음"
@@ -151,9 +178,12 @@ def _cmd_axis_update(ws, args):
     if args.dry_run:
         say(json.dumps({k: p[k] for k in ("code", "prev_run", "target", "removed", "values_added_only", "chunks",
                                          "dropped_answers", "dropped_corrections")}, ensure_ascii=False))
+        if p["code"]:
+            trace.skip_code(p["code"])
         return 3 if p["code"] else 0
     if p["code"]:
         say("[axis-update] 건너뜀 %s" % p["code"])
+        trace.skip_code(p["code"])
         return _skip_code(p["code"])
     return 0
 
@@ -174,12 +204,15 @@ def _cmd_rules_diff(ws, args):
     try:
         res = rulesdiff.compare(ws, con, tax)
     except feedback.FeedbackError as e:
-        raise PipelineError("검수 피드백 규칙 파일(labeling_rules.json) 오류: %s" % e)
+        raise PipelineError("검수 피드백 규칙 파일(labeling_rules.json) 오류: %s" % e,
+                            reason_code="LABELING_RULES_INVALID", detail=trace.safe_code(str(e)))
     finally:
         con.close()
     say(json.dumps(rulesdiff.public(res), ensure_ascii=False))
     say(rulesdiff.summary_line(res))
     # 변경이 있으면 0(축 없는 규칙만 바뀐 STAGE_WIDE_ONLY 포함), 없거나 기준을 모르면 3
+    if res["code"] not in (None, rulesdiff.STAGE_WIDE_ONLY):
+        trace.skip_code(res["code"])
     return 0 if res["code"] in (None, rulesdiff.STAGE_WIDE_ONLY) else 3
 
 
@@ -190,9 +223,12 @@ def _cmd_rules_update(ws, args):
     p, run_id, _ = run_rules_update(ws, dry_run=args.dry_run)
     if args.dry_run:
         say(json.dumps(rulesupdate.summary(p), ensure_ascii=False))
+        if p["code"]:
+            trace.skip_code(p["code"])
         return 3 if p["code"] else 0
     if p["code"]:
         say("[rules-update] 건너뜀 %s%s" % (p["code"], rulesupdate.skip_reason(p)))
+        trace.skip_code(p["code"])
         return _skip_code(p["code"])
     return 0
 
@@ -271,7 +307,8 @@ def _cmd_axis_board(ws, con, run_id, args):
     try:
         path, n_axes, n_slides = axisboard.build_board(ws, con, run_id, tax)
     except axisboard.BoardError as e:
-        raise PipelineError("run_id=%s는 axis-update 실행이 아닙니다(%s). --run으로 axis-update 실행 ID를 주세요." % (run_id, e))
+        raise PipelineError("run_id=%s는 axis-update 실행이 아닙니다(%s). --run으로 axis-update 실행 ID를 주세요." % (run_id, e),
+                            reason_code="AXIS_BOARD_RUN_INVALID", detail=trace.safe_code(str(e)))
     say("[axis-board] run_id=%s 대상 축 %d개, 슬라이드 %d개 → screens/axis_update.html" % (run_id, n_axes, n_slides))
 
 
@@ -284,7 +321,8 @@ def _cmd_rules_board(ws, con, run_id, args):
     try:
         path, n_rules, n_slides = rulesboard.build_board(ws, con, run_id, tax)
     except rulesboard.BoardError as e:
-        raise PipelineError("run_id=%s는 rules-update 실행이 아닙니다(%s). --run으로 rules-update 실행 ID를 주세요." % (run_id, e))
+        raise PipelineError("run_id=%s는 rules-update 실행이 아닙니다(%s). --run으로 rules-update 실행 ID를 주세요." % (run_id, e),
+                            reason_code="RULES_BOARD_RUN_INVALID", detail=trace.safe_code(str(e)))
     say("[rules-board] run_id=%s 규칙 카드 %d개, 바뀐 슬라이드 %d개 → screens/rules_update.html" % (run_id, n_rules, n_slides))
 
 
@@ -308,18 +346,45 @@ def _cmd_report(ws, con, run_id, args):
     say("[report] taxonomy 재검토 요청 누적 %d건 → reports/taxonomy_revisit.md" % n)
 
 
+def _since(con):
+    return con.execute("SELECT COALESCE(MAX(id), 0) FROM failures").fetchone()[0]
+
+
+def _target_failures(con, run_id, stages, since, all_failed=False):
+    """이 명령이 남긴 대상별 실패(failures, id > since)를 마일스톤에 붙인다: 전부 실패면 실패, 일부면 부분 실패.
+    반환값(종료 코드)은 바꾸지 않는다."""
+    row = con.execute("SELECT reason_code, COUNT(*) AS n FROM failures WHERE run_id=? AND id>? AND stage IN (%s)"
+                      " GROUP BY reason_code ORDER BY n DESC, reason_code LIMIT 1" % ",".join("?" * len(stages)),
+                      [run_id, since] + list(stages)).fetchone()
+    if row is None:
+        return
+    if all_failed:
+        trace.fail_code(row[0])
+    else:
+        trace.note_partial(row[0])
+
+
 def _cmd_embed(ws, con, run_id, args):
     from labelbot import embed
     from labelbot.pipeline import Logger
 
-    embed.embed(ws, con, run_id, log=Logger(ws))
+    since = _since(con)
+    res = embed.embed(ws, con, run_id, log=Logger(ws))
+    m = trace.current()
+    if m is not None:
+        m.n = res.get("stored")
+    _target_failures(con, run_id, ("embed",), since, all_failed=res.get("called", 0) > 0 and not res.get("stored"))
 
 
 def _cmd_push_vectors(ws, con, run_id, args):
     from labelbot import vectorpush
     from labelbot.pipeline import Logger
 
+    since = _since(con)
     res = vectorpush.push(ws, con, run_id, log=Logger(ws), force=args.force)
+    if res.get("reason"):
+        (trace.skip_code if res["reason"] == "RULES_CHANGE_RATIO_HIGH" else trace.fail_code)(res["reason"])
+    _target_failures(con, run_id, ("push",), since)
     return 3 if res.get("reason") == "RULES_CHANGE_RATIO_HIGH" else 0  # 변경 비율 상한으로 막히면 3
 
 
@@ -327,7 +392,9 @@ def _cmd_slide_images(ws, con, run_id, args):
     from labelbot import export, slideimg
     from labelbot.pipeline import Logger, load_taxonomy, say
 
+    since = _since(con)
     slideimg.render(ws, con, run_id, log=Logger(ws))
+    _target_failures(con, run_id, ("slide_image",), since)
     tax, _ = load_taxonomy(ws)
     export.export(ws, con, run_id, tax)
     say("[slide-images] out/labeling.sqlite chunks.slide_image 갱신")
@@ -337,7 +404,9 @@ def _cmd_push_slides(ws, con, run_id, args):
     from labelbot import slidepush
     from labelbot.pipeline import Logger
 
+    since = _since(con)
     slidepush.push(ws, con, run_id, log=Logger(ws))
+    _target_failures(con, run_id, ("push_slides",), since)
 
 
 _WS_COMMANDS = {"selfcheck": _cmd_selfcheck, "probe": _cmd_probe, "serve": _cmd_serve, "ingest": _cmd_ingest,
@@ -354,6 +423,7 @@ def _probe(ws, root):
 
     if not os.path.isdir(root):
         print("[오류] 입력 폴더가 없습니다.", file=sys.stderr)
+        trace.fail_code("INPUT_DIR_NOT_FOUND")
         return 1
     for full, rel, fname in ingest.iter_inputs(root):
         ext = os.path.splitext(fname)[1].lower()

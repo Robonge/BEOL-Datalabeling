@@ -113,4 +113,7 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
+    from labelbot import trace  # noqa: E402  마일스톤 M11(stderr 줄, stdout JSON 불변)
+
+    sys.exit(trace.run_main("M11", main))

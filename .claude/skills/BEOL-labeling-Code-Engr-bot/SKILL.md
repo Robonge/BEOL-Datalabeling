@@ -18,7 +18,7 @@ description: 저장소 코드와 workflow가 프로젝트 규칙(루트 CLAUDE.m
 
 ## 고정 값
 
-- 코드 폴더: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
+- 코드 폴더: 저장소 루트(`git rev-parse --show-toplevel`, 이 SKILL.md 기준 ../../..). 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
 - 출력: `code_engrbot/out/<review ID>/findings.jsonl`, `review.md`, `manifest.json`.
 - 기본 검사 대상: `labelbot`, `domain_engrbot`, `code_engrbot`, `tests`, `.claude/skills`.
 
@@ -149,7 +149,7 @@ taxonomy.json에 축이 더해지거나 빠지거나 종류·값이 바뀌면, �
 
    판정 칸은 `일치`, `불일치(축)`, `불일치(규칙)`, `불일치(축·규칙)`(둘 다) 중 하나다.
 
-4. 불일치 폴더를 입력 폴더로 묶는다(축 불일치와 규칙 불일치 모두 같은 규칙). 입력 폴더는 그 작업 폴더 `pipeline.json`의 `input_root`다. 같은 입력 폴더의 작업 폴더가 여러 개면 최신 라벨 실행(JSON의 `run_id`) 시각이 가장 늦은 폴더만 남긴다. 그 입력 폴더에 이미 지금 taxonomy와 같은 더 새 작업 폴더가 있으면 재라벨링 대상에서 뺀다. 남은 작업 폴더가 4단계의 재라벨링 대상이다.
+4. 불일치 폴더를 입력 폴더로 묶는다(축 불일치와 규칙 불일치 모두 같은 규칙). 입력 폴더는 그 작업 폴더 `pipeline.json`의 `input_root` 문자열이 아니라 풀어 낸 실제 경로 `os.path.normcase(os.path.realpath(Workspace(p, create=False).input_root))`(`from labelbot.workspace import Workspace`, `p` = 작업 폴더)로 묶는다(상대·절대 표기가 섞여도 같은 입력 폴더는 한 묶음이 된다). 같은 입력 폴더의 작업 폴더가 여러 개면 최신 라벨 실행(JSON의 `run_id`) 시각이 가장 늦은 폴더만 남긴다. 그 입력 폴더에 이미 지금 taxonomy와 같은 더 새 작업 폴더가 있으면 재라벨링 대상에서 뺀다. 남은 작업 폴더가 4단계의 재라벨링 대상이다.
 
 ### 4. 자동 재라벨링·수정 대기
 

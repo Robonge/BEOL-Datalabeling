@@ -6,12 +6,18 @@ import sys
 import threading
 import time
 
-from labelbot import classify, feedback, ingest, label, prompts, questions, store, taxdiff, util
+from labelbot import classify, feedback, ingest, label, prompts, questions, store, taxdiff, trace, util
 from labelbot.llm import ChatClient
 
 
 class PipelineError(Exception):
-    pass
+    """[오류] 줄로 내는 실행 오류. str(e)는 지금까지의 문장 그대로다(계약). reason_code는 사유 코드(카탈로그
+    labelbot/reason_codes.py), detail은 하위 사유 코드(없으면 None)."""
+
+    def __init__(self, message, reason_code=None, detail=None):
+        Exception.__init__(self, message)
+        self.reason_code = reason_code
+        self.detail = detail
 
 
 class LockLost(Exception):
@@ -42,20 +48,22 @@ def load_taxonomy(ws):
     p = ws.taxonomy_path
     if p.lower().endswith(".xlsx"):
         raise PipelineError("taxonomy 원본이 taxonomy.json으로 바뀌었습니다(TAXONOMY_XLSX_NEEDS_MIGRATION). "
-                            "python -m labelbot taxonomy-migrate --xlsx \"<이 xlsx 경로>\" 를 한 번 실행하세요.")
+                            "python -m labelbot taxonomy-migrate --xlsx \"<이 xlsx 경로>\" 를 한 번 실행하세요.",
+                            reason_code="TAXONOMY_XLSX_NEEDS_MIGRATION")
     if not os.path.isfile(p):
-        raise PipelineError("taxonomy.json이 없습니다(TAXONOMY_MISSING). pipeline.json의 taxonomy_path를 확인하세요.")
+        raise PipelineError("taxonomy.json이 없습니다(TAXONOMY_MISSING). pipeline.json의 taxonomy_path를 확인하세요.",
+                            reason_code="TAXONOMY_MISSING")
     try:
         data = ingest.read_input(p, ws.path("inputs"))
     except OSError:
-        raise PipelineError("taxonomy.json 읽기 실패: OS_ERROR")
+        raise PipelineError("taxonomy.json 읽기 실패: OS_ERROR", reason_code="TAXONOMY_READ_FAILED", detail="OS_ERROR")
     try:
         tax = taxonomy.parse_bytes(data)
     except taxonomy.TaxonomyError as e:
         lines = ["taxonomy.json 오류(시트, 행, 코드):"]
         for issue in e.issues:
             lines.append("  - %s %s %s %s" % tuple(issue[:4]))
-        raise PipelineError("\n".join(lines))
+        raise PipelineError("\n".join(lines), reason_code="TAXONOMY_PARSE_ERROR")
     for w in tax.warnings:
         say("[경고] taxonomy %s %s %s" % tuple(w[:3]))
     return tax, util.sha256_bytes(data)
@@ -135,7 +143,7 @@ def finish_run(con, run_id, sheet_hashes=None, sent_params=None):
 
 def do_ingest(ws, con, run_id, input_root, log):
     if not os.path.isdir(input_root):
-        raise PipelineError("입력 폴더가 없습니다(--input).")
+        raise PipelineError("입력 폴더가 없습니다(--input).", reason_code="INPUT_DIR_NOT_FOUND")
     seen = ingest.collect(ws, con, run_id, input_root, log=log)
     n = ingest.parse_files(ws, con, run_id, seen, log=log)
     ok = con.execute(
@@ -181,58 +189,62 @@ def run_labeling(ctx, chunks):
 
     con, tax = ctx.con, ctx.tax
     workers = int(ctx.cfg["llm"].get("workers") or 4)
-    with _threaded_con(ctx):
-        cls_results = _parallel(lambda c: classify.classify_chunk(ctx, c), chunks, workers)
-    stats = {"chunks": len(chunks), "classify_failed": 0, "label_failed": 0, "excluded_type": 0, "labeled": 0,
-             "no_questions": False, "truncated": {}}
-    limit = int(ctx.cfg["limits"]["questions_per_chunk"])
-    approved = []
-    for c, res in zip(chunks, cls_results):
-        if res is None:
-            stats["classify_failed"] += 1
-            continue
-        classify.store_result(ctx, c["chunk_id"], res)
-        candidates.collect_from_classify(ctx, c["chunk_id"], res)
-        if res["chunk_type"] != "내용":
-            stats["excluded_type"] += 1
-            continue
-        mapped, cut = questions.map_questions(tax, res["axes"], limit)
-        for q in cut:
-            stats["truncated"][q.qid] = stats["truncated"].get(q.qid, 0) + 1
-        approved.append((c, res, mapped))
-    con.commit()
-    say("[classify] chunk %d개 중 실패 %d, 비내용 %d" % (len(chunks), stats["classify_failed"], stats["excluded_type"]))
-    # 2차: 승인 질문(규칙) + 1차 라벨 검증 질문(LLM, 남은 상한만큼)
-    with _threaded_con(ctx):
-        gen_results = _parallel(lambda t: questions.generate_questions(ctx, t[0], t[1]["axes"], limit - len(t[2])),
-                                approved, workers)
-    con.commit()
-    to_label = [(c, res, mapped + gen) for (c, res, mapped), gen in zip(approved, gen_results) if mapped + gen]
-    stats["control_questions"] = sum(1 for g in gen_results for q in g if questions.is_control(q.qid))
-    stats["generated_questions"] = sum(len(g) for g in gen_results) - stats["control_questions"]
-    # 검증 대상(unknown 축·저확신 라벨)인데 상한(verify_max·질문 상한) 때문에 빠진 수(질문 생성이 실패한 chunk는 세지 않는다)
-    cmin = questions.conf_min(ctx.cfg)
-    stats["verify_cut"] = sum(
-        len(questions.verify_targets(tax, res["axes"], 10 ** 6, cmin)) - sum(1 for q in gen if not questions.is_control(q.qid))
-        for (c, res, mapped), gen in zip(approved, gen_results) if gen)
-    say("[question] 검증 질문 %d개, 대조 질문 %d개 생성(chunk %d개, 상한으로 검증하지 못한 대상 %d개)"
-        % (stats["generated_questions"], stats["control_questions"], len(approved), stats["verify_cut"]))
-    if not to_label:
-        stats["no_questions"] = True
-        say("[label] 물을 질문이 없어 3차 라벨링을 건너뜁니다.")
+    with trace.milestone("M02", run_id=ctx.run_id, workspace=ctx.ws) as m2:
+        m2.n = len(chunks)
+        with _threaded_con(ctx):
+            cls_results = _parallel(lambda c: classify.classify_chunk(ctx, c), chunks, workers)
+        stats = {"chunks": len(chunks), "classify_failed": 0, "label_failed": 0, "excluded_type": 0, "labeled": 0,
+                 "no_questions": False, "truncated": {}}
+        limit = int(ctx.cfg["limits"]["questions_per_chunk"])
+        approved = []
+        for c, res in zip(chunks, cls_results):
+            if res is None:
+                stats["classify_failed"] += 1
+                continue
+            classify.store_result(ctx, c["chunk_id"], res)
+            candidates.collect_from_classify(ctx, c["chunk_id"], res)
+            if res["chunk_type"] != "내용":
+                stats["excluded_type"] += 1
+                continue
+            mapped, cut = questions.map_questions(tax, res["axes"], limit)
+            for q in cut:
+                stats["truncated"][q.qid] = stats["truncated"].get(q.qid, 0) + 1
+            approved.append((c, res, mapped))
+        con.commit()
+        say("[classify] chunk %d개 중 실패 %d, 비내용 %d" % (len(chunks), stats["classify_failed"], stats["excluded_type"]))
+    with trace.milestone("M03", run_id=ctx.run_id, workspace=ctx.ws) as m3:
+        # 2차: 승인 질문(규칙) + 1차 라벨 검증 질문(LLM, 남은 상한만큼)
+        with _threaded_con(ctx):
+            gen_results = _parallel(lambda t: questions.generate_questions(ctx, t[0], t[1]["axes"], limit - len(t[2])),
+                                    approved, workers)
+        con.commit()
+        to_label = [(c, res, mapped + gen) for (c, res, mapped), gen in zip(approved, gen_results) if mapped + gen]
+        m3.n = len(to_label)
+        stats["control_questions"] = sum(1 for g in gen_results for q in g if questions.is_control(q.qid))
+        stats["generated_questions"] = sum(len(g) for g in gen_results) - stats["control_questions"]
+        # 검증 대상(unknown 축·저확신 라벨)인데 상한(verify_max·질문 상한) 때문에 빠진 수(질문 생성이 실패한 chunk는 세지 않는다)
+        cmin = questions.conf_min(ctx.cfg)
+        stats["verify_cut"] = sum(
+            len(questions.verify_targets(tax, res["axes"], 10 ** 6, cmin)) - sum(1 for q in gen if not questions.is_control(q.qid))
+            for (c, res, mapped), gen in zip(approved, gen_results) if gen)
+        say("[question] 검증 질문 %d개, 대조 질문 %d개 생성(chunk %d개, 상한으로 검증하지 못한 대상 %d개)"
+            % (stats["generated_questions"], stats["control_questions"], len(approved), stats["verify_cut"]))
+        if not to_label:
+            stats["no_questions"] = True
+            say("[label] 물을 질문이 없어 3차 라벨링을 건너뜁니다.")
+            return stats
+        with _threaded_con(ctx):
+            lab_results = _parallel(lambda t: label.label_chunk(ctx, t[0], t[1], t[2]), to_label, workers)
+        for (c, _, _), res in zip(to_label, lab_results):
+            if res is None:
+                stats["label_failed"] += 1
+                continue
+            label.store_result(ctx, c["chunk_id"], res)
+            candidates.collect_from_label(ctx, c["chunk_id"], res)
+            stats["labeled"] += 1
+        con.commit()
+        say("[label] 대상 %d개 중 실패 %d" % (len(to_label), stats["label_failed"]))
         return stats
-    with _threaded_con(ctx):
-        lab_results = _parallel(lambda t: label.label_chunk(ctx, t[0], t[1], t[2]), to_label, workers)
-    for (c, _, _), res in zip(to_label, lab_results):
-        if res is None:
-            stats["label_failed"] += 1
-            continue
-        label.store_result(ctx, c["chunk_id"], res)
-        candidates.collect_from_label(ctx, c["chunk_id"], res)
-        stats["labeled"] += 1
-    con.commit()
-    say("[label] 대상 %d개 중 실패 %d" % (len(to_label), stats["label_failed"]))
-    return stats
 
 
 def run_all(ws, input_root, transport=None, command="run", use_feedback=True):
@@ -247,8 +259,11 @@ def run_all(ws, input_root, transport=None, command="run", use_feedback=True):
     try:
         tax, tax_sha = load_taxonomy(ws)
         run_id = start_run(con, ws, command, input_root)
+        trace.set_run(run_id)
         log = Logger(ws)
-        seen = do_ingest(ws, con, run_id, input_root, log)
+        with trace.milestone("M01", run_id=run_id, workspace=ws) as m:
+            seen = do_ingest(ws, con, run_id, input_root, log)
+            m.n = len(seen)
         ctx = Ctx(ws, con, run_id, tax=tax, transport=transport, log=log)
         store.meta_set(con, "taxonomy_sha256", tax_sha)
         store.meta_set(con, "sent_params", util.dumps(ctx.chat.sent_params()))
@@ -257,7 +272,8 @@ def run_all(ws, input_root, transport=None, command="run", use_feedback=True):
         try:
             ctx.feedback = feedback.load(ws, tax, ctx.chat, enabled=use_feedback)
         except feedback.FeedbackError as e:
-            raise PipelineError("검수 피드백 규칙 파일(labeling_rules.json) 오류: %s" % e)
+            raise PipelineError("검수 피드백 규칙 파일(labeling_rules.json) 오류: %s" % e,
+                                reason_code="LABELING_RULES_INVALID", detail=trace.safe_code(str(e)))
         ctx.feedback.prepare(ws, con, run_id, chunks, log=log)
         if ctx.feedback.enabled:
             ctx.sheet_hashes["labeling_rules"] = ctx.feedback.digest()
@@ -265,12 +281,13 @@ def run_all(ws, input_root, transport=None, command="run", use_feedback=True):
         stats = run_labeling(ctx, chunks)
         store.meta_set(con, "feedback_applied:" + run_id, util.dumps(ctx.feedback.applied()))
         store.meta_set(con, "rules_applied:" + run_id, util.dumps(ctx.feedback.applied_rules()))
-        alerts.evaluate(ctx)
-        review.compute_flags(con, run_id, ws.config, tax, ws.path("reports"))
-        candidates.write_reports(ctx)
-        export.export(ws, con, run_id, tax)
-        report.write_report(ws, con, run_id, tax, stats=stats)
-        finish_run(con, run_id, ctx.sheet_hashes, ctx.chat.sent_params())
+        with trace.milestone("M04", run_id=run_id, workspace=ws) as m:
+            alerts.evaluate(ctx)
+            m.n = len(review.compute_flags(con, run_id, ws.config, tax, ws.path("reports")))
+            candidates.write_reports(ctx)
+            export.export(ws, con, run_id, tax)
+            report.write_report(ws, con, run_id, tax, stats=stats)
+            finish_run(con, run_id, ctx.sheet_hashes, ctx.chat.sent_params())
         say("[run] 완료 run_id=%s LLM 호출 %d회 (캐시 %d회)" % (run_id, ctx.chat.calls, ctx.chat.cache_hits))
         return run_id, ctx
     finally:
@@ -344,7 +361,8 @@ def _axis_update(ws, con, tax, tax_sha, p, transport, use_feedback, run_id):
         # rules_applied: 실행을 시작할 때의 승인 파일 기록과 기준 실행의 기록(끝에서 다시 읽지 않는다)
         own = rulesdiff.current(ws, tax) if use_feedback else feedback.empty_record()
     except feedback.FeedbackError as e:
-        raise PipelineError("검수 피드백 규칙 파일(labeling_rules.json) 오류: %s" % e)
+        raise PipelineError("검수 피드백 규칙 파일(labeling_rules.json) 오류: %s" % e,
+                                reason_code="LABELING_RULES_INVALID", detail=trace.safe_code(str(e)))
     prev_rules = rulesdiff.baseline(ws, con, p["prev_run"], tax, beat=lambda: axisupdate.touch_lock(ws, run_id))
     ctx.feedback.prepare(ws, con, run_id, chunks, log=log)
     if ctx.feedback.enabled:
@@ -444,7 +462,8 @@ def run_rules_update(ws, transport=None, dry_run=False):
             finally:
                 axisupdate.release_lock(ws, owner)
         except feedback.FeedbackError as e:
-            raise PipelineError("검수 피드백 규칙 파일(labeling_rules.json) 오류: %s" % e)
+            raise PipelineError("검수 피드백 규칙 파일(labeling_rules.json) 오류: %s" % e,
+                                reason_code="LABELING_RULES_INVALID", detail=trace.safe_code(str(e)))
         return p, run_id, ctx
     finally:
         con.close()
@@ -654,6 +673,7 @@ def run_ingest(ws, input_root):
     con = store.connect(ws.work_db)
     try:
         run_id = start_run(con, ws, "ingest", input_root)
+        trace.set_run(run_id)
         do_ingest(ws, con, run_id, input_root, Logger(ws))
         finish_run(con, run_id)
         return run_id

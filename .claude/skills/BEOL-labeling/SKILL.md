@@ -28,9 +28,9 @@ Supabase 적재는 이 스킬에서 하지 않는다. 검수 전 라벨이 사�
 
 ## 고정 값
 
-- 코드 폴더: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
+- 코드 폴더: 저장소 루트(`git rev-parse --show-toplevel`, 이 SKILL.md 기준 ../../..). 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
 - 입력 폴더: 인자로 받는다. 없으면 `parshing test files`(코드 폴더 기준 상대 경로, 폴더명 철자 그대로).
-- 작업 폴더: 실행할 때마다 `C:\Users\dltkd\Desktop\261004 BEOL AX day2\workspaces\261004_BEOL_<입력 폴더 slug>_<YYYYMMDD-HHMMSS>`로 새로 만든다(모든 작업은 코드 폴더 안). 사용자가 지정하면 그 경로. 새 폴더라 LLM 캐시가 없으므로 매번 전체를 호출한다(사용자 결정, 2026-10-05).
+- 작업 폴더: 실행할 때마다 저장소 루트의 `workspaces/261004_BEOL_<입력 폴더 slug>_<YYYYMMDD-HHMMSS>`로 새로 만든다(모든 작업은 코드 폴더 안). 사용자가 지정하면 그 경로. 새 폴더라 LLM 캐시가 없으므로 매번 전체를 호출한다(사용자 결정, 2026-10-05).
 - 처리 완료 파일 목록: 코드 폴더의 `injested-file-list/<작업 폴더 이름>.json`(`files`에 처리를 마친 파일명). 실행 전 중복 확인에 쓴다.
 - taxonomy: 저장소의 `taxonomy/taxonomy.json`을 직접 가리킨다(2026-10-07부터 xlsx 대신 json이 원본이다).
 - 모델: `gpt-6-sol`(temperature 미전송, `max_completion_tokens`). 키는 코드 폴더 `.env`에서 읽는다.

@@ -8,8 +8,10 @@ injested-file-list/*.json(이전 실행에서 처리를 마친 파일명)과 입
 사용:
   python init_workspace.py --input "<입력 폴더>" [--workspace "<작업 폴더>"] [--force]
   python init_workspace.py --input "<입력 폴더>" --workspace "<작업 폴더>" --skip-duplicates
-출력: JSON 한 줄(workspace, launch_name, port, 파일 수, pipeline.json 작성 여부, duplicates).
+출력: JSON 한 줄(workspace, launch_name, port, 파일 수, pipeline.json 작성 여부, duplicates, path_notes).
 duplicates에는 건수와 출처 목록 파일만 담는다(파일명은 출력하지 않는다).
+pipeline.json의 taxonomy_path·input_root는 대상이 저장소 안이면 작업 폴더 기준 상대경로(`/` 구분)로 쓴다.
+저장소 밖(업무 PC 문서 폴더 등)이면 절대경로를 그대로 쓰고 path_notes에 {필드: "OUTSIDE_REPO"}를 남긴다.
 """
 import argparse
 import datetime
@@ -30,6 +32,7 @@ BASE_PORT = 8770
 LIST_DIR = os.path.join(CODE_ROOT, "injested-file-list")
 
 # pipeline.json에 쓰는 값. 기본값과 같은 항목은 DEFAULT_CONFIG에서 가져오고, 이 스킬이 바꾸는 값만 직접 적는다.
+# taxonomy_path·input_root는 작업 폴더가 정해진 뒤 main에서 stored_path로 다시 정한다.
 _D = DEFAULT_CONFIG
 PIPELINE = {
     "taxonomy_path": os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json").replace("\\", "/"),
@@ -89,6 +92,15 @@ def inside(child, parent):
         return False
 
 
+def stored_path(target, ws):
+    """pipeline.json에 적을 경로와 사유 코드. 대상·작업 폴더가 모두 저장소 안이면 작업 폴더 기준 상대경로(/ 구분),
+    아니면 절대경로와 OUTSIDE_REPO."""
+    target = os.path.abspath(target)
+    if inside(target, CODE_ROOT) and inside(ws, CODE_ROOT):
+        return os.path.relpath(target, ws).replace("\\", "/"), None
+    return target.replace("\\", "/"), "OUTSIDE_REPO"
+
+
 def serve_args(ws, port):
     """labelbot serve: screens/를 보여 주고 검수·대조 JSON을 inbox/에 바로 쓴다."""
     script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "serve_screens.py").replace("\\", "/")
@@ -143,9 +155,13 @@ def main():
     os.makedirs(ws, exist_ok=True)
     cfg_path = os.path.join(ws, "pipeline.json")
     wrote = False
+    notes = {}
     if a.force or not os.path.isfile(cfg_path):
         cfg = json.loads(json.dumps(PIPELINE))
-        cfg["input_root"] = inp.replace("\\", "/")
+        for key, target in (("taxonomy_path", os.path.join(CODE_ROOT, "taxonomy", "taxonomy.json")), ("input_root", inp)):
+            cfg[key], why = stored_path(target, ws)
+            if why:
+                notes[key] = why
         with open(cfg_path, "w", encoding="utf-8", newline="\n") as f:
             json.dump(cfg, f, ensure_ascii=False, indent=2)
             f.write("\n")
@@ -171,10 +187,13 @@ def main():
     port = upsert_launch(name, BASE_PORT, ws.replace("\\", "/"))
     print(json.dumps({"workspace": ws.replace("\\", "/"), "input": inp.replace("\\", "/"), "pipeline_written": wrote,
                       "file_counts": counts, "launch_name": name, "port": port,
-                      "duplicates": {"count": len(dup), "sources": sources}, "skipped": skipped},
+                      "duplicates": {"count": len(dup), "sources": sources}, "skipped": skipped,
+                      "path_notes": notes},
                      ensure_ascii=False))
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    from labelbot import trace  # noqa: E402  마일스톤 M24(stderr 줄, stdout JSON 불변)
+
+    sys.exit(trace.run_main("M24", main))

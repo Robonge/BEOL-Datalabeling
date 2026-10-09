@@ -1,6 +1,6 @@
 # pages.md - dependency trees and line ranges
 
-All paths relative to repo root `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. Verified by reading imports of each module.
+All paths relative to repo root (`git rev-parse --show-toplevel`). Verified by reading imports of each module.
 Templates have no JS imports; the only "includes" are the `fill_template` text substitutions.
 
 ## results.html

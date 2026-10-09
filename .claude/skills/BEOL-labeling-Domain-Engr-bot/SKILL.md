@@ -39,7 +39,7 @@ Code-Engr-bot ← 규칙 · 축 변경 감지 ───────────�
 
 ## 고정 값
 
-- 코드 폴더: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`. 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
+- 코드 폴더: 저장소 루트(`git rev-parse --show-toplevel`, 이 SKILL.md 기준 ../../..). 모든 명령은 여기서 `PYTHONIOENCODING=utf-8`을 붙여 실행한다.
 - 작업 폴더 `<WS>`: 사람이 고른다(절차 1). 인자로 받았으면 그 폴더를 고른 것으로 본다. 후보는 `python -m domain_engrbot workspaces`가 내는 코드 폴더 `workspaces\` 아래 `work.sqlite`가 있는 폴더다(`_`·`.`으로 시작하는 `_domain_engrbot`·`_feedback`·`.omc`는 작업 폴더가 아니다). 임의로 고르지 않는다.
 - 질문 폴더: `workspaces\_domain_engrbot\questions\`(장부처럼 작업 폴더 공용, 커밋 제외). 질문 묶음·질문 화면·답 이력·taxonomy 제안이 여기에 있다.
 - 교정 장부: `workspaces\_domain_engrbot\ledger\`(커밋 제외). 사람 검수 교정이 Domain-Engr-bot 입력으로 들어오는 곳이다. 설계는 `domain_engrbot/docs/plan-ledger.md`.

@@ -20,7 +20,7 @@ description: BEOL 라벨링 파이프라인(입력 폴더 → BEOL-labeling 파�
 ## 인자
 
 - 입력 폴더: 사용자가 준 경로. 없으면 `parshing test files`(코드 폴더 기준). 사용자가 다른 이름을 말했는데 그 폴더가 없으면, 어느 폴더로 대체했는지 첫 줄에 알린다.
-- 코드 폴더: `C:\Users\dltkd\Desktop\261004 BEOL AX day2`.
+- 코드 폴더: 저장소 루트(`git rev-parse --show-toplevel`, 이 SKILL.md 기준 ../../..).
 
 ## 절차
 

@@ -11,6 +11,10 @@ qa/inbox/qa_decisions_<QA>.json을 직접 쓴다(labelbot serve와 같은 방식
 (drafter: 호출한 쪽이 넘기는 LLM 콜러블). 콘솔에는 set_id·파일 이름·건수·사유 코드만 낸다(질문·답 문장은 내지 않는다).
 applier(호출한 쪽이 넘기는 반영 콜러블)가 있으면 '답변 완료 · 저장'이 곧 반영이다: 저장한 답 파일을 바로 반영하고,
 반영이 끝나면 서버를 닫는다(사용자 결정, 2026-10-06. 백그라운드로 띄운 Claude는 서버가 끝나는 것으로 마무리를 안다).
+
+역방향 프록시 뒤에서 쓸 때만 env로 넓힌다(labelbot serve와 같은 규칙, 둘 다 없으면 지금과 같다).
+BEOL_ALLOWED_HOSTS(쉼표, 포트 무관)는 Host·Origin 허용 목록에 더하고, BEOL_PATH_PREFIX(예: /absproxy/8771)는
+경로 매칭 전에 뗀다. 보드·편집기 서버(taxonomy_editor)도 _BaseHandler를 물려받아 같은 규칙을 쓴다.
 """
 import hashlib
 import http.server
@@ -21,7 +25,7 @@ import sys
 import tempfile
 import threading
 
-from domain_engrbot import io, qmodel
+from domain_engrbot import io, qmodel, trace
 
 KIND = "qa_decisions"
 MAX_BODY = 5 * 1024 * 1024
@@ -33,6 +37,64 @@ _CODE = re.compile(r"^[A-Z0-9_]{1,64}$")
 # 화면은 인라인 스크립트·스타일과 data: 이미지만 쓰고, 같은 출처에만 요청한다(외부 주소·틀 넣기 금지).
 CSP = ("default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; "
        "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+LOOPBACK = ("127.0.0.1", "localhost", "::1")
+
+
+# ---- 프록시 대응(env). domain_engrbot은 labelbot을 정해진 모듈로만 가져오므로 labelbot.serve의 작은 도우미를 그대로 옮겨 둔다.
+
+def _hostname(value):
+    """'host[:port]'·'[IPv6]:port'에서 소문자 호스트 이름만 뗀다. 없으면 ''."""
+    v = (value or "").strip().lower()
+    if v.startswith("["):
+        return v[1:].partition("]")[0]
+    return v if v.count(":") > 1 else v.partition(":")[0]
+
+
+def env_hosts():
+    """env BEOL_ALLOWED_HOSTS(쉼표, 포트 무관)의 호스트 이름 집합. 미설정이면 빈 집합."""
+    return {h for h in (_hostname(x) for x in os.environ.get("BEOL_ALLOWED_HOSTS", "").split(",")) if h}
+
+
+def host_allowed(host):
+    """Host 헤더(포트 무관)가 loopback 또는 BEOL_ALLOWED_HOSTS인가. DNS 재바인딩으로 들어온 요청을 막는다."""
+    name = _hostname(host)
+    return bool(name) and (name in LOOPBACK or name in env_hosts())
+
+
+def origin_allowed(origin, host, fwd_host=None):
+    """POST의 Origin 확인. Origin이 없으면 거절한다. Origin의 host:port가 Host(또는 허용 목록 안의
+    X-Forwarded-Host)와 같거나, Origin의 호스트가 BEOL_ALLOWED_HOSTS에 있으면(포트·Host 무관) 허용한다.
+    loopback의 다른 포트는 다른 앱이라 지금처럼 거절한다."""
+    if not origin:
+        return False
+    hp = origin.split("://", 1)[-1]
+    if hp == host:
+        return True
+    fwd = (fwd_host or "").split(",")[0].strip()
+    if fwd and host_allowed(fwd) and hp == fwd:
+        return True
+    return _hostname(hp) in env_hosts()
+
+
+def strip_prefix(path):
+    """env BEOL_PATH_PREFIX(예: /absproxy/8771)를 요청 경로 앞에서 뗀다. 접두어가 없는 경로는 그대로 둔다."""
+    p = os.environ.get("BEOL_PATH_PREFIX", "").strip().rstrip("/")
+    if not p:
+        return path
+    if not p.startswith("/"):
+        p = "/" + p
+    if path != p and not path.startswith((p + "/", p + "?")):
+        return path
+    rest = path[len(p):]
+    return rest if rest.startswith("/") else "/" + rest
+
+
+def no_browser():
+    """브라우저를 열지 않을 때: env BEOL_NO_BROWSER=1이거나 디스플레이가 없을 때(Windows·macOS가 아니고
+    DISPLAY·WAYLAND_DISPLAY가 없음). 이때는 주소만 출력한다."""
+    if os.environ.get("BEOL_NO_BROWSER") == "1":
+        return True
+    return sys.platform not in ("win32", "darwin") and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
 
 
 def default_port(qa_run_id):
@@ -64,7 +126,9 @@ class _Server(http.server.ThreadingHTTPServer):
 
 
 class _BaseHandler(http.server.BaseHTTPRequestHandler):
-    """QA 검토 서버와 질문 서버의 공통 부분: 응답 도우미, Host·Origin 확인, 실패 응답만 남기는 로그."""
+    """QA 검토 서버와 질문 서버의 공통 부분: 응답 도우미, Host·Origin 확인, 실패 응답만 남기는 로그.
+    milestone: POST 실패 줄에 쓰는 마일스톤 ID(보드·편집기 핸들러는 M12). 서버 스레드에 명시로 넘긴다."""
+    milestone = "M11"
 
     def log_message(self, fmt, *args):
         # 성공 요청은 내지 않는다(저장했을 때만 한 줄). 실패 응답만 경로와 코드를 남긴다.
@@ -85,15 +149,24 @@ class _BaseHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(body)
 
     def _json(self, code, obj):
+        if code >= 400 and self.command == "POST":
+            trace.post_failed(self.milestone, obj.get("code") if isinstance(obj, dict) else None)
         self._send(code, json.dumps(obj, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
 
+    def parse_request(self):
+        # 경로 매칭(do_GET·do_POST) 전에 프록시 접두어를 뗀다.
+        ok = super().parse_request()
+        if ok:
+            self.path = strip_prefix(self.path)
+        return ok
+
     def _local_host(self):
-        # Host를 로컬 이름으로 묶어 DNS 재바인딩으로 들어온 요청을 막는다. Host가 없으면 거절한다.
-        return (self.headers.get("Host") or "").rsplit(":", 1)[0].lower() in ("127.0.0.1", "localhost")
+        # Host를 로컬 이름이나 BEOL_ALLOWED_HOSTS로 묶어 DNS 재바인딩으로 들어온 요청을 막는다. Host가 없으면 거절한다.
+        return host_allowed(self.headers.get("Host"))
 
     def _same_origin(self):
-        origin = self.headers.get("Origin")
-        return self._local_host() and bool(origin) and origin.split("://", 1)[-1] == self.headers.get("Host")
+        return self._local_host() and origin_allowed(self.headers.get("Origin"), self.headers.get("Host"),
+                                                     self.headers.get("X-Forwarded-Host"))
 
     def _save_inbox(self, text, name):
         """inbox/<name>에 원자 교체로 쓴다. 임시 파일은 inbox 밖(qa/)에 고유 이름으로 써서 반영 단계가 쓰다 만
@@ -188,16 +261,19 @@ def serve(paths, qa_run_id, port=None):
     """반환: 종료 코드. 포트를 쓰고 있으면 OS가 고른 빈 포트로 연다."""
     try:
         srv = make_server(paths, qa_run_id, default_port(qa_run_id) if port is None else port)
-    except OSError:
+    except OSError as e:
         if port is not None:
+            if trace.port_in_use(e):
+                return trace.port_fail("M11", port)
             raise
         srv = make_server(paths, qa_run_id, 0)
     print("[serve] 검토 화면: http://127.0.0.1:%d/ (검수 완료 → qa/inbox/%s, 끝내려면 Ctrl+C)" % (
         srv.server_address[1], decision_name(qa_run_id)), flush=True)
+    trace.serving("M11", "http://127.0.0.1:%d/" % srv.server_address[1])
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
-        pass
+        trace.aborted("M11")
     finally:
         srv.server_close()
     return 0
@@ -375,27 +451,33 @@ def serve_questions(paths, qd, port=None, drafter=None, applier=None):
         doc = qmodel.load_set(qd)
     except qmodel.QModelError as e:
         print("[오류] %s" % e.reason_code, flush=True)
+        trace.fail_code(e.reason_code)
         return 1
     if doc is None:
         print("[오류] QUESTIONS_NOT_FOUND", flush=True)
+        trace.fail_code("QUESTIONS_NOT_FOUND")
         return 1
     if not os.path.isfile(os.path.join(qd, qmodel.SCREEN)):
         print("[오류] QUESTION_SCREEN_MISSING", flush=True)
+        trace.fail_code("QUESTION_SCREEN_MISSING")
         return 1
     set_id = doc["set_id"]
     try:
         srv = make_question_server(paths, qd, set_id, question_port(set_id) if port is None else port, drafter,
                                    applier=applier)
-    except OSError:
+    except OSError as e:
         if port is not None:
+            if trace.port_in_use(e):
+                return trace.port_fail("M11", port)
             raise
         srv = make_question_server(paths, qd, set_id, 0, drafter, applier=applier)
     print("[serve] 질문 화면: http://127.0.0.1:%d/ (답변 완료 → qa/inbox/%s%s, 끝내려면 Ctrl+C)" % (
         srv.server_address[1], qmodel.answers_name(set_id), " → 바로 반영" if applier else ""), flush=True)
+    trace.serving("M11", "http://127.0.0.1:%d/" % srv.server_address[1])
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
-        pass
+        trace.aborted("M11")
     finally:
         srv.server_close()
     if srv.applied:
@@ -414,6 +496,7 @@ BOARD_KIND = "taxonomy_board_decisions"
 
 
 class _BoardHandler(_BaseHandler):
+    milestone = "M12"
     screen = None
     preview = None
     finalize = None

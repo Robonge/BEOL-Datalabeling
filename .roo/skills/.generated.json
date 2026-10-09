@@ -1,0 +1,76 @@
+{
+  "excluded": {
+    "BEOL-labeling-change-dashboard": "~/.claude/projects 세션 기록에 의존(폐쇄망 Roo에 없음)"
+  },
+  "generator": "tools/gen_roo_skills.py",
+  "generator_version": "1",
+  "rules": {
+    ".roo/rules/00-beol-governing.md": {
+      "generator_version": "1",
+      "source": "CLAUDE.md",
+      "source_sha256": "84d309fbd6fed546e1a15d102f3403569ba0bd0ea192ea001116453a6cac9223"
+    }
+  },
+  "skills": {
+    "beol-labeling": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling/SKILL.md",
+      "source_sha256": "edfdf0f79e42b1b8cfc46b8054a638eb9345fcddd44db720948ec6e71b0c77ce"
+    },
+    "beol-labeling-axis-update": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling-axis-update/SKILL.md",
+      "source_sha256": "e19863a31ff1b3700895f15499fb7606b54756144c1c1de4e0df731b2c57c040"
+    },
+    "beol-labeling-code-engr-bot": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling-Code-Engr-bot/SKILL.md",
+      "source_sha256": "bf30d5acfa5595e69077045cbc2837b931541ac535089f5d846208544b45c3b0"
+    },
+    "beol-labeling-daily-report": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling-daily-report/SKILL.md",
+      "source_sha256": "91aafaee03303335c3391ea5aa5bf704e09403ce7a52b65103e89a5bf47dfc65"
+    },
+    "beol-labeling-domain-engr-bot": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling-Domain-Engr-bot/SKILL.md",
+      "source_sha256": "be965f228d0a4925615df8d6b4c90e9500e073263e4b13c95085c0268b509f0e"
+    },
+    "beol-labeling-feedback": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling-feedback/SKILL.md",
+      "source_sha256": "0457d0cf896c84342b73fd3a119e22dfb8f84b635a2e648926495de73f03e173"
+    },
+    "beol-labeling-project-html": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling-project-html/SKILL.md",
+      "source_sha256": "f42e7609359fc006e712d0fb12f491eb7ecc4beef3edac0eecf966419e7a7945"
+    },
+    "beol-labeling-rag-html": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling-RAG-html/SKILL.md",
+      "source_sha256": "934d666a874267c29f1f0683bf4005adafdc16c954f1080c3b330df9d5e1581e"
+    },
+    "beol-labeling-rules-update": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling-rules-update/SKILL.md",
+      "source_sha256": "3772e719fd458949a78e37fbbf0350acb802012212d9fbc7696499ea70f8d123"
+    },
+    "beol-labeling-run-labeling": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling-run-labeling/SKILL.md",
+      "source_sha256": "bd167ed2528e1fb9a78196e44a41c98a041d6d6f0af8b4a605b5270d8cfa7315"
+    },
+    "beol-labeling-workflow": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-labeling-workflow/SKILL.md",
+      "source_sha256": "b006e04e946b479a726a9cb8e3f670035a2fdb619d71aef987e43037127a2fd2"
+    },
+    "beol-taxonomy-dashboard": {
+      "generator_version": "1",
+      "source": ".claude/skills/BEOL-taxonomy-dashboard/SKILL.md",
+      "source_sha256": "a33c3d24f479c34a41112d6c375f8b039e5d80154ab8c76ebf48017a6543e72b"
+    }
+  }
+}

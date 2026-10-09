@@ -6,6 +6,7 @@
 - 되돌릴 수 있는 일만 한다: 코드 검수, 축·규칙 점검(읽기), 교정 장부, 규칙 후보, 도메인 질문 생성.
 - 재라벨링·적재·승인·taxonomy.json 쓰기는 하지 않고 morning.md에 할 일로 올린다.
 - 한 단계가 실패해도 다음 단계로 넘어간다. 기록에는 단계 이름·종료 코드·건수만 남긴다.
+- 실패한 단계의 사유는 그 명령이 milestones.jsonl에 남긴 마지막 실패 줄의 `<사유 코드>@<Mxx>`(없으면 RC_<n>).
 - 출력: workspaces/_nightly/<YYYYMMDD>/steps.jsonl, morning_queue.jsonl, morning.md
 """
 import argparse
@@ -17,6 +18,10 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+from labelbot import trace  # noqa: E402  마일스톤 추적(M18 NIGHTLY_REPORT, stderr)
+
 WS_DIR = os.path.join(ROOT, "workspaces")
 OUT_DIR = os.path.join(WS_DIR, "_nightly")
 TIMEOUT = 15 * 60
@@ -25,6 +30,44 @@ SEVERITY_ORDER = {"critical": 0, "action": 1, "info": 2}
 
 def _now():
     return datetime.datetime.now().isoformat(timespec="seconds")
+
+
+def _jsonl_paths(args):
+    """그 명령이 마일스톤을 기록하는 milestones.jsonl 후보: --workspace의 logs/, 그리고 작업 폴더 밖 기록(_trace)."""
+    out = []
+    if "--workspace" in args:
+        i = args.index("--workspace")
+        if i + 1 < len(args):
+            out.append(os.path.join(ROOT, args[i + 1], "logs", trace.JSONL))
+    out.append(os.path.join(trace.trace_root(), trace.JSONL))
+    return out
+
+
+def _sizes(paths):
+    return dict((p, os.path.getsize(p) if os.path.isfile(p) else 0) for p in paths)
+
+
+def milestone_reason(before):
+    """before({경로: 실행 전 크기}) 뒤에 덧붙은 줄 중 마지막 fail → '<사유 코드>@<Mxx>'. 없으면 None."""
+    last = None
+    for path, size in before.items():
+        if not os.path.isfile(path):
+            continue
+        try:
+            with open(path, "rb") as fh:
+                fh.seek(size)
+                tail = fh.read().decode("utf-8", "replace")
+        except OSError:
+            continue
+        for line in tail.splitlines():
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(r, dict) and r.get("status") == "fail" and trace.safe_code(r.get("reason_code")) \
+                    and (last is None or (r.get("ts") or "") >= (last.get("ts") or "")):
+                last = r
+    return "%s@%s" % (last["reason_code"], last["milestone"]) if last else None
 
 
 def run(step, args, dry_run, steps):
@@ -37,11 +80,12 @@ def run(step, args, dry_run, steps):
         steps.append(row)
         return None, ""
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    before = _sizes(_jsonl_paths(args))
     try:
         p = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, timeout=TIMEOUT)
         rc, out = p.returncode, p.stdout.decode("utf-8", "replace")
         status = "ok" if rc == 0 else "failed"
-        reason = None if rc == 0 else "RC_%d" % rc
+        reason = None if rc == 0 else (milestone_reason(before) or "RC_%d" % rc)
     except subprocess.TimeoutExpired:
         rc, out, status, reason = None, "", "failed", "TIMEOUT"
     except OSError:
@@ -175,6 +219,10 @@ def main(argv=None):
     p.add_argument("--recent", type=int, default=3, help="축·규칙 점검할 최근 작업 폴더 수(기본 3)")
     p.add_argument("--dry-run", action="store_true", help="명령만 출력하고 실행·기록하지 않는다")
     args = p.parse_args(argv)
+    return trace.run("M18", lambda: _main(args))
+
+
+def _main(args):
     steps, queue = nightly(args.recent, args.dry_run)
     if args.dry_run:
         return 0

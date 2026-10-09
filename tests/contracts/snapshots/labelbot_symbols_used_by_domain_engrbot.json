@@ -217,6 +217,62 @@
       "domain_engrbot/adapters/labelbot_ws.py"
     ]
   },
+  "labelbot.trace.aborted": {
+    "kind": "function",
+    "signature": "(mid, workspace=None)",
+    "used_in": [
+      "domain_engrbot/trace.py"
+    ]
+  },
+  "labelbot.trace.fail_code": {
+    "kind": "function",
+    "signature": "(code, detail=None)",
+    "used_in": [
+      "domain_engrbot/trace.py"
+    ]
+  },
+  "labelbot.trace.port_fail": {
+    "kind": "function",
+    "signature": "(mid, port)",
+    "used_in": [
+      "domain_engrbot/trace.py"
+    ]
+  },
+  "labelbot.trace.port_in_use": {
+    "kind": "function",
+    "signature": "(exc)",
+    "used_in": [
+      "domain_engrbot/trace.py"
+    ]
+  },
+  "labelbot.trace.post_failed": {
+    "kind": "function",
+    "signature": "(mid, code, workspace=None)",
+    "used_in": [
+      "domain_engrbot/trace.py"
+    ]
+  },
+  "labelbot.trace.run": {
+    "kind": "function",
+    "signature": "(mid, fn, run_id=None, workspace=None, quiet=False, defer=False)",
+    "used_in": [
+      "domain_engrbot/trace.py"
+    ]
+  },
+  "labelbot.trace.safe_code": {
+    "kind": "function",
+    "signature": "(code)",
+    "used_in": [
+      "domain_engrbot/trace.py"
+    ]
+  },
+  "labelbot.trace.serving": {
+    "kind": "function",
+    "signature": "(mid, url)",
+    "used_in": [
+      "domain_engrbot/trace.py"
+    ]
+  },
   "labelbot.util.ALLOWED_EXT": {
     "kind": "constant",
     "type": "tuple",
