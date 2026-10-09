@@ -1,12 +1,12 @@
 {
- "release_label": "beol-import-20261010-1ab9e3b",
- "source_commit": "1ab9e3bca053ddb49d02778ea622bdcaf93e36ea",
- "created_at": "2026-10-09T16:51:25Z",
+ "release_label": "beol-import-20261010-45e7915",
+ "source_commit": "45e791502ab5dd43518fc5d4d52c63e97fc524fd",
+ "created_at": "2026-10-09T21:40:15Z",
  "files": [
   {
    "path": ".claude/launch.json",
-   "size": 949,
-   "sha256": "5da6ab0a370fac0bcb4903b05a1b9a77f94859763bd6c33f2c2ef2ed7f4ce67c",
+   "size": 526,
+   "sha256": "b1bcb8828dca23655f06488f6bb80451a8946e1e6b8d7ec3a7f2718b19215baf",
    "class": "code"
   },
   {
@@ -191,8 +191,8 @@
   },
   {
    "path": ".roo/rules/00-beol-governing.md",
-   "size": 5273,
-   "sha256": "8d4832d5872355a6698109c70484043747e38f0840e40738fdad98b61faf7bcc",
+   "size": 6146,
+   "sha256": "a1b38da1c6c2c54789e1118775de6fe21d124a2dd5b33f2fecd7f51acf13478f",
    "class": "code"
   },
   {
@@ -215,14 +215,14 @@
   },
   {
    "path": ".roo/skills/beol-env-setup/SKILL.md",
-   "size": 5372,
-   "sha256": "deec748886e3bbf27b36f157887f1e3340d9919a727b7da5c5556a52305056d2",
+   "size": 5880,
+   "sha256": "96ea37652a45bcc211a3371af757d612c92c2182eaeb0c55037876d9f458eba5",
    "class": "code"
   },
   {
    "path": ".roo/skills/beol-import-verify/SKILL.md",
-   "size": 3479,
-   "sha256": "aff269801a4e3d53690385904b59082daa7a3be818053cb97129327c2be5754b",
+   "size": 3496,
+   "sha256": "128310034b516f5e7591bcbf8ca5976199c7d6ff43547d539493fd056545cfb9",
    "class": "code"
   },
   {
@@ -299,8 +299,8 @@
   },
   {
    "path": ".roo/skills/beol-release-accept/SKILL.md",
-   "size": 4829,
-   "sha256": "36a7c0707fb0de68d6cfbf17fd9ff9ceac657772a6f0ba4b2f2ba864b5cc22e0",
+   "size": 4906,
+   "sha256": "da99f64df9f4b9d237eda7a4646b0f5c92e00402b06e9452bc62685c06eaaf33",
    "class": "code"
   },
   {
@@ -358,6 +358,12 @@
    "class": "code"
   },
   {
+   "path": "CDEP_VER.md",
+   "size": 12700,
+   "sha256": "4a04c34a0963d85164c9475b61029766e62b4cba15fbe380164872e04e790f1b",
+   "class": "code"
+  },
+  {
    "path": "CLAUDE.md",
    "size": 3546,
    "sha256": "84d309fbd6fed546e1a15d102f3403569ba0bd0ea192ea001116453a6cac9223",
@@ -365,14 +371,14 @@
   },
   {
    "path": "CLOSED_NETWORK_RUNBOOK.md",
-   "size": 13173,
-   "sha256": "331cba076fba87c81c830d0dcaa4fc96465738dc2696479751840e6a4e106872",
+   "size": 13678,
+   "sha256": "bf7116351a967348becf23e4cf5c448babe9e8ec809942bc0f10b52377316bdf",
    "class": "code"
   },
   {
    "path": "CLOUD_SETUP.md",
-   "size": 13458,
-   "sha256": "1b197da8aa99c2b6d1b28388a812918d1a7308cfa142f1ae662415cbb9d03b32",
+   "size": 15409,
+   "sha256": "52a552e424feb20a86d4c94002d3ba9a5ade473d7a1ebb245266447d0c643607",
    "class": "code"
   },
   {
@@ -559,6 +565,42 @@
    "path": "config/doctor_targets.example.json",
    "size": 2492,
    "sha256": "8f2453926359eca8b3d2749ed7b24b6341563cb2c367f775b117bdc3323ed822",
+   "class": "code"
+  },
+  {
+   "path": "config/known_test_failures.txt",
+   "size": 1545,
+   "sha256": "e132adc59363246402e8db954d9641372ba0b89054907ab437831a1f9c30d08b",
+   "class": "text-other"
+  },
+  {
+   "path": "config/site.example/beol.env.example",
+   "size": 2006,
+   "sha256": "e64e807f14f3ce39efaaa98677469c1ee3af827d958aa6078531c4279c38ba8d",
+   "class": "code"
+  },
+  {
+   "path": "config/site.example/crontab.example",
+   "size": 877,
+   "sha256": "dc5d0e73e7a09f34f454f4be745db139209722a5f8d65ffa1ef5d37884860e0f",
+   "class": "code"
+  },
+  {
+   "path": "config/site.example/doctor_targets.example.json",
+   "size": 2492,
+   "sha256": "8f2453926359eca8b3d2749ed7b24b6341563cb2c367f775b117bdc3323ed822",
+   "class": "code"
+  },
+  {
+   "path": "config/site.example/profile.example.json",
+   "size": 1244,
+   "sha256": "edec8e4cd5221e8a72f5c76f6e475b97dedfc5cec4ef87b5ec38928721546f19",
+   "class": "code"
+  },
+  {
+   "path": "config/site.example/scan_denylist.example.json",
+   "size": 446,
+   "sha256": "0c423aafe81cd96a04cf1408e28a5772c2726b105f1a1922d4e0c96006660159",
    "class": "code"
   },
   {
@@ -2477,8 +2519,8 @@
   },
   {
    "path": "domain_engrbot/tests/test_taxonomy_board.py",
-   "size": 80342,
-   "sha256": "944374ca573455ae8c2d5d7472fd1fbadb4a7790f99fa87c48953888bb89fffa",
+   "size": 81144,
+   "sha256": "f22404ccfc32f491871a7297ab89e99357872fa6413fa0a92f5d833298e1b899",
    "class": "code"
   },
   {
@@ -2813,98 +2855,98 @@
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-020234.json",
-   "size": 1030,
-   "sha256": "963b938afb332c04b4effe559a3831b2b3e787ab37ea4307436fd7f5dc3b03f9",
+   "size": 950,
+   "sha256": "650611e00514211efd4ff7f1a5549889144e1afb127c43fddec555a9f13476ae",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-023720.json",
-   "size": 684,
-   "sha256": "8dd7a067c2d6ce2ebab83ab6dd456a32727f1f2f95eb10be2870913af7895dac",
+   "size": 604,
+   "sha256": "0ce13552d59929a35b123c6ac4f2e152e95fa186418e765d091541679f22f720",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-025439.json",
-   "size": 633,
-   "sha256": "0749354c9841357cd1c409d41ab254b4b6bfcf96dde364658403259ec5f34efb",
+   "size": 553,
+   "sha256": "370233fd4e86a8ea0d28092b215f40cbabb342fd1e1b5c1513f7c9ff00355961",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-034316.json",
-   "size": 710,
-   "sha256": "23881a94a45777d7bd30314ca14ac4cf12262c0e44f5753a628dada7ae8a3642",
+   "size": 630,
+   "sha256": "2795324bc4bc2b8c115fa8b6c59f2753e52d549639e6e6445661d1dc4655315e",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-041826.json",
-   "size": 684,
-   "sha256": "aea1b9bb0a8ebff1573571c1441312cb6b7ecaf2aa509b16367cfec4f624248b",
+   "size": 604,
+   "sha256": "4d954b4b692c226417edadb1255a0b9f4015f6f82cc8d5168f9cdc9c7607653f",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-113123.json",
-   "size": 447,
-   "sha256": "6df292a5b3ef37ad9bd42d4aa76fd668694575fb23b96cf42d7b5dde9272d581",
+   "size": 367,
+   "sha256": "2c2f2fc022002a4676309ea6e88ed5c301dba835c01472004f2ac2668eed1334",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-165508.json",
-   "size": 766,
-   "sha256": "d0e329ec6b77ce9a1d53a75ba0e3d805ec5b373e76dc2069f2f239170127e1c0",
+   "size": 686,
+   "sha256": "c4183bb88402db0b47c96026247e56b55f585c515da0a5fe645588960fc4cbee",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-195048.json",
-   "size": 532,
-   "sha256": "fdd7e2e942136a88b5f713034734dd5421df858725a7555d44afccd9254e50dc",
+   "size": 452,
+   "sha256": "78c4ec2f3382f82acff992c71d60c6ddf87c01023af5513e589d59f5dc9cc62e",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-222213.json",
-   "size": 532,
-   "sha256": "45cd91b67ae7882e0897af18596cba838ff7826c215bcd889b72064484490944",
+   "size": 452,
+   "sha256": "139a0e93ba755aaa50852b2a8a712f104342804a28f0ce60ae3c8ba13d67e942",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-232910.json",
-   "size": 762,
-   "sha256": "2bd2fd77c8d4f4abc1d79c77f28b2c7fc46eae3e3dc21ab67a5cb43c33731a7b",
+   "size": 682,
+   "sha256": "c5e8d793fede018ea74e5550dbaafdfa0c95eda765af9221d68080cca05899c4",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261006-134010.json",
-   "size": 762,
-   "sha256": "a2bb1d04e8d8d1589c630558c786a2a841cabdf13fc8982a6f1b7d531a91b347",
+   "size": 682,
+   "sha256": "2bb49b3182e119e216b4e83bcafa00c176326611e6365f7c017a7c6c6e1ceee0",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261006-235203.json",
-   "size": 1132,
-   "sha256": "3d344fe4db466dc6f2da8db835e0beb751e45dc3e1741dd28212e3015c2871b1",
+   "size": 1052,
+   "sha256": "4ecd48eb6cd266b93979f6464f050faa81bd477992d712b711efe2d3eddea1e3",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261007-025935.json",
-   "size": 999,
-   "sha256": "1fa4878bc71b30738801666aed4ec64d433c8e42999ea17341d39fa6e6066bd0",
+   "size": 919,
+   "sha256": "1f93bf918a4608da76874bf2c3d5cf26550fe633fff5fb3ef5fe6528c46cfa45",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261007-124653.json",
-   "size": 846,
-   "sha256": "bbbb1901402ba6ef928bd03b65f3848cec7737a1a9b5b234e0eba784c280aa25",
+   "size": 766,
+   "sha256": "bfe1306e84c86482e4511064d4987dcbc3acab0204f9917e1bb6795ff1325544",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261007-195113.json",
-   "size": 1996,
-   "sha256": "a30b8a9f8208f380b0cf5fdd686794b98d6fa03bf33444ac5f14a57b5331c045",
+   "size": 1916,
+   "sha256": "786fe84528350f9486e317428d182951af715436fdf66acf4322ecf51b992fb1",
    "class": "state"
   },
   {
    "path": "injested-file-list/261004_BEOL_parshing-test-files_20261008-013403.json",
-   "size": 336,
-   "sha256": "3eacd8d111d49ed245afc4f7281c92358d7c69d24d4072a67e40ac06f4e5a1bd",
+   "size": 256,
+   "sha256": "1b678f9d4806bc452ead17cebe8ca3eb1819a1c3429123bc1ca73ba89993a351",
    "class": "state"
   },
   {
@@ -2945,8 +2987,8 @@
   },
   {
    "path": "labelbot/cdp.py",
-   "size": 13097,
-   "sha256": "e369f24e25e552627faf9f9bd40b8476bb60e14da0fe8507cb0da1a1651c6468",
+   "size": 15346,
+   "sha256": "9502e2d0375f5e1db1026a8286aee3904ad0a2c016dc0d4a576ee806fba1b5d4",
    "class": "code"
   },
   {
@@ -3029,8 +3071,8 @@
   },
   {
    "path": "labelbot/milestones.py",
-   "size": 8611,
-   "sha256": "c908696b98d04b2235cb3c3da77fd458c1b4bca9caa12849d6977cb38a9ed211",
+   "size": 8647,
+   "sha256": "81e56edf53d8d1cd5895d4d26a9b9fd6ee14f951759ed8a17e22769c2024e14e",
    "class": "code"
   },
   {
@@ -3077,8 +3119,8 @@
   },
   {
    "path": "labelbot/reason_codes.py",
-   "size": 48605,
-   "sha256": "ffc72bfafaee65b4a72aee66a7d6b4806684c80ff8e99497d8a9298e91c53386",
+   "size": 49206,
+   "sha256": "9efebb0f7087b4323bfef2c00a01be4512838faf58437dd9886af918b824b376",
    "class": "code"
   },
   {
@@ -4049,14 +4091,26 @@
   },
   {
    "path": "tests/test_import_tools.py",
-   "size": 24466,
-   "sha256": "db54897326360d365824bfc39ec289b54e7723f6e69c27d97f0daf8211ccbaa0",
+   "size": 25094,
+   "sha256": "8323efc43bff15ffd9e73234835824b702aeabbe1d24647d8ecfff339cf5612d",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_import_tools_git.py",
+   "size": 1428,
+   "sha256": "13a848b89353ca6f78b11b35d463e1efb2c17d3b522c47ec7ada54d4b1fc9faa",
    "class": "code"
   },
   {
    "path": "tests/test_init_workspace.py",
    "size": 2646,
    "sha256": "6ebd1cfe61ff472b99ece5fb5a44d0e0f155359a061604f36740d3fdbe452123",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_linux_compat.py",
+   "size": 18179,
+   "sha256": "770fc280b60229f471ca19ae885f1903ee1a2e045080f27877a15a4da0c35907",
    "class": "code"
   },
   {
@@ -4091,8 +4145,14 @@
   },
   {
    "path": "tests/test_prepush_scan.py",
-   "size": 5765,
-   "sha256": "3d9ebafc0cbfb5b2c163fc9a6f66f60da152fd3c0ea85cf2e77649a2c92d91c7",
+   "size": 5675,
+   "sha256": "d231375b3c979d1c6690cc51678f41b57072273dd57f3ee634396986d1e4b8a8",
+   "class": "code"
+  },
+  {
+   "path": "tests/test_prepush_scan_git.py",
+   "size": 1019,
+   "sha256": "83f9b9d28917657b8879bccb03f0a1ca38409357f97822ff8f69447f0b201dc1",
    "class": "code"
   },
   {
@@ -4253,14 +4313,14 @@
   },
   {
    "path": "tools/beol_doctor.py",
-   "size": 59808,
-   "sha256": "b62b5b73b746b9081ac8c9faf6cd04b5e3d34f7802693a7fa43e0290a3886435",
+   "size": 60300,
+   "sha256": "57672e4c00a1350cfce9e0cba21f057b067aef7532ce1ec5d0cb5cbe4e15f2eb",
    "class": "code"
   },
   {
    "path": "tools/beol_status.py",
-   "size": 827,
-   "sha256": "b34641efd5d690f0a02cbf2976389661e8200a6a7f78294a87a4ad6d19aabecc",
+   "size": 2484,
+   "sha256": "e3392b17386d1747343101910ad25befa783d236f0a01eeba68cf03c8b1274c4",
    "class": "code"
   },
   {
@@ -4276,15 +4336,21 @@
    "class": "code"
   },
   {
+   "path": "tools/cloud_setup.sh",
+   "size": 12810,
+   "sha256": "73c5080bffb89c85b882dbd02fc35327d0f222adec5da902e6c22115f2a5db75",
+   "class": "code"
+  },
+  {
    "path": "tools/gen_roo_skills.py",
-   "size": 49029,
-   "sha256": "a1734188f79ab8aab8baec7b23f83edd68bc9138064dc68e928ede1c172df2ca",
+   "size": 49981,
+   "sha256": "015eeae42aab33ad5afe58c1a09103b00920f9396935ecc500c75aed79bf1939",
    "class": "code"
   },
   {
    "path": "tools/make_import_manifest.py",
-   "size": 14066,
-   "sha256": "ba0ee1be60a5e9842822c7e43bddbbbe3f02bba5f18a56ed6d1f4ede410c551b",
+   "size": 15549,
+   "sha256": "694b6b87b9cdeb504515d799d460051f76b85d2efb26f9c2ca32103331f1268a",
    "class": "code"
   },
   {
@@ -4297,6 +4363,12 @@
    "path": "tools/rag_eval.py",
    "size": 31284,
    "sha256": "9e5f0dd5aeb73373af03b32eba20082adf6b5b54e17ccdb3ca886c27c2a1350c",
+   "class": "code"
+  },
+  {
+   "path": "tools/site_init.py",
+   "size": 4456,
+   "sha256": "d37f59a1261f1da05e4ae5bad5881bc339900b62349b8ef2ef0a75ecedf4b2b3",
    "class": "code"
   },
   {
@@ -4368,7 +4440,72 @@
    "tracked": false
   }
  ],
- "state_overrides": [],
+ "state_overrides": [
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-020234.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-023720.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-025439.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-034316.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-041826.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-113123.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-165508.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-195048.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-222213.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261005-232910.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261006-134010.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261006-235203.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261007-025935.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261007-124653.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261007-195113.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  },
+  {
+   "path": "injested-file-list/261004_BEOL_parshing-test-files_20261008-013403.json",
+   "reason": "경로 상대화(cdep-ver 리눅스 클라우드)"
+  }
+ ],
  "test_modules": [
   "code_engrbot/tests/test_c1.py",
   "code_engrbot/tests/test_c2.py",
@@ -4416,6 +4553,7 @@
   "tests/test_docmeta.py",
   "tests/test_import_tools.py",
   "tests/test_init_workspace.py",
+  "tests/test_linux_compat.py",
   "tests/test_llm_guard.py",
   "tests/test_milestones.py",
   "tests/test_prepush_scan.py",
@@ -4437,6 +4575,72 @@
   "tests/test_taxonomy.py",
   "tests/test_taxonomy_store.py",
   "tests/test_trace.py"
+ ],
+ "test_modules_excluded": [
+  {
+   "path": "tests/test_axis_update.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_axis_update_screens.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_controls.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_feedback.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_golden_run.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_import_tools_git.py",
+   "excluded_reason": "git 체크아웃(.git) 필요 — 반입 ZIP에는 .git이 없다"
+  },
+  {
+   "path": "tests/test_new_axis_flow.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_parsers.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_pipeline.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_prepush_scan_git.py",
+   "excluded_reason": "git 체크아웃(.git) 필요 — 반입 ZIP에는 .git이 없다"
+  },
+  {
+   "path": "tests/test_revisit.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_rules_board.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_rules_update.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_run_axes.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_slides.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  },
+  {
+   "path": "tests/test_status.py",
+   "excluded_reason": "DUMMY_IMPORT"
+  }
  ],
  "download_list_sha256": "114ca210c4d854def7c7b7f155fbd26928950b8ab657d3006934c4c537d07c41"
 }
