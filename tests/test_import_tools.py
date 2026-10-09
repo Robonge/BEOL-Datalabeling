@@ -186,13 +186,19 @@ class ManifestTest(RepoCase):
         self.assertEqual(rc, 1)
         self.assertIn("OVERRIDE_NOT_STATE", out)
 
-    def test_real_repo_dummy_graph(self):
-        blobs = mim.read_blobs(ROOT, "HEAD")
+    def test_closed_network_marker_excludes_with_reason(self):
+        """CLOSED_NETWORK_EXCLUDE 표시 모듈은 dummy와 무관하게 빠지고 이유가 실린다(git 없는 폐쇄망용).
+        실제 저장소 그래프 확인(git blob 필요)은 tests/test_import_tools_git.py."""
+        blobs = {"tests/__init__.py": b"", "tests/_dummy.py": b"X = 1\n",
+                 "tests/test_a.py": b"import os\n",
+                 "tests/test_git_only.py": b'"""doc"""\nCLOSED_NETWORK_EXCLUDE = "git checkout"\nimport os\n',
+                 "tests/test_not_top.py": b'def f():\n    CLOSED_NETWORK_EXCLUDE = "x"\n',
+                 "tests/test_d.py": b"from tests import _dummy\n"}
         tests, excluded = mim.compute_test_modules(blobs)
-        self.assertIn("tests/test_pipeline.py", excluded)
-        self.assertIn("tests/test_rules_board.py", excluded)  # test_rules_update → test_pipeline 경유
-        self.assertIn("tests/test_taxonomy.py", tests)
-        self.assertFalse(set(tests) & set(excluded))
+        self.assertEqual(tests, ["tests/test_a.py", "tests/test_not_top.py"])
+        self.assertEqual(mim.excluded_reasons(blobs, excluded), [
+            {"path": "tests/test_d.py", "excluded_reason": "DUMMY_IMPORT"},
+            {"path": "tests/test_git_only.py", "excluded_reason": "git checkout"}])
 
 
 class VerifyImportTest(RepoCase):

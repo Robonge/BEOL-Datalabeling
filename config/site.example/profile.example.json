@@ -1,0 +1,27 @@
+{
+  "_설명": "사내 OpenAI 호환 API용 pipeline.json 덮어쓰기 예시(placeholder만, 공개 저장소). tools/site_init.py가 workspaces/_site/profile.json으로 복사한다. 아직 코드가 이 파일을 자동으로 읽지 않는다 — 게이트 G-API 값이 정해지면 작업 폴더 pipeline.json의 같은 키에 옮겨 적는다(키 값은 적지 않고 env 이름만).",
+  "_필드": "llm.base_url·embedding.base_url=사내 API 루트(…/v1), model=모델 id, api_key_env=beol.env의 키 env 이름, ca_file=사내 루트 CA 경로(시스템 저장소에 넣었으면 null), render.browser_path=chromium 실행 파일(비우면 BEOL_CHROME·PATH에서 찾는다)",
+  "llm": {
+    "base_url": "https://llm.example.invalid/v1",
+    "model": "<chat-model-id>",
+    "api_key_env": "BEOL_LLM_API_KEY",
+    "max_tokens_param": "max_tokens",
+    "response_format_json": false,
+    "ca_file": null,
+    "timeout": 180,
+    "workers": 4
+  },
+  "embedding": {
+    "base_url": "https://embed.example.invalid/v1",
+    "model": "<embedding-model-id>",
+    "api_key_env": "BEOL_EMBED_API_KEY",
+    "ca_file": null
+  },
+  "supabase": {
+    "enabled": false,
+    "storage_enabled": false
+  },
+  "render": {
+    "browser_path": null
+  }
+}

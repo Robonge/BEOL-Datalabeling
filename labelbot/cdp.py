@@ -12,6 +12,7 @@ import shutil
 import socket  # code_engrbot: allow C2_TRANSPORT_BYPASS 127.0.0.1 DevTools 웹소켓 전용, 사외 전송 아님(WebSocket이 로컬 호스트 외 거부)
 import struct
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.parse
@@ -25,9 +26,24 @@ class CdpError(Exception):
         self.reason_code = reason_code
 
 
+# 리눅스에서 PATH로 찾는 이름(배포판 패키지·Google 패키지). Windows·macOS 후보 순서는 그대로 둔다.
+LINUX_NAMES = ("chromium", "chromium-browser", "google-chrome", "google-chrome-stable", "microsoft-edge")
+# Chrome for Testing 압축 해제 위치(CLOUD_SETUP.md 7절). BEOL_CHROME이 폴더면 그 아래에서도 찾는다.
+CFT_RELS = (os.path.join("chrome-linux64", "chrome"), "chrome")
+
+
+def _env_browser():
+    """env BEOL_CHROME: 실행 파일 경로 또는 Chrome for Testing을 푼 폴더. 없으면 []."""
+    v = (os.environ.get("BEOL_CHROME") or "").strip()
+    if not v:
+        return []
+    v = os.path.expanduser(v)
+    return [os.path.join(v, r) for r in CFT_RELS] if os.path.isdir(v) else [v]
+
+
 def browser_candidates():
     pf = [os.environ.get(k) for k in ("ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA")]
-    out = []
+    out = _env_browser()
     for base in [p for p in pf if p]:
         out.append(os.path.join(base, "Microsoft", "Edge", "Application", "msedge.exe"))
     for base in [p for p in pf if p]:
@@ -35,7 +51,34 @@ def browser_candidates():
     out += ["/usr/bin/microsoft-edge", "/usr/bin/google-chrome", "/usr/bin/chromium",
             "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
             "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"]
+    if sys.platform.startswith("linux"):
+        out += [w for w in (shutil.which(n) for n in LINUX_NAMES) if w and w not in out]
+        out += ["/usr/bin/chromium-browser", "/usr/bin/google-chrome-stable", "/snap/bin/chromium",
+                os.path.join(os.path.expanduser("~"), ".local", "opt", "chrome-linux64", "chrome")]
     return out
+
+
+def linux_flags(platform=None, euid=None, shm_bytes=None):
+    """리눅스 컨테이너에서만 붙이는 headless 플래그(Windows·macOS는 빈 목록 — 동작 그대로).
+    --no-sandbox: root로 돌 때(euid 0) 또는 env BEOL_CHROME_NO_SANDBOX=1(사용자 네임스페이스가 막힌 컨테이너).
+    --disable-dev-shm-usage: /dev/shm이 512MB 미만(컨테이너 기본 64MB)이거나 env BEOL_CHROME_DISABLE_DEV_SHM=1."""
+    platform = sys.platform if platform is None else platform
+    if not platform.startswith("linux"):
+        return []
+    if euid is None:
+        euid = os.geteuid() if hasattr(os, "geteuid") else -1
+    flags = []
+    if euid == 0 or os.environ.get("BEOL_CHROME_NO_SANDBOX") == "1":
+        flags.append("--no-sandbox")
+    if shm_bytes is None:
+        try:
+            st = os.statvfs("/dev/shm")
+            shm_bytes = st.f_frsize * st.f_blocks
+        except (AttributeError, OSError):
+            shm_bytes = 0
+    if shm_bytes < 512 * 1024 * 1024 or os.environ.get("BEOL_CHROME_DISABLE_DEV_SHM") == "1":
+        flags.append("--disable-dev-shm-usage")
+    return flags
 
 
 def find_browser(path=None):
@@ -261,7 +304,8 @@ class Browser:
         args = [exe, "--headless=new", "--remote-debugging-port=0", "--remote-debugging-address=127.0.0.1",
                 "--user-data-dir=" + self.profile, "--no-first-run", "--no-default-browser-check",
                 "--disable-extensions", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
-                "--disable-background-networking", "--disable-sync", "--disable-component-update", "about:blank"]
+                "--disable-background-networking", "--disable-sync", "--disable-component-update"]
+        args += linux_flags() + ["about:blank"]
         try:
             self.proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                          stdin=subprocess.DEVNULL)

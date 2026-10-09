@@ -778,6 +778,12 @@ def _find_chrome(ctx):
     p = ctx.doc.get("chromium_path")
     if p:
         return p if os.path.isfile(p) else None
+    env_p = os.path.expanduser((ctx.env.get("BEOL_CHROME") or "").strip())  # labelbot/cdp.py와 같은 env
+    if env_p:
+        cands = [env_p]
+        if os.path.isdir(env_p):
+            cands = [os.path.join(env_p, "chrome-linux64", "chrome"), os.path.join(env_p, "chrome")]
+        return next((c for c in cands if os.path.isfile(c)), None)
     for name in CHROME_NAMES:
         w = shutil.which(name)
         if w:
@@ -788,7 +794,9 @@ def _find_chrome(ctx):
         cands.append(os.path.join(base, "Microsoft", "Edge", "Application", "msedge.exe"))
         cands.append(os.path.join(base, "Google", "Chrome", "Application", "chrome.exe"))
     cands += ["/usr/bin/microsoft-edge", "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
-              "/snap/bin/chromium", "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+              "/usr/bin/google-chrome-stable", "/snap/bin/chromium",
+              os.path.join(os.path.expanduser("~"), ".local", "opt", "chrome-linux64", "chrome"),
+              "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
               "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"]
     return next((c for c in cands if os.path.isfile(c)), None)
 

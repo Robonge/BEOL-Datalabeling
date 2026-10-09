@@ -1,7 +1,7 @@
 {
   "run_id": "20261005T142934-1532",
-  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261005-232910",
-  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "workspace": "workspaces/261004_BEOL_parshing-test-files_20261005-232910",
+  "input": "../../parshing test files",
   "recorded_at": "2026-10-05T23:32:28",
   "files": [
     "260402_RQE8IA.6C F4 trench etch bias 350V, 600V, pulsed 조건 평가 (PID 영향).pptx",

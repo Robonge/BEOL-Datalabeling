@@ -15,7 +15,7 @@ description: '폐쇄망에 반입한 릴리스 압축 해제 폴더를 확인한
 2. release_label로 폴더 이름을 바꾸고 그 폴더로 간다.
    ```bash
    cd /config/work/beol
-   L=$(python3 -c "import json;print(json.load(open('BEOL-Datalabeling-LLM-added/transfer/import_manifest.json'))['release_label'])")
+   L=$(python3 -c "import json;print(json.load(open('BEOL-Datalabeling-LLM-added/transfer/import_manifest.json',encoding='utf-8'))['release_label'])")
    mv BEOL-Datalabeling-LLM-added "/config/work/beol/$L" && cd "/config/work/beol/$L"
    ```
 3. 대조한다. 반입 보고는 항상 `/config/work/beol/_import/<release_label>.json`이다.

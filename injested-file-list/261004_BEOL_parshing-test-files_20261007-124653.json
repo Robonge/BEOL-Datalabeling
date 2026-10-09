@@ -1,7 +1,7 @@
 {
   "run_id": "20261007T034837-92cb",
-  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261007-124653",
-  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "workspace": "workspaces/261004_BEOL_parshing-test-files_20261007-124653",
+  "input": "../../parshing test files",
   "recorded_at": "2026-10-07T12:50:35",
   "files": [
     "260410_QIXJA058.65 M3 Ru liner O2-ALD 계면 산화 억제 평가.pptx",

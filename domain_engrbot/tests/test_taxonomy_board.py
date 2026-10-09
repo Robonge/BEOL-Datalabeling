@@ -362,6 +362,9 @@ class TaxonomyBoardTest(unittest.TestCase):
         self.assertIn("WORKSPACE_NOT_FOUND", buf.getvalue())
 
     def test_open_board_uses_browser(self):
+        # 환경 무관: BEOL_NO_BROWSER=1이나 DISPLAY 없는 리눅스에서도 "브라우저를 연다" 분기를 본다
+        from domain_engrbot import serve as serve_mod
+        self.enterContext(mock.patch.object(serve_mod, "no_browser", return_value=False))
         with mock.patch.object(tb.webbrowser, "open", return_value=True) as op:
             self.assertIsNone(tb.open_board("http://127.0.0.1:8795/"))
             self.assertIsNone(tb.open_board(os.path.join(self.tmp, "taxonomy_board.html")))
@@ -370,6 +373,16 @@ class TaxonomyBoardTest(unittest.TestCase):
         with mock.patch.object(tb.webbrowser, "open", return_value=False):
             self.assertEqual(tb.open_board("http://127.0.0.1:1/"), "BROWSER_NOT_FOUND")
         self.assertFalse(hasattr(tb, "open_side_by_side"))
+
+    def test_open_board_no_browser_prints_url(self):
+        from domain_engrbot import serve as serve_mod
+        buf = std_io.StringIO()
+        with mock.patch.object(serve_mod, "no_browser", return_value=True), \
+                mock.patch.object(tb.webbrowser, "open") as op, contextlib.redirect_stdout(buf):
+            self.assertIsNone(tb.open_board("http://127.0.0.1:8795/"))
+        op.assert_not_called()
+        self.assertIn("NO_BROWSER", buf.getvalue())
+        self.assertIn("http://127.0.0.1:8795/", buf.getvalue())
 
     def test_default_taxonomy_is_json(self):
         self.assertEqual(os.path.basename(tb.DEFAULT_TAXONOMY), "taxonomy.json")

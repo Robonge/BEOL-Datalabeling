@@ -17,12 +17,12 @@ description: '폐쇄망 서버에 처음(R1) 실행 환경을 만든다(C1). 설
 
 ## 절차
 
+- **기본 경로는 `bash tools/cloud_setup.sh`다.** 먼저 `bash tools/cloud_setup.sh --dry-run`으로 단계 목록을 보여 주고, 본 실행은 오래 걸리는 테스트(C3)가 있으므로 사용자 터미널에서 돌려 달라고 한다. 멈추면 그 단계 ID의 실패 블록을 인용하고, 고친 뒤 `bash tools/cloud_setup.sh --from <ID>`. 스크립트는 패키지를 설치하지 않는다 — 출력된 apt/dnf 명령은 사용자(또는 서버 관리자)가 `sudo`로 실행한다. 아래 0–3은 스크립트가 하지 않는 설치 단계(CA·패키지·Python 빌드)를 수동으로 할 때의 절차다.
+
 0. **step 도우미 준비.** `step`은 셸 함수라 터미널마다 다시 정의해야 한다. 사용자에게 VS Code 터미널을 하나 열고 `CLOUD_SETUP.md` 0절의 `# >>> step 도우미` ~ `# <<< step 도우미` 블록을 붙여 넣어 달라고 한다. 이후 `step` 명령은 **그 터미널**에서 실행한다(Roo 명령 도구가 다른 셸을 쓰면 `step: command not found`가 난다 — 그때는 사용자에게 그 터미널에서 실행해 달라고 안내하고 출력 끝 줄을 받는다).
 1. **설치 전 진단(1절).**
    ```bash
-   mkdir -p workspaces/_site
-   cp config/doctor_targets.example.json workspaces/_site/doctor_targets.json
-   chmod 600 workspaces/_site/doctor_targets.json
+   python3 tools/site_init.py
    ```
    사용자가 `workspaces/_site/doctor_targets.json`의 host를 실제 사내 호스트로 고치고(쓰지 않는 대상은 지움) 알려 오면:
    ```bash

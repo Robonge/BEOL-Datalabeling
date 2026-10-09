@@ -1,0 +1,10 @@
+# crontab 예시(placeholder만). tools/site_init.py가 workspaces/_site/crontab.example로 복사한다.
+# `crontab -e`에 붙여 넣고 B=를 실제 릴리스 폴더로 바꾼다(릴리스를 바꿀 때 B=만 고친다, current 심볼릭은 쓰지 않는다).
+# 경로는 모두 $B 기준 상대경로다. 키·호스트 값은 beol.env에만 있다(이 파일에 적지 않는다).
+SHELL=/bin/bash
+TZ=Asia/Seoul
+CRON_TZ=Asia/Seoul
+B=/config/work/beol/<release_label>
+# 06:00 야간 실행(Code-Engr-bot·Domain-Engr-bot) → 06:40 daily report
+0 6 * * *  cd "$B" && set -a && . workspaces/_site/beol.env && set +a && mkdir -p workspaces/_nightly && python nightly_run.py >> workspaces/_nightly/cron.log 2>&1
+40 6 * * *  cd "$B" && set -a && . workspaces/_site/beol.env && set +a && mkdir -p workspaces/_nightly && python daily_report.py >> workspaces/_nightly/cron.log 2>&1

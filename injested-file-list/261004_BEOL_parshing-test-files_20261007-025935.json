@@ -1,7 +1,7 @@
 {
   "run_id": "20261006T175957-9c46",
-  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261007-025935",
-  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "workspace": "workspaces/261004_BEOL_parshing-test-files_20261007-025935",
+  "input": "../../parshing test files",
   "recorded_at": "2026-10-07T03:02:04",
   "files": [
     "260121_QLDSR040.62 M1 RSBM TaN ALD cycle 100cy, 45cy, 50cy window 평가.pptx",

@@ -1,0 +1,16 @@
+# 로컬 기준선의 알려진 실패(테스트 ID만). tools/cloud_setup.sh C3가 이 목록 밖의 실패·오류가 있으면 멈춘다.
+# 출처: 로컬 전체 스위트 기준선(10 FAILED + SUBFAILED 묶음). 줄어들기만 해야 한다 — 늘리지 않는다.
+domain_engrbot/tests/test_golden_outputs.py::CleanRunGoldenTest::test_outputs_match_golden
+domain_engrbot/tests/test_golden_outputs.py::DefectRunGoldenTest::test_outputs_match_golden
+domain_engrbot/tests/test_golden_outputs.py::EvalGoldenTest::test_outputs_match_golden
+domain_engrbot/tests/test_harness.py::FullHarnessTest::test_all_layers_recall_one
+domain_engrbot/tests/test_harness.py::FullHarnessTest::test_failsafe_never_pass
+domain_engrbot/tests/test_integration.py::ZeroLayerAndNoJudgeTest::test_eval_command_writes_json_and_md
+domain_engrbot/tests/test_integration.py::ZeroLayerAndNoJudgeTest::test_layers_without_l3b_never_pass
+domain_engrbot/tests/test_integration.py::ZeroLayerAndNoJudgeTest::test_no_judge_zero_pass
+domain_engrbot/tests/test_judge.py::CleanAndMutationTest::test_label_swap_detected
+domain_engrbot/tests/test_judge.py::CleanAndMutationTest::test_partial_is_minor_and_reason_verbatim
+domain_engrbot/tests/test_judge.py::FailSafeTest::test_http_without_llm_config_is_skipped
+domain_engrbot/tests/test_judge.py::FailSafeTest::test_injected_failures_retry_then_judge_failed
+domain_engrbot/tests/test_judge.py::FailSafeTest::test_no_judge_zero_pass
+tests/test_defaults_taxonomy.py::DefaultTaxonomyTest::test_default_synonyms_have_no_short_ascii_keys

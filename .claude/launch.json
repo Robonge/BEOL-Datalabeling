@@ -2,18 +2,6 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "screens-parshing-test-files",
-      "runtimeExecutable": "python",
-      "runtimeArgs": [
-        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/.claude/skills/BEOL-labeling/scripts/serve_screens.py",
-        "--workspace",
-        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261008-013403",
-        "--port",
-        "8771"
-      ],
-      "port": 8771
-    },
-    {
       "name": "docs-static",
       "runtimeExecutable": "python",
       "runtimeArgs": [

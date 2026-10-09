@@ -42,3 +42,11 @@ taxonomy, Domain-Engr-bot(`domain_engrbot/`), labeling(`labelbot/`·`taxonomy/`�
 - `BEOL_TRACE=1`은 Roo 명령으로 실행하지 않는다(traceback이 대화 기록·사내 LLM 맥락에 들어간다). 일반 터미널에서만 켜고, 그 출력은 반출하지 않는다.
 - 저장소는 공개다. 사내 호스트·IP·키·내부 경로를 저장소 파일에 쓰지 않는다. 실제 값은 비추적 `workspaces/_site/`에만 둔다.
 - `.roo/skills/.generated.json`에 있는 skill과 이 파일은 생성물이다. 고치지 않는다.
+
+## 리눅스 클라우드 경로 규칙
+
+- 명령은 릴리스 폴더(예: `/config/work/beol/<release_label>`)에서 실행한다. 다른 위치에서 돌리지 않는다.
+- 경로는 릴리스 폴더 기준 상대경로로 쓴다(`workspaces/<작업 폴더>`, `taxonomy/taxonomy.json`). Windows 경로(`C:\…`, `%USERPROFILE%`)와 `/config/work/beol/current` 같은 심볼릭은 쓰지 않는다.
+- `python`은 Python 3.14 venv(또는 `~/.local/bin`)다: `python -m labelbot …`, `python nightly_run.py` 등 본체.
+- `python3`은 배포판 Python(3.8+)이다: `tools/beol_doctor.py`, `tools/beol_status.py`, `tools/verify_import.py`, `tools/carry_state.py`, `tools/site_init.py`처럼 3.14 없이 도는 도구만.
+- 환경 확인은 `bash tools/cloud_setup.sh`(먼저 `--dry-run`), 사이트 설정 예시는 `config/site.example/` → `python3 tools/site_init.py`.

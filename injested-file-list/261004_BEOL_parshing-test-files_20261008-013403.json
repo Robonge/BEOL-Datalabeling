@@ -1,7 +1,7 @@
 {
   "run_id": "20261007T163437-f0fe",
-  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261008-013403",
-  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "workspace": "workspaces/261004_BEOL_parshing-test-files_20261008-013403",
+  "input": "../../parshing test files",
   "recorded_at": "2026-10-08T01:37:40",
   "files": [
     "BEOL_Ru_Interconnect_Deep_Dive.pptx"

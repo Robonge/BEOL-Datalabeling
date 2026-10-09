@@ -14,12 +14,13 @@ description: '폐쇄망에서 릴리스마다 수락 검사를 한다(C3·C6): �
 1. **반입·업그레이드 확인.** `/config/work/beol/_import/<release_label>.json`이 있고 종료 코드 0이었는지(`beol-import-verify` 스킬), 업그레이드면 `carry_report.json`이 있는지(`beol-upgrade-carry` 스킬) 확인한다.
 2. **비더미 테스트(C3).** 몇 분 걸리므로 사용자에게 별도 VS Code 터미널에서 실행하고 마지막 요약 줄을 붙여 달라고 한다.
    ```bash
-   python -m pytest -p no:cacheprovider -q $(python -c "import json;print(' '.join(json.load(open('transfer/import_manifest.json'))['test_modules']))")
+   T=$(python3 tools/beol_status.py test-modules) && BEOL_NO_BROWSER=1 python -m pytest -p no:cacheprovider -q $T
    ```
    pytest가 미러에 없으면:
    ```bash
-   python -m unittest $(python -c "import json;print(' '.join(m[:-3].replace('/','.') for m in json.load(open('transfer/import_manifest.json'))['test_modules']))")
+   T=$(python3 tools/beol_status.py test-modules --unittest) && BEOL_NO_BROWSER=1 python -m unittest $T
    ```
+   목록이 비면 `사유=TEST_LIST_EMPTY`로 멈춘다(전체 스위트로 넘어가지 않는다). 기준선 비교까지 하려면 `bash tools/cloud_setup.sh --only C3`.
    수락: 실패는 로컬 기준선 10건 중 남은 것만(`domain_engrbot` test_harness 2·test_integration 3·test_judge 4, `tests/test_defaults_taxonomy` 1), 새 실패 0. 차이는 실패 테스트 ID·오류 유형으로 반출.
 3. **Roo skill 생성물 일치.**
    ```bash

@@ -1,0 +1,6 @@
+{
+  "_설명": "tools/prepush_scan.py --denylist 예시(placeholder만, 공개 저장소). tools/site_init.py가 workspaces/_site/scan_denylist.json으로 복사한다. 사본에 사내 호스트·도메인·내부 경로를 적으면 반출물에 남은 사내 이름을 잡는다(대소문자 무시, 부분 일치).",
+  "hosts": ["intranet-host.example.invalid"],
+  "domains": ["corp.example.invalid"],
+  "paths": ["/srv/example-internal/"]
+}

@@ -1,0 +1,26 @@
+{
+  "_설명": "tools/beol_doctor.py 대상 예시(placeholder만). mkdir -p workspaces/_site 후 workspaces/_site/doctor_targets.json으로 복사해 실제 사내 호스트를 채운다. 그 파일은 git에 올리지 않는다(workspaces/는 gitignore). doctor 화면·doctor_report.json에는 alias·포트·사유 코드만 나온다.",
+  "_필드": "targets[].alias=출력용 별칭, host=실제 호스트(출력 안 함), port, proto=https|http|tcp, role=mirror|pip|llm|embed|vectordb|s3, probe_path=HTTP 확인 경로, index_path=pip 인덱스 경로, auth_env=E15에서 Bearer로 보낼 키의 환경 변수 이름(값은 출력 안 함), internal=false면 NO_PROXY 검사 제외",
+  "timeout_s": 5,
+  "ca_file": "",
+  "targets": [
+    {"alias": "mirror", "role": "mirror", "host": "mirror.example.invalid", "port": 443, "proto": "https", "probe_path": "/", "purpose": "apt/yum 미러"},
+    {"alias": "pip", "role": "pip", "host": "pip.example.invalid", "port": 443, "proto": "https", "index_path": "/simple", "purpose": "사내 pip 인덱스"},
+    {"alias": "llm", "role": "llm", "host": "llm.example.invalid", "port": 443, "proto": "https", "probe_path": "/v1/models", "auth_env": "BEOL_LLM_API_KEY", "purpose": "사내 LLM API"},
+    {"alias": "embed", "role": "embed", "host": "embed.example.invalid", "port": 443, "proto": "https", "probe_path": "/v1/models", "auth_env": "BEOL_EMBED_API_KEY", "purpose": "사내 임베딩 API"},
+    {"alias": "vectordb", "role": "vectordb", "host": "vectordb.example.invalid", "port": 443, "proto": "https", "probe_path": "/", "purpose": "벡터 DB"},
+    {"alias": "s3", "role": "s3", "host": "s3.example.invalid", "port": 443, "proto": "https", "probe_path": "/", "purpose": "사내 S3 호환 저장소"}
+  ],
+  "clock_ref": "s3",
+  "clock_max_skew_s": 120,
+  "packages": {
+    "apt": ["build-essential", "pkg-config", "libssl-dev", "zlib1g-dev", "libsqlite3-dev", "liblzma-dev", "libbz2-dev", "libffi-dev", "libreadline-dev", "chromium", "fonts-noto-cjk", "fontconfig"],
+    "dnf": ["gcc", "make", "pkgconf-pkg-config", "openssl-devel", "zlib-devel", "sqlite-devel", "xz-devel", "bzip2-devel", "libffi-devel", "readline-devel", "chromium", "google-noto-sans-cjk-ttc-fonts", "fontconfig"],
+    "pip": ["pytest"]
+  },
+  "ports": [8771, 8790, 8795, 8796],
+  "port_ranges": [[8700, 8899], [8900, 9099]],
+  "disk_min_gb": 10,
+  "env_required": ["BEOL_LLM_API_KEY", "BEOL_EMBED_API_KEY", "BEOL_ALLOWED_HOST_SUFFIXES"],
+  "e15_enabled": false
+}

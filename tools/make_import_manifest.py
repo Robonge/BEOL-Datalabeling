@@ -6,7 +6,9 @@ GitHub 브랜치 ZIP에는 .git이 없고 파일 내용은 blob(LF) 그대로다
 
 - class: state(이어받는 상태, 우선) > office(.pptx .docx .xlsx .csv .pdf) > media > code > text-other
 - state_paths: 업그레이드(carry_state.py)가 이어받는 목록. tracked=True는 3방향 비교, False는 폐쇄망 사본 복사
-- test_modules: 폐쇄망 테스트 목록. tests._dummy를 직접·간접 import하는 모듈은 import 그래프로 빼낸다
+- test_modules: 폐쇄망 테스트 목록. tests._dummy를 직접·간접 import하는 모듈은 import 그래프로 빼낸다.
+  모듈 맨 위에 `CLOSED_NETWORK_EXCLUDE = "<이유>"`가 있는 테스트 모듈(예: git 체크아웃이 필요한 테스트)도 뺀다.
+  뺀 모듈과 이유는 test_modules_excluded[{path, excluded_reason}]에 싣는다(DUMMY_IMPORT 또는 그 이유 문장)
 - 상태 동결: --base-manifest를 주면 state blob이 바뀌었는데 --override path=reason이 없을 때 STATE_FROZEN으로 실패
 
 사용: python tools/make_import_manifest.py --label beol-import-YYYYMMDD-<sha7> [--rev HEAD] [--out PATH]
@@ -181,6 +183,31 @@ def _imports(mod, is_pkg, src, known):
     return found
 
 
+MARKER = "CLOSED_NETWORK_EXCLUDE"
+DUMMY_REASON = "DUMMY_IMPORT"
+
+
+def marker_reason(src):
+    """모듈 최상위 `CLOSED_NETWORK_EXCLUDE = "<이유>"`의 이유 문장. 없으면 None."""
+    try:
+        tree = ast.parse(src)
+    except (SyntaxError, ValueError):
+        return None
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        named = any(isinstance(t, ast.Name) and t.id == MARKER for t in node.targets)
+        val = node.value.value if isinstance(node.value, ast.Constant) else None
+        if named and isinstance(val, str) and val.strip():
+            return val.strip()
+    return None
+
+
+def excluded_reasons(blobs, excluded):
+    """[{path, excluded_reason}] — 표시가 있으면 그 이유, 아니면 DUMMY_IMPORT."""
+    return [{"path": p, "excluded_reason": marker_reason(blobs[p]) or DUMMY_REASON} for p in excluded]
+
+
 def compute_test_modules(blobs):
     mods = {}
     for path, data in blobs.items():
@@ -202,7 +229,7 @@ def compute_test_modules(blobs):
                 if dep not in seen:
                     seen.add(dep)
                     stack.append(dep)
-        (excluded if DUMMY_MODULE in seen else tests).append(path)
+        (excluded if DUMMY_MODULE in seen or marker_reason(blobs[path]) else tests).append(path)
     return tests, excluded
 
 
@@ -271,6 +298,7 @@ def build_manifest(root, rev, label, overrides, base_manifest=None):
         "state_paths": STATE_PATHS,
         "state_overrides": overrides,
         "test_modules": tests,
+        "test_modules_excluded": excluded_reasons(blobs, excluded),
         "download_list_sha256": hashlib.sha256(dl).hexdigest() if dl is not None else None,
     }
     return manifest, excluded
@@ -314,7 +342,10 @@ def main(argv=None):
     print("manifest: %s" % out)
     print("commit=%s files=%d %s" % (manifest["source_commit"][:7], len(manifest["files"]),
                                      " ".join("%s=%d" % kv for kv in sorted(counts.items()))))
-    print("test_modules=%d excluded_dummy=%d" % (len(manifest["test_modules"]), len(excluded)))
+    rows = manifest["test_modules_excluded"]
+    n_dummy = len([r for r in rows if r["excluded_reason"] == DUMMY_REASON])
+    print("test_modules=%d excluded_dummy=%d excluded_marked=%d" % (len(manifest["test_modules"]), n_dummy,
+                                                                   len(rows) - n_dummy))
     sys.stdout.flush()
     sys.stderr.write("[%s] 완료 n=%d\n" % (MILESTONE, len(manifest["files"])))
     return 0

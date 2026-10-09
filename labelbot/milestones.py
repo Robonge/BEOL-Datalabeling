@@ -115,6 +115,7 @@ ENTRYPOINTS = {
     "tools/s3_sync_originals.py": ("M27",),
     "tools/vector_backup.py": ("M17",),
     "tools/vector_restore.py": ("M17",),
+    "tools/site_init.py": ("M00",),
     # 저장소 루트 스크립트
     "nightly_run.py": ("M18",),
     "daily_report.py": ("M18",),

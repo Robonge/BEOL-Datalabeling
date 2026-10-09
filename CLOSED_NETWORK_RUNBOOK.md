@@ -31,7 +31,7 @@
 
 ```bash
 cd /config/work/beol
-L=$(python3 -c "import json;print(json.load(open('BEOL-Datalabeling-LLM-added/transfer/import_manifest.json'))['release_label'])")
+L=$(python3 -c "import json;print(json.load(open('BEOL-Datalabeling-LLM-added/transfer/import_manifest.json',encoding='utf-8'))['release_label'])")
 mv BEOL-Datalabeling-LLM-added "/config/work/beol/$L" && cd "/config/work/beol/$L"
 mkdir -p /config/work/beol/_import
 python3 tools/verify_import.py --manifest transfer/import_manifest.json --root . --out "/config/work/beol/_import/$L.json"
@@ -100,10 +100,12 @@ NEW=/config/work/beol/<새 release_label>          # C0 통과
 ## C3 — 비더미 테스트 (릴리스마다)
 
 ```bash
-python -m pytest -p no:cacheprovider -q $(python -c "import json;print(' '.join(json.load(open('transfer/import_manifest.json'))['test_modules']))")
+T=$(python3 tools/beol_status.py test-modules) && BEOL_NO_BROWSER=1 python -m pytest -p no:cacheprovider -q $T
 ```
 
-- 더미 문서 폴더가 없으므로 `tests._dummy`를 import하는 모듈은 manifest `test_modules`에서 빠져 있다.
+- 더미 문서 폴더가 없으므로 `tests._dummy`를 import하는 모듈과, git 체크아웃이 필요한 모듈(`CLOSED_NETWORK_EXCLUDE` 표시, 반입 ZIP에는 `.git`이 없다)은 manifest `test_modules`에서 빠져 있다(이유는 `test_modules_excluded`).
+- 목록이 비었거나 manifest를 못 읽으면 `test-modules`가 `사유=TEST_LIST_EMPTY`로 멈추고 pytest는 돌지 않는다. **`$(…)`가 비어 전체 스위트가 도는 일이 없게 위 형식(`T=… &&`)만 쓴다.**
+- 같은 검사를 기준선 비교까지 하려면 `bash tools/cloud_setup.sh --only C3`(`config/known_test_failures.txt` 밖의 실패만 실패).
 - 수락: 실패는 로컬 기준선 10건 중 남은 것만(`domain_engrbot` test_harness 2·test_integration 3·test_judge 4, `tests/test_defaults_taxonomy` 1), 새 실패 0. 차이는 실패 테스트 ID·오류 유형으로 반출.
 
 ## 설정만으로 고칠 수 있는 것 (릴리스 불필요)

@@ -1,7 +1,7 @@
 {
   "run_id": "20261004T191948-0484",
-  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261005-041826",
-  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "workspace": "workspaces/261004_BEOL_parshing-test-files_20261005-041826",
+  "input": "../../parshing test files",
   "recorded_at": "2026-10-05T04:22:12",
   "files": [
     "260128_RDEOV037.66 V1 RSBM aniline pulse 주기 변경 평가 호환.pptx",

@@ -1,6 +1,6 @@
 """tools/prepush_scan.py(공개 저장소 push 전 검사, G-PUB) 테스트.
 
-- 지금 저장소(추적 파일 전체)는 허용 목록으로 통과
+- 지금 저장소(추적 파일 전체)는 허용 목록으로 통과 — git 필요라 tests/test_prepush_scan_git.py
 - 임시 파일에 넣은 가짜 키·사설 IP·PEM·UNC·실값 접미사·denylist 호스트는 실패, 값은 출력 안 함
 - placeholder·loopback·CSS 선택자(.sk-…)는 통과, 허용 목록의 줄 해시로 통과
 가짜 키는 실행 중에 조립한다(키 꼴 리터럴을 두지 않는다).
@@ -55,11 +55,6 @@ class PrepushScanTest(unittest.TestCase):
         shown = path.replace(os.sep, "/")  # 출력 경로는 / 구분자
         hits = [ln.rsplit(":", 2) for ln in out.splitlines() if ln.startswith(shown)]
         return rc, [(int(h[1]), h[2]) for h in hits], out, path
-
-    def test_current_tree_passes(self):
-        rc, out = run()
-        self.assertEqual(rc, 0, out)
-        self.assertIn("hits=0", out)
 
     def test_injected_secrets_fail_and_values_hidden(self):
         lines = ["key = '%s'" % FAKE_SK, "aws=%s" % FAKE_AWS, "tok %s" % FAKE_GHP, "jwt: %s" % FAKE_JWT, PEM,

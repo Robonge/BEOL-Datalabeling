@@ -1,7 +1,7 @@
 {
   "run_id": "20261004T184333-8cfc",
-  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261005-034316",
-  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "workspace": "workspaces/261004_BEOL_parshing-test-files_20261005-034316",
+  "input": "../../parshing test files",
   "recorded_at": "2026-10-05T03:45:27",
   "files": [
     "260123_QQRPP042.6E M1 RSBM Ru DME chemistry 변경 평가 조건부.pptx",

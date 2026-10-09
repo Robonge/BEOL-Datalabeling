@@ -1,7 +1,7 @@
 {
   "run_id": "20261007T105157-2b26",
-  "workspace": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/workspaces/261004_BEOL_parshing-test-files_20261007-195113",
-  "input": "C:/Users/dltkd/Desktop/261004 BEOL AX day2/parshing test files",
+  "workspace": "workspaces/261004_BEOL_parshing-test-files_20261007-195113",
+  "input": "../../parshing test files",
   "recorded_at": "2026-10-07T19:58:10",
   "files": [
     "260115_RDX5TA.6C V1 신규 chamber 호환 평가.pptx",

@@ -12,6 +12,21 @@ B=/config/work/beol/<release_label>      # C0에서 만든 릴리스 폴더
 cd "$B"
 ```
 
+## 기본 경로: `tools/cloud_setup.sh`
+
+확인 단계(사이트 설정 폴더 → doctor 보고 → python 3.14 해석 → 시간대 → chromium·글꼴 → 작업 폴더 → selfcheck → 사유 코드 표 → 폐쇄망 테스트)는 스크립트가 아래 `step` 도우미로 차례로 돌린다. 스크립트의 도우미 블록은 0절과 바이트 단위로 같다(테스트가 검사).
+
+```bash
+bash tools/cloud_setup.sh --dry-run      # 단계 목록만(아무것도 실행·생성하지 않는다)
+bash tools/cloud_setup.sh                # 처음부터. 실패하면 그 단계에서 멈춘다
+bash tools/cloud_setup.sh --from E09     # 고친 뒤 그 단계부터 다시
+bash tools/cloud_setup.sh --only C3      # 한 단계만
+```
+
+- 스크립트는 **패키지를 설치하지 않는다**(sudo·사내 미러가 필요). python·chromium·글꼴 단계가 실패하면 배포판에 맞는 apt/dnf 명령을 이유와 함께 출력만 한다 — 그 명령과 CA·Python 빌드(4–7절)는 아래 수동 절차대로 한다.
+- 사이트 설정 예시는 `config/site.example/`(placeholder만)에 있고 `python3 tools/site_init.py`가 없는 파일만 `workspaces/_site/`로 복사한다(`beol.env`·`profile.json`·`doctor_targets.json`·`scan_denylist.json`은 chmod 600, `crontab.example`). 이미 있는 파일은 덮어쓰지 않는다.
+- 아래 1–10절은 수동 절차다(스크립트가 하지 않는 설치 단계 포함). 스크립트가 멈춘 단계의 절을 보고 고친 뒤 `--from <ID>`로 이어 간다.
+
 ## 0. step 도우미
 
 릴리스 폴더에서 아래 블록을 터미널에 붙여 넣는다(새 터미널마다 다시). `step <ID> "<설명>" -- <명령…>` 형식이다.
@@ -77,10 +92,8 @@ step() {
 ## 1. 설치 전 진단 (doctor)
 
 ```bash
-mkdir -p workspaces/_site
-cp config/doctor_targets.example.json workspaces/_site/doctor_targets.json
-chmod 600 workspaces/_site/doctor_targets.json
-# 편집: host를 실제 사내 호스트로, 쓰지 않는 대상은 지운다(이 파일은 git에 올라가지 않는다)
+python3 tools/site_init.py               # workspaces/_site/ 예시 사본(없는 파일만, chmod 600)
+# 편집: workspaces/_site/doctor_targets.json의 host를 실제 사내 호스트로, 쓰지 않는 대상은 지운다(git에 올라가지 않는다)
 python3 tools/beol_doctor.py
 ```
 
@@ -92,7 +105,7 @@ python3 tools/beol_doctor.py
 ```bash
 mkdir -p /config/work/beol/_import
 step E01 "OS·아키텍처" -- sh -c 'cat /etc/os-release; uname -m'
-step E01 "env.json 기록" -- python3 -c "import json,platform;d=dict(l.rstrip().split('=',1) for l in open('/etc/os-release') if '=' in l);json.dump({'id':d.get('ID','').strip(chr(34)),'version_id':d.get('VERSION_ID','').strip(chr(34)),'like':d.get('ID_LIKE','').strip(chr(34)),'machine':platform.machine()},open('/config/work/beol/_import/env.json','w'))"
+step E01 "env.json 기록" -- python3 -c "import json,platform;d=dict(l.rstrip().split('=',1) for l in open('/etc/os-release',encoding='utf-8') if '=' in l);json.dump({'id':d.get('ID','').strip(chr(34)),'version_id':d.get('VERSION_ID','').strip(chr(34)),'like':d.get('ID_LIKE','').strip(chr(34)),'machine':platform.machine()},open('/config/work/beol/_import/env.json','w',encoding='utf-8'))"
 ```
 
 `ID`/`ID_LIKE`가 debian·ubuntu면 아래 **deb**, rhel·rocky·alma·fedora면 **rpm** 명령을 쓴다.
@@ -103,10 +116,10 @@ step E01 "env.json 기록" -- python3 -c "import json,platform;d=dict(l.rstrip()
 
 ```bash
 step E14 ".env 만들기" -- sh -c 'cp .env.example .env && chmod 600 .env'
-step E14 "beol.env 만들기" -- sh -c 'mkdir -p workspaces/_site && touch workspaces/_site/beol.env && chmod 600 workspaces/_site/beol.env'
+step E14 "beol.env 만들기" -- python3 tools/site_init.py
 ```
 
-`workspaces/_site/beol.env` 내용(R1 시점, 편집기로 작성). 사내 API·S3·벡터 DB·미러는 `NO_PROXY`에 넣는다.
+`workspaces/_site/beol.env` 내용(R1 시점, 편집기로 작성 — 예시 `config/site.example/beol.env.example`). 사내 API·S3·벡터 DB·미러는 `NO_PROXY`에 넣는다.
 
 ```bash
 export TZ=Asia/Seoul
@@ -206,11 +219,14 @@ step E13 "쓰기·디스크" -- python3 tools/beol_doctor.py --step E13
 
 ## 9. crontab
 
-`crontab -e` 맨 위에 폴더와 env를 둔다. 릴리스를 바꿀 때(CU 6단계) `B=`를 새 폴더로 고친다.
+`crontab -e` 맨 위에 폴더와 env를 둔다. 릴리스를 바꿀 때(CU 6단계) `B=`를 새 폴더로 고친다. 붙여 넣을 내용은 `workspaces/_site/crontab.example`(원본 `config/site.example/crontab.example`: 야간 실행 06:00 + daily report 06:40, 로그 `workspaces/_nightly/cron.log`)이다.
 
 ```cron
+SHELL=/bin/bash
+TZ=Asia/Seoul
+CRON_TZ=Asia/Seoul
 B=/config/work/beol/<release_label>
-0 6 * * *  . $B/workspaces/_site/beol.env; cd $B && mkdir -p workspaces/_nightly && python nightly_run.py >> workspaces/_nightly/cron.log 2>&1
+0 6 * * *  cd "$B" && set -a && . workspaces/_site/beol.env && set +a && mkdir -p workspaces/_nightly && python nightly_run.py >> workspaces/_nightly/cron.log 2>&1
 ```
 
 백업 줄(`tools/vector_backup.py` 등)은 B7 릴리스에서 `CLOSED_NETWORK_RUNBOOK.md`에 추가된다.
@@ -222,11 +238,13 @@ step E15 "doctor 재실행(E15는 게이트 후 릴리스)" -- python3 tools/beo
 python -V                                                      # Python 3.14.2
 mkdir -p workspaces/_setup_check && python -m labelbot selfcheck --workspace workspaces/_setup_check
 python -m pytest -p no:cacheprovider -q tests/contracts
-# 폐쇄망 테스트 목록(manifest test_modules, 더미 의존 모듈 제외)
-python -m pytest -p no:cacheprovider -q $(python -c "import json;print(' '.join(json.load(open('transfer/import_manifest.json'))['test_modules']))")
+# 폐쇄망 테스트 목록(manifest test_modules — 더미 의존·git 필요 모듈 제외). 목록이 비면 TEST_LIST_EMPTY로 멈춘다(전체 스위트로 넘어가지 않는다)
+T=$(python3 tools/beol_status.py test-modules) && BEOL_NO_BROWSER=1 python -m pytest -p no:cacheprovider -q $T
 # pytest가 미러에 없으면
-python -m unittest $(python -c "import json;print(' '.join(m[:-3].replace('/','.') for m in json.load(open('transfer/import_manifest.json'))['test_modules']))")
+T=$(python3 tools/beol_status.py test-modules --unittest) && BEOL_NO_BROWSER=1 python -m unittest $T
 ```
+
+`bash tools/cloud_setup.sh --only C3`는 같은 목록을 돌리고 `config/known_test_failures.txt`(로컬 기준선) 밖의 실패만 실패로 본다.
 
 - 상태·사유 코드 표(L3c 릴리스부터): `python3 tools/beol_status.py status --all-workspaces`, `python3 tools/beol_status.py codes --entrypoints`(배포판 python3), `python -m labelbot status --all-workspaces`, `python -m labelbot codes`(Python 3.14) — 두 출력이 같아야 한다.
 - ZIP 압축 해제 뒤 파일 시각 때문에 selfcheck가 `TAXONOMY_XLSX_NEWER` 경고를 낼 수 있다(2초 차이까지는 무시). 그래도 나오면 `touch taxonomy/taxonomy.json`.
