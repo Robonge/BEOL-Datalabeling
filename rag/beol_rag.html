@@ -992,6 +992,66 @@ try { if (sessionStorage.getItem("beol_rag_intro") || matchMedia("(prefers-reduc
   function scrollDown() { main.scrollTop = main.scrollHeight; }
   function setBusy(b) { busy = b; sendBtn.disabled = b; input.disabled = b; if (!b && $("ov").hidden) input.focus(); }
 
+  // 답의 마크다운 기호를 뗀다: **굵게** → 글자만, 줄 머리 "* " 글머리 → "• ", "#" 제목 기호 → 없음.
+  function plainMarks(text) {
+    return String(text)
+      .replace(/\*\*([\s\S]*?)\*\*/g, "$1")
+      .replace(/\*\*/g, "")
+      .replace(/^([ \t]*)\*[ \t]+/gm, "$1• ")
+      .replace(/^[ \t]*#{1,6}[ \t]+/gm, "");
+  }
+
+  // 답 본문(nodes)을 타이핑하듯 한 글자씩 보여 주고, 다 나오면 after(근거 트레이 등)를 보인다.
+  // 본문을 누르면 바로 끝까지 보여 준다. 움직임 줄이기 설정이면 한 번에 보여 준다.
+  function typeOut(box, nodes, after) {
+    var reduce = false;
+    try { reduce = matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+    if (reduce) return;
+    // 문단·표 행은 나올 차례가 되면 보이고(빈 칸 테두리가 먼저 보이지 않게), 도장은 1글자로 친다.
+    var items = [], total = 0;
+    (function walk(list) {
+      Array.prototype.forEach.call(list, function (n) {
+        if (n.nodeType === 3) { if (n.nodeValue) { items.push({ t: n, s: n.nodeValue }); total += n.nodeValue.length; } return; }
+        if (n.nodeType !== 1) return;
+        if (n.classList.contains("stamp")) { items.push({ e: n, w: 1 }); total++; return; }
+        if (/^(P|TR)$/.test(n.tagName) || n.classList.contains("tw")) items.push({ e: n, w: 0 });
+        walk(n.childNodes);
+      });
+    })(nodes);
+    if (total < 2) return;
+    items.forEach(function (it) { if (it.t) it.t.nodeValue = ""; else it.e.style.display = "none"; });
+    after.forEach(function (n) { if (n.nodeType === 1) n.style.display = "none"; });
+    var dur = Math.min(7000, Math.max(1200, total * 12)), t0 = 0, done = 0, idx = 0, off = 0, over = false;
+    function show(it) {
+      if (it.t) { it.t.nodeValue = it.s; return; }
+      it.e.style.display = "";
+      if (it.w) it.e.style.setProperty("--i", "0");   // 나오는 순간 바로 찍히게
+    }
+    function finish() {
+      if (over) return;
+      over = true;
+      for (; idx < items.length; idx++) show(items[idx]);
+      after.forEach(function (n) { if (n.nodeType === 1) n.style.display = ""; });
+      box.removeEventListener("click", finish);
+    }
+    function frame(ts) {
+      if (over) return;
+      if (!t0) t0 = ts;
+      var upto = Math.ceil(total * Math.min(1, (ts - t0) / dur));
+      while (idx < items.length && done < upto) {
+        var it = items[idx];
+        if (it.e) { show(it); done += it.w; idx++; continue; }
+        var take = Math.min(upto - done, it.s.length - off);
+        off += take; done += take;
+        it.t.nodeValue = it.s.slice(0, off);
+        if (off >= it.s.length) { idx++; off = 0; }
+      }
+      if (upto >= total) finish(); else requestAnimationFrame(frame);
+    }
+    box.addEventListener("click", finish);
+    requestAnimationFrame(frame);
+  }
+
   // 답 본문을 그린다. "|"로 칸을 나눈 줄이 2줄 이상 이어지면 표로, 나머지는 문단으로 그린다.
   function renderAnswer(box, text, evidence, bind) {
     var order = 0;
@@ -1331,14 +1391,16 @@ try { if (sessionStorage.getItem("beol_rag_intro") || matchMedia("(prefers-reduc
         return;
       }
       try {
-        var rn = renumber(d.answer, Array.isArray(d.evidence) ? d.evidence : [], Array.isArray(d.cited) ? d.cited : []);
+        var rn = renumber(plainMarks(d.answer), Array.isArray(d.evidence) ? d.evidence : [], Array.isArray(d.cited) ? d.cited : []);
         var answer = rn.answer, evidence = rn.evidence, cited = rn.cited;
         box.textContent = "";
         var bind = linker(box);
         if (d.rewritten_query && d.rewritten_query !== question) {
           box.appendChild(el("p", "rq", "검색한 질문: " + d.rewritten_query));
         }
+        var bodyFrom = box.childNodes.length;
         renderAnswer(box, answer, evidence, bind);
+        var bodyTo = box.childNodes.length;
         var why = reasons(answer);
         // 인용된 슬라이드(1번부터, 썸네일) → 인용 안 된 검색 슬라이드 → 인용 안 된 같은 파일 슬라이드(둘 다 점선 칸)
         var isCited = function (e) { return cited.indexOf(e.n) >= 0; };
@@ -1364,6 +1426,8 @@ try { if (sessionStorage.getItem("beol_rag_intro") || matchMedia("(prefers-reduc
           if (t && !seen[w]) { seen[w] = 1; box.appendChild(el("p", "rq", "참고: " + t)); }
         });
         box.classList.add("fresh");
+        var kids = Array.prototype.slice.call(box.childNodes);
+        typeOut(box, kids.slice(bodyFrom, bodyTo), kids.slice(bodyTo));
         setStepStatus(chat, noMatch ? "자료에 없음" : (hits.length ? "근거 " + hits.length + " · 인용 " + cited.length : "근거 없음"));
         evidenceCell(noMatch ? "NO MATCH" : hits.length + " / " + citedHits);
         chat.history.push({ role: "user", content: question }, { role: "assistant", content: answer });

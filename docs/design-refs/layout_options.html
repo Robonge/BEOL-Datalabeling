@@ -1,0 +1,495 @@
+<title>데이터 파이프라인 레이아웃 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap">
+<style>
+/* Layout concept: 비교용 어두운 작업대 위에 PlayStation 식 밴드(검정·흰색·파랑) 시안 3개를 탭으로 올린다.
+   시안 내부는 레퍼런스 색을 고정으로 쓰고(단일 세계), 바깥 작업대도 의도적으로 어두운 단일 테마다. */
+:root{
+  color-scheme: dark;
+  --ps-blue:#0070d1; --ps-blue-press:#0064b7; --ps-link-dark:#53b1ff;
+  --ink:#000; --ink-deep:#121314; --ink-card:#181818;
+  --paper:#fff; --paper-card:#f5f7fa; --paper-soft:#f3f3f3;
+  --body-light:rgba(0,0,0,.6); --mute-light:#6b6b6b;
+  --body-dark:rgba(255,255,255,.7); --mute-dark:rgba(229,229,229,.55); --hair-dark:rgba(229,229,229,.2);
+  --bench:#0b0c0e; --bench-fg:#e9ecf1; --bench-mute:#9aa3b0; --bench-line:#23262c;
+  --f-display:"Roboto","Noto Sans KR",Arial,sans-serif;
+  --f-body:"Noto Sans KR","Roboto",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bench);color:var(--bench-fg);font-family:var(--f-body);font-size:15px;line-height:1.5;padding-inline:16px;padding-block:32px 64px}
+.wrap{max-width:1240px;margin-inline:auto;display:flex;flex-direction:column;gap:24px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.bench-head{display:flex;flex-direction:column;gap:8px}
+.bench-head .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--bench-mute)}
+.bench-head h1{font-family:var(--f-display);font-weight:300;font-size:clamp(26px,3.4vw,36px)}
+.bench-head p{margin:0;color:var(--bench-mute);max-width:68ch}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{font:700 14px/1.25 var(--f-body);letter-spacing:.3px;border-radius:9999px;padding:10px 18px;border:1px solid var(--bench-line);background:transparent;color:var(--bench-fg);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ps-blue);border-color:var(--ps-blue);color:#fff}
+.tab:focus-visible,.mk a:focus-visible,.mk button:focus-visible{outline:2px solid var(--ps-link-dark);outline-offset:2px}
+.brief{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;border-top:1px solid var(--bench-line);border-bottom:1px solid var(--bench-line);padding-block:16px}
+.brief div{min-width:0}
+.brief b{display:block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--bench-mute);font-weight:500;margin-bottom:4px}
+.brief p{margin:0}
+.frame{border:1px solid var(--bench-line);border-radius:8px;overflow:hidden;background:#000}
+.frame-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#15171a;color:var(--bench-mute);font-size:12px}
+.frame-bar i{width:9px;height:9px;border-radius:50%;background:#2c3036;display:inline-block}
+.frame-bar span{margin-left:8px}
+
+/* ---------- 시안 공통(PlayStation 토큰) ---------- */
+.mk{font-family:var(--f-body);font-size:16px;line-height:1.5}
+.mk a{color:inherit;text-decoration:none}
+.band{padding:72px 48px}
+.band.dark{background:var(--ink);color:#fff}
+.band.deep{background:linear-gradient(var(--ink-deep),var(--ink));color:#fff}
+.band.light{background:var(--paper);color:var(--ink)}
+.band.blue{background:var(--ps-blue);color:#fff}
+.inner{max-width:1120px;margin-inline:auto;display:flex;flex-direction:column;gap:32px}
+.mk .eyebrow{font-size:12px;font-weight:500;letter-spacing:.14em;text-transform:uppercase}
+.dark .eyebrow,.deep .eyebrow{color:var(--mute-dark)}
+.light .eyebrow{color:var(--mute-light)}
+.blue .eyebrow{color:#fff}
+.d-xl{font-family:var(--f-display);font-weight:300;font-size:clamp(32px,4.6vw,54px);line-height:1.2;letter-spacing:-.1px}
+.d-lg{font-family:var(--f-display);font-weight:300;font-size:clamp(26px,3.6vw,40px);line-height:1.25;letter-spacing:.1px}
+.d-md{font-family:var(--f-display);font-weight:300;font-size:clamp(22px,2.6vw,28px);line-height:1.25}
+.lead{font-size:18px;max-width:34em;margin:0}
+.dark .lead,.deep .lead{color:var(--body-dark)}
+.light .lead{color:var(--body-light)}
+.blue .lead{color:#fff}
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+.pill{display:inline-flex;align-items:center;font:700 16px/1.25 var(--f-body);letter-spacing:.4px;border-radius:9999px;padding:12px 24px;border:2px solid transparent;cursor:pointer}
+.pill.primary{background:var(--ps-blue);color:#fff}
+.pill.primary:hover{background:var(--ps-blue-press)}
+.pill.ghost-d{border-color:rgba(255,255,255,.6);color:#fff;background:transparent}
+.pill.ghost-l{border-color:var(--ink);color:var(--ink);background:transparent}
+.pill.white{background:#fff;color:var(--ps-blue)}
+.chip{display:inline-block;font-size:12px;font-weight:500;border-radius:9999px;padding:5px 12px;white-space:nowrap}
+.light .chip{background:#e6f0fa;color:var(--ps-blue-press)}
+.dark .chip,.deep .chip{background:rgba(83,177,255,.14);color:var(--ps-link-dark)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 48px;background:var(--ink);color:#fff;border-bottom:1px solid var(--hair-dark);flex-wrap:wrap}
+.nav b{font-weight:500;letter-spacing:.3px}
+.nav ul{display:flex;gap:24px;list-style:none;margin:0;padding:0;font-size:14px;color:var(--body-dark);flex-wrap:wrap}
+.diagram{overflow-x:auto}
+.diagram svg{display:block;width:100%;min-width:680px;height:auto}
+.svg-t{font-family:var(--f-body)}
+.card{border-radius:8px;padding:24px;min-width:0}
+.light .card{background:var(--paper-card)}
+.dark .card,.deep .card{background:var(--ink-card)}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.steps-mini{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.steps-mini li{display:flex;gap:8px}
+.steps-mini .n{font-variant-numeric:tabular-nums;color:var(--ps-blue-press);font-weight:700;min-width:1.6em}
+.dark .steps-mini .n{color:var(--ps-link-dark)}
+.card h3{font-family:var(--f-display);font-weight:300;font-size:22px;margin-bottom:12px}
+.card .k{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--mute-light);margin-bottom:6px;text-transform:uppercase}
+.check{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.check li{display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:8px}
+.light .check li{background:var(--paper-card)}
+.blue .check li{background:rgba(255,255,255,.12)}
+.check svg{flex:none;margin-top:2px}
+.split{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+
+/* ---------- 시안 B ---------- */
+.b-layout{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:48px;align-items:start}
+.b-pin{position:sticky;top:16px}
+.b-pin svg{width:100%;height:auto;display:block;max-width:340px}
+.b-node rect{transition:fill .2s,stroke .2s}
+.b-node.on rect{fill:var(--ps-blue);stroke:var(--ps-blue)}
+.b-node.on text{fill:#fff}
+.b-ch{display:flex;flex-direction:column;gap:4px}
+.b-ch + .b-ch{margin-top:32px}
+.b-ch h3{font-family:var(--f-display);font-weight:300;font-size:26px;margin-bottom:8px}
+.b-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:16px;align-items:start;padding:16px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.b-row:hover,.b-row.on{background:var(--paper-card);border-color:#e3e8ef}
+.b-row .num{font-family:var(--f-display);font-weight:300;font-size:28px;line-height:1;color:var(--ps-blue);font-variant-numeric:tabular-nums}
+.b-row h4{margin:0 0 4px;font-size:17px;font-weight:500}
+.b-row p{margin:0;font-size:15px;color:var(--body-light)}
+
+/* ---------- 시안 C ---------- */
+.map{width:100%;border-collapse:collapse;font-size:15px}
+.map th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute-light);font-weight:500;text-align:left;padding:10px 12px;border-bottom:1px solid #e3e8ef}
+.map td{padding:16px 12px;border-bottom:1px solid var(--paper-soft);vertical-align:top}
+.map td:first-child{font-family:var(--f-display);font-weight:300;font-size:20px;white-space:nowrap}
+.map code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(--paper-card);padding:4px 8px;border-radius:4px}
+.table-scroll{overflow-x:auto}
+.rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:16px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory}
+.tile{scroll-snap-align:start;border-radius:8px;background:var(--ink-card);display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.tile .art{aspect-ratio:16/9;display:flex;align-items:flex-end;padding:14px;background:linear-gradient(135deg,#1c2a3a,#0b0f14)}
+.tile .art.c1{background:linear-gradient(135deg,#0b3866,#0b0f14)}
+.tile .art.c2{background:linear-gradient(135deg,#0070d1,#06213d)}
+.tile .art.c3{background:linear-gradient(135deg,#26313d,#0b0f14)}
+.tile .art span{font-family:var(--f-display);font-weight:300;font-size:44px;line-height:1;color:#fff;font-variant-numeric:tabular-nums}
+.tile .body{padding:14px 16px 18px;display:flex;flex-direction:column;gap:6px}
+.tile h4{margin:0;font-size:16px;font-weight:500}
+.tile p{margin:0;font-size:14px;color:var(--body-dark)}
+.tile .ch{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute-dark)}
+.practice{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;counter-reset:p}
+.practice li{border-top:2px solid var(--ps-blue);padding-top:12px;font-size:14px;min-width:0}
+.practice li::before{counter-increment:p;content:counter(p);display:block;font-family:var(--f-display);font-weight:300;font-size:28px;color:var(--ps-blue);line-height:1.1;margin-bottom:6px}
+
+@media (max-width:900px){
+  .band{padding:56px 24px}
+  .nav{padding:12px 24px}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .b-layout{grid-template-columns:minmax(0,1fr);gap:24px}
+  .b-pin{position:static}
+  .b-pin svg{max-width:100%}
+  .practice{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .brief{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){
+  .band{padding:44px 16px}
+  .nav{padding:12px 16px}
+  .nav ul{display:none}
+  .grid4,.grid2{grid-template-columns:minmax(0,1fr)}
+  .b-row{grid-template-columns:36px minmax(0,1fr)}
+  .b-row .chip{grid-column:2}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <header class="bench-head">
+    <span class="eyebrow">레이아웃 시안 · PlayStation 레퍼런스</span>
+    <h1>비정형 데이터 파이프라인 설명 페이지, 시안 3개</h1>
+    <p>세 시안 모두 같은 내용(11단계, 비유, 체크리스트)과 같은 디자인 토큰을 씁니다. 다른 점은 schematic을 어디에, 얼마나 크게 두느냐입니다. 탭을 눌러 비교해 보세요.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="시안 선택">
+    <button class="tab" role="tab" id="tab-a" aria-controls="opt-a" aria-selected="true">A · 트레일러 챕터</button>
+    <button class="tab" role="tab" id="tab-b" aria-controls="opt-b" aria-selected="false">B · 고정 schematic</button>
+    <button class="tab" role="tab" id="tab-c" aria-controls="opt-c" aria-selected="false">C · 비유 먼저</button>
+  </div>
+
+  <!-- ================= 시안 A ================= -->
+  <section id="opt-a" role="tabpanel" aria-labelledby="tab-a" class="opt">
+    <div class="brief">
+      <div><b>콘셉트</b><p>검정 히어로에 전체 흐름도를 가로로 크게 깔고, 아래로 흰색·검정·파랑 밴드가 장(章)처럼 넘어갑니다.</p></div>
+      <div><b>잘 맞는 경우</b><p>첫 화면에서 "자동 수집·정제"의 전체 그림을 한 번에 보여 주고 싶을 때. 발표 화면에 띄우기 좋습니다.</p></div>
+      <div><b>주의할 점</b><p>11단계 세부는 카드 안 목록이라 상세 설명은 짧아집니다. 폰에서는 흐름도를 가로로 밀어서 봐야 합니다.</p></div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><i></i><i></i><i></i><span>시안 A · 트레일러 챕터</span></div>
+      <div class="mk">
+        <nav class="nav"><b>BEOL AX · 데이터 파이프라인</b><ul><li>모으기</li><li>라벨 붙이기</li><li>정리·포장</li><li>적재·운영</li></ul></nav>
+
+        <div class="band dark">
+          <div class="inner">
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <span class="eyebrow">비정형 데이터 → 라벨링 → Docker 적재</span>
+              <h2 class="d-xl">대량의 비정형 데이터,<br>자동으로 모으고 정제합니다</h2>
+              <p class="lead">여러 소스의 데이터를 자동으로 모아 정리해, 바로 활용 가능한 형태로 제공합니다.</p>
+              <div class="btns"><a class="pill primary" href="#opt-a">흐름 따라가기</a><a class="pill ghost-d" href="#opt-a">체크리스트 보기</a></div>
+            </div>
+            <div class="diagram" aria-label="파이프라인 흐름도">
+              <svg viewBox="0 0 1100 330" role="img" aria-labelledby="a-svg-t">
+                <title id="a-svg-t">메모·이메일·이미지·음성·문서가 수집, 라벨링, 정제, Docker 포장을 거쳐 저장소에 적재되는 흐름</title>
+                <defs>
+                  <marker id="a-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#9aa3b0"/></marker>
+                  <marker id="a-arr-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#53b1ff"/></marker>
+                </defs>
+                <g class="svg-t" font-size="14" fill="#fff" text-anchor="middle">
+                  <g fill="#181818" stroke="rgba(255,255,255,.35)">
+                    <rect x="10" y="24" width="130" height="34" rx="17"/><rect x="10" y="76" width="130" height="34" rx="17"/><rect x="10" y="128" width="130" height="34" rx="17"/><rect x="10" y="180" width="130" height="34" rx="17"/><rect x="10" y="232" width="130" height="34" rx="17"/>
+                  </g>
+                  <text x="75" y="46">메모</text><text x="75" y="98">이메일</text><text x="75" y="150">이미지</text><text x="75" y="202">음성 녹음</text><text x="75" y="254">PPT·문서</text>
+                  <g fill="none" stroke="#9aa3b0" stroke-width="1.4">
+                    <path d="M140 41C185 41 185 145 222 145"/><path d="M140 93C185 93 185 145 222 145"/><path d="M140 145H222" marker-end="url(#a-arr)"/><path d="M140 197C185 197 185 145 222 145"/><path d="M140 249C185 249 185 145 222 145"/>
+                  </g>
+                  <!-- 노드 -->
+                  <g stroke="rgba(255,255,255,.35)" fill="#121314">
+                    <rect x="226" y="95" width="140" height="100" rx="8"/>
+                    <rect x="406" y="95" width="140" height="100" rx="8" fill="#0070d1" stroke="#0070d1"/>
+                    <rect x="586" y="95" width="140" height="100" rx="8"/>
+                    <rect x="766" y="95" width="140" height="100" rx="8"/>
+                  </g>
+                  <g stroke="rgba(255,255,255,.18)"><path d="M796 165V185M816 165V185M836 165V185M856 165V185M876 165V185"/></g>
+                  <text x="296" y="140" font-size="20" font-weight="300">수집</text><text x="296" y="164" font-size="12" fill="#cccccc">출처·형태 기록</text>
+                  <text x="476" y="140" font-size="20" font-weight="300">라벨링</text><text x="476" y="164" font-size="12" fill="#e6f0fa">정의서 기준 태그</text>
+                  <text x="656" y="140" font-size="20" font-weight="300">정제</text><text x="656" y="164" font-size="12" fill="#cccccc">텍스트 추출·청크</text>
+                  <text x="836" y="137" font-size="20" font-weight="300">Docker</text><text x="836" y="158" font-size="12" fill="#cccccc">이미지로 포장</text>
+                  <g fill="none" stroke="#9aa3b0" stroke-width="1.4">
+                    <path d="M366 145H402" marker-end="url(#a-arr)"/><path d="M546 145H582" marker-end="url(#a-arr)"/><path d="M726 145H762" marker-end="url(#a-arr)"/><path d="M906 145H950" marker-end="url(#a-arr)"/>
+                  </g>
+                  <!-- 저장소 원통 -->
+                  <g fill="#121314" stroke="rgba(255,255,255,.35)">
+                    <path d="M956 108v74c0 10 31 18 64 18s64-8 64-18v-74"/><ellipse cx="1020" cy="108" rx="64" ry="16"/>
+                  </g>
+                  <text x="1020" y="152" font-size="20" font-weight="300">저장소</text><text x="1020" y="174" font-size="12" fill="#cccccc">DB·벡터 DB</text>
+                  <!-- 라벨 예시 -->
+                  <g font-size="11" font-weight="500">
+                    <rect x="402" y="48" width="44" height="22" rx="11" fill="rgba(83,177,255,.16)"/><text x="424" y="63" fill="#53b1ff">정상</text>
+                    <rect x="454" y="48" width="44" height="22" rx="11" fill="rgba(83,177,255,.16)"/><text x="476" y="63" fill="#53b1ff">경고</text>
+                    <rect x="506" y="48" width="44" height="22" rx="11" fill="rgba(83,177,255,.16)"/><text x="528" y="63" fill="#53b1ff">오류</text>
+                    <path d="M476 72V92" stroke="#53b1ff" stroke-dasharray="3 3"/>
+                  </g>
+                  <!-- 단계 번호 -->
+                  <g font-size="11" fill="rgba(229,229,229,.55)" letter-spacing="1.2">
+                    <text x="75" y="296">STEP 1</text><text x="296" y="222">STEP 1–2</text><text x="476" y="222">STEP 3–6</text><text x="656" y="222">STEP 7</text><text x="836" y="222">STEP 8–9</text><text x="1020" y="222">STEP 10</text>
+                  </g>
+                  <!-- 피드백 루프 -->
+                  <path d="M1020 236V286H476V200" fill="none" stroke="#53b1ff" stroke-width="1.4" stroke-dasharray="5 5" marker-end="url(#a-arr-b)"/>
+                  <text x="748" y="310" font-size="12" fill="#53b1ff">STEP 11 · 모니터링 → 라벨 규칙 갱신</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="band light">
+          <div class="inner">
+            <div class="split"><div style="display:flex;flex-direction:column;gap:12px"><span class="eyebrow">11개 작업 · 4개 장</span><h2 class="d-lg">네 장면으로 보는 전체 과정</h2></div><p class="lead" style="max-width:26em">장마다 사람이 정하는 일과 자동으로 도는 일을 나눠 적었습니다.</p></div>
+            <div class="grid4" id="a-cards"></div>
+          </div>
+        </div>
+
+        <div class="band deep">
+          <div class="inner">
+            <div style="display:flex;flex-direction:column;gap:12px"><span class="eyebrow">비전공자용 비유</span><h2 class="d-lg">잡동사니 사진 박스를 창고에 넣기까지</h2></div>
+            <div class="grid4" id="a-analogy"></div>
+          </div>
+        </div>
+
+        <div class="band light">
+          <div class="inner">
+            <div style="display:flex;flex-direction:column;gap:12px"><span class="eyebrow">ASD-STE100 스타일 체크리스트</span><h2 class="d-lg">매번 남겨야 하는 다섯 가지</h2></div>
+            <ul class="check" data-check></ul>
+          </div>
+        </div>
+
+        <div class="band blue">
+          <div class="inner">
+            <div class="split">
+              <div style="display:flex;flex-direction:column;gap:12px"><span class="eyebrow">처음 해 보는 사람에게</span><h2 class="d-lg">샘플 50개로 7단계 실습부터</h2><p class="lead">50개 고르기 → 라벨 3~5개 정의 → 10개 직접 붙이기 → 2명 일치도 확인 → 규칙 보완 → JSON 저장 → Docker 예제 실행</p></div>
+              <a class="pill white" href="#opt-a">실습 시작</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 시안 B ================= -->
+  <section id="opt-b" role="tabpanel" aria-labelledby="tab-b" class="opt" hidden>
+    <div class="brief">
+      <div><b>콘셉트</b><p>흰 배경 매뉴얼형. 왼쪽에 세로 흐름도가 고정되고, 오른쪽 11단계 목록에 마우스를 올리면 해당 단계가 파랗게 켜집니다.</p></div>
+      <div><b>잘 맞는 경우</b><p>읽는 사람이 단계별 설명을 차근차근 따라가야 할 때. 사내 가이드 문서처럼 오래 두고 보기 좋습니다.</p></div>
+      <div><b>주의할 점</b><p>첫 화면의 인상은 A보다 조용합니다. 폰에서는 흐름도가 목록 위로 올라가 고정이 풀립니다.</p></div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><i></i><i></i><i></i><span>시안 B · 고정 schematic</span></div>
+      <div class="mk">
+        <nav class="nav"><b>BEOL AX · 데이터 파이프라인</b><ul><li>개요</li><li>11단계</li><li>체크리스트</li></ul></nav>
+        <div class="band dark" style="padding-block:64px">
+          <div class="inner" style="gap:20px">
+            <span class="eyebrow">비정형 데이터 파이프라인 가이드</span>
+            <h2 class="d-xl">대량의 비정형 데이터<br>자동 수집·정제</h2>
+            <p class="lead">여러 소스의 데이터를 자동으로 모아 정리해, 바로 활용 가능한 형태로 제공합니다.</p>
+            <div class="btns"><a class="pill primary" href="#opt-b">11단계 보기</a></div>
+          </div>
+        </div>
+        <div class="band light">
+          <div class="inner">
+            <div class="b-layout">
+              <aside class="b-pin" aria-label="세로 흐름도">
+                <svg viewBox="0 0 320 700" role="img" aria-labelledby="b-svg-t">
+                  <title id="b-svg-t">수집, 라벨링, 정제, Docker, 적재 다섯 단계 세로 흐름도</title>
+                  <defs><marker id="b-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6b6b6b"/></marker></defs>
+                  <g class="svg-t" text-anchor="middle">
+                    <g font-size="12" fill="#000">
+                      <g fill="#f5f7fa" stroke="#d5dbe3"><rect x="4" y="8" width="56" height="26" rx="13"/><rect x="68" y="8" width="56" height="26" rx="13"/><rect x="132" y="8" width="56" height="26" rx="13"/><rect x="196" y="8" width="56" height="26" rx="13"/><rect x="260" y="8" width="56" height="26" rx="13"/></g>
+                      <text x="32" y="26">메모</text><text x="96" y="26">이메일</text><text x="160" y="26">이미지</text><text x="224" y="26">음성</text><text x="288" y="26">문서</text>
+                    </g>
+                    <g fill="none" stroke="#6b6b6b" stroke-width="1.3"><path d="M32 34C32 60 160 52 160 74"/><path d="M96 34C96 56 160 56 160 74"/><path d="M160 34V74"/><path d="M224 34C224 56 160 56 160 74"/><path d="M288 34C288 60 160 52 160 74" marker-end="url(#b-arr)"/></g>
+                    <g id="b-nodes"></g>
+                    <path d="M290 590C316 590 316 230 290 230" fill="none" stroke="#0064b7" stroke-dasharray="5 5" stroke-width="1.3" marker-end="url(#b-arr)"/>
+                    <text x="306" y="420" font-size="11" fill="#0064b7" transform="rotate(90 306 420)">11 모니터링 → 규칙 갱신</text>
+                  </g>
+                </svg>
+              </aside>
+              <div id="b-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="band blue">
+          <div class="inner">
+            <div style="display:flex;flex-direction:column;gap:12px"><span class="eyebrow">ASD-STE100 스타일 체크리스트</span><h2 class="d-lg">매번 남겨야 하는 다섯 가지</h2></div>
+            <ul class="check" data-check></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 시안 C ================= -->
+  <section id="opt-c" role="tabpanel" aria-labelledby="tab-c" class="opt" hidden>
+    <div class="brief">
+      <div><b>콘셉트</b><p>비유 그림을 히어로로 씁니다. 박스 → 스티커 → 밀봉 → 창고 네 장면을 먼저 보여 주고, 실제 작업은 비유와 1:1로 짝지어 설명합니다.</p></div>
+      <div><b>잘 맞는 경우</b><p>처음 듣는 사람이 대상일 때. 용어보다 그림으로 먼저 이해시키고, 11단계는 게임 타일처럼 옆으로 넘겨 봅니다.</p></div>
+      <div><b>주의할 점</b><p>흐름도가 비유 그림으로 대체돼 기술적인 정확도는 A·B보다 낮습니다. 엔지니어용 상세도는 따로 필요합니다.</p></div>
+    </div>
+    <div class="frame">
+      <div class="frame-bar"><i></i><i></i><i></i><span>시안 C · 비유 먼저</span></div>
+      <div class="mk">
+        <nav class="nav"><b>BEOL AX · 데이터 파이프라인</b><ul><li>비유</li><li>실제 작업</li><li>11단계</li><li>실습</li></ul></nav>
+        <div class="band dark">
+          <div class="inner">
+            <div style="display:flex;flex-direction:column;gap:20px;align-items:center;text-align:center">
+              <span class="eyebrow">대량의 비정형 데이터 자동 수집·정제</span>
+              <h2 class="d-xl">잡동사니 박스가<br>바로 쓰는 데이터가 되기까지</h2>
+              <p class="lead">여러 소스의 데이터를 자동으로 모아 정리해, 바로 활용 가능한 형태로 제공합니다.</p>
+            </div>
+            <div class="diagram">
+              <svg viewBox="0 0 1100 290" role="img" aria-labelledby="c-svg-t">
+                <title id="c-svg-t">잡동사니 박스, 스티커 붙이기, 밀봉 포장, 창고 보관 네 장면</title>
+                <defs><marker id="c-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#9aa3b0"/></marker></defs>
+                <g class="svg-t" text-anchor="middle" fill="#fff">
+                  <!-- 장면 1: 열린 박스와 잡동사니 -->
+                  <g fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.6">
+                    <path d="M50 120L80 210H200L230 120Z" fill="#181818"/><path d="M50 120L30 92M230 120L250 92"/>
+                    <circle cx="105" cy="96" r="16"/><rect x="128" y="70" width="34" height="42" rx="3"/><path d="M180 112L196 80L212 112Z"/><path d="M84 66h30v20h-30zM90 72h18M90 78h12"/>
+                  </g>
+                  <text x="140" y="246" font-size="17" font-weight="300">잡동사니 박스</text><text x="140" y="268" font-size="12" fill="#cccccc">비정형 데이터</text>
+                  <path d="M262 150H318" stroke="#9aa3b0" stroke-width="1.4" marker-end="url(#c-arr)"/>
+                  <!-- 장면 2: 스티커 -->
+                  <g fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.6">
+                    <circle cx="380" cy="110" r="18"/><rect x="430" y="88" width="36" height="44" rx="3"/><path d="M500 132L518 98L536 132Z"/><path d="M370 168h34v24h-34z"/>
+                  </g>
+                  <g font-size="10" font-weight="500">
+                    <rect x="356" y="62" width="48" height="18" rx="9" fill="#0070d1"/><text x="380" y="75">사진</text>
+                    <rect x="424" y="62" width="48" height="18" rx="9" fill="#0070d1"/><text x="448" y="75">문서</text>
+                    <rect x="494" y="72" width="48" height="18" rx="9" fill="#0070d1"/><text x="518" y="85">음성</text>
+                    <rect x="412" y="172" width="48" height="18" rx="9" fill="#0070d1"/><text x="436" y="185">메모</text>
+                  </g>
+                  <text x="450" y="246" font-size="17" font-weight="300">스티커 붙이기</text><text x="450" y="268" font-size="12" fill="#cccccc">라벨링·검수</text>
+                  <path d="M572 150H628" stroke="#9aa3b0" stroke-width="1.4" marker-end="url(#c-arr)"/>
+                  <!-- 장면 3: 밀봉 -->
+                  <g stroke="rgba(255,255,255,.55)" stroke-width="1.6">
+                    <rect x="680" y="96" width="140" height="110" rx="4" fill="#181818"/><path d="M680 96L700 70H800L820 96" fill="none"/>
+                    <rect x="742" y="70" width="16" height="136" fill="#0070d1" stroke="none"/>
+                  </g>
+                  <rect x="694" y="160" width="40" height="22" rx="4" fill="#fff"/><text x="714" y="175" font-size="11" fill="#000" font-weight="700">v1.2</text>
+                  <text x="750" y="246" font-size="17" font-weight="300">밀봉 포장</text><text x="750" y="268" font-size="12" fill="#cccccc">Docker 이미지</text>
+                  <path d="M852 150H908" stroke="#9aa3b0" stroke-width="1.4" marker-end="url(#c-arr)"/>
+                  <!-- 장면 4: 창고 -->
+                  <g fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.6">
+                    <path d="M940 210V90L1010 54L1080 90V210"/><path d="M955 140H1065M955 176H1065"/>
+                  </g>
+                  <g fill="#181818" stroke="rgba(255,255,255,.55)" stroke-width="1.2"><rect x="962" y="116" width="26" height="24"/><rect x="994" y="116" width="26" height="24"/><rect x="962" y="152" width="26" height="24"/><rect x="1026" y="152" width="26" height="24"/></g>
+                  <rect x="1026" y="116" width="26" height="24" fill="#0070d1"/>
+                  <text x="1010" y="246" font-size="17" font-weight="300">창고 보관</text><text x="1010" y="268" font-size="12" fill="#cccccc">DB·벡터 DB 적재</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="band light">
+          <div class="inner">
+            <div style="display:flex;flex-direction:column;gap:12px"><span class="eyebrow">비유 ↔ 실제 작업</span><h2 class="d-lg">그림 속 장면이 실제로 하는 일</h2></div>
+            <div class="table-scroll">
+              <table class="map">
+                <thead><tr><th>장면</th><th>실제 작업</th><th>남는 결과물</th></tr></thead>
+                <tbody>
+                  <tr><td>잡동사니 박스</td><td>메모·이메일·이미지·음성·문서를 자동으로 모으고 출처를 기록합니다.</td><td><code>source</code>, <code>collected_at</code></td></tr>
+                  <tr><td>스티커 붙이기</td><td>정의서에 적은 기준으로 라벨을 붙이고, 두 사람의 일치도를 확인합니다.</td><td><code>label: 정상 | 경고 | 오류</code></td></tr>
+                  <tr><td>밀봉 포장</td><td>텍스트 추출·청크로 정제한 데이터와 처리 스크립트를 Docker 이미지로 묶습니다.</td><td><code>pipeline:v1.2</code> 이미지 태그</td></tr>
+                  <tr><td>창고 보관</td><td>컨테이너를 실행해 DB·벡터 DB에 적재하고, 실행 로그를 남깁니다.</td><td>적재 로그, 성공률</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="band dark">
+          <div class="inner">
+            <div class="split"><div style="display:flex;flex-direction:column;gap:12px"><span class="eyebrow">11단계 · 옆으로 넘겨 보기</span><h2 class="d-lg">한 장에 한 단계씩</h2></div></div>
+            <div class="rail" id="c-rail"></div>
+          </div>
+        </div>
+        <div class="band light">
+          <div class="inner">
+            <div style="display:flex;flex-direction:column;gap:12px"><span class="eyebrow">처음 해 보는 사람에게</span><h2 class="d-lg">샘플 50개로 해 보는 7단계</h2></div>
+            <ol class="practice">
+              <li>샘플 데이터 50개 고르기</li><li>라벨 3~5개 정의</li><li>10개 직접 붙여 보기</li><li>2명에게 같은 항목 맡겨 일치도 확인</li><li>라벨 규칙 보완</li><li>JSON·CSV로 저장</li><li>Docker 예제 실행</li>
+            </ol>
+          </div>
+        </div>
+        <div class="band blue">
+          <div class="inner">
+            <div style="display:flex;flex-direction:column;gap:12px"><span class="eyebrow">ASD-STE100 스타일 체크리스트</span><h2 class="d-md">출처 기록 · 라벨 정의서 · 샘플 검수 결과 · 적재 로그 · 버전 태그</h2></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const CH = ['모으기','라벨 붙이기','정리·포장','적재·운영'];
+const STEPS = [
+  {n:1,c:0,t:'준비',d:'메모·이메일·이미지·음성처럼 형태가 다른 데이터를 모으고 종류를 나눕니다.',r:'출처·형태 기록'},
+  {n:2,c:0,t:'문제 정의',d:'이 데이터로 무엇을 알고 싶은지 정합니다. 예: 이메일에서 불만만 골라내기.',r:'목적 한 문장'},
+  {n:3,c:1,t:'라벨 설계',d:'정상·경고·오류처럼 3~5개 라벨과, 언제 붙이는지 기준을 적습니다.',r:'정의서 필수'},
+  {n:4,c:1,t:'샘플 검증',d:'대표 샘플에 두 사람이 따로 라벨을 붙여 결과가 비슷한지 봅니다.',r:'일치도 확인'},
+  {n:5,c:1,t:'라벨링 수행',d:'쉬운 웹 도구로 사람이 붙이고, 반복되는 항목은 자동 규칙이 돕습니다.',r:'단순한 작업 지시'},
+  {n:6,c:1,t:'검수',d:'무작위로 다시 보고, 자주 틀리는 유형의 규칙을 고칩니다. 목표 일치도 80% 이상.',r:'허용 오차 문서화'},
+  {n:7,c:2,t:'정제·포맷화',d:'텍스트를 뽑고 작은 조각(청크)으로 나눠 id·원본·라벨·메타데이터 형식으로 맞춥니다.',r:'필드 이름 정의'},
+  {n:8,c:2,t:'컨테이너 준비',d:'정리된 데이터, 라벨 사양, 처리 스크립트를 한 묶음으로 모읍니다.',r:'묶음 목록 기록'},
+  {n:9,c:2,t:'Docker 이미지',d:'Dockerfile에 필요한 프로그램을 적어 이미지로 만듭니다. 어느 컴퓨터에서든 똑같이 돌아갑니다.',r:'버전 태그'},
+  {n:10,c:3,t:'적재',d:'컨테이너를 실행해 데이터베이스나 벡터 DB에 올립니다.',r:'실행 로그 보관'},
+  {n:11,c:3,t:'모니터링',d:'라벨 일관성과 적재 성공률을 정기 점검하고 규칙을 갱신합니다.',r:'변경 이력 기록'}
+];
+const CHECK = ['출처 기록 (누가·언제 수집)','라벨 정의서 (짧은 문서)','샘플 검수 결과','적재 로그 보관','버전 태그 (데이터·라벨·이미지)'];
+const esc = s => s.replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+// A: 장별 카드
+document.getElementById('a-cards').innerHTML = CH.map((c,i)=>`
+  <div class="card"><div class="k">장 ${i+1}</div><h3>${c}</h3>
+  <ul class="steps-mini">${STEPS.filter(s=>s.c===i).map(s=>`<li><span class="n">${s.n}</span><span>${esc(s.t)}</span></li>`).join('')}</ul></div>`).join('');
+// A: 비유 카드
+const ANA = [['잡동사니 박스','형태가 들쭉날쭉한 원재료. 메모, 사진, 녹음이 섞여 있습니다.'],['스티커','각 물건에 무엇인지 표시합니다. 이것이 라벨링입니다.'],['밀봉 포장','정리한 묶음을 Docker 이미지로 포장합니다.'],['창고','서버에 넣어 두고 필요할 때 같은 상태로 꺼내 씁니다.']];
+document.getElementById('a-analogy').innerHTML = ANA.map((a,i)=>`<div class="card"><div class="k" style="color:var(--mute-dark)">${i+1} / 4</div><h3>${a[0]}</h3><p style="margin:0;color:var(--body-dark);font-size:15px">${a[1]}</p></div>`).join('');
+// 체크리스트
+const tick = '<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" fill="none" stroke="currentColor" stroke-opacity=".5"/><path d="M5 9.2l2.6 2.6L13 6.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
+document.querySelectorAll('[data-check]').forEach(ul=>ul.innerHTML = CHECK.map(c=>`<li>${tick}<span>${c}</span></li>`).join(''));
+
+// B: 세로 노드
+const BN = [['수집','1–2'],['라벨링','3–6'],['정제','7'],['Docker','8–9'],['적재','10–11']];
+const STAGE = n => n<=2?0:n<=6?1:n===7?2:n<=9?3:4;
+const g = document.getElementById('b-nodes');
+g.innerHTML = BN.map((b,i)=>{const y=80+i*130;return `
+  <g class="b-node" data-i="${i}"><rect x="40" y="${y}" width="240" height="84" rx="8" fill="#f5f7fa" stroke="#d5dbe3"/>
+  <text x="160" y="${y+40}" font-size="22" font-weight="300" fill="#000">${b[0]}</text>
+  <text x="160" y="${y+64}" font-size="11" fill="#6b6b6b" letter-spacing="1">STEP ${b[1]}</text></g>
+  ${i<4?`<path d="M160 ${y+84}V${y+126}" stroke="#6b6b6b" stroke-width="1.3" marker-end="url(#b-arr)"/>`:''}`}).join('');
+document.getElementById('b-list').innerHTML = CH.map((c,i)=>`
+  <div class="b-ch"><span class="eyebrow">장 ${i+1}</span><h3>${c}</h3>
+  ${STEPS.filter(s=>s.c===i).map(s=>`<div class="b-row" tabindex="0" data-n="${s.n}"><span class="num">${String(s.n).padStart(2,'0')}</span><div><h4>${esc(s.t)}</h4><p>${esc(s.d)}</p></div><span class="chip">${esc(s.r)}</span></div>`).join('')}</div>`).join('');
+const light = n => {
+  document.querySelectorAll('.b-node').forEach(el=>el.classList.toggle('on', +el.dataset.i===STAGE(n)));
+  document.querySelectorAll('.b-row').forEach(el=>el.classList.toggle('on', +el.dataset.n===n));
+};
+document.querySelectorAll('.b-row').forEach(el=>{
+  const n=+el.dataset.n; el.addEventListener('mouseenter',()=>light(n)); el.addEventListener('focus',()=>light(n)); el.addEventListener('click',()=>light(n));
+});
+light(1);
+
+// C: 타일 레일
+const ART = ['c1','c2','c3','c1'];
+document.getElementById('c-rail').innerHTML = STEPS.map(s=>`
+  <article class="tile"><div class="art ${ART[s.c]}"><span>${String(s.n).padStart(2,'0')}</span></div>
+  <div class="body"><span class="ch">${CH[s.c]}</span><h4>${esc(s.t)}</h4><p>${esc(s.d)}</p></div></article>`).join('');
+
+// 탭
+const tabs = [...document.querySelectorAll('.tab')];
+const show = id => {
+  tabs.forEach(t=>{const on=t.getAttribute('aria-controls')===id; t.setAttribute('aria-selected',on); document.getElementById(t.getAttribute('aria-controls')).hidden=!on;});
+  try{localStorage.setItem('layout-opt',id)}catch(e){}
+};
+tabs.forEach(t=>t.addEventListener('click',()=>show(t.getAttribute('aria-controls'))));
+let start='opt-a';
+const h=location.hash.slice(1); if(['a','b','c'].includes(h)) start='opt-'+h;
+else { try{const s=localStorage.getItem('layout-opt'); if(s && document.getElementById(s)) start=s;}catch(e){} }
+show(start);
+</script>

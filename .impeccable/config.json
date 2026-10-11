@@ -11,6 +11,33 @@
         ],
         "createdAt": "2026-10-07T15:56:30.948Z",
         "reason": "User confirmed: 2026-10-08 chose mockup A copying the Gemini reference's navy radial glow"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "roboto",
+        "files": [
+          "docs/design-refs/layout_options.html"
+        ],
+        "createdAt": "2026-10-08T16:36:54.581Z",
+        "reason": "Claude: docs/design-refs/playstation-DESIGN.md names Roboto as the SST substitute; root DESIGN.md covers the RAG screen only"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "roboto",
+        "files": [
+          "docs/data_pipeline_explainer.html"
+        ],
+        "createdAt": "2026-10-08T16:43:57.197Z",
+        "reason": "Claude: docs/design-refs/playstation-DESIGN.md names Roboto as the SST substitute; user chose option C built on it"
+      },
+      {
+        "rule": "hero-eyebrow-chip",
+        "value": "*",
+        "files": [
+          "docs/data_pipeline_explainer.html"
+        ],
+        "createdAt": "2026-10-08T16:45:40.798Z",
+        "reason": "user confirmed: picked option C (eyebrow above hero headline) and said the layout and content are good, 2026-10-09"
       }
     ]
   }
