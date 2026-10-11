@@ -84,9 +84,9 @@ def main():
         from labelbot.ingest import read_input
 
         cfg = json.loads(read_input(os.path.join(a.workspace, "pipeline.json"), None, expect="text"))
-        out["supabase_enabled"] = bool(cfg.get("supabase", {}).get("enabled"))
+        out["vector_store_enabled"] = bool(cfg.get("vector_store", {}).get("enabled"))
     except (OSError, ValueError, ImportError):
-        out["supabase_enabled"] = None
+        out["vector_store_enabled"] = None
     inbox = os.path.join(a.workspace, "inbox")
     names = sorted(os.listdir(inbox)) if os.path.isdir(inbox) else []
     out["inbox"] = {"review": [n for n in names if n.lower().startswith("review_") and n.lower().endswith(".json")],

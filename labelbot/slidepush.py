@@ -1,37 +1,44 @@
-"""슬라이드 JPG를 Supabase Storage에 올리고 벡터 행에 slide_image_* 열을 채운다(python -m labelbot push-slides).
+"""슬라이드 JPG를 로컬 저장소 slides/에 저장하고 벡터 행에 slide_image_* 열을 채운다(python -m labelbot push-slides).
 
-Storage는 사본이다. 원본은 slide_images/<sha256>.b64와 work.sqlite slide_images 표다.
-slide_image_push_log로 멱등을 보장한다. 같은 대상 호스트·버킷에 같은 chunk·jpg_sha256이 OK로 있으면 보내지 않는다.
+로컬 저장소 slides/는 사본이다. 원본은 slide_images/<sha256>.b64와 work.sqlite slide_images 표다.
+slide_image_push_log로 멱등을 보장한다. 같은 저장소(target_hash)·버킷에 같은 chunk·jpg_sha256이 OK로 있으면 보내지 않는다.
 벡터 행이 있어야 열을 채울 수 있으므로 push-vectors 다음에 부른다. 행이 없으면 ROW_MISSING으로 남기고 다음에 다시 한다.
 라벨과 label_hash는 바꾸지 않는다(push-vectors의 멱등을 건드리지 않는다).
 """
 import os
-import urllib.parse
+import sqlite3
 
-from labelbot import store, util
+from labelbot import localstore, store, util
 from labelbot.embed import run_chunks
-from labelbot.llm import CallFailed, SupabaseSinkBase, host_hash, patch_json, post_bytes, read_key
+from labelbot.llm import CallFailed
 from labelbot.slideimg import object_path
 
 STAGE = "push_slides"
+LOCAL_BUCKET = "local"
 
 
-class StorageSink(SupabaseSinkBase):
+class LocalSlideSink:
+    """저장소 연결을 스스로 연다. close()로 닫는다."""
+
+    def __init__(self, root):
+        self.root = root
+        self.con = localstore.connect(root)
+
     def upload(self, bucket, path, data):
-        url = "%s/storage/v1/object/%s/%s" % (self.base, urllib.parse.quote(bucket, safe=""),
-                                              urllib.parse.quote(path, safe="/"))
-        hdrs = self._hdrs()
-        hdrs["x-upsert"] = "true"
-        post_bytes(url, hdrs, data, "image/jpeg", self.timeout, self.ca_file)
+        try:
+            localstore.put_slide(self.root, util.sha256_bytes(data), data)
+        except (OSError, ValueError):
+            raise CallFailed("LOCAL_STORE_ERROR")
 
     def patch_row(self, chunk_id, fields):
         """반환: 갱신된 행 수."""
-        url = "%s/rest/v1/%s?chunk_id=eq.%s&select=chunk_id" % (
-            self.base, self.cfg["table"], urllib.parse.quote(chunk_id, safe=""))
-        hdrs = self._hdrs()
-        hdrs["Prefer"] = "return=representation"
-        _, body = patch_json(url, hdrs, fields, self.timeout, self.ca_file)
-        return len(body) if isinstance(body, list) else 0
+        try:
+            return localstore.patch_slide(self.con, chunk_id, fields)
+        except sqlite3.Error:
+            raise CallFailed("LOCAL_STORE_ERROR")
+
+    def close(self):
+        self.con.close()
 
 
 def row_fields(bucket, r):
@@ -40,20 +47,31 @@ def row_fields(bucket, r):
 
 
 def push(ws, con, run_id, sink=None, log=None):
-    sb = ws.config["supabase"]
+    vs = ws.config["vector_store"]
     zero = {"uploaded": 0, "patched": 0, "skipped": 0, "blocked": 0, "failed": 0}
-    if not sb.get("storage_enabled"):
-        print("[push-slides] supabase.storage_enabled=false: 호출하지 않습니다.")
+    if not vs.get("slides_enabled"):
+        print("[push-slides] vector_store.slides_enabled=false: 저장하지 않습니다.")
         return zero
-    url = ws.supabase_url()
-    bucket = sb.get("storage_bucket") or "BEOL-labeling"
-    if sink is None:
-        key = read_key(sb.get("key_env"))
-        if not url or not key:
-            print("[push-slides] SUPABASE_URL 또는 키 환경변수가 없습니다.")
-            return dict(zero, reason="CONFIG_MISSING")
-        sink = StorageSink(url, sb, key)
-    target = host_hash(url)
+    root, bucket = localstore.store_root(vs), LOCAL_BUCKET
+    lcon = localstore.connect(root)
+    try:
+        target = localstore.target_hash(lcon)
+    finally:
+        lcon.close()
+    own_sink = sink is None
+    if own_sink:
+        sink = LocalSlideSink(root)
+    try:
+        st = _push_rows(ws, con, run_id, sink, log, bucket, target, zero)
+    finally:
+        if own_sink:
+            sink.close()
+    print("[push-slides] 업로드 %d, 행 갱신 %d, 건너뜀 %d, 차단 %d, 실패 %d" % (
+        st["uploaded"], st["patched"], st["skipped"], st["blocked"], st["failed"]))
+    return st
+
+
+def _push_rows(ws, con, run_id, sink, log, bucket, target, zero):
     ids = [c["chunk_id"] for c in run_chunks(con, run_id)]
     # 지금 본문과 같은 text_hash로 그린 그림만 올린다.
     rows = con.execute(
@@ -75,8 +93,6 @@ def push(ws, con, run_id, sink=None, log=None):
             if log:
                 log(STAGE, r["chunk_id"], code)
         con.commit()
-    print("[push-slides] 업로드 %d, 행 갱신 %d, 건너뜀 %d, 차단 %d, 실패 %d" % (
-        st["uploaded"], st["patched"], st["skipped"], st["blocked"], st["failed"]))
     return st
 
 

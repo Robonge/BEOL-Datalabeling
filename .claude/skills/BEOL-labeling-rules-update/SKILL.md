@@ -1,6 +1,6 @@
 ---
 name: BEOL-labeling-rules-update
-description: Domain-Engr-bot이 taxonomy/labeling_rules.json의 라벨링 규칙을 추가·수정·끄기·기각해서, 이미 라벨링·검수를 마친 작업 폴더의 옛 라벨이 지금 규칙과 달라졌을 때, 바뀐 규칙이 닿는 범위만 LLM으로 다시 라벨링한다(축 규칙은 그 축 전체 chunk의 1차 분류만, 답 규칙은 그 질문의 O/X만 3차로). 사람이 교정하거나 확인한 값은 건드리지 않는다. 사람 검수 없이 바로 반영하고, 규칙별 카드와 값이 바뀐 슬라이드(이전 → 지금)를 보여 주는 현황판(rules_update.html)을 띄운 뒤 임베딩·Supabase 적재까지 이어 간다. BEOL-labeling-Code-Engr-bot이 규칙 점검에서 걸린 작업 폴더마다 묻지 않고 자동으로 부른다. 사용자가 "규칙 바뀐 것만 다시", "라벨링 규칙 반영", "rules update", "규칙 변경 재라벨링"이라고 하거나 /BEOL-labeling-rules-update를 부르면 이 스킬을 쓴다. 축 변경분은 axis-update, 규칙 확정은 Domain-Engr-bot이 맡는다.
+description: Domain-Engr-bot이 taxonomy/labeling_rules.json의 라벨링 규칙을 추가·수정·끄기·기각해서, 이미 라벨링·검수를 마친 작업 폴더의 옛 라벨이 지금 규칙과 달라졌을 때, 바뀐 규칙이 닿는 범위만 LLM으로 다시 라벨링한다(축 규칙은 그 축 전체 chunk의 1차 분류만, 답 규칙은 그 질문의 O/X만 3차로). 사람이 교정하거나 확인한 값은 건드리지 않는다. 사람 검수 없이 바로 반영하고, 규칙별 카드와 값이 바뀐 슬라이드(이전 → 지금)를 보여 주는 현황판(rules_update.html)을 띄운 뒤 임베딩·로컬 저장소 적재까지 이어 간다. BEOL-labeling-Code-Engr-bot이 규칙 점검에서 걸린 작업 폴더마다 묻지 않고 자동으로 부른다. 사용자가 "규칙 바뀐 것만 다시", "라벨링 규칙 반영", "rules update", "규칙 변경 재라벨링"이라고 하거나 /BEOL-labeling-rules-update를 부르면 이 스킬을 쓴다. 축 변경분은 axis-update, 규칙 확정은 Domain-Engr-bot이 맡는다.
 ---
 
 # BEOL-labeling-rules-update: 바뀐 규칙이 닿는 범위만 다시 라벨링
@@ -11,7 +11,7 @@ description: Domain-Engr-bot이 taxonomy/labeling_rules.json의 라벨링 규칙
 
 ```
 대상 확인(dry-run) → 사전 점검 → 바뀐 규칙 범위 재라벨링 → 현황판(rules-board) 띄우기
-→ 임베딩 → Supabase 적재 → 현황판 갱신 → 보고
+→ 임베딩 → 로컬 저장소 적재 → 현황판 갱신 → 보고
 ```
 
 검수 대기 단계는 없다.
@@ -69,7 +69,7 @@ python -m labelbot push-slides --workspace "<WS>" --run <RUN>
 | `RULES_BASELINE_UNKNOWN` | 기준 실행이 쓴 규칙 파일을 복원하지 못했다(규칙 이력·git에 같은 것이 없다) | 전체 `/BEOL-labeling`을 안내한다 |
 | `PREV_NOT_REVIEWED` | 기준 실행의 사람 검수가 끝나지 않았다 | 먼저 `/BEOL-labeling-feedback`으로 검수를 마친다 |
 | `REVIEW_IN_PROGRESS` | 기준 실행의 검수가 열려 있다(시작 신호만 있고 완료 신호가 없다) | 검수 완료 뒤 다시 |
-| `PREV_PUSH_PENDING` | supabase를 쓰는데 기준 실행의 확정 라벨이 아직 다 적재되지 않았다 | 기준 작업 폴더에서 `/BEOL-labeling-feedback` 적재 단계(`embed` → `push-vectors`)를 다시 실행한다. Supabase를 쓰지 않으면 `pipeline.json`의 `supabase.enabled=false`. 그 뒤 다시 |
+| `PREV_PUSH_PENDING` | 로컬 저장을 켰는데 기준 실행의 확정 라벨이 아직 다 적재되지 않았다 | 기준 작업 폴더에서 `/BEOL-labeling-feedback` 적재 단계(`embed` → `push-vectors`)를 다시 실행한다. 로컬 저장을 쓰지 않으면 `pipeline.json`의 `vector_store.enabled=false`. 그 뒤 다시 |
 | `AXIS_UPDATE_LOCKED` | 같은 작업 폴더에서 axis-update 또는 rules-update가 돌고 있다(`logs/axis_update.lock.json`, 6시간 넘은 잠금은 무시) | 그 실행이 끝난 뒤 다시. 실행 중인 것이 없으면 잠금 파일을 지우거나 6시간이 지나기를 기다린다 |
 | `AXIS_CHANGE_PENDING` | 기준 실행 대비 활성 taxonomy 축이 바뀌어 있다(비활성 축만의 변경은 막지 않는다) | 먼저 `/BEOL-labeling-axis-update`. 그 검수가 끝난 뒤 다시 |
 | `NO_RELABEL_TARGET` | 바뀐 규칙이 닿는 값이 모두 사람이 교정·확인한 값이거나 질문이 없다(건너뜀 줄 뒤에 건수) | 할 일 없음. 기록이 바뀌지 않으므로 다음 점검에서도 같은 사유로 건너뛴다 |
@@ -80,7 +80,7 @@ python -m labelbot push-slides --workspace "<WS>" --run <RUN>
 
 ### 적재 보류: `RULES_CHANGE_RATIO_HIGH` (건너뜀도 실패도 아님)
 
-다시 라벨링한 (chunk, 축/질문) 중 값이 바뀐 비율이 상한(`rules_update.max_change_ratio`, 기본 0.3)을 넘으면 실행은 끝내되 Supabase 적재만 멈춘다. 사람 검수가 없는 흐름이라 규칙 하나가 라벨을 대량으로 뒤집는 사고를 막는 장치다. 호출 성공 수가 `rules_update.min_relabels`(기본 10) 미만이면 이 검사를 하지 않는다.
+다시 라벨링한 (chunk, 축/질문) 중 값이 바뀐 비율이 상한(`rules_update.max_change_ratio`, 기본 0.3)을 넘으면 실행은 끝내되 로컬 저장소 적재만 멈춘다. 사람 검수가 없는 흐름이라 규칙 하나가 라벨을 대량으로 뒤집는 사고를 막는 장치다. 호출 성공 수가 `rules_update.min_relabels`(기본 10) 미만이면 이 검사를 하지 않는다.
 
 - 현황판에서 이전 → 지금을 보고 맞으면 `push-vectors --force`로 보낸다(이어서 `push-slides`). 이때 `[push-vectors] FORCED RULES_CHANGE_RATIO_HIGH ratio=… limit=…` 줄이 나오고 실행 기록에 `forced_at`이 남는다.
 - 되돌리려면 이 실행의 라벨을 쓰지 않는 전체 `/BEOL-labeling`을 돌린다.
@@ -100,7 +100,7 @@ python -m labelbot push-slides --workspace "<WS>" --run <RUN>
 
 - `✅` 완료, `▶️` 진행 중, `⬜` 대기, `❌` 실패, `⏭️` 건너뜀. 1단계에서 건너뜀 사유 코드가 나오면 1단계를 `⏭️ — <코드>`로 두고 나머지는 그대로 둔 채 끝낸다(실패가 아니다).
 - 목록에는 milestone 5개를 번호 순서대로 한 줄에 하나씩 항상 모두 쓴다. 제목 줄·막대 줄·지금 줄·목록 사이는 빈 줄로 띄운다. `▶️` 줄은 단계 번호·이름을 굵게 쓰고 `— 진행 중`을 붙인다. 막대 줄의 `N/5 완료`는 `✅` 줄의 수다.
-- 3단계 줄 끝에 `규칙 n건 · 축 대상 chunk n · 답 대상 n · LLM n회`, 5단계 줄 끝에 Supabase 전송 행 수 또는 `보류 RULES_CHANGE_RATIO_HIGH`를 붙인다. 적재 보류는 5단계를 `✅ — 보류 RULES_CHANGE_RATIO_HIGH`로 두고 100%로 끝낸다.
+- 3단계 줄 끝에 `규칙 n건 · 축 대상 chunk n · 답 대상 n · LLM n회`, 5단계 줄 끝에 로컬 저장소 전송 행 수 또는 `보류 RULES_CHANGE_RATIO_HIGH`를 붙인다. 적재 보류는 5단계를 `✅ — 보류 RULES_CHANGE_RATIO_HIGH`로 두고 100%로 끝낸다.
 
 ## 절차
 
@@ -153,7 +153,7 @@ python -m labelbot push-slides --workspace "<WS>" --run <RUN>
 ## 규칙 변경 재라벨링 (run_id: <RUN>, 기준 <이전 RUN>)
 - 바뀐 규칙 id <목록>(추가 n · 수정 n · 끄기 n · 기각 n)
 - 다시 라벨 n · 값 바뀜 n(비율 %) · 사람 값이라 건너뜀 n · 낡은 답 버림 n
-- 적재: Supabase n행 · 임베딩 n · 슬라이드 JPG 실패 n (또는 보류 RULES_CHANGE_RATIO_HIGH)
+- 적재: 로컬 저장소 n행 · 임베딩 n · 슬라이드 JPG 실패 n (또는 보류 RULES_CHANGE_RATIO_HIGH)
 - [현황판](http://localhost:<port>/rules_update.html) · [작업 폴더](<WS 상대>)
 ```
 0건인 항목은 쓰지 않는다. 단계 전체 규칙·사례 변경을 보고만 했으면 건수를 한 줄 덧붙인다. 규칙 문장은 쓰지 않는다.

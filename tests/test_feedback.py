@@ -32,7 +32,7 @@ def _make_ws(parent, include, rules_path):
     d = tempfile.mkdtemp(prefix="labelbot_fb_", dir=parent)
     cfg = {"taxonomy_path": TAXONOMY, "input_root": DUMMY_DIR, "include_file_ids": include,
            "llm": {"transport": "mock", "model": "mock", "max_retries": 1},
-           "embedding": {"transport": "mock"}, "supabase": {"enabled": False},
+           "embedding": {"transport": "mock"}, "vector_store": {"enabled": False},
            "feedback": {"rules_path": rules_path, "examples_root": parent}}
     with open(os.path.join(d, "pipeline.json"), "w", encoding="utf-8") as f:
         json.dump(cfg, f)

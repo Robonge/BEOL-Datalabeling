@@ -3,7 +3,7 @@
   "groups": [
     {
       "title": "라벨링 파이프라인",
-      "lead": "run-labeling이 라벨링부터 Supabase 적재까지 잇고, 사람 검수 완료에서만 멈춘다",
+      "lead": "run-labeling이 라벨링부터 로컬 저장소 적재까지 잇고, 사람 검수 완료에서만 멈춘다",
       "color": "#4A5FA8",
       "skills": [
         {
@@ -16,7 +16,7 @@
             },
             {
               "name": "BEOL-labeling-feedback",
-              "role": "검수 교정 반영 → 임베딩 → Supabase 적재"
+              "role": "검수 교정 반영 → 임베딩 → 로컬 저장소 적재"
             }
           ]
         }
@@ -76,7 +76,7 @@
         },
         {
           "name": "BEOL-labeling-RAG-html",
-          "role": "RAG 대화 화면 실행 · 답변 서버 함수 배포"
+          "role": "RAG 대화 화면 실행 · 로컬 답변 서버 실행"
         }
       ]
     }

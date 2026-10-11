@@ -27,7 +27,19 @@ from tests.test_taxonomy import axis_row, base_sheets, build, tax_row
 
 NEW, GONE, CHANGED, ONLY, KEEP = "평가 조건", "의사결정 상태", "불량 모드", "공정 단계", "구조/레이어"
 PARTIAL_FAIL = 6  # test_pipeline.responder에서 정상 버킷. B의 부분 분류만 이 버킷을 실패시킨다
-SUPABASE = {"enabled": True, "url": "https://example-proj.supabase.co"}
+# 로컬 저장소는 임시 폴더에만 쓴다(실제 workspaces/_rag_store 금지). test_rules_update·test_rules_board도 이것을 import한다.
+RAG_STORE = tempfile.mkdtemp(prefix="labelbot_ragstore_")
+VECTOR_STORE = {"enabled": True, "path": RAG_STORE}
+_STORE_ENV = mock.patch.dict(os.environ, {"BEOL_RAG_STORE": RAG_STORE})
+
+
+def setUpModule():
+    _STORE_ENV.start()
+
+
+def tearDownModule():
+    _STORE_ENV.stop()
+    shutil.rmtree(RAG_STORE, ignore_errors=True)
 
 
 def before_sheets():
@@ -72,14 +84,14 @@ class Sink:
 
 
 def push_all(ws, con, run_id):
-    """mock 임베딩 후 sink로 적재한다. supabase 설정은 이 호출 동안만 켠다."""
+    """mock 임베딩 후 sink로 적재한다. vector_store 설정(임시 저장소)은 이 호출 동안만 켠다."""
     embed.embed(ws, con, run_id, transport=MockEmbedTransport())
     sink = Sink()
-    ws.config["supabase"].update(SUPABASE)
+    ws.config["vector_store"].update(VECTOR_STORE)
     try:
         vectorpush.push(ws, con, run_id, sink=sink)
     finally:
-        ws.config["supabase"].update({"enabled": False, "url": ""})
+        ws.config["vector_store"].update({"enabled": False})
     return sink.rows
 
 
@@ -105,7 +117,7 @@ def make_ws(sheets):
         f.write(build(sheets))
     cfg = {"taxonomy_path": tax_path, "input_root": DUMMY_DIR,
            "llm": {"transport": "mock", "model": "mock", "max_retries": 1},
-           "embedding": {"transport": "mock"}, "supabase": {"enabled": False}}
+           "embedding": {"transport": "mock"}, "vector_store": {"enabled": False}}
     with open(os.path.join(d, "pipeline.json"), "w", encoding="utf-8") as f:
         json.dump(cfg, f)
     return d, tax_path, Workspace(d)
@@ -577,18 +589,18 @@ class AxisUpdateGateTest(unittest.TestCase):
         self.assertEqual((obj["run_id"], obj["finished"], obj["newer_unfinished"]), (self.run_a, True, crashed))
 
     def _check_push_pending(self, tax):
-        self.ws.config["supabase"].update(SUPABASE)
+        self.ws.config["vector_store"].update(VECTOR_STORE)
         try:
             self.assertEqual(axisupdate.plan(self.ws, self.con, tax)["code"], axisupdate.PREV_PUSH_PENDING)
         finally:
-            self.ws.config["supabase"].update({"enabled": False, "url": ""})
+            self.ws.config["vector_store"].update({"enabled": False})
         self.assertGreater(len(push_all(self.ws, self.con, self.run_a)), 0)
-        self.ws.config["supabase"].update(SUPABASE)
+        self.ws.config["vector_store"].update(VECTOR_STORE)
         try:
             self.assertEqual(vectorpush.unpushed(self.ws, self.con, self.run_a), 0)
             self.assertIsNone(axisupdate.plan(self.ws, self.con, tax)["code"])
         finally:
-            self.ws.config["supabase"].update({"enabled": False, "url": ""})
+            self.ws.config["vector_store"].update({"enabled": False})
 
     def _crash_once(self, tax):
         """부분 분류 중 예외로 멈춘 실행: 잠금이 풀리고, 기본 최신 실행·전역 축 meta는 기준 실행 그대로다(m6)."""

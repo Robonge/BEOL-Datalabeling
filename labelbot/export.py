@@ -4,7 +4,7 @@ import os
 import shutil
 import sqlite3
 
-from labelbot import finals, slideimg, store, util
+from labelbot import finals, slideimg, slidepush, store, util
 from labelbot.questions import all_questions
 
 SCHEMA = [
@@ -103,7 +103,7 @@ def export(ws, con, run_id, tax):
         out.execute("PRAGMA journal_mode=DELETE")
         _create(out)
         _write_files(out, con, files, chunks)
-        bucket = ws.config["supabase"].get("storage_bucket")
+        bucket = slidepush.LOCAL_BUCKET if (ws.config.get("vector_store") or {}).get("slides_enabled") else None
         bad = finals.incomplete(con, run_id, labels)  # 대상 축을 못 채운 axis-update chunk는 분류 실패 chunk처럼 쓴다
         for c in chunks:
             _write_chunk(out, ws, con, c, {} if c["chunk_id"] in bad else labels.get(c["chunk_id"]) or {}, out_dir, bucket)

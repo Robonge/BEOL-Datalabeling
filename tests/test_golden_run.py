@@ -73,7 +73,7 @@ class GoldenRun(unittest.TestCase):
         cls.dir = tempfile.mkdtemp(prefix="labelbot_golden_")
         cfg = {"taxonomy_path": TAXONOMY, "input_root": DUMMY_DIR, "include_file_ids": _include_ids(),
                "llm": {"transport": "mock", "model": "mock", "max_retries": 1},
-               "embedding": {"transport": "mock"}, "supabase": {"enabled": False},
+               "embedding": {"transport": "mock"}, "vector_store": {"enabled": False},
                "feedback": {"rules_path": os.path.join(cls.dir, "no_rules.json"), "examples_root": cls.dir}}
         cls.ws_dir = os.path.join(cls.dir, "ws")
         os.makedirs(cls.ws_dir)

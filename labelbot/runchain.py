@@ -70,11 +70,11 @@ def reviewed(ws, con, prev):
 
 
 def push_pending(ws, con, prev):
-    """supabase를 쓰는데 기준 실행의 확정 라벨이 아직 다 적재되지 않았으면 PREV_PUSH_PENDING(vectorpush 기록 재사용).
+    """로컬 저장소(vector_store)를 쓰는데 기준 실행의 확정 라벨이 아직 다 적재되지 않았으면 PREV_PUSH_PENDING(vectorpush 기록 재사용).
 
     부분 실행은 file_locations를 새 실행으로 옮기므로, 그 뒤에는 기준 실행을 embed·push할 수 없다.
     """
-    if not (ws.config.get("supabase") or {}).get("enabled"):
+    if not (ws.config.get("vector_store") or {}).get("enabled"):
         return None
     from labelbot import vectorpush
 

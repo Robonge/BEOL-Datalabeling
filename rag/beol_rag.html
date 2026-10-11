@@ -3,13 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://akvsabzuwjenxepxybpe.supabase.co; media-src 'self'; img-src https://akvsabzuwjenxepxybpe.supabase.co blob: data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; media-src 'self'; img-src 'self' blob: data:; base-uri 'none'; form-action 'none'">
 <link rel="icon" href="data:,">
 <title>BEOL 슬라이드 RAG (데모)</title>
 <script>
-const SUPABASE_URL = "https://akvsabzuwjenxepxybpe.supabase.co";
-const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrdnNhYnp1d2plbnhlcHh5YnBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5Njg5MDMsImV4cCI6MjA5ODU0NDkwM30.sRrdRuJU6eK5VOJA9p6tg425YMPAVcLv3Yyi_Qyf2Ak"; // 공개용 anon 키(role=anon). 비공개 키는 넣지 않는다
-const FUNCTION_URL = SUPABASE_URL + "/functions/v1/beol-rag-ask";
+const API_BASE = "";
+const FUNCTION_URL = API_BASE + "/api/ask";
 const HISTORY_MAX = 12;          // 서버로 보내는 최근 대화 메시지 수(질문 포함)
 const ASSISTANT_MAX_CHARS = 2000; // 이력에 실리는 assistant 답 길이
 const TOP_K = 5;                 // 근거 슬라이드 수
@@ -475,7 +474,7 @@ try { if (sessionStorage.getItem("beol_rag_intro") || matchMedia("(prefers-reduc
 <script>
 (function () {
   "use strict";
-  var HDR = { "apikey": ANON_KEY, "Authorization": "Bearer " + ANON_KEY };
+  var HDR = {};
   var AXIS_ORDER = ["공정 모듈","구조/레이어","제품·세대","결과","불량 모드","Main step","Material","물리 현상","Patterning/scheme","REMSPC","의사결정 상태"];
   var NA_VALUE = "해당 없음";
   var $ = function (id) { return document.getElementById(id); };
@@ -696,7 +695,7 @@ try { if (sessionStorage.getItem("beol_rag_intro") || matchMedia("(prefers-reduc
   }
 
   function loadFacets() {
-    fetch(SUPABASE_URL + "/rest/v1/beol_rag_facets?select=axis,value,n&order=axis,n.desc", { headers: authHeaders() })
+    fetch(API_BASE + "/api/facets", { headers: authHeaders() })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP_" + r.status);
         return r.json();
@@ -718,16 +717,13 @@ try { if (sessionStorage.getItem("beol_rag_intro") || matchMedia("(prefers-reduc
   }
 
   function loadBadge() {
-    fetch(SUPABASE_URL + "/rest/v1/beol_rag_chunks?select=chunk_id", {
-      headers: authHeaders({ "Prefer": "count=exact", "Range": "0-0" })
-    }).then(function (r) {
-      var cr = r.headers.get("Content-Range");
-      var m = cr && cr.match(/\/(\d+)$/);
-      if (!r.ok && r.status !== 206) throw new Error("x");
-      if (!m) throw new Error("x");
-      $("slideCount").textContent = m[1];
-      $("badge").hidden = false;
-    }).catch(function () { /* 배지 생략 */ });
+    fetch(API_BASE + "/api/stats", { headers: authHeaders() })
+      .then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
+      .then(function (d) {
+        if (!d || typeof d.count !== "number") throw new Error("x");
+        $("slideCount").textContent = String(d.count);
+        $("badge").hidden = false;
+      }).catch(function () { /* 배지 생략 */ });
   }
 
   /* ---------- 그림 로딩 ---------- */
@@ -742,7 +738,7 @@ try { if (sessionStorage.getItem("beol_rag_intro") || matchMedia("(prefers-reduc
       if (stale()) return;
       if (!ev.image_path) return none();
       var path = String(ev.image_path).split("/").map(encodeURIComponent).join("/");
-      var url = SUPABASE_URL + "/storage/v1/object/authenticated/" + encodeURIComponent("BEOL-labeling") + "/" + path;
+      var url = API_BASE + "/slides/" + path;
       fetch(url, { headers: authHeaders() })
         .then(function (r) { if (!r.ok) throw new Error("x"); return r.blob(); })
         .then(function (blob) {
@@ -1289,9 +1285,9 @@ try { if (sessionStorage.getItem("beol_rag_intro") || matchMedia("(prefers-reduc
         evidence: ev, verdict: verdict, comment: comment || null
       };
       note.textContent = "보내는 중…";
-      fetch(SUPABASE_URL + "/rest/v1/beol_rag_feedback", {
+      fetch(API_BASE + "/api/feedback", {
         method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json", "Prefer": "return=minimal" }),
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body)
       }).then(function (r) {
         if (r.status === 201) { lock(btn); note.textContent = "고마워요, 기록했어요"; }

@@ -53,7 +53,7 @@ python -m code_engrbot rules
 - 읽기 전용이다. 사용자가 고치라고 하기 전에는 소스를 고치지 않는다.
 - 이 봇(`code_engrbot` 코드)은 소스를 import·실행하지 않는다. 그 방식은 바꾸지 않는다. taxonomy 축 점검은 code_engrbot이 아니라 이 skill 절차가 `labelbot taxonomy-diff`를 불러 한다. 점검 결과는 code_engrbot 판정·종료 코드에 넣지 않는다.
 - 재라벨링은 자동이다(사용자 결정, 2026-10-06). 3단계에서 재라벨링 대상이 된 작업 폴더는 묻지 않고 `/BEOL-labeling-axis-update`로 바뀐 축만 다시 라벨링한다. 이전 라벨·검수 결과는 유지되고, 같은 작업 폴더에 `axis-update` 실행이 하나 더 생긴다. 대상이 아닌 폴더는 돌리지 않는다. 전체 재라벨링(`/BEOL-labeling`)은 부르지 않는다.
-- 규칙 재라벨링도 자동이다(사용자 결정, 2026-10-07). 3단계에서 규칙 불일치로 걸린 작업 폴더는 묻지 않고 `/BEOL-labeling-rules-update`로 바뀐 규칙이 닿는 범위만 다시 라벨링한다. 이 흐름에는 사람 검수가 없고 Supabase 적재까지 이어진다. 같은 폴더에 축 불일치도 있으면 axis-update만 먼저 부른다. 규칙 점검도 `labelbot rules-diff`가 하고, 점검 결과는 code_engrbot 판정·종료 코드에 넣지 않는다.
+- 규칙 재라벨링도 자동이다(사용자 결정, 2026-10-07). 3단계에서 규칙 불일치로 걸린 작업 폴더는 묻지 않고 `/BEOL-labeling-rules-update`로 바뀐 규칙이 닿는 범위만 다시 라벨링한다. 이 흐름에는 사람 검수가 없고 로컬 저장소 적재까지 이어진다. 같은 폴더에 축 불일치도 있으면 axis-update만 먼저 부른다. 규칙 점검도 `labelbot rules-diff`가 하고, 점검 결과는 code_engrbot 판정·종료 코드에 넣지 않는다.
 - 축 점검 보고에는 작업 폴더 이름·실행 ID·축 이름·건수만 쓴다. 축 정의 문장, 값 목록, 본문은 쓰지 않는다. taxonomy.json을 Read 도구로 열거나 직접 파싱하지 않는다(축 비교는 `taxonomy-diff`가 `open(path,"rb")` → `parse_bytes`로 한다).
 - 사내 파일을 Read 도구로 열지 않는다(루트 `CLAUDE.md`). 코드 검수에는 필요 없다.
 - 오탐은 코드를 억지로 바꾸지 않고 해당 줄에 주석으로 누른다. 사유를 반드시 적는다.
@@ -161,7 +161,7 @@ taxonomy.json에 축이 더해지거나 빠지거나 종류·값이 바뀌면, �
   - 그 skill이 건너뜀 사유 코드를 내면 표에 `⏭️ <코드>`로 적고 다음 폴더로 간다. 멈추면(selfcheck FAIL 등) `❌ <사유>`로 적는다. rules-update가 적재 보류(`RULES_CHANGE_RATIO_HIGH`)로 끝나면 `✅ 적재 보류`로 적고 현황판에서 확인하라고 안내한다(실패가 아니다).
     - axis-update 코드: `PREV_NOT_REVIEWED`·`REVIEW_IN_PROGRESS`·`PREV_PUSH_PENDING`·`AXIS_UPDATE_LOCKED`·`NO_AXIS_CHANGE`·`NO_PREVIOUS_RUN`.
     - rules-update 코드: 위 코드에 `RULES_BASELINE_UNKNOWN`(기준 규칙을 복원하지 못함 → 전체 `/BEOL-labeling` 안내만), `NO_RULE_CHANGE`(할 일 없음), `STAGE_WIDE_ONLY`(축 없는 규칙만 바뀜 → 다음 전체 `/BEOL-labeling` 때 반영), `AXIS_CHANGE_PENDING`(축도 바뀜 → 먼저 axis-update), `NO_RELABEL_TARGET`(대상이 모두 사람 값·확인 chunk라 다시 라벨할 것이 없음. 다음 점검에서도 다시 나올 수 있다)가 더해진다.
-    - `PREV_PUSH_PENDING`에서 빠져나오기: 기준 작업 폴더에서 `/BEOL-labeling-feedback` 6단계(`embed` → `push-vectors`)를 다시 실행한다(`RULES_CHANGE_RATIO_HIGH`로 보류된 실행이면 현황판을 확인한 뒤 `push-vectors --force`). Supabase를 쓰지 않으면 `pipeline.json`의 `supabase.enabled=false`.
+    - `PREV_PUSH_PENDING`에서 빠져나오기: 기준 작업 폴더에서 `/BEOL-labeling-feedback` 6단계(`embed` → `push-vectors`)를 다시 실행한다(`RULES_CHANGE_RATIO_HIGH`로 보류된 실행이면 현황판을 확인한 뒤 `push-vectors --force`). 로컬 저장을 쓰지 않으면 `pipeline.json`의 `vector_store.enabled=false`.
     - `AXIS_UPDATE_LOCKED`에서 빠져나오기: 실행 중인 axis-update·rules-update가 없으면 `logs/axis_update.lock.json`을 지우거나, 오래된 잠금 기준 시간(6시간)이 지나기를 기다린다.
   - 끝나면 작업 폴더별 결과(axis-update 또는 rules-update 실행 ID·대상 축·바뀐 규칙 id, 또는 건너뜀·실패 사유)를 한 표로 보고한다.
   - 입력 폴더에 새 파일이 생겨 전체 재라벨링이 필요해 보이면 `/BEOL-labeling <입력 폴더>`를 안내만 한다.
@@ -172,7 +172,7 @@ taxonomy.json에 축이 더해지거나 빠지거나 종류·값이 바뀌면, �
 - 도메인 질문(검수 결과 → 엔지니어 답 → 규칙·taxonomy 제안): BEOL-labeling-Domain-Engr-bot
 - 라벨링 실행: BEOL-labeling(전체), BEOL-labeling-axis-update(축 변경분), BEOL-labeling-rules-update(규칙 변경분). 이 skill은 3단계에서 걸린 작업 폴더를 자동으로 넘기기만 한다
 - taxonomy 축·라벨링 규칙 비교 로직: `labelbot taxonomy-diff`·`labelbot rules-diff`(이 skill은 부르고 결과를 표로 옮긴다)
-- 사람 검수 반영과 Supabase 적재: BEOL-labeling-feedback
+- 사람 검수 반영과 로컬 저장소 적재: BEOL-labeling-feedback
 - LLM 코드 리뷰, 실행 흔적 연결, `eval`
 
 ## 관계

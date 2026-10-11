@@ -236,7 +236,7 @@ function nowStr(){return new Date().toTimeString().slice(0,8);}
 /* ---------- zones ---------- */
 var ZONES = {
   A:{name:"BEOL-labeling", cmd:"/BEOL-labeling", start:"준비 · 중복 확인 · 피드백 · taxonomy 변경 보고 · 수집 · 파싱", end:"대시보드 → 사람 검수(H6, 선택 H2) → 검수 완료 신호를 받아 feedback 호출"},
-  B:{name:"BEOL-labeling-feedback", cmd:"검수 완료 신호 → BEOL-labeling이 호출 (또는 채팅 \"검수 끝났어\")", start:"교정 모으기 · 반영", end:"Domain-Engr-bot 장부 · 화면 · 임베딩 · 슬라이드 JPG · Supabase 적재"},
+  B:{name:"BEOL-labeling-feedback", cmd:"검수 완료 신호 → BEOL-labeling이 호출 (또는 채팅 \"검수 끝났어\")", start:"교정 모으기 · 반영", end:"Domain-Engr-bot 장부 · 화면 · 임베딩 · 슬라이드 JPG · 로컬 저장소 적재"},
   C:{name:"BEOL-labeling-Domain-Engr-bot", cmd:"/BEOL-labeling-Domain-Engr-bot", start:"작업 폴더 고르기 · 도메인 질문 생성 · 질문 화면 띄우기", end:"엔지니어가 확정한 초안 → taxonomy/labeling_rules.json · taxonomy 보드 S7"},
   H:{name:"도메인 담당자 (사람)", cmd:"taxonomy.json · domain_rules.json", start:"후보 · 재검토 요청 · 보드 S7 · draft 규칙 확인", end:"taxonomy 보드 · 규칙 수정 → 다음 /BEOL-labeling"}
 };
@@ -257,7 +257,7 @@ function mA1(){
   'taxonomy.json   <span class="ok">PASS</span> 축 10\n'+
   'llm_probe       <span class="ok">PASS</span> gpt-6-sol\n'+
   'write_roundtrip <span class="ok">PASS</span> 7종\n'+
-  'supabase_table  <span class="ok">PASS</span>\n'+
+  'vector_store     <span class="ok">PASS</span>\n'+
   '<span class="ok">결과: 전 항목 PASS</span>')+'</div>'+
   '<div><table class="t" style="margin-top:4px"><tr><th>확장자</th><th>파일</th><th>처리</th></tr>'+
   (function(){ var e=LIVE.ext||{}, other=0; Object.keys(e).forEach(function(k){ if(k!==".pptx"&&k!==".docx") other+=e[k]; });
@@ -470,7 +470,7 @@ function mB3(){
   '<div class="sm">두 번째 탭은 교정 결과를 보여 주기 위한 가정 값입니다.</div>';
 }
 function mB4(){
-  return flow(["확정 라벨 텍스트","embed","text-embedding-3-small · 1536차원","push-vectors","Supabase"])+
+  return flow(["확정 라벨 텍스트","embed","text-embedding-3-small · 1536차원","push-vectors","로컬 저장소"])+
   term('<span class="d">beol_chunk_embeddings (행 예시)</span>\n{ "chunk_id": "c_3f9a21",\n  "run_id": "'+RUN+'",\n  "labels": { "구조/레이어": ["M1"], "Q-COM-001": "X" },\n  "embedding": [0.012, -0.044, … 1536개] }')+
   '<table class="t"><tr><th>출력</th><th>뜻</th></tr>'+
   '<tr><td>'+badge("전송","ok")+'</td><td>라벨이 새로 바뀐 chunk만 올림(이미 올린 chunk는 건너뜀)</td></tr>'+
@@ -588,7 +588,7 @@ function mH9(){
 var STEPS = [
  {z:"A",t:"준비 · 중복 확인 · 수집 · 파싱",cmd:"init_workspace · labeling-rules status · taxonomy-diff · selfcheck · run (ingest)",llm:0,who:"bot",
   lead:"실행마다 연월일시분초가 붙은 새 작업 폴더를 만들고, 이전에 처리를 마친 파일과 겹치는지 확인한 뒤 환경을 점검하고, 원본을 base64로 보관해 메모리에서 슬라이드를 파싱하고 chunk로 나눕니다. 파일마다 Lot ID · WF 번호 · 날짜 · 작성자를 정규식으로 뽑습니다(LLM 0회).",
-  pts:["작업 폴더 <code>261004_BEOL_&lt;입력&gt;_YYYYMMDD-HHMMSS</code> 생성 · pipeline.json 기록 · 화면 서버 등록","중복 확인: 입력 파일명을 <code>injested-file-list/*.json</code>과 비교(파일은 열지 않음). 겹치면 시작 전에 사용자에게 질문 → 중복 빼고 진행(<code>skip_file_names</code>) · 전체 진행 · 중단","검수 피드백 반영 상태: 승인돼 켜진 규칙 · 사례와 확정 대기 건수를 묻지 않고 한 줄 보고(확정은 Domain-Engr-bot 질문 화면)","taxonomy 변경: <code>taxonomy-diff</code>로 지난 실행 대비 추가 · 삭제 · 변경 축을 한 줄 보고(새 축은 이번 실행부터 라벨링)","사전 점검(키 · 모델 · taxonomy · 쓰기 확장자 · Supabase 표). FAIL이면 멈춤, 축 정의 · 질문 없는 새 축은 WARN만","<code>read_input</code> → <code>.b64</code> → <code>BytesIO</code> → OOXML 파싱(DRM 규칙)","같은 파일은 해시로 건너뜀, 실패는 파일 ID와 사유 코드만 기록"],
+  pts:["작업 폴더 <code>261004_BEOL_&lt;입력&gt;_YYYYMMDD-HHMMSS</code> 생성 · pipeline.json 기록 · 화면 서버 등록","중복 확인: 입력 파일명을 <code>injested-file-list/*.json</code>과 비교(파일은 열지 않음). 겹치면 시작 전에 사용자에게 질문 → 중복 빼고 진행(<code>skip_file_names</code>) · 전체 진행 · 중단","검수 피드백 반영 상태: 승인돼 켜진 규칙 · 사례와 확정 대기 건수를 묻지 않고 한 줄 보고(확정은 Domain-Engr-bot 질문 화면)","taxonomy 변경: <code>taxonomy-diff</code>로 지난 실행 대비 추가 · 삭제 · 변경 축을 한 줄 보고(새 축은 이번 실행부터 라벨링)","사전 점검(키 · 모델 · taxonomy · 쓰기 확장자 · 로컬 저장소). FAIL이면 멈춤, 축 정의 · 질문 없는 새 축은 WARN만","<code>read_input</code> → <code>.b64</code> → <code>BytesIO</code> → OOXML 파싱(DRM 규칙)","같은 파일은 해시로 건너뜀, 실패는 파일 ID와 사유 코드만 기록"],
   out:["workspaces/261004_BEOL_&lt;입력&gt;_&lt;타임스탬프&gt;/","pipeline.json (skip_file_names)","b64/&lt;sha256&gt;.b64","work.sqlite (files · chunks)","logs/labelbot.log"],mock:mA1},
  {z:"A",t:"1차 분류",cmd:"labelbot run (classify)",llm:1,who:"bot",
   lead:"chunk마다 LLM을 1회 불러 유형(내용/비내용)과 "+(LIVE.axis_count ? LIVE.axis_count + "개 " : "")+"축의 값을 고릅니다.",
@@ -608,7 +608,7 @@ var STEPS = [
   out:["injested-file-list/&lt;작업 폴더 이름&gt;.json","reports/alerts.json","reports/flagged_&lt;RUN&gt;.jsonl·.md","reports/candidates.md","reports/taxonomy_revisit.md","out/labeling.sqlite","reports/baseline_&lt;RUN&gt;.md"],mock:mA7},
  {z:"A",t:"화면 생성 · 대시보드 · 검수 완료 대기",cmd:"compare · slide-images · review · dashboard · serve · wait_review_done",llm:0,who:"bot",
   lead:"파싱 대조 · 슬라이드 썸네일 · 검수 · 결과 대시보드를 만들고, 사용자의 Chrome에 결과 대시보드만 띄웁니다. 그다음 검수 완료 신호를 백그라운드로 기다리며 멈춥니다. 검수 · 대조 화면은 사람이 대시보드 버튼으로 엽니다(버튼은 화면만 엶).",
-  pts:["LLM 호출 0회","<code>slide-images</code>가 검수 화면의 같은 파일 슬라이드 썸네일(JPG)을 먼저 그림. 실패해도 계속","Supabase에는 아직 올리지 않음(검수 전 라벨 보호)","<code>wait_review_done.py</code>가 <code>signals/review_done_&lt;RUN&gt;.json</code>을 기다림(시작 신호는 기다리지 않음)","신호가 오면 이 대화가 깨어나 건수를 한 줄 알리고 <code>/BEOL-labeling-feedback</code>을 부름"],
+  pts:["LLM 호출 0회","<code>slide-images</code>가 검수 화면의 같은 파일 슬라이드 썸네일(JPG)을 먼저 그림. 실패해도 계속","로컬 저장소에는 아직 올리지 않음(검수 전 라벨 보호)","<code>wait_review_done.py</code>가 <code>signals/review_done_&lt;RUN&gt;.json</code>을 기다림(시작 신호는 기다리지 않음)","신호가 오면 이 대화가 깨어나 건수를 한 줄 알리고 <code>/BEOL-labeling-feedback</code>을 부름"],
   out:["screens/results.html","screens/review.html","screens/compare.html","slide_images/&lt;sha256&gt;.b64"],mock:mA8,bind:function(root){
     var v=root.querySelector("#a8view"); v.innerHTML=a8view("results");
     root.querySelector("#a8tabs").addEventListener("click",function(e){var t=e.target.getAttribute("data-t"); if(!t) return;
@@ -638,10 +638,10 @@ var STEPS = [
     t.addEventListener("click",function(e){var v=e.target.getAttribute("data-v"); if(v===null) return; b3on=v==="1";
       var tmp=document.createElement("div"); tmp.innerHTML=mB3(); root.querySelector(".mock").innerHTML=tmp.innerHTML; bindStep(root);});
   }},
- {z:"B",t:"임베딩 · 슬라이드 JPG · Supabase 적재",cmd:"labelbot embed · slide-images · push-vectors · push-slides",llm:0,who:"bot",
-  lead:"확정 라벨 chunk를 임베딩하고 슬라이드 미리보기를 JPG로 캡처한 뒤, 벡터와 슬라이드 이미지를 Supabase 사본에 올립니다. 이 단계만 임베딩 API를 부릅니다.",
-  pts:["이미 만든 벡터면 호출 0회","<code>slide-images</code>: 교정으로 본문이 바뀐 슬라이드만 다시 그림(headless Edge/Chrome, LLM 0회)","<code>push-vectors</code>: 사람 교정이 우선인 확정 라벨로 적재, 라벨이 바뀐 chunk만 다시 전송","<code>push-slides</code>: Storage 버킷에 슬라이드 JPG를 올리고 벡터 행의 <code>slide_image_*</code> 열을 채움(<code>storage_enabled=false</code>면 STORAGE_DISABLED)","적재 뒤 대시보드를 한 번 더 만들어 \"검수 반영 결과\"(검수 전 → 남은 불량, 적재 건수)를 보여 줌","실패는 사유 코드로 남고 반영 결과에는 영향 없음"],
-  out:["work.sqlite (chunk_embeddings · vector_push_log)","slide_images/&lt;sha256&gt;.b64","Supabase beol_chunk_embeddings","Supabase Storage BEOL-labeling 버킷"],mock:mB4},
+ {z:"B",t:"임베딩 · 슬라이드 JPG · 로컬 저장소 적재",cmd:"labelbot embed · slide-images · push-vectors · push-slides",llm:0,who:"bot",
+  lead:"확정 라벨 chunk를 임베딩하고 슬라이드 미리보기를 JPG로 캡처한 뒤, 벡터와 슬라이드 이미지를 로컬 저장소(workspaces/_rag_store) 사본에 올립니다. 이 단계만 임베딩 API를 부릅니다.",
+  pts:["이미 만든 벡터면 호출 0회","<code>slide-images</code>: 교정으로 본문이 바뀐 슬라이드만 다시 그림(headless Edge/Chrome, LLM 0회)","<code>push-vectors</code>: 사람 교정이 우선인 확정 라벨로 적재, 라벨이 바뀐 chunk만 다시 전송","<code>push-slides</code>: 로컬 저장소 slides/에 슬라이드 JPG를 쓰고 벡터 행의 <code>slide_image_*</code> 열을 채움(<code>vector_store.slides_enabled=false</code>면 STORAGE_DISABLED)","적재 뒤 대시보드를 한 번 더 만들어 \"검수 반영 결과\"(검수 전 → 남은 불량, 적재 건수)를 보여 줌","실패는 사유 코드로 남고 반영 결과에는 영향 없음"],
+  out:["work.sqlite (chunk_embeddings · vector_push_log)","slide_images/&lt;sha256&gt;.b64","로컬 저장소 rag_store.sqlite","로컬 저장소 slides/&lt;sha&gt;.b64"],mock:mB4},
  {z:"C",t:"도메인 질문 생성",cmd:"domain_engrbot workspaces · questions generate",llm:1,who:"bot",
   lead:"검수 결과(교정 · 재검토 요청 · 검수 등록 동의어)와 누적 교정 장부를 Domain-Engr-bot이 읽고, LLM이 엔지니어에게 물을 질문 10개 안팎과 답마다의 초안(규칙 문장 · taxonomy 행)을 만듭니다. 사람이 이미 검수한 chunk를 다시 검수하지 않습니다(2026-10-06 사용자 결정).",
   pts:["/BEOL-labeling-Domain-Engr-bot을 부를 때만 만듦(feedback 뒤 자동 실행 없음)","작업 폴더 고르기: question_state no_review · new · asked, asked면 건너뛰기 · 다시 만들기 · 남은 질문 이어서 답하기","시작할 때 그 작업 폴더를 다시 intake(멱등). 장부의 규칙 후보(FR-) · 사례 후보(EX-)도 질문 재료","입력이 그대로면 재사용(LLM 0회), 답하지 않은 질문은 이월해 앞에 둠","답했거나 묻지 않기로 한 질문은 지문으로 막아 다시 묻지 않음(새 근거가 붙으면 다시 엶)"],

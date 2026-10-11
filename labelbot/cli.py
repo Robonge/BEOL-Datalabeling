@@ -28,9 +28,9 @@ def _parser():
             sp.add_argument("--no-feedback", action="store_true", help="승인된 검수 피드백 규칙·사례를 이번 실행에 넣지 않는다")
     for name, h in (("compare", "파싱 대조 화면"), ("review", "불량 목록과 검수 화면"), ("report", "기준선 리포트 재계산"),
                     ("dashboard", "결과 대시보드 화면"),
-                    ("embed", "chunk 임베딩"), ("push-vectors", "Supabase 벡터 적재"),
+                    ("embed", "chunk 임베딩"), ("push-vectors", "로컬 RAG 저장소에 벡터 적재"),
                     ("slide-images", "슬라이드 미리보기 JPG 렌더(slide_images/*.b64)"),
-                    ("push-slides", "슬라이드 JPG를 Supabase Storage에 올리고 행에 slide_image_* 기록")):
+                    ("push-slides", "슬라이드 JPG를 로컬 RAG 저장소에 저장하고 행에 slide_image_* 기록")):
         sp = add(name, h)
         sp.add_argument("--run", help="실행 ID(기본: 최신)")
         if name == "push-vectors":

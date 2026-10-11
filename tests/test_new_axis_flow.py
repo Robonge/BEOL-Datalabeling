@@ -11,6 +11,7 @@ import shutil
 import sqlite3
 import tempfile
 import unittest
+from unittest import mock
 
 from labelbot import (classify, cli, dashboard, embed, pipeline, prompts, questions, review, selfcheck,
                       store, vectorpush)
@@ -52,7 +53,7 @@ class NewAxisFlowTest(unittest.TestCase):
             f.write(build(sheets_with_new_axis()))
         cfg = {"taxonomy_path": cls.tax_path, "input_root": DUMMY_DIR,
                "llm": {"transport": "mock", "model": "mock", "max_retries": 1},
-               "embedding": {"transport": "mock"}, "supabase": {"enabled": False}}
+               "embedding": {"transport": "mock"}, "vector_store": {"enabled": False}}
         with open(os.path.join(cls.dir, "pipeline.json"), "w", encoding="utf-8") as f:
             json.dump(cfg, f)
         cls.ws = Workspace(cls.dir)
@@ -189,11 +190,14 @@ class NewAxisFlowTest(unittest.TestCase):
                 self.rows += rows
 
         sink = Sink()
-        self.ws.config["supabase"].update({"enabled": True, "url": "https://example-proj.supabase.co"})
+        store_dir = tempfile.mkdtemp(prefix="labelbot_ragstore_")  # 실제 workspaces/_rag_store에 쓰지 않는다
+        self.ws.config["vector_store"].update({"enabled": True, "path": store_dir})
         try:
-            vectorpush.push(self.ws, self.con, self.run_id, sink=sink)
+            with mock.patch.dict(os.environ, {"BEOL_RAG_STORE": store_dir}):
+                vectorpush.push(self.ws, self.con, self.run_id, sink=sink)
         finally:
-            self.ws.config["supabase"].update({"enabled": False, "url": ""})
+            self.ws.config["vector_store"].update({"enabled": False, "path": ""})
+            shutil.rmtree(store_dir, ignore_errors=True)
         self.assertGreater(len(sink.rows), 0)
         self.assertTrue(all(NEW in r["labels"]["axes"] for r in sink.rows))
         self.assertTrue(any({"POR", "Split"} & set(r["labels"]["axes"][NEW]) for r in sink.rows))

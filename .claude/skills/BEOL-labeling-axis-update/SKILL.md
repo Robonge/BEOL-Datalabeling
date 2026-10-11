@@ -1,6 +1,6 @@
 ---
 name: BEOL-labeling-axis-update
-description: taxonomy.json의 축이 추가·삭제·변경(값 추가·삭제 포함)됐을 때, 이미 라벨링·검수를 마친 작업 폴더에서 이전 라벨은 그대로 두고 바뀐 축만 1차 분류로 다시 라벨링한다. 삭제된 축은 라벨에서 뺀다. 사람 검수는 바뀐 축에 불량이 있는 chunk만 받고, 결과는 축별 카드와 슬라이드별 이미지·새 축 라벨만 보여 주는 현황판(axis_update.html)으로 띄운 뒤 검수 대기에서 멈춘다. 검수 완료 뒤에는 반영·임베딩·Supabase 적재까지 이어 간다. BEOL-labeling-Code-Engr-bot이 축 점검에서 걸린 작업 폴더마다 묻지 않고 자동으로 부른다. 사용자가 "축 변경분만 라벨링", "새 축만 라벨링", "axis update", "축 추가 재라벨링", "taxonomy 바뀐 축만 다시"라고 하거나 /BEOL-labeling-axis-update를 부르면 이 스킬을 쓴다. 전체 재라벨링은 BEOL-labeling, 규칙 변경분은 rules-update가 맡는다.
+description: taxonomy.json의 축이 추가·삭제·변경(값 추가·삭제 포함)됐을 때, 이미 라벨링·검수를 마친 작업 폴더에서 이전 라벨은 그대로 두고 바뀐 축만 1차 분류로 다시 라벨링한다. 삭제된 축은 라벨에서 뺀다. 사람 검수는 바뀐 축에 불량이 있는 chunk만 받고, 결과는 축별 카드와 슬라이드별 이미지·새 축 라벨만 보여 주는 현황판(axis_update.html)으로 띄운 뒤 검수 대기에서 멈춘다. 검수 완료 뒤에는 반영·임베딩·로컬 저장소 적재까지 이어 간다. BEOL-labeling-Code-Engr-bot이 축 점검에서 걸린 작업 폴더마다 묻지 않고 자동으로 부른다. 사용자가 "축 변경분만 라벨링", "새 축만 라벨링", "axis update", "축 추가 재라벨링", "taxonomy 바뀐 축만 다시"라고 하거나 /BEOL-labeling-axis-update를 부르면 이 스킬을 쓴다. 전체 재라벨링은 BEOL-labeling, 규칙 변경분은 rules-update가 맡는다.
 ---
 
 # BEOL-labeling-axis-update: 바뀐 축만 다시 라벨링
@@ -11,7 +11,7 @@ description: taxonomy.json의 축이 추가·삭제·변경(값 추가·삭제 �
 
 ```
 대상 확인(dry-run) → 사전 점검 → 바뀐 축 1차 분류 → 화면(슬라이드 이미지·검수·현황판) → 현황판 띄우기 → 검수 완료 대기
-→ [검수 완료] 반영 → Domain-Engr-bot 장부·규칙 후보 → 현황판 갱신 → 임베딩 → Supabase 적재
+→ [검수 완료] 반영 → Domain-Engr-bot 장부·규칙 후보 → 현황판 갱신 → 임베딩 → 로컬 저장소 적재
 ```
 
 ## 무엇을 다시 하고 무엇을 이어받나
@@ -19,7 +19,7 @@ description: taxonomy.json의 축이 추가·삭제·변경(값 추가·삭제 �
 | 구분 | 처리 |
 |---|---|
 | 대상 축 | taxonomy-diff의 추가 축, 변경 축(종류·다중값·계층·값 구성), 값이 삭제된 축, 값이 추가된 축. 사용 여부 N→Y는 추가로 본다 |
-| 삭제 축 | LLM 없이 새 실행 라벨에서 뺀다. 사용 여부 Y→N도 같다. Supabase 적재 때 라벨 JSON에서도 빠진다 |
+| 삭제 축 | LLM 없이 새 실행 라벨에서 뺀다. 사용 여부 Y→N도 같다. 로컬 저장소 적재 때 라벨 JSON에서도 빠진다 |
 | 1차 분류 | 대상 축만 chunk당 1회 다시 호출한다. 다른 축 값은 참고로만 주고 다시 출력하지 않는다. chunk_type은 이어받는다 |
 | 2·3차 질문 | 다시 돌리지 않는다. 대상 축에 걸린 질문(`대상축=값` 적용 대상, 대상 축 검증·대조 질문)의 답은 버리고, 나머지 답(공통 질문 포함)은 이어받는다 |
 | 이전 사람 교정 | 삭제 축·변경 축 교정은 새 실행에 적용하지 않는다(기록은 남는다). 값만 추가된 축의 교정은 유지한다 |
@@ -51,7 +51,7 @@ taxonomy-diff는 축 정의 문장(H열) 변경을 감지하지 않는다. 정�
 | `NO_AXIS_CHANGE` | 지금 taxonomy와 축이 같다 | 할 일 없음 |
 | `PREV_NOT_REVIEWED` | 기준 실행의 사람 검수가 끝나지 않았다 | 먼저 `/BEOL-labeling-feedback`으로 검수를 마친다 |
 | `REVIEW_IN_PROGRESS` | 기준 실행의 검수가 열려 있다(시작 신호만 있고 완료 신호가 없다) | 검수 완료 뒤 다시 |
-| `PREV_PUSH_PENDING` | supabase를 쓰는데 기준 실행의 확정 라벨이 아직 다 적재되지 않았다(axis-update 뒤에는 기준 실행을 적재할 수 없다) | 기준 작업 폴더에서 `/BEOL-labeling-feedback` 4단계(`embed` → `push-vectors`)를 다시 실행한다. Supabase를 쓰지 않으면 `pipeline.json`의 `supabase.enabled=false`. 그 뒤 다시 |
+| `PREV_PUSH_PENDING` | 로컬 저장을 켰는데 기준 실행의 확정 라벨이 아직 다 적재되지 않았다(axis-update 뒤에는 기준 실행을 적재할 수 없다) | 기준 작업 폴더에서 `/BEOL-labeling-feedback` 4단계(`embed` → `push-vectors`)를 다시 실행한다. 로컬 저장을 쓰지 않으면 `pipeline.json`의 `vector_store.enabled=false`. 그 뒤 다시 |
 | `AXIS_UPDATE_LOCKED` | 같은 작업 폴더에서 다른 axis-update가 돌고 있다(`logs/axis_update.lock.json`, 6시간 넘은 잠금은 무시) | 그 실행이 끝난 뒤 다시. 실행 중인 axis-update가 없으면 `logs/axis_update.lock.json`을 지우거나, 오래된 잠금 기준 시간(6시간)이 지나기를 기다린다 |
 | `AXIS_UPDATE_LOCK_LOST` | 실행 중에 잠금을 잃었다(다른 실행이 남은 잠금으로 보고 넘겨받음). 이번 실행은 끝나지 않은 채 멈춘다 | 다른 axis-update가 끝난 뒤 다시. 다시 돌리면 같은 기준에서 멱등 복사로 덮어쓴다 |
 
@@ -70,7 +70,7 @@ taxonomy-diff는 축 정의 문장(H열) 변경을 감지하지 않는다. 정�
 | 7 | 임베딩·적재 | `[push-vectors] …`·`[push-slides] …` | 100% |
 
 - `✅` 완료, `▶️` 진행 중, `⬜` 대기, `❌` 실패, `⏭️` 건너뜀. 1단계에서 건너뜀 사유 코드가 나오면 1단계를 `⏭️ — <코드>`로 두고 나머지는 그대로 둔 채 끝낸다(실패가 아니다).
-- 3단계 줄 끝에 `대상 축 n · 삭제 축 n · chunk n · LLM n회`, 7단계 줄 끝에 Supabase 전송 행 수를 붙인다.
+- 3단계 줄 끝에 `대상 축 n · 삭제 축 n · chunk n · LLM n회`, 7단계 줄 끝에 로컬 저장소 전송 행 수를 붙인다.
 - 검수 완료 대기 중에는 5번을 `▶️ … — 검수 완료 버튼 대기`로 둔다.
 
 ## 절차
@@ -118,7 +118,7 @@ Bash `run_in_background: true`, `timeout: 7200000`. 그다음 아래를 안내�
 1. 현황판에서 축별 불량·슬라이드별 새 라벨을 훑어본다. 이미지를 누르면 크게 보인다.
 2. **검수 시작**을 누르고, 검수 화면에서 불량 chunk n개의 대상 축만 확인·교정한다. 강조된 라벨부터 확인하고, 확신도 높은 라벨은 접혀 있다. 다른 축은 잠겨 있다.
 3. 다 끝나면 검수 화면 상단의 **검수 완료**를 누른다. 교정할 것이 없어도 누른다. 누르면 화면이 잠기고 반영·적재가 이어진다.
-4. 검수가 끝나기 전에는 Supabase에 올리지 않는다.
+4. 검수가 끝나기 전에는 로컬 저장소에 올리지 않는다.
 
 `code: WAIT_TIMEOUT`이면 같은 대기를 다시 건다.
 
@@ -144,7 +144,7 @@ BEOL-labeling-feedback 4단계와 같다(`embed` → `slide-images` → `push-ve
 ## 축 변경 재라벨링 (run_id: <RUN>, 기준 <이전 RUN>)
 - 대상 축 <이름 목록>(n) · 삭제 축 <이름 목록>(n) · 버린 답 n · 적용 안 한 이전 교정 n
 - 불량 n(사유별) → 교정 n · 확인 n · 남은 불량 n
-- 적재: Supabase n행 · 임베딩 n · 슬라이드 JPG 실패 n
+- 적재: 로컬 저장소 n행 · 임베딩 n · 슬라이드 JPG 실패 n
 - [현황판](http://localhost:<port>/axis_update.html) · [작업 폴더](<WS 상대>)
 ```
 0건인 항목은 쓰지 않는다. 라벨링 규칙 후보가 나왔으면 BEOL-labeling-feedback 보고 형식의 피드백 줄을 한 줄 붙인다.

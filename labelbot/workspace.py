@@ -41,19 +41,9 @@ DEFAULT_CONFIG = {
         "timeout": 60,
         "batch_size": 64,
     },
-    "supabase": {
-        "enabled": False,
-        "url": "",
-        "url_env": "SUPABASE_URL",
-        "table": "chunk_embeddings",
-        "key_env": "SUPABASE_SERVICE_KEY",
-        "batch_size": 100,
-        "timeout": 60,
-        "ca_file": None,
-        # 슬라이드 JPG를 Storage에 올리고 행에 slide_image_* 열을 채운다(push-slides). 버킷은 private.
-        "storage_enabled": False,
-        "storage_bucket": "BEOL-labeling",
-    },
+    # push-vectors·push-slides가 쓰는 로컬 RAG 저장소(labelbot/localstore.py). path가 비면 환경변수 BEOL_RAG_STORE,
+    # 그것도 없으면 <코드 폴더>/workspaces/_rag_store. 기본 꺼짐(테스트가 실제 저장소에 쓰지 않게). init_workspace.py가 켠다.
+    "vector_store": {"enabled": False, "path": "", "batch_size": 100, "slides_enabled": False},
     # 슬라이드 미리보기 JPG 렌더(slide-images). headless Edge/Chrome의 DevTools 캡처를 쓴다.
     "render": {"browser_path": None, "jpeg_quality": 85, "width_px": 1280, "timeout": 30},
     "flag": {"unknown_ratio_min": 0.5, "confidence_min": 0.7},
@@ -85,7 +75,7 @@ DEFAULT_CONFIG = {
     },
     "parse": {"image_min_bytes": 2048, "boilerplate_ratio": 0.6},
     # rules-update(labelbot/rulesupdate.py): 다시 라벨한 (chunk, 축·질문) 중 값이 바뀐 비율이 max_change_ratio를 넘으면
-    # push-vectors가 적재를 멈춘다(RULES_CHANGE_RATIO_HIGH, --force로 보낸다). 다시 라벨한 수가 min_relabels 미만이면 보지 않는다.
+    # push-vectors가 로컬 저장소 적재를 멈춘다(RULES_CHANGE_RATIO_HIGH, --force로 보낸다). 다시 라벨한 수가 min_relabels 미만이면 보지 않는다.
     "rules_update": {"max_change_ratio": 0.3, "min_relabels": 10},
 }
 
@@ -200,10 +190,6 @@ class Workspace:
         if p and not os.path.isabs(p):
             p = os.path.join(self.root, p)
         return p or self.path("raw")
-
-    def supabase_url(self):
-        sb = self.config["supabase"]
-        return sb.get("url") or os.environ.get(sb.get("url_env") or "", "")
 
     def config_hash(self):
         return util.hash_obj(self.config)

@@ -84,7 +84,7 @@ def build_workspace():
         json.dump({"taxonomy_path": TAXONOMY,
                    "llm": {"transport": "mock", "model": "mock", "max_retries": 1, "workers": 1,
                            "base_url": "https://llm.corp.test/v1", "internal_host_suffixes": ["corp.test"]},
-                   "embedding": {"transport": "mock"}, "supabase": {"enabled": False}}, f)
+                   "embedding": {"transport": "mock"}, "vector_store": {"enabled": False}}, f)
     ws = Workspace(root)
     con = store.connect(ws.work_db)
     try:

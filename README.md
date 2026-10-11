@@ -23,7 +23,7 @@
 |---|---|---|---|
 | ① 라벨링 파이프라인 | `/BEOL-labeling-run-labeling` | 입력 → 라벨링 → 검수 → 적재를 한 번에 잇는다 | 새 자료를 처음부터 적재까지 돌릴 때 |
 | | └ `/BEOL-labeling` | 파싱 → 분류 → 라벨링 뒤 검수 화면을 띄우고 멈춘다 | 라벨링 단계만 돌릴 때 |
-| | └ `/BEOL-labeling-feedback` | 검수 교정 반영 → 임베딩 → Supabase 적재 | 검수 화면에서 "검수 완료"를 누른 뒤 |
+| | └ `/BEOL-labeling-feedback` | 검수 교정 반영 → 임베딩 → 로컬 저장소 적재 | 검수 화면에서 "검수 완료"를 누른 뒤 |
 | ② 품질 점검 · 재라벨링 | `/BEOL-labeling-Domain-Engr-bot` | 검수 결과로 엔지니어에게 질문하고, 확정한 답을 규칙·taxonomy 제안으로 보낸다 | 적재가 끝난 뒤 사람이 시작한다 |
 | | └ `/BEOL-taxonomy-dashboard` | 흩어진 taxonomy 수정 제안을 모아 확정분을 taxonomy.json에 반영한다 | taxonomy를 고칠 때 |
 | | `/BEOL-labeling-Code-Engr-bot` | 코드 검수(읽기 전용)와 축·규칙 변경 감지 | 코드를 고친 뒤, taxonomy·규칙을 바꾼 뒤 |
@@ -33,7 +33,7 @@
 | | `/BEOL-labeling-project-html` | 발표 HTML의 파일럿 슬라이드·스킬 지도를 갱신한다 | 새 실행 뒤, 발표 전 |
 | | `/BEOL-labeling-change-dashboard` | 세션별 변경 내역 대시보드를 만든다 | 3시간 주기 예약 작업, PM 점검 때 |
 | | `/BEOL-labeling-daily-report` | 밤 자동 실행 결과를 아침 할 일 리포트 HTML로 만든다 | 아침에 밤사이 결과를 볼 때 |
-| | `/BEOL-labeling-RAG-html` | RAG 대화 화면을 띄우고 답변 서버 함수를 배포한다 | RAG 화면을 열거나 답변 프롬프트를 바꿨을 때 |
+| | `/BEOL-labeling-RAG-html` | RAG 대화 화면을 로컬 RAG 서버(`labelbot.ragsrv`)로 띄운다 | RAG 화면을 열거나 답변 프롬프트를 바꿔 서버를 다시 띄울 때 |
 
 - ①의 적재가 끝나면 ②를 시작한다. 품질 점검 스킬은 run-labeling이 자동으로 부르지 않는다.
 - 새 스킬을 만들면 `skill_map.json`에 넣는다. 빠지면 발표 HTML에서 '미분류'로 보인다.
@@ -49,9 +49,9 @@
 | `prompts/` | labelbot 프롬프트. 코드가 이 경로를 읽으므로 옮기지 않는다 |
 | `taxonomy/` | `taxonomy.json`(원본)과 `labeling_rules.json`(승인 규칙) |
 | `injested-file-list/` | 수집 이력. 옮기지 않는다 |
-| `rag/` | RAG 대화 화면(`beol_rag.html`)과 Edge Function(`functions/beol-rag-ask/`) |
+| `rag/` | RAG 대화 화면(`beol_rag.html`). 답변 서버는 `labelbot/ragsrv.py` |
 | `change-dashboard/` | 세션 변경 대시보드. 생성물은 커밋 제외 |
-| `docs/` | 발표·문서(`project_intro.html`, `workflow.html`, `supabase_schema.md` 등). 정리 작업에서는 손대지 않는다 |
+| `docs/` | 발표·문서(`project_intro.html`, `workflow.html` 등). 정리 작업에서는 손대지 않는다 |
 | `workspaces/` | 작업 폴더(사내 자료 b64·DB 포함, 커밋 제외) |
 | `parshing test files/` | `/BEOL-labeling` 기본 입력 폴더 |
 | `dummy pprx files_2nd revised/` | 더미 자료 2차 수정본 |
@@ -65,11 +65,11 @@
 
 ## 준비
 
-1. 키: 코드 폴더의 `.env.example`을 `.env`로 복사하고 `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`를 채운다(셸 환경변수가 있으면 그 값이 우선한다). `.env`는 커밋하지 않는다.
+1. 키: 코드 폴더의 `.env.example`을 `.env`로 복사하고 `OPENAI_API_KEY`를 채운다(셸 환경변수가 있으면 그 값이 우선한다). `.env`는 커밋하지 않는다.
 2. 작업 폴더: 코드 폴더의 `workspaces/` 아래에 만든다(예: `workspaces/261004_BEOL_x`, 커밋 제외). 첫 실행 때 기본 `pipeline.json`이 생긴다.
 3. taxonomy: 원본은 `taxonomy/taxonomy.json`이다(2026-10-07부터 xlsx 대신 json). 작업 폴더의 `pipeline.json` `taxonomy_path`가 이 파일을 가리킨다. 사람은 Excel이 아니라 taxonomy 보드(`python -m domain_engrbot taxonomy-board --serve --open`)나 편집기(`python -m domain_engrbot taxonomy-editor --open`)로 고친다. 예전 xlsx는 `python -m labelbot taxonomy-migrate`로 한 번 변환한다.
    - 새 축 추가: 축 정의 행 D~G·H, 값 행, questions 행을 채우는 체크리스트는 `.claude/skills/BEOL-taxonomy-dashboard/SKILL.md`의 "새 축 체크리스트"에 있다. `python -m labelbot taxonomy-diff --workspace <작업 폴더>`로 지난 실행과의 차이를 본다. taxonomy를 바꾼 뒤 테스트 자료를 다시 만드는 순서는 아래 "taxonomy를 바꾼 뒤"를 따른다.
-4. Supabase 표: `docs/supabase_schema.md`의 SQL을 실행한다.
+4. 로컬 저장소: 따로 만들 것이 없다. 첫 `push-vectors`가 `workspaces/_rag_store`(`BEOL_RAG_STORE`로 바꿈)에 `rag_store.sqlite`·`rag_config.json`을 만든다.
 5. 의존성: 본체는 설치가 필요 없다(`requirements.txt`는 비어 있다). 사외 PoC SDK는 `requirements-poc.txt`.
 
 ## 명령
@@ -103,14 +103,14 @@ python -m labelbot rules-board --workspace <작업 폴더> [--run <실행 ID>]
 - `axis-update`·`axis-board`: taxonomy 축이 바뀐(추가·삭제·변경·값 추가·값 삭제) 작업 폴더에서 이전 라벨을 이어받고 바뀐 축만 1차 분류로 다시 라벨링한다(입력 폴더는 다시 읽지 않는다, `--dry-run`은 대상 축·건수만 출력). 이어서 `review`(대상 축만 편집, 나머지 축은 잠금)와 `axis-board`(축별 불량·처리 결과 카드와 슬라이드별 새 축 값 현황판 `screens/axis_update.html`, 기본 `--run`은 최신 라벨 실행이고 axis-update 실행이 아니면 오류)를 만든다. 절차는 `.claude/skills/BEOL-labeling-axis-update/SKILL.md`.
 - `slide-images`: 검수 화면과 같은 슬라이드 근사 미리보기를 headless Edge/Chrome으로 JPG 캡처해 `slide_images/<sha256>.b64`에 둔다(`.jpg` 파일은 쓰지 않는다). `out/labeling.sqlite`의 `chunks.slide_image`에 기록한다. 브라우저 경로는 `render.browser_path`. Edge가 포트를 열기 전에 바로 종료하면(`RENDERER_EXITED`, 기존 Edge 인스턴스·정책 때문일 수 있다) 다음 후보인 Chrome으로 자동 전환한다. 둘 다 실패하면 `render.browser_path`에 띄워지는 브라우저 경로를 지정하고, 포트 대기 초과는 `RENDERER_PORT_TIMEOUT`이다. 지정한 `render.browser_path`가 파일이 아니면 `RENDERER_MISSING`이다. 후보를 차례로 시도하므로 최대 대기는 후보 수 × 시작 대기 시간이다.
 - 검수 피드백 환류: 생산은 Domain-Engr-bot, 소비는 labelbot이다. `domain_engrbot intake`가 작업 폴더 교정을 장부(`workspaces/_domain_engrbot/ledger/`)로 모으고, `domain_engrbot labeling-rules candidates`가 규칙 후보(축 값 혼동·과잉·누락, 질문 답 뒤집힘)와 few-shot 사례 후보를 `labeling_candidates.md`(본문 없음)로 쓴다. 후보는 Domain-Engr-bot 도메인 질문의 재료가 되고, Domain-Engr-bot 질문 화면에서 엔지니어가 확정한 규칙·사례가 `taxonomy/labeling_rules.json`(승인 시 생성, 본문 없음. 지금은 git이 추적하지 않는다. `questions apply`는 바꾸기 전 본을 `workspaces/_domain_engrbot/questions/rules_history.jsonl`에 남긴다)에 남는다(문장·enabled는 사람이 고칠 수 있다. `labeling-rules approve`·`reject` 명령은 남아 있다). 다음 `labelbot run`은 승인 규칙을 1차 분류·3차 라벨링 프롬프트에 "검수 피드백 지침"으로, 승인 사례를 비슷한 chunk의 1차 분류에 few-shot으로 넣는다. 사례 본문은 원래 작업 폴더의 `work.sqlite`에서 읽기 전용으로 가져온다(그 폴더가 없거나 본문이 바뀌었으면 빠진다. 같은 파일·같은 본문 제외). `run --no-feedback`이면 넣지 않는다.
-- `rules-diff`·`rules-update`·`rules-board`: 라벨링 규칙(`taxonomy/labeling_rules.json`)이 바뀐 작업 폴더에서 기준 실행 대비 바뀐 규칙(추가·수정·끄기·기각)을 찾고(`rules-diff`, 규칙 id·건수만 출력), 그 규칙이 닿는 범위만 LLM으로 다시 라벨링한다(`rules-update`, `--dry-run`은 대상만 출력). 축 규칙은 그 축 전체 chunk의 1차 분류만, 답 규칙은 그 질문의 O/X만 다시 매기고, 사람이 교정·확인한 값은 건드리지 않는다. 사람 검수 없이 바로 반영하며 `rules-board`가 규칙별 카드와 값이 바뀐 슬라이드(이전 → 지금) 현황판 `screens/rules_update.html`을 만든다(기본 `--run`은 최신 라벨 실행이고 rules-update 실행이 아니면 오류). 값이 바뀐 비율이 `rules_update.max_change_ratio`(기본 0.3)를 넘으면 Supabase 적재만 `RULES_CHANGE_RATIO_HIGH`로 보류하며, 현황판을 확인한 뒤 `push-vectors --force`로 보낸다. 보류된 실행이 있으면 다음 axis-update·rules-update는 `PREV_PUSH_PENDING`으로 건너뛴다. 절차는 `.claude/skills/BEOL-labeling-rules-update/SKILL.md`.
-- `push-slides`: `supabase.storage_enabled=true`이면 JPG를 Storage `BEOL-labeling` 버킷에 올리고 `beol_chunk_embeddings` 행의 `slide_image_*` 열을 채운다. `push-vectors` 다음에 부른다. 스키마는 `docs/supabase_schema.md`.
+- `rules-diff`·`rules-update`·`rules-board`: 라벨링 규칙(`taxonomy/labeling_rules.json`)이 바뀐 작업 폴더에서 기준 실행 대비 바뀐 규칙(추가·수정·끄기·기각)을 찾고(`rules-diff`, 규칙 id·건수만 출력), 그 규칙이 닿는 범위만 LLM으로 다시 라벨링한다(`rules-update`, `--dry-run`은 대상만 출력). 축 규칙은 그 축 전체 chunk의 1차 분류만, 답 규칙은 그 질문의 O/X만 다시 매기고, 사람이 교정·확인한 값은 건드리지 않는다. 사람 검수 없이 바로 반영하며 `rules-board`가 규칙별 카드와 값이 바뀐 슬라이드(이전 → 지금) 현황판 `screens/rules_update.html`을 만든다(기본 `--run`은 최신 라벨 실행이고 rules-update 실행이 아니면 오류). 값이 바뀐 비율이 `rules_update.max_change_ratio`(기본 0.3)를 넘으면 로컬 저장소 적재만 `RULES_CHANGE_RATIO_HIGH`로 보류하며, 현황판을 확인한 뒤 `push-vectors --force`로 보낸다. 보류된 실행이 있으면 다음 axis-update·rules-update는 `PREV_PUSH_PENDING`으로 건너뛴다. 절차는 `.claude/skills/BEOL-labeling-rules-update/SKILL.md`.
+- `push-slides`: `vector_store.slides_enabled=true`이면 JPG를 로컬 저장소의 `slides/<sha>.b64`에 쓰고 벡터 행의 `slide_image_*` 열을 채운다. `push-vectors` 다음에 부른다. 검색 규격은 `labelbot/ragsearch.py` docstring.
 
 ## 라벨링 규칙 바꾸기
 
 - Domain-Engr-bot 질문 화면에서 엔지니어가 확정한 규칙·사례(또는 승인 규칙 관리의 끄기·수정)가 `taxonomy/labeling_rules.json`을 바꾼다. 규칙 초안에는 대상 축(3차면 `축=값` 또는 질문 id)을 반드시 쓴다.
 - Code-Engr-bot이 작업 폴더마다 `taxonomy-diff`와 `rules-diff`를 돌려 규칙이 바뀐 작업 폴더를 찾는다(`/BEOL-labeling-Code-Engr-bot`, "규칙 점검").
-- 걸린 폴더는 묻지 않고 `/BEOL-labeling-rules-update`가 자동으로 돈다: 바뀐 규칙 범위만 재라벨링 → 현황판 → 임베딩·Supabase 적재. 사람 검수 대기는 없고, 변경 비율이 상한을 넘으면 적재만 보류한다. 같은 폴더에 축 변경도 있으면 axis-update가 먼저다.
+- 걸린 폴더는 묻지 않고 `/BEOL-labeling-rules-update`가 자동으로 돈다: 바뀐 규칙 범위만 재라벨링 → 현황판 → 임베딩·로컬 저장소 적재. 사람 검수 대기는 없고, 변경 비율이 상한을 넘으면 적재만 보류한다. 같은 폴더에 축 변경도 있으면 axis-update가 먼저다.
 - 대상 축이 없는 규칙(단계 전체 규칙)과 few-shot 사례 변경은 재라벨링하지 않고 건수만 보고한다. 다음 전체 `/BEOL-labeling`에서 반영된다.
 
 ## domain_engrbot (도메인 질문)
@@ -159,7 +159,7 @@ python -m code_engrbot rules
 ```json
 {"llm": {"model": "gpt-6-sol", "temperature": null, "max_tokens": null,
          "max_tokens_param": "max_completion_tokens", "response_format_json": true, "timeout": 180, "workers": 6},
- "supabase": {"enabled": true, "table": "beol_chunk_embeddings"}}
+ "vector_store": {"enabled": true, "path": "workspaces/_rag_store", "batch_size": 100, "slides_enabled": true}}
 ```
 
 ## 테스트
@@ -193,17 +193,17 @@ python -m pytest -q -p no:cacheprovider                    # 전체를 pytest로
 미리보기 `rag-ui` 항목을 선택하거나:
 
 ```bash
-python -m http.server 8795 --bind 127.0.0.1 --directory rag
+python -m labelbot.ragsrv --port 8795 --bind 127.0.0.1 --directory rag
 ```
 
 그 뒤 http://127.0.0.1:8795/beol_rag.html에서 열 수 있다.
 
-**비밀값 설정**: Supabase 대시보드 → Edge Functions → Secrets에 `OPENAI_API_KEY`를 넣는다. `RAG_CHAT_MODEL`(기본 `gpt-6-sol`)도 선택 설정 가능하다.
+**비밀값 설정**: 서버를 띄우는 셸의 환경변수 또는 코드 폴더 `.env`에 `OPENAI_API_KEY`를 둔다. `RAG_CHAT_MODEL`(기본 `gpt-6-sol`)도 선택 설정 가능하다. 답변 프롬프트는 `labelbot/raglib.py`에 있고, 고친 뒤 서버를 다시 띄우면 반영된다(배포 절차 없음).
 
 **비용**: OpenAI에 월별 사용 한도 설정을 권장한다(이 데모는 호출 제한이 없다).
 
-**SQL 구조**: `docs/supabase_schema.md`의 "RAG 화면용 읽기 창·검색대·피드백 표" 절을 참고한다.
+**검색 규격**: `labelbot/ragsearch.py`의 docstring을 참고한다. 저장소 파일은 `rag_store.sqlite`, `slides/<sha>.b64`, `rag_config.json`이다.
 
-**코드 규칙**: `rag/`는 HTML·Edge Function(TypeScript)이라 Code-Engr-bot 본체 규칙(표준 라이브러리만) 대상에서 뺐다(`code_engrbot/defaults/policy.json`의 `exclude`).
+**코드 규칙**: `rag/`는 HTML이라 Code-Engr-bot 본체 규칙(표준 라이브러리만) 대상에서 뺐다(`code_engrbot/defaults/policy.json`의 `exclude`).
 
-LLM·임베딩·Supabase 호출은 모두 `labelbot/llm.py`의 공용 함수(`check_send`)를 거친다. PoC에서는 사외·사내를 구분하지 않는다(2026-10-05 사용자 결정). 더미 해시 대조는 없고, 호스트를 판정할 수 없는 URL(빈 값, IP 리터럴, http(s) 아님)만 `HOST_UNCERTAIN`으로 막는다. 사내 파일이 사외로 나가는 것을 막는 장치가 없으므로 PoC가 끝나면 되돌린다. 리다이렉트는 따라가지 않는다.
+LLM·임베딩 호출은 모두 `labelbot/llm.py`의 공용 함수(`check_send`)를 거친다. PoC에서는 사외·사내를 구분하지 않는다(2026-10-05 사용자 결정). 더미 해시 대조는 없고, 호스트를 판정할 수 없는 URL(빈 값, IP 리터럴, http(s) 아님)만 `HOST_UNCERTAIN`으로 막는다. 사내 파일이 사외로 나가는 것을 막는 장치가 없으므로 PoC가 끝나면 되돌린다. 리다이렉트는 따라가지 않는다.

@@ -30,12 +30,13 @@
       "runtimeExecutable": "python",
       "runtimeArgs": [
         "-m",
-        "http.server",
+        "labelbot.ragsrv",
+        "--port",
         "8795",
         "--bind",
         "127.0.0.1",
         "--directory",
-        "C:/Users/dltkd/Desktop/261004 BEOL AX day2/rag"
+        "C:/Users/dltkd/Desktop/local-pc-dbsave-local-only/rag"
       ],
       "port": 8795
     }

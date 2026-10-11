@@ -40,7 +40,7 @@ class RunAxesTest(unittest.TestCase):
             f.write(build(base_sheets()))
         cfg = {"taxonomy_path": cls.tax_path, "input_root": DUMMY_DIR,
                "llm": {"transport": "mock", "model": "mock", "max_retries": 1},
-               "embedding": {"transport": "mock"}, "supabase": {"enabled": False}}
+               "embedding": {"transport": "mock"}, "vector_store": {"enabled": False}}
         with open(os.path.join(cls.dir, "pipeline.json"), "w", encoding="utf-8") as f:
             json.dump(cfg, f)
         cls.ws = Workspace(cls.dir)

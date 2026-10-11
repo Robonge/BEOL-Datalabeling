@@ -407,7 +407,7 @@ const DATA = /*__DATA__*/null;
       <span class="n">${val}${tot != null ? `<small> / ${tot}</small>` : ''}</span>${tot ? `<span class="pb"><span style="width:${Math.min(100, 100 * val / tot).toFixed(1)}%"></span></span>` : ''}</div>`;
     return `<section class="card s5" aria-label="다음 단계로 넘어간 것"><div class="ch"><h2>검수 뒤 이어진 것</h2><p>확정 라벨이 어디까지 갔는지</p></div><div class="ho">
       ${row(H.embedded >= n ? 'ok' : '', H.embedded >= n ? '✓' : '1', '임베딩', '확정 라벨 chunk 벡터', H.embedded, n)}
-      ${row(H.pushed >= n ? 'ok' : H.pushed ? '' : 'off', H.pushed >= n ? '✓' : '2', 'Supabase 적재', '검수 반영 뒤 확정 라벨로 올라간 chunk', H.pushed, n)}
+      ${row(H.pushed >= n ? 'ok' : H.pushed ? '' : 'off', H.pushed >= n ? '✓' : '2', '로컬 저장', '검수 반영 뒤 확정 라벨로 올라간 chunk', H.pushed, n)}
       ${row(R.evidence.with ? '' : 'off', '3', '라벨링 사례 후보', '근거를 남긴 교정 → Domain-Engr-bot 질문 화면에서 사람이 확정한 뒤 다음 실행에 반영', R.evidence.with, R.evidence.total)}
       ${row(H.revisits ? '' : 'off', '4', 'taxonomy 재검토 요청', '라벨은 바꾸지 않음 · 리포트로만 전달', H.revisits)}
       ${row(H.synonyms ? '' : 'off', '5', '검수 등록 동의어', 'synonyms 시트 후보', H.synonyms)}

@@ -1,7 +1,7 @@
 """OpenAI 호환 호출과 외부 전송 안전장치.
 
-호스트 판정, 리다이렉트 거부 opener, 키 읽기는 이 모듈의 공용 함수 하나씩이며
-LLM, 임베딩, Supabase 적재가 모두 이것을 쓴다. 키 값은 로그·캐시 키·DB에 넣지 않는다.
+리다이렉트 거부 opener, 키 읽기는 이 모듈의 공용 함수 하나씩이며
+LLM과 임베딩이 모두 이것을 쓴다. 키 값은 로그·캐시 키·DB에 넣지 않는다.
 """
 import http.client
 import json
@@ -9,7 +9,6 @@ import os
 import socket
 import ssl
 import urllib.error
-import urllib.parse
 import urllib.request
 
 from labelbot import util
@@ -26,15 +25,6 @@ class CallFailed(Exception):
 
 
 # ---- 공용 안전장치 -------------------------------------------------------
-
-
-
-def host_hash(url):
-    host = (urllib.parse.urlsplit(url or "").hostname or "").lower()
-    return util.sha256_text(host)[:16]
-
-
-
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -56,47 +46,6 @@ def post_json(url, headers, payload, timeout, ca_file=None):
     hdrs = {"Content-Type": "application/json"}
     hdrs.update(headers or {})
     req = urllib.request.Request(url, data=data, headers=hdrs, method="POST")
-    return _open(req, timeout, ca_file)
-
-
-def post_bytes(url, headers, data, content_type, timeout, ca_file=None):
-    """바이너리 POST(Storage 업로드). 3xx는 실패. 반환: (status, 파싱된 본문 또는 None)."""
-    hdrs = {"Content-Type": content_type}
-    hdrs.update(headers or {})
-    req = urllib.request.Request(url, data=data, headers=hdrs, method="POST")
-    return _open(req, timeout, ca_file)
-
-
-def patch_json(url, headers, payload, timeout, ca_file=None):
-    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    hdrs = {"Content-Type": "application/json"}
-    hdrs.update(headers or {})
-    req = urllib.request.Request(url, data=data, headers=hdrs, method="PATCH")
-    return _open(req, timeout, ca_file)
-
-
-class SupabaseSinkBase:
-    """Supabase REST·Storage 적재 대상의 공통 부분: 기본 URL, 키 헤더, timeout, ca_file."""
-
-    def __init__(self, url, cfg, key):
-        self.base = url.rstrip("/")
-        self.cfg = cfg
-        self.key = key
-
-    def _hdrs(self):
-        return {"apikey": self.key, "Authorization": "Bearer " + self.key}
-
-    @property
-    def timeout(self):
-        return self.cfg.get("timeout") or 60
-
-    @property
-    def ca_file(self):
-        return self.cfg.get("ca_file")
-
-
-def get_json(url, headers, timeout, ca_file=None):
-    req = urllib.request.Request(url, headers=headers or {}, method="GET")
     return _open(req, timeout, ca_file)
 
 
@@ -183,6 +132,23 @@ class HttpChatTransport:
             return resp["choices"][0]["message"]["content"]
         except (TypeError, KeyError, IndexError):
             raise CallFailed("RESPONSE_SHAPE")
+
+
+def chat_once(cfg, messages, max_tokens, timeout):
+    """RAG 답변용 단발 채팅 호출(labelbot.ragsrv). (본문, finish_reason)을 돌려준다. 캐시·재시도·temperature 없음."""
+    key = read_key(cfg.get("api_key_env"))
+    if not key:
+        raise CallFailed("KEY_MISSING")
+    url = cfg["base_url"].rstrip("/") + cfg["chat_path"]
+    body = {"model": cfg["model"], "messages": messages, "max_completion_tokens": max_tokens}
+    status, resp = post_json(url, auth_headers(cfg, key), body, timeout, cfg.get("ca_file"))
+    try:
+        choice = resp["choices"][0]
+        text = choice["message"].get("content") or ""
+        reason = choice.get("finish_reason")
+    except (TypeError, KeyError, IndexError, AttributeError):
+        raise CallFailed("RESPONSE_SHAPE")
+    return text, (reason if isinstance(reason, str) else None)
 
 
 class ChatClient:

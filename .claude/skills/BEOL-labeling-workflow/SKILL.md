@@ -1,6 +1,6 @@
 ---
 name: BEOL-labeling-workflow
-description: BEOL 라벨링 워크플로(입력 → 준비·수집·파싱 → 1~3차 분류·검증 질문·라벨링 → 불량 목록 → 사람 검수 → 피드백 반영 → Domain-Engr-bot 장부·규칙 후보 → 임베딩·Supabase 적재 → Domain-Engr-bot 도메인 질문 생성 → 엔지니어 답변·초안 확정 → 규칙·taxonomy 제안 반영 → taxonomy 보드·편집기(taxonomy.json)·도메인 규칙 수정 → 다음 실행)를 단계별 산출물·예시 화면이 있는 HTML 한 장(docs/workflow.html)으로 다시 만든다. 위쪽에 docs/project_intro.html의 S4 팀 지도를 넣어 단계마다 맡은 agent를 강조한다. 최신 실행의 건수·알림·답 분포와 Domain-Engr-bot의 장부·승인 규칙·도메인 질문 건수를 채워 넣는다. 사용자가 "워크플로 HTML 다시 만들어줘", "workflow 시각화", "workflow.html 갱신", "단계별 화면 정리", "BEOL 워크플로 보여줘", "Domain-Engr-bot까지 포함한 workflow"라고 하거나 /BEOL-labeling-workflow를 부르면 이 스킬을 쓴다.
+description: BEOL 라벨링 워크플로(입력 → 준비·수집·파싱 → 1~3차 분류·검증 질문·라벨링 → 불량 목록 → 사람 검수 → 피드백 반영 → Domain-Engr-bot 장부·규칙 후보 → 임베딩·로컬 저장소 적재 → Domain-Engr-bot 도메인 질문 생성 → 엔지니어 답변·초안 확정 → 규칙·taxonomy 제안 반영 → taxonomy 보드·편집기(taxonomy.json)·도메인 규칙 수정 → 다음 실행)를 단계별 산출물·예시 화면이 있는 HTML 한 장(docs/workflow.html)으로 다시 만든다. 위쪽에 docs/project_intro.html의 S4 팀 지도를 넣어 단계마다 맡은 agent를 강조한다. 최신 실행의 건수·알림·답 분포와 Domain-Engr-bot의 장부·승인 규칙·도메인 질문 건수를 채워 넣는다. 사용자가 "워크플로 HTML 다시 만들어줘", "workflow 시각화", "workflow.html 갱신", "단계별 화면 정리", "BEOL 워크플로 보여줘", "Domain-Engr-bot까지 포함한 workflow"라고 하거나 /BEOL-labeling-workflow를 부르면 이 스킬을 쓴다.
 ---
 
 # BEOL-labeling-workflow: 워크플로 HTML 다시 만들기
@@ -17,7 +17,7 @@ description: BEOL 라벨링 워크플로(입력 → 준비·수집·파싱 → 1
                          → 7 H6 불량 chunk 검수(사람) → 8 H2 파싱 대조(사람, 선택) → 검수 완료 신호 → feedback 호출
 [B BEOL-labeling-feedback] 9 교정 모으기·반영
                          → 10 Domain-Engr-bot 장부·라벨링 규칙 후보(domain_engrbot intake · labeling-rules candidates)
-                         → 11 화면·리포트 재생성 → 12 임베딩·슬라이드 JPG·Supabase 적재(push-vectors · push-slides)
+                         → 11 화면·리포트 재생성 → 12 임베딩·슬라이드 JPG·로컬 저장소 적재(push-vectors · push-slides)
 [C BEOL-labeling-Domain-Engr-bot]    13 도메인 질문 생성(domain_engrbot workspaces · questions generate) → 14 엔지니어 답변·초안 확정(사람, engr_questions.html)
                          → 15 규칙·taxonomy 제안 반영(questions apply → taxonomy/labeling_rules.json · 보드 S7)
 [H 도메인 담당자(사람)]   16 taxonomy.json(보드 S7·편집기) · domain_rules.json 수정 → 다음 /BEOL-labeling(단계 1)

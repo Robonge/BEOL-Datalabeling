@@ -19,7 +19,7 @@
 - `CLAUDE.md`가 우선한다. 원본 경로는 ingest(`read_input`) 한 곳에서만 열고, 봇과 도구는 `.xlsx .csv .txt .pptx` 같은 office·텍스트 확장자를 디스크에 쓰지 않는다. 허용 형식은 `.b64 .sqlite .json .jsonl .html .md .log`다.
 - 표준 라이브러리만 쓰고 Python 3.14.2 기준으로 작성한다(사외 구동 기준). 사내 Python 버전은 M7에서 self-check로 확인한다.
 - 사외 검증은 `dummy pptx files/` 폴더의 파일(정답표 필수층과 합성 픽스처)과 LLM mock, 테스트 안에서 띄운 `http.server` mock 서버로 한다.
-- 지금은 사외 OpenAI API 기준으로 만들고, 사내 반입 후 사용자가 `pipeline.json`의 `llm`, `embedding`, `supabase` 세 블록만 고친다. 사내 자료가 사외 호스트로 나가지 않도록 LLM·임베딩·벡터 적재 호출은 모두 `llm.py`의 공용 호스트 판정 함수를 거친다(`internal_host_suffixes`, 더미 해시 목록, 리다이렉트 거부).
+- 지금은 사외 OpenAI API 기준으로 만들고, 사내 반입 후 사용자가 `pipeline.json`의 `llm`, `embedding`, `vector_store` 세 블록만 고친다. 사내 자료가 사외 호스트로 나가지 않도록 LLM·임베딩·벡터 적재 호출은 모두 `llm.py`의 공용 호스트 판정 함수를 거친다(`internal_host_suffixes`, 더미 해시 목록, 리다이렉트 거부).
 
 ## 2. 디렉터리 구조
 
@@ -55,14 +55,14 @@ labelbot/
   report.py          기준선 리포트 (report --run, 분포만)
   gate.py(미구현)            M7 게이트 기록 (gate record, reports/gate_<timestamp>.json)
   embed.py           임베딩 (python -m labelbot embed, chunk_embeddings)
-  vectorpush.py      Supabase 벡터 적재 (python -m labelbot push-vectors, vector_push_log)
+  vectorpush.py      로컬 저장소 벡터 적재 (python -m labelbot push-vectors, vector_push_log)
   cdp.py             표준 라이브러리 DevTools 클라이언트 (headless Edge/Chrome, WebSocket)
   slideimg.py        슬라이드 미리보기 JPG 렌더 (python -m labelbot slide-images, slide_images/*.b64)
-  slidepush.py       슬라이드 JPG Storage 적재 (python -m labelbot push-slides, slide_image_push_log)
+  slidepush.py       슬라이드 JPG 로컬 저장소 적재 (python -m labelbot push-slides, slide_image_push_log)
   store.py           작업 DB 스키마와 읽기·쓰기
   screens/           HTML 화면 템플릿 (compare.html, review.html, slides.html + 공유 slide_preview.js·.css)
 prompts/             단계별 프롬프트 (.md)
-docs/supabase_schema.md  Supabase(pgvector) 표 정의 SQL 코드 블록 (.sql 파일은 두지 않는다)
+(저장소 표 정의와 검색 규격은 labelbot/ragsearch.py docstring, .sql 파일은 두지 않는다)
 taxonomy/taxonomy.json   기본 taxonomy (더미 동의어 포함, 원본)
 taxonomy/taxonomy_history.jsonl   저장 이력(바꾸기 전 문서)
 taxonomy/labeling_rules.json(승인 시 생성)         검수 피드백 승인 규칙·사례 참조와 기각 ID(축·값·질문 ID·건수·문장, 사례는 작업 폴더 이름·chunk ID·본문 해시·확정 라벨만, 본문 없음, git 추적, 사람이 문장·enabled 편집). Domain-Engr-bot이 쓰고 labelbot이 읽는다
@@ -87,7 +87,7 @@ PRD.md, plan.md, README.md
 
 ```
 taxonomy.json   사내 taxonomy (`pipeline.json`의 `taxonomy_path`가 가리킨다). 가리키는 파일이 없으면 실행을 거부한다
-pipeline.json   `taxonomy_path`(기본값: 저장소의 `taxonomy/taxonomy.json`), llm 블록(base_url, chat_path, model, api_key_env, auth_header, extra_headers, ca_file, timeout, temperature, max_tokens, response_format_json, internal_host_suffixes), embedding 블록, supabase 블록, flag 블록(`unknown_ratio_min` 기본 0.5, `confidence_min` 기본 0.7), 임계값, 상한값, 알림 기준값, chunk 방식, 화면 chunk당 이미지 상한(기본 4). 키 값은 넣지 않고 환경변수 이름만 둔다
+pipeline.json   `taxonomy_path`(기본값: 저장소의 `taxonomy/taxonomy.json`), llm 블록(base_url, chat_path, model, api_key_env, auth_header, extra_headers, ca_file, timeout, temperature, max_tokens, response_format_json, internal_host_suffixes), embedding 블록, vector_store 블록, flag 블록(`unknown_ratio_min` 기본 0.5, `confidence_min` 기본 0.7), 임계값, 상한값, 알림 기준값, chunk 방식, 화면 chunk당 이미지 상한(기본 4). 키 값은 넣지 않고 환경변수 이름만 둔다
 inputs/         사람 입력(taxonomy.json, 교정 파일)의 base64 보관본 <sha256>.b64
 raw/            원본 파일
 b64/            base64 텍스트
@@ -118,7 +118,7 @@ logs/           .log (파일 ID와 사유 코드만)
 | `run [--no-feedback]` | 수집부터 산출·조회 검증·리포트까지 전 단계. `push-vectors`는 부르지 않는다. 승인된 검수 피드백 규칙·사례를 1차 분류·3차 라벨링 프롬프트에 넣는다(승인 사례가 있으면 유사도용으로 이번 chunk를 먼저 임베딩). `--no-feedback`이면 넣지 않는다 | 발급 | M6 |
 | `report --run <ID>` | 기준선 리포트(분포) 재계산, `reports/taxonomy_revisit.*` 재작성(LLM 호출 0회) | 안 함 | M6 |
 | `embed` | chunk 임베딩, `chunk_embeddings` | 안 함 | M6b |
-| `push-vectors` | Supabase 벡터 적재, `vector_push_log` | 안 함 | M6b |
+| `push-vectors` | 로컬 저장소 벡터 적재, `vector_push_log` | 안 함 | M6b |
 | `domain_engrbot questions generate\|serve\|apply` (Domain-Engr-bot) | 검수 피드백 생산: `domain_engrbot intake`가 모은 장부와 검수 결과로 엔지니어에게 물을 질문을 만들고(LLM), 질문 화면에서 사람이 확정한 초안만 승인 파일과 taxonomy 수정 보드(S7)에 적는다. `labeling-rules candidates\|status`는 후보 계산·건수용으로, `review\|apply`는 승인분 관리용으로 남는다(`approve\|reject`도 명령은 남음) | 안 함(질문 묶음은 set_id) | M5 |
 | `slide-images` | 슬라이드 근사 미리보기 JPG 렌더(`slide_images/<sha256>.b64`, `slide_images` 표), 산출 `chunks.slide_image` 갱신 | 안 함 | M6c |
 | `push-slides` | 슬라이드 JPG를 Storage 버킷에 올리고 벡터 행 `slide_image_*` 열 기록, `slide_image_push_log` | 안 함 | M6c |
@@ -309,7 +309,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - 대상은 이 chunk에 붙지 않은 활성 축의 (축, 값)이다. 참일 수 있는 값은 뺀다: 붙은 값과 그 상위·하위 값, `해당 없음`·`unknown`, 1차가 unknown이라 한 축의 값 전부. 순위는 붙은 값이 있는 단일값 축(같은 축의 다른 값이 가장 헷갈리는 음성 대조군), 붙은 값이 있는 다중값 축, 나머지 축 순이고, 같은 순위는 sha256(chunk_id|축|값) 순이라 재실행해도 같다. 다른 chunk 본문은 프롬프트에 넣지 않는다(토큰이 chunk 수의 제곱으로 늘고, 함께 돌린 묶음에 따라 질문이 바뀌어 캐시·`label_hash`가 흔들린다).
 - 검증 질문과 같은 question_gen 호출에서 같은 형식·말투로 만든다(`controls`). 검증기는 검증 질문만 엄격히 보고(틀리면 재시도), 대조 질문은 형식에 맞는 것만 남긴다. 빠지거나 틀린 대조 질문은 failures에 stage `question_ctl`(`CONTROL_DROPPED`, `CONTROL_FORMAT_INVALID`)로 남고 검증 질문은 그대로 쓴다. 질문 ID는 `Q-CTL-` + sha256("ctl"|chunk_id|축|값) 앞 10자리, 문구는 `ctl_questions` 표에 남는다.
 - 3차 프롬프트에서 대조 질문 ID는 `Q-GEN-` 모양의 별칭(sha256("alias"|원래 ID))으로 바꾸고 생성 질문을 ID 순으로 섞어, 라벨러가 ID나 순서로 대조 질문을 가려내지 못하게 한다. 답은 원래 ID로 되돌린다. 라벨러는 `Q-GEN-` 질문을 1차 분류 결과와 상관없이 본문만 보고 뒷받침 O, 반박 X, 근거 없음 N/A로 답한다. 같은 (축, 값)의 `GEN_ANSWER` 피드백 규칙도 대조 질문에 함께 붙는다.
-- 대조 질문 답은 `labels`에 kind `control`로 남아 확정 라벨·`label_hash`·산출·Supabase 적재·H5 N/A 비율·Domain-Engr-bot 입력(kind `answer`만 읽음)에 들어가지 않는다. 검수 파일의 `Q-CTL-` 답 교정은 반영하지 않는다.
+- 대조 질문 답은 `labels`에 kind `control`로 남아 확정 라벨·`label_hash`·산출·로컬 저장소 적재·H5 N/A 비율·Domain-Engr-bot 입력(kind `answer`만 읽음)에 들어가지 않는다. 검수 파일의 `Q-CTL-` 답 교정은 반영하지 않는다.
 - 대조 질문 O의 인용이 본문에 있으면(짧은 인용 포함) 불량 사유 `CONTROL_O`, 없으면 `QUOTE_NOT_FOUND`로 검수 목록에 오른다(1차 분류 누락이나 3차 과잉 판정 신호). 검수 화면은 대조 질문 답을 읽기 전용 표로 보여 주고, 맞으면 사람이 축 교정으로 값을 더한다. 대시보드에 `Q-CTL-*` 합산 행, 요약(`summary.py`)에 `controls` 건수가 나온다.
 - 한계: 라벨러 프롬프트에 1차 분류 결과가 참고로 들어가므로 완전한 맹검은 아니다. 대조 질문 O 비율은 라벨러 예 편향의 하한 추정으로 본다. 대조 몫만큼 검증 질문 칸이 줄어 라벨이 많은 chunk는 검증하지 못하는 라벨이 늘어난다(mock 더미 769 chunk: 86 → 272).
 
@@ -485,23 +485,23 @@ logs/           .log (파일 ID와 사유 코드만)
 
 ### M6b. 임베딩과 벡터 적재
 
-만드는 파일: `labelbot/embed.py`, `labelbot/vectorpush.py`, `docs/supabase_schema.md`. 둘 다 chunk가 확정된 뒤 따로 돌리는 명령이며(`PRD.md` FR-9), 분류·라벨링·검수·산출은 이 단계에 의존하지 않는다. 실패는 사유 코드로 기록하고 다른 단계를 막지 않는다. 우선순위는 둘 다 P1이다(chunk에서 다시 만들 수 있다).
+만드는 파일: `labelbot/embed.py`, `labelbot/vectorpush.py`. 둘 다 chunk가 확정된 뒤 따로 돌리는 명령이며(`PRD.md` FR-9), 분류·라벨링·검수·산출은 이 단계에 의존하지 않는다. 실패는 사유 코드로 기록하고 다른 단계를 막지 않는다. 우선순위는 둘 다 P1이다(chunk에서 다시 만들 수 있다).
 
 [P1] G20 임베딩 (`python -m labelbot embed`): chunk 벡터를 만들어 로컬 `work.sqlite`에 보관한다. 검색, RAG, graph는 만들지 않는다. 설정은 `pipeline.json`의 `embedding` 블록이며 키와 기본값은 `base_url`, `path`("/embeddings"), `model`("text-embedding-3-small"), `api_key_env`("OPENAI_API_KEY"), `auth_header`("Authorization"), `extra_headers`({}), `ca_file`(null), `timeout`(60), `batch_size`(64), `enabled`(true)다. 호출은 `urllib` 기반 OpenAI Embeddings 호환이고, 입력은 chunk의 파싱된 텍스트다(base64 문자열은 넣지 않는다, `CLAUDE.md` "DRM 규칙"). 호스트 판정, 더미 해시 조건, 리다이렉트 거부, 키 비노출은 G19 공용 함수를 쓴다. 저장은 `chunk_embeddings(chunk_id, model, dim, text_hash, vector BLOB, run_id)`이고 키와 직렬화는 2절 "ID와 해시 정의"를 따른다. `text_hash`와 `model`이 같으면 다시 호출하지 않으며, 모델이 다른 벡터는 같은 조회에서 섞지 않는다.
 - [ ] mock 서버로 chunk N개를 넣으면 `chunk_embeddings`에 N행이 생기고 `dim`이 응답 벡터 길이와 같다.
 - [ ] 같은 입력으로 다시 돌리면 호출이 0회다.
-- [ ] `enabled=false`면 `embed` 호출이 0회다. `run`은 `embedding`·`supabase` 설정과 무관하게 끝까지 간다.
+- [ ] `enabled=false`면 `embed` 호출이 0회다. `run`은 `embedding`·`vector_store` 설정과 무관하게 끝까지 간다.
 - [ ] 사외 호스트 설정에서 더미 해시 밖 파일의 chunk가 있으면 그 호출이 0회로 거부되고 사유 코드가 남는다.
 - [ ] mock 서버가 받은 요청 본문에 base64 문자열이 없다.
 - [ ] 로그에서 본문, 파일명, 테스트 키를 검색하면 0건이다.
 - [ ] mock 서버가 오류를 내도 `embed`는 사유 코드를 남기고 끝나며, 이미 만든 산출과 이후 `run`·`push-vectors` 실행은 영향을 받지 않는다.
 
-[P1] G21 Supabase 벡터 적재 (`python -m labelbot push-vectors`): `chunk_embeddings`의 벡터를 Supabase(Postgres + pgvector) 표에 올리는 데까지만 한다. 검색·RAG·graph는 만들지 않는다. 로컬 `chunk_embeddings`가 원본이고 Supabase는 사본이다.
-- 설정: `pipeline.json`의 `supabase` 블록. 키와 기본값은 `enabled`(false), `url`, `table`("chunk_embeddings"), `key_env`("SUPABASE_SERVICE_KEY"), `batch_size`(100), `timeout`(60), `ca_file`(null)이다. 키는 환경변수에서만 읽는다.
-- 호출: `urllib`로 `POST {url}/rest/v1/{table}`, 헤더 `apikey`, `Authorization: Bearer`, `Prefer: resolution=merge-duplicates`(chunk ID + 모델 기준 upsert). 리다이렉트 거부 opener와 호스트 판정 함수는 LLM 호출과 같은 것을 쓴다. 호스트가 `internal_host_suffixes`에 없으면 사외이고, 사외에는 파일 해시가 더미 해시 목록에 있는 chunk만 보낸다. 입력이 0개면 호출 0회다.
+[P1] G21 로컬 저장소 벡터 적재 (`python -m labelbot push-vectors`): `chunk_embeddings`의 벡터를 로컬 저장소(`rag_store.sqlite`) 표에 올리는 데까지만 한다. 검색·RAG·graph는 만들지 않는다. 로컬 `chunk_embeddings`가 원본이고 로컬 저장소는 사본이다.
+- 설정: `pipeline.json`의 `vector_store` 블록. 키와 기본값은 `enabled`(false), `path`("workspaces/_rag_store"), `batch_size`(100), `slides_enabled`(true)이다. 저장소 폴더는 환경변수 `BEOL_RAG_STORE`로도 바꾼다.
+- 쓰기: 로컬 저장소의 `rag_store.sqlite`에 chunk ID + 모델 기준으로 upsert한다. 네트워크 호출이 없어 호스트 판정과 더미 해시 조건은 적용하지 않는다. 입력이 0개면 쓰기 0회다.
 - 보내는 열: chunk ID, 파일 ID(sha256), 파일명(`file_name`), chunk 순번, 모델, 차원, 벡터, chunk 본문, 확정 라벨(JSON), 실행 ID. 경로는 보내지 않는다(2026-10-07 파일명 열 추가).
 - 멱등: 로컬 `vector_push_log(chunk_id, model, text_hash, label_hash, target_host_hash, pushed_at, result_code)` 표. `label_hash`는 2절 "ID와 해시 정의"를 따른다. 같은 대상 호스트에 같은 chunk ID·모델·`text_hash`·`label_hash`로 `result_code`가 성공인 기록이 있으면 다시 보내지 않으므로, 같은 내용을 다시 돌리면 호출이 0회다. 확정 라벨이 바뀐 chunk는 `label_hash`가 달라져 그 chunk만 다시 올라간다.
-- Supabase 표 정의(pgvector)는 `docs/supabase_schema.md`에 SQL 코드 블록으로 둔다. `.sql` 파일은 허용 형식이 아니므로 만들지 않는다.
+- 저장소 표 정의와 검색 규격은 `labelbot/ragsearch.py` docstring에 둔다. `.sql` 파일은 허용 형식이 아니므로 만들지 않는다.
 - [ ] mock 서버로 N개를 올리면 요청 본문 행 수의 합이 N이고 `vector_push_log`가 N행이다.
 - [ ] 검수 교정으로 chunk 1개의 확정 라벨만 바꾸고 `push-vectors`를 다시 돌리면 요청 본문 행 수가 1이고 그 chunk의 라벨이 교정 값이다. 나머지 chunk는 전송이 0건이다.
 - [ ] 다시 돌리면 호출이 0회다.
@@ -512,36 +512,36 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 로그와 `vector_push_log`에서 chunk 본문, 파일명, 테스트 키를 검색하면 0건이다. 요청 본문에 경로 열이 없고, 파일명은 `file_name` 열에만 있다.
 - [ ] 모델이 다른 벡터를 같은 표에 섞어 올리려 하면 호출 전에 거부되고 사유 코드가 남는다.
 - [ ] 입력 0개면 호출이 0회다.
-- [ ] `docs/supabase_schema.md`에 SQL 코드 블록이 있고 저장소에 `.sql` 파일이 0개다.
+- [ ] `labelbot/ragsearch.py` docstring에 표 정의가 있고 저장소에 `.sql` 파일이 0개다.
 - [ ] mock 서버가 오류를 내도 라벨링·산출 단계가 끝까지 간다.
 
 ### M6c. 슬라이드 미리보기 JPG와 Storage 적재
 
-상세 계획: `.omc/plans/slide-jpg-supabase.md`. 만드는 파일: `labelbot/cdp.py`, `labelbot/slideimg.py`, `labelbot/slidepush.py`, `labelbot/screens/slides.html`, `labelbot/screens/slide_preview.js`·`.css`(review.html과 공유). 우선순위 P2(검수·라벨에 영향 없음).
+상세 계획: 옛 `.omc/plans/`의 슬라이드 JPG 적재 계획 문서. 만드는 파일: `labelbot/cdp.py`, `labelbot/slideimg.py`, `labelbot/slidepush.py`, `labelbot/screens/slides.html`, `labelbot/screens/slide_preview.js`·`.css`(review.html과 공유). 우선순위 P2(검수·라벨에 영향 없음).
 
 [P2] G22 슬라이드 JPG (`python -m labelbot slide-images`): 검수 화면과 같은 근사 미리보기를 headless Edge/Chrome(DevTools `Page.captureScreenshot`, jpeg)으로 슬라이드마다 캡처한다. 결과 base64를 그대로 `slide_images/<jpg_sha256>.b64`에 쓴다(`.jpg` 파일은 쓰지 않는다). `text_hash`·배치 해시·렌더 설정이 같으면 다시 그리지 않는다. pptx가 아니면 `NO_LAYOUT`.
 - [x] 대상 수 = `slide_images` 행 수 + `failures(stage='slide_image')` 수.
 - [x] 모든 `.b64`가 디코딩하면 `FF D8 FF`로 시작하고 sha256이 파일명과 같다. 작업 폴더에 `.jpg` 파일이 0개다.
 - [x] 다시 돌리면 렌더 0건이다. 브라우저가 없으면 `RENDERER_MISSING`으로 남고 다른 단계는 영향을 받지 않는다.
 
-[P2] G23 Storage 적재 (`python -m labelbot push-slides`): `supabase.storage_enabled=true`일 때 `storage_bucket`(기본 `BEOL-labeling`, private)에 `<file_id 앞 16자>/<슬라이드 번호 4자리>.jpg`로 올리고 `beol_chunk_embeddings` 행의 `slide_image_bucket·path·sha256·width·height`를 PATCH한다. `push-vectors` 다음에 부른다. 라벨·`label_hash`는 바꾸지 않는다.
+[P2] G23 슬라이드 적재 (`python -m labelbot push-slides`): `vector_store.slides_enabled=true`일 때 로컬 저장소의 `slides/<sha>.b64`에 쓰고 벡터 행의 `slide_image_bucket·path·sha256·width·height` 열을 갱신한다. `push-vectors` 다음에 부른다. 라벨·`label_hash`는 바꾸지 않는다.
 - [x] 다시 돌리면 업로드 0건이다. 행이 없으면 `ROW_MISSING`, 다음 실행에서 다시 한다.
 - [x] 사외 호스트에서 더미 해시 밖 슬라이드는 `EXTERNAL_NON_DUMMY`로 차단된다.
-- [ ] 실제 Supabase에서 버킷·열 SQL(`docs/supabase_schema.md`)을 실행하고 더미 슬라이드 업로드·행 갱신을 확인한다.
+- [ ] 로컬 저장소에 더미 슬라이드를 쓰고 행 갱신을 확인한다.
 
 ### M7. 사내 반입과 100개 실행
 
 사내에서 사용자가 진행한다. 순서대로 한다. G-1~G-10은 게이트 항목이며(gap ID G1~G21과 구분하려고 하이픈을 붙인다), 7단계(100개 실행) 전에 모두 PASS여야 한다. 같은 업무 PC에서 Python·메모장·브라우저로 여는 확인은 필요조건일 뿐이다(투명 복호화는 같은 PC의 다른 프로그램에도 해당할 수 있다). 사외로 반출하는 형식의 충분조건은 G-10이다.
 
 1. GitHub zip을 내려받아 압축을 풀고 self-check를 돌린다. 이 시점에는 작업 폴더의 `taxonomy_path`가 사내 taxonomy.json을 가리키지 않을 수 있으므로 전 항목 PASS는 5단계 뒤에 판정한다. **G-1**: `write_roundtrip` 항목만 PASS다(7개 확장자, 필요조건).
-2. `pipeline.json`의 `llm`, `embedding`, `supabase` 세 블록을 사내 값으로 바꾼다(`base_url`·`url`, `model`, `internal_host_suffixes`(사내 도메인), 필요하면 `auth_header`, `extra_headers`, `ca_file`, 경로). 사내에서 벡터 DB(Supabase 또는 사내 Postgres + pgvector)를 쓸 수 있는지 확인하고, 쓸 수 없거나 사내 호스트가 아니면 `supabase.enabled`를 false로 둔다. **G-2**: self-check의 호스트 판정 항목과 LLM 항목만 PASS다(호스트 판정 "사내"). 사내 파일로 LLM·임베딩·벡터 적재를 부르는 어떤 단계보다 먼저 한다.
+2. `pipeline.json`의 `llm`, `embedding`, `vector_store` 세 블록을 사내 값으로 바꾼다(`base_url`, `model`, `internal_host_suffixes`(사내 도메인), 필요하면 `auth_header`, `extra_headers`, `ca_file`, 경로). 사내에서 벡터 DB(로컬 저장소 또는 사내 Postgres + pgvector)를 쓸 수 있는지 확인하고, 쓸 수 없거나 사내 호스트가 아니면 `vector_store.enabled`를 false로 둔다. **G-2**: self-check의 호스트 판정 항목과 LLM 항목만 PASS다(호스트 판정 "사내"). 사내 파일로 LLM·임베딩·벡터 적재를 부르는 어떤 단계보다 먼저 한다.
 3. 사내 파일 1개로 `ingest`를 돌려 DRM 해제, base64 저장, 이미지 저장이 되는지 확인한다. **G-3**: 수집 → `.b64` → 디코딩 → 시그니처 검사가 통과한다. **G-4**: 추출 이미지 `.b64`와 `b64/`의 파일을 같은 PC의 메모장으로 열어 base64 평문으로 보인다(필요조건).
 4. 점검 스크립트(`probe`)로 100개 파일의 구조 통계를 본다. 처리하지 못하는 요소가 많으면 사유 코드와 통계를 사외로 전달해 파서를 보강한다.
 5. 작업 폴더 `pipeline.json`의 `taxonomy_path`를 사내 `taxonomy.json`으로 가리키고, taxonomy 편집기로 `taxonomy`에 제품·세대 값을, `synonyms`에 사내 동의어를 적는다(`files` 시트 메모·제외는 없앴다). **G-5**: `taxonomy.json`이 `read_input`으로 읽힌다(`ENCRYPTED`나 `NOT_OOXML` 사유 코드가 아니다). 여기서 self-check를 다시 돌려 전 항목 PASS를 확인한다.
 6. 기본본 그대로(승인된 질문은 `Q-COM-001` 하나) 사내 파일 1개로 `run`을 끝까지 돌리고 `compare`·`review`로 화면 2개를 만든다. **G-6**: `screens/*.html`을 브라우저로 열어 내용이 보인다(`review.html`은 불량 목록과 사유 코드 필터가 보인다). **G-7**: `out/labeling.sqlite`를 Python이 아닌 소비자(사내 SQL 도구)에서 열어 조회가 된다. **G-8**: `reports/`의 `.md`·`.json`(`flagged_<실행ID>.jsonl`·`.md` 포함), `alerts.json`, `logs/`의 `.log`, 작업 폴더의 `.jsonl`을 같은 PC의 메모장이나 브라우저로 열어 평문으로 보인다(필요조건). **G-9**: 화면에서 내려받은 `.json`을 `inbox/`에 넣고 `apply`가 성공한다. **G-10**: 사외로 반출하는 형식(기준선 리포트 `.md`, 게이트 기록 `.json`, 필요하면 `.log`)을 실제 반출 경로로 옮긴 뒤, 또는 DRM 에이전트가 없는 PC에서 열어 평문으로 보인다. 이어서 `python -m labelbot gate record`로 항목별 PASS/FAIL을 입력해 `reports/gate_<timestamp>.json`에 남긴다(self-check와 게이트는 실행 ID를 발급하지 않으므로 시각을 쓴다). 경로와 파일명은 넣지 않는다.
 7. 전 단계를 실행한다. 중간에 `reports/candidates.md`의 새 값·질문·동의어 후보를 보고 시트에 붙여넣은 뒤 재실행한다. 라벨 분포 알림이 나오면 원인을 점검한다. 프롬프트를 바꾸는 P1 항목(G7, G14)을 이번 회차에 넣을지 2회차까지 동결할지 기록한다.
 8. 파싱 대조 5개, 검수, 조회 질문 채택(`queries` 시트에 붙여넣고 채택 열을 Y로 둔다)을 한다. 검수 화면은 프롬프트와 taxonomy를 고정하고 마지막 재실행을 끝낸 뒤 생성하며, 그 시점의 실행 ID가 검수 기준 실행 ID다. 검수 중 발견한 동의어는 교정 파일에 담고, `candidates.md`의 "검수 등록" 행을 시트에 붙여넣는다.
-9. 후보와 "검수 등록" 행을 붙여넣은 뒤 재실행해, 바뀐 표현이 있는 chunk만 다시 처리되는지 본다. 기준선 리포트는 `report --run <검수 기준 실행 ID>`로 고정해서 본다. 필요하면 `embed`와 (`supabase.enabled`가 true일 때만) `push-vectors`를 돌린다. 이 두 명령의 실패는 기준선 판정을 막지 않는다.
+9. 후보와 "검수 등록" 행을 붙여넣은 뒤 재실행해, 바뀐 표현이 있는 chunk만 다시 처리되는지 본다. 기준선 리포트는 `report --run <검수 기준 실행 ID>`로 고정해서 본다. 필요하면 `embed`와 (`vector_store.enabled`가 true일 때만) `push-vectors`를 돌린다. 이 두 명령의 실패는 기준선 판정을 막지 않는다.
 10. 불량 목록과 분포 리포트를 확인하고, 검수 화면에서 교정한다.
 
 게이트가 FAIL이면 100개 실행을 시작하지 않는다. 실패 보고는 `gate record`의 화면 출력(항목 번호, PASS/FAIL, 형식명, 사유 코드)을 사용자가 손으로 옮겨 적어 사외로 전달한다(`.json` 반출 자체가 실패했을 수 있다). 처리 순서는 "사외에서 대안 반영 → 새 zip → 사내에서 게이트 전체 재실행"이다.
@@ -554,7 +554,7 @@ logs/           .log (파일 ID와 사유 코드만)
 - [ ] 검수 기준 실행 ID의 `flagged_chunks`와 `reports/flagged_<ID>.jsonl`·`.md`가 작업 폴더에 남고, 교정 파일이 반영되어 `corrections`에 사람 값과 봇 원답이 있다.
 - [ ] 산출 SQLite의 모든 files 행에 상대 경로와 파일명이 있고, 같은 해시가 여러 위치에 있으면 `file_locations`에 모두 있다.
 - [ ] G17 금지 확장자 검사를 사내에서 한 번 더 돌려 통과한다.
-- [ ] `pipeline.json`에서 사내 값으로 바뀐 블록이 `llm`, `embedding`, `supabase` 세 개뿐이고, 벡터 DB 사용 가능 여부와 `supabase.enabled` 값이 게이트 기록에 남는다.
+- [ ] `pipeline.json`에서 사내 값으로 바뀐 블록이 `llm`, `embedding`, `vector_store` 세 개뿐이고, 벡터 DB 사용 가능 여부와 `vector_store.enabled` 값이 게이트 기록에 남는다.
 - [ ] 사내 파일 1개에서 chunk가 생성되고 이미지 저장 방식이 확정된다.
 - [ ] 100개 실행 후 실패 파일이 사유 코드와 함께 목록화된다.
 - [ ] 파싱 대조 5개와 검수가 끝나고 교정이 반영된다.
@@ -577,8 +577,8 @@ logs/           .log (파일 ID와 사유 코드만)
 | H7 | 조회 질문 채택(`queries` 시트) | 대기 | `taxonomy.py`(`queries` 시트 읽기), `candidates.py`(`reports/query_candidates.md`), `querycheck.py` | M6 |
 | H8 | 동의어 후보 승인(`synonyms` 시트에 붙여넣기) | 계속(처리 전 후보는 시트에 넣지 않는다) | `candidates.py` | M2, M4 |
 | H9 | 검수 피드백 규칙·사례 확정(Domain-Engr-bot 도메인 질문에 답하고 초안을 고쳐 확정) | 계속(확정 전에는 프롬프트에 넣지 않는다. 확정은 `/BEOL-labeling-Domain-Engr-bot` 질문 화면에서만 하고 라벨링 시작 때는 묻지 않는다) | `domain_engrbot/questions.py`(질문 생성), `domain_engrbot/answers.py`(확정 반영), `domain_engrbot/labeling_rules.py`(후보), `domain_engrbot/labeling_review.py`(승인분 관리), `labelbot/feedback.py`(소비), `BEOL-labeling-Domain-Engr-bot`, `BEOL-labeling` 1-2(건수만), `BEOL-labeling-feedback` 4-1·4-2 | M5 |
-| 게이트 | 사내 설정 변경(`llm`, `embedding`, `supabase` 블록), 벡터 DB 사용 가능 여부 확인, G-1~G-10 확인과 `gate record` 입력 | 대기(FAIL이면 100개 실행을 시작하지 않는다) | `selfcheck.py`, `gate.py` | M0, M7 |
-| 벡터 적재 | `supabase.enabled`를 켤지 정하고 `push-vectors` 실행 | 계속(실패해도 라벨링·산출은 진행한다) | `embed.py`, `vectorpush.py` | M6b, M7 |
+| 게이트 | 사내 설정 변경(`llm`, `embedding`, `vector_store` 블록), 벡터 DB 사용 가능 여부 확인, G-1~G-10 확인과 `gate record` 입력 | 대기(FAIL이면 100개 실행을 시작하지 않는다) | `selfcheck.py`, `gate.py` | M0, M7 |
+| 벡터 적재 | `vector_store.enabled`를 켤지 정하고 `push-vectors` 실행 | 계속(실패해도 라벨링·산출은 진행한다) | `embed.py`, `vectorpush.py` | M6b, M7 |
 
 게이트와 벡터 적재 행은 `PRD.md` 3.2절의 H1~H8 밖에서 plan이 추가한 운영 지점이다.
 
@@ -600,16 +600,16 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 | `write_roundtrip`과 같은 PC의 확인이 거짓 PASS를 낸다. | 같은 PC의 확인(G-1, G-4, G-6~G-9)은 필요조건으로만 쓰고, 사외로 반출하는 형식은 반출 경로를 거친 뒤나 DRM 에이전트가 없는 PC에서 여는 G-10을 통과해야 진행한다. | M0, M7 |
 | 사외 엔드포인트로 사내 자료가 나간다(LLM, 임베딩, 벡터 적재). | 사용자 신고 플래그가 아니라 호스트(`internal_host_suffixes`)와 더미 해시로 판정하고, 불확실하면 거부하며, 리다이렉트를 따라가지 않는다. 엔드포인트 변경을 사내 파일로 호출하는 단계보다 앞(M7 2단계)에 둔다. | M0, M6b, M7 |
 | 사내 게이트웨이 형식이 다르다. | 인증 헤더, 추가 헤더, CA, 경로, 타임아웃을 설정 키로 둔다. 그래도 맞지 않으면 사유 코드만 사외로 전달한다. | M0, M7 |
-| 경로가 사외로 새어 나간다. | 상대 경로만 저장하고 절대 경로는 실행 메타에만 둔다. 로그, 콘솔, 리포트, `alerts.json`, 교정 파일, 게이트 기록, Supabase 전송 열에서 0건인지 통합 테스트로 본다. | M1, M6, M6b |
+| 경로가 사외로 새어 나간다. | 상대 경로만 저장하고 절대 경로는 실행 메타에만 둔다. 로그, 콘솔, 리포트, `alerts.json`, 교정 파일, 게이트 기록, 로컬 저장소 전송 열에서 0건인지 통합 테스트로 본다. | M1, M6, M6b |
 | 폴더명이 분류를 끌고 간다. | 참고(인용 불가)로만 넣고 근거는 본문에서 받는다. 처음 본 위치를 고정해 캐시 키를 안정시킨다. | M2 |
 | 프롬프트를 바꾸는 P1 항목(G7, G14)은 재계산되지 않는다. | M7 전에 넣거나 2회차까지 동결하고, M7 7단계에 기록한다. | M4, M7 |
 | P1 항목이 첫 실행에 없을 수 있다. | `labels`, `failures`, `flagged_chunks`, `corrections`가 남으므로 새 zip으로 호출 0회 재계산이 된다. | M5, M6 |
 | 불량 목록이 너무 길다. | 사유 코드 필터와 겹침 순 정렬을 두고, 기준값은 `flag` 블록 설정으로 조정한다. | M5 |
 | 사내 정확도는 측정하지 않는다. | 사외 더미 정답표 대조(`tools/evalgold.py`(미구현))로만 프롬프트 변경 효과를 본다. | M6 |
 | 금지 확장자 검사가 입력 파일 때문에 항상 실패한다. | 실행 전 목록과 비교해 새 파일만 보고, 입력 전용 경로를 명시적으로 뺀다. | M6 |
-| 사내에서 임베딩 모델을 바꾸면 차원이 달라진다. | `chunk_embeddings`에 `model`과 `dim`을 두고, 모델이 다른 벡터는 같은 조회에서 섞지 않으며 Supabase 표에 섞어 올리지 않는다. 모델을 바꾸면 그 모델로 다시 만든다. | M6b |
-| 사내에서 Supabase나 pgvector를 쓸 수 없다. | `supabase.enabled` 기본값을 false로 두고, 로컬 `chunk_embeddings`를 원본으로 유지한다. M7 2단계에서 사용 가능 여부를 확인해 기록한다. | M6b, M7 |
-| Supabase 사본과 로컬 원본이 어긋난다. | `vector_push_log`로 멱등을 보장하고 chunk ID + 모델로 upsert한다. 본문이나 확정 라벨이 바뀐 chunk는 해시가 달라져 다시 올라간다. 어긋나면 로컬 표에서 다시 올린다. | M6b |
+| 사내에서 임베딩 모델을 바꾸면 차원이 달라진다. | `chunk_embeddings`에 `model`과 `dim`을 두고, 모델이 다른 벡터는 같은 조회에서 섞지 않으며 로컬 저장소 표에 섞어 올리지 않는다. 모델을 바꾸면 그 모델로 다시 만든다. | M6b |
+| 사내에서 로컬 저장소나 pgvector를 쓸 수 없다. | `vector_store.enabled` 기본값을 false로 두고, 로컬 `chunk_embeddings`를 원본으로 유지한다. M7 2단계에서 사용 가능 여부를 확인해 기록한다. | M6b, M7 |
+| 로컬 저장소 사본과 로컬 원본이 어긋난다. | `vector_push_log`로 멱등을 보장하고 chunk ID + 모델로 upsert한다. 본문이나 확정 라벨이 바뀐 chunk는 해시가 달라져 다시 올라간다. 어긋나면 로컬 표에서 다시 올린다. | M6b |
 | 사내 LLM의 JSON 출력이 불안정하다. | 응답 검증, 재시도, 실패 chunk의 검수 이관. | M2 |
 | 좌표 기반 표 복원이 실제 표가 아닌 배치를 표로 오인한다. | 여러 행에서 열 위치가 반복될 때만 표로 본다. 대조 화면에서 확인한다. | M1 |
 | HTML 화면 두 개로 구현 범위가 커진다. | 화면은 표시와 기록만 하고 검증과 반영은 Python 쪽에서 한다. 화면 공통 부분(데이터 내장, 내려받기, 텍스트 복사)을 하나로 만든다. chunk당 이미지 상한(기본 4개)으로 HTML 크기를 줄인다. | M1, M5 |
@@ -629,7 +629,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 1. 마일스톤마다 `python -m unittest discover tests`를 돌려 그 마일스톤의 완료 기준 테스트가 통과하는지 본다.
 2. M6 이후 정답표 대상 파일 10개로 전 단계를 mock으로 돌려 산출물과 리포트가 생성되는지 본다. mock은 정답표에서 응답을 만들어 저장 결과, 3상태 집계, H5 분모를 확인한다(배관 검증). `review`로 `flagged_chunks`와 `reports/flagged_*`가 LLM 호출 없이 생성되는지도 본다.
 3. M6 이후 같은 통합 실행에서 금지 확장자 전수 검사(G17), 로그·리포트 비노출 검사와 원본 경로 단일 열기 검사(G16)를 돌린다.
-4. M6b 이후 테스트 안에서 띄운 `http.server` mock 서버로 `embed`와 `push-vectors`를 돌려 호출 수, `chunk_embeddings`·`vector_push_log` 행 수, 사외 호스트 차단, 302 거부, 키·본문·파일명 비노출을 확인한다. 실제 Supabase로는 사외에서 더미 해시 chunk만 보낼 수 있다.
+4. M6b 이후 테스트 안에서 띄운 `http.server` mock 서버로 `embed`와 `push-vectors`를 돌려 호출 수, `chunk_embeddings`·`vector_push_log` 행 수, 사외 호스트 차단, 302 거부, 키·본문·파일명 비노출을 확인한다. 로컬 저장소 적재는 임시 폴더로 확인한다.
 5. 화면 두 개(파싱 대조, 검수)를 브라우저에서 직접 열어, 데이터가 보이고 사유 코드 필터, 내려받기와 교정 반영이 되는지 확인한다.
 6. 사외에서 쓸 수 있는 OpenAI 호환 엔드포인트가 있으면 mock 대신 실제 LLM으로 정답표 파일을 한 번 돌리고, `tools/evalgold.py`로 정답표와 대조해 지표(`labelbot/metrics.py`(미구현))를 본다(합격선은 정하지 않는다). 사외 호스트이므로 더미 해시 파일만 호출된다. 없으면 이 단계는 사내에서 한다.
 7. 구현 결과를 별도 검토 패스로 점검한다(코드 리뷰, 완료 기준 충족 여부).
@@ -641,13 +641,13 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 - 사외에서 실제 LLM 검증에 쓸 엔드포인트가 있는지.
 - docx 샘플은 폴더에 없으므로 합성 docx로 테스트한다(확정). 실제에 가까운 더미 docx를 받으면 추가한다.
 - 임베딩을 내보내기 DB에 넣을지: `chunk_embeddings`를 `out/labeling.sqlite`에도 넣을지. 넣으면 산출 DB가 커지고 `SCHEMA.md`에 벡터 형식 설명이 필요하다. 기본안: `work.sqlite`에만 둔다.
-- 임베딩의 용도: 준중복 그룹(G4)에 쓸지, 보관만 할지. 4차 불량 목록 판정에는 쓰지 않는다. 기본안: 보관과 Supabase 사본 적재만 한다.
-- 사내에서 Supabase(또는 사내 Postgres + pgvector)를 쓸 수 있는지와 그 주소가 `internal_host_suffixes`에 드는 사내 호스트인지. 기본안: `supabase.enabled=false`로 두고 M7 2단계에서 확인해 게이트 기록에 남긴다.
-- 사외 개발용 Supabase 프로젝트를 둘지. 둔다면 사외 호스트이므로 더미 해시 chunk만 올라간다. 기본안: 사외 검증은 mock 서버로만 하고, 실제 Supabase 적재는 선택이다.
-- Supabase로 보내는 열에 chunk 본문을 포함할지. 기본안: 포함한다(사본에서 바로 확인할 수 있게). 사내 정책상 본문 사본이 금지되면 본문 열을 빼는 설정을 추가한다.
+- 임베딩의 용도: 준중복 그룹(G4)에 쓸지, 보관만 할지. 4차 불량 목록 판정에는 쓰지 않는다. 기본안: 보관과 로컬 저장소 사본 적재만 한다.
+- 사내에서 로컬 저장소 폴더를 쓸 수 있는지와 그 주소가 `internal_host_suffixes`에 드는 사내 호스트인지. 기본안: `vector_store.enabled=false`로 두고 M7 2단계에서 확인해 게이트 기록에 남긴다.
+- 사외 개발용 저장소 폴더를 따로 둘지. 기본안: 임시 폴더로 검증한다.
+- 로컬 저장소로 보내는 열에 chunk 본문을 포함할지. 기본안: 포함한다(사본에서 바로 확인할 수 있게). 사내 정책상 본문 사본이 금지되면 본문 열을 빼는 설정을 추가한다.
 - 확정된 결정(2026-10-04, `PRD.md` 부록 B): 파일 메모·조회 질문은 선택 시트 `files`·`queries`에 둔다. H4는 "대기"다. 평가 내용이 없는 chunk의 의사결정 상태는 `해당 없음`이다. EUV-SAUP·EUV-SET·ArF-SET는 Patterning 값이고 정의는 비우며, 이에 기대는 정답표 칸은 `unknown`이다. 개발 산출물 확장자 예외는 없다.
 - 확정된 결정(2026-10-04, 라벨링 품질 보강 v2 6절, 다시 논의하지 않는다):
-  1. 지금은 OpenAI API 기준으로 만들고, 사내 반입 후 사용자가 `pipeline.json`의 `llm`, `embedding`, `supabase` 블록만 고친다.
+  1. 지금은 OpenAI API 기준으로 만들고, 사내 반입 후 사용자가 `pipeline.json`의 `llm`, `embedding`, `vector_store` 블록만 고친다.
   2. 정답표 확인에 사용자가 1시간을 쓴다. `tools/gold_view.py`(미구현)가 만든 `.md`를 보고 틀린 칸만 알린다.
   3. blind 모드는 off로 고정하며 구현하지 않는다. (4차 단계 단순화로 대체됨: 표본 검수가 없어져 이 결정은 쓰지 않는다.)
   4. 준중복은 `dup_group`으로 표시만 하고 전부 처리한다. 이 결정으로 사내 v1/v2/final 준중복 표시 방식의 미결 항목을 닫는다.
@@ -661,7 +661,7 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
   12. G15 차트 텍스트는 첫 실행 전에 넣는다(P0, M1).
   13. 사내 게이트는 기본본 그대로(승인된 질문 `Q-COM-001` 하나)로 돌린다.
   14. 사내 LLM은 도메인 주소로 호출한다. `internal_hosts` 키는 두지 않고 IP 리터럴 거부를 유지한다.
-  15. 임베딩은 OpenAI embedding model로 설정하고 결과는 로컬 `work.sqlite`의 `chunk_embeddings`에 보관한다. 외부로 나가는 것은 G21 `push-vectors`의 Supabase 사본뿐이며, 같은 호스트 판정과 더미 해시 조건을 거친다.
+  15. 임베딩은 OpenAI embedding model로 설정하고 결과는 로컬 `work.sqlite`의 `chunk_embeddings`에 보관한다. 외부로 나가는 것은 G21 `push-vectors`의 로컬 저장소 사본뿐이며, 같은 호스트 판정과 더미 해시 조건을 거친다.
 - 확정된 결정(2026-10-04, 4차 단계 단순화, 다시 논의하지 않는다):
   1. 4차 단계는 검수 봇이 아니라 "4차 불량 목록 추출"이다(`PRD.md` FR-5). LLM을 부르지 않고 이미 저장된 값만으로 판정한다.
   2. 사유 코드는 `UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED`, `CONTROL_O`·`UNKNOWN_O`(2026-10-05 대조·unknown 검증 질문, M3) 8개다. 기준값은 `flag.unknown_ratio_min` 0.5, `flag.confidence_min` 0.7이다.
@@ -670,9 +670,9 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
   5. LLM 독립 재판정, 표본 추출, `review_snapshot`·`review_actions`, `review_gold/`, 사내 정확도 지표는 두지 않는다. 사내 정확도는 측정하지 않고, 프롬프트 변경 효과는 사외 더미 정답표 대조(`tools/evalgold.py`(미구현))로만 본다.
 - 확정된 결정(2026-10-04, 구현 착수 전 요구사항 정리, 사외 구동 기준). 이 블록이 위의 다른 문구와 충돌하면 이 블록을 따른다.
   1. 현재 구현은 사외 구동 기준이다. Python 버전은 3.14.2 기준으로 한다(1절·M0의 3.8 문법 기준을 대체한다). 사내 Python 버전은 M7에서 self-check로 확인한다.
-  2. 벡터 저장소: 사외는 로컬 `chunk_embeddings`(1차)와 사외 Supabase 실제 적재(2차)이며, 오늘 PoC는 실제 Supabase 적재까지 완료 기준에 넣는다(위 "실제 Supabase 적재는 선택"을 대체한다). 사내는 로컬 1차 보관, 2차 사내 DB 저장이며 사내 DB 적재는 이후 범위다. 사내 반입본의 `supabase.enabled` 기본값은 false다.
-  3. 키는 코드 폴더 루트 `.env`(`OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`)나 셸 환경변수로 넣는다. 셸 값이 우선한다. `.env`는 `.gitignore`로 커밋하지 않고 템플릿 `.env.example`만 커밋한다. `supabase.url`이 비어 있으면 `SUPABASE_URL`을 쓴다.
-  4. 의존성: `requirements.txt`는 labelbot 본체용이며 비어 있다(표준 라이브러리만). 사외 PoC SDK(`openai`, `supabase`, `python-dotenv`)는 `requirements-poc.txt`에 두고 labelbot 본체는 import하지 않는다.
+  2. 벡터 저장소: 사외는 로컬 `chunk_embeddings`(1차)와 로컬 저장소 실제 적재(2차)이며, 오늘 PoC는 실제 로컬 저장소 적재까지 완료 기준에 넣는다(위 "실제 로컬 저장소 적재는 선택"을 대체한다). 사내는 로컬 1차 보관, 2차 사내 DB 저장이며 사내 DB 적재는 이후 범위다. 사내 반입본의 `vector_store.enabled` 기본값은 false다.
+  3. 키는 코드 폴더 루트 `.env`(`OPENAI_API_KEY`)나 셸 환경변수로 넣는다. 셸 값이 우선한다. `.env`는 `.gitignore`로 커밋하지 않고 템플릿 `.env.example`만 커밋한다. `vector_store.path`가 비어 있으면 `BEOL_RAG_STORE`를 쓴다.
+  4. 의존성: `requirements.txt`는 labelbot 본체용이며 비어 있다(표준 라이브러리만). 사외 PoC SDK(`openai`, `python-dotenv`)는 `requirements-poc.txt`에 두고 labelbot 본체는 import하지 않는다.
   5. 개발 전용 파일 확장자 예외: `.env`, `.env.example`, `requirements*.txt`, `.gitignore`는 사내 데이터를 담지 않는 저장소 파일이므로 허용한다(위 "개발 산출물 확장자 예외는 없다"를 이 파일들에 한해 대체한다). 작업 폴더 금지 확장자 검사(G17)는 그대로다.
   6. 기본 taxonomy의 기준은 커밋된 `taxonomy/taxonomy.xlsx`다. 부록과 다르면 xlsx가 맞고, `tests/fixtures/default_taxonomy_rows.jsonl`은 xlsx에서 만든다.
   7. 더미 파일은 저장소의 `dummy pptx files/`에 모두 있다(부록 해시 11개 확인).
@@ -835,10 +835,10 @@ H5 알림 조건(1회 실행, 내용 유형 chunk 기준, 둘 중 하나라도 �
 
 ## 변경 이력
 
-- 2026-10-04 라벨링 품질 보강(v2) 반영: `.omc/plans/labeling-quality-review-v2.md`의 4절(마일스톤별 반영 제안), 6절(확정 결정), 8절(리스크)과 G21 Supabase 벡터 적재 명세를 반영했다. 반영한 gap ID는 G1, G2, G3, G4(chunk `dup_group`, 파일 `near_dup_group`), G5, G6, G7, G8, G9(G1 안의 N/A 편중 표시), G11, G12, G13, G14, G15, G16, G17, G18, G19, G20, G21이다. 바뀐 곳은 1절(외부 전송 제약), 2절(디렉터리 구조: `metrics.py`, `gate.py`, `embed.py`, `vectorpush.py`, `docs/supabase_schema.md`, `prompts/*.md`, 작업 폴더의 `pipeline.json` 세 블록·`review_gold/`·`gate_<timestamp>.json`), 3절 M0(G18, G19), M1(G16, G4, G15), M2(3상태 기준 수정, G6, G8, G16), M3(G5, G11), M4(재실행 기준 수정, G6, G7, G14), M5(시드·실행 ID 거부·리포트 기준 수정, G3, G2, G13, G16, G1, G8 재판정 형식), M6(재실행 기준 수정, G16, G17, G12, 리포트 요약), 신설 M6b(G20, G21), M7(게이트 G-1~G-10을 끼워 10단계로 다시 매김, 사내 설정 세 블록, 벡터 DB 사용 가능 여부 확인, 완료 기준 추가), 4절 HITL 표(H6 보강, 게이트·벡터 적재 행), 5절 리스크, 6절 검증 단계, 7절(v2 7절 미결 항목과 G21 결정 항목을 기본안과 함께 추가, 준중복 미결 항목 닫음, v2 6절 확정 결정 15개 추가)이다. taxonomy 재설계로 정해진 내용(분류 축 8 + 상태 축 2, `taxonomy.xlsx` 읽기 전용, 화면 2개, 더미 정답표 10개 파일 39 chunk, `tools/evalgold.py`(미구현))은 바꾸지 않았다.
+- 2026-10-04 라벨링 품질 보강(v2) 반영: `.omc/plans/labeling-quality-review-v2.md`의 4절(마일스톤별 반영 제안), 6절(확정 결정), 8절(리스크)과 G21 로컬 저장소 벡터 적재 명세를 반영했다. 반영한 gap ID는 G1, G2, G3, G4(chunk `dup_group`, 파일 `near_dup_group`), G5, G6, G7, G8, G9(G1 안의 N/A 편중 표시), G11, G12, G13, G14, G15, G16, G17, G18, G19, G20, G21이다. 바뀐 곳은 1절(외부 전송 제약), 2절(디렉터리 구조: `metrics.py`, `gate.py`, `embed.py`, `vectorpush.py`, `prompts/*.md`, 작업 폴더의 `pipeline.json` 세 블록·`review_gold/`·`gate_<timestamp>.json`), 3절 M0(G18, G19), M1(G16, G4, G15), M2(3상태 기준 수정, G6, G8, G16), M3(G5, G11), M4(재실행 기준 수정, G6, G7, G14), M5(시드·실행 ID 거부·리포트 기준 수정, G3, G2, G13, G16, G1, G8 재판정 형식), M6(재실행 기준 수정, G16, G17, G12, 리포트 요약), 신설 M6b(G20, G21), M7(게이트 G-1~G-10을 끼워 10단계로 다시 매김, 사내 설정 세 블록, 벡터 DB 사용 가능 여부 확인, 완료 기준 추가), 4절 HITL 표(H6 보강, 게이트·벡터 적재 행), 5절 리스크, 6절 검증 단계, 7절(v2 7절 미결 항목과 G21 결정 항목을 기본안과 함께 추가, 준중복 미결 항목 닫음, v2 6절 확정 결정 15개 추가)이다. taxonomy 재설계로 정해진 내용(분류 축 8 + 상태 축 2, `taxonomy.xlsx` 읽기 전용, 화면 2개, 더미 정답표 10개 파일 39 chunk, `tools/evalgold.py`(미구현))은 바꾸지 않았다.
 - 2026-10-04 구현 착수 리뷰 반영: 2절에 "명령", "ID와 해시 정의", "작업 DB(work.sqlite) 표"를 추가했다(실행 ID 발급은 `run`·`ingest`, `schema_version`과 추가 전용 마이그레이션, `taxonomy_path`). M2에 `taxonomy.parse_bytes` 진입점과 `taxonomy/taxonomy.xlsx` 의존 테스트 분리를 적었다. M6b의 `run`·`embed` 관계와 `result_code` 성공 기준 멱등을 고쳤다. 역방향 의존 기준을 옮겼다: M0의 더미 해시 밖 chunk 차단 → M2(M0에는 공용 함수 단위 테스트), M0의 빈 작업 폴더 `run` → M6, M1의 위치 이동 시 분류·라벨링 호출 0회 → M4, M5의 리포트 지표·실패 건수·`report --run`·`evalgold.py`=`report.py` → M6. M1의 "리포트에 적힌다"는 `files` 표로 바꿨다.
 - 2026-10-04 4차 단계 단순화: 사용자 결정에 따라 4차를 검수 봇에서 "4차 불량 목록 추출"(`PRD.md` FR-5)로 바꿨다. LLM 호출 없이 사유 코드 6개(`UNKNOWN_HIGH`, `LOW_CONFIDENCE`, `QUOTE_NOT_FOUND`, `PARSE_WARNING`, `CLASSIFY_FAILED`, `LABEL_FAILED`)로 판정하고, 걸린 chunk를 상한 없이 `flagged_chunks`, `reports/flagged_<실행ID>.jsonl`·`.md`, 검수 화면에 낸다. 뺀 것은 LLM 독립 재판정(`prompts/rejudge.md`(미구현), G8 재판정 형식), 표본 추출 전부(G3), `review_snapshot`·`review_actions` 표와 검수 행동 기록(G13), blind 문장, `review_gold/`와 `report --compare-review-gold`, 회차 간 답 재사용(G2 일부), 사내 리포트의 정확도 지표(G1 사내 부분), M7의 합격선 결정과 review_gold 보관이다. 사외 더미 정답표 대조(`tools/evalgold.py`, `labelbot/metrics.py`(미구현))는 남기고 `metrics.py`는 M6에서 만든다. 바뀐 곳은 1절, 2절(디렉터리 구조, `pipeline.json`의 `flag` 블록, 명령 표, ID와 해시 정의, 작업 DB 표), 3절 머리말, M4(G7 문구), M5(전면 재작성), M6(리포트 분포 항목, G1 블록), M7(10단계, G-6·G-8 문구, 완료 기준), 4절 H6, 5절 리스크, 6절 검증 단계, 7절(임베딩 용도, 대체된 결정 표시, 새 확정 결정)이다. 백업은 `.omc/backups/plan.pre-flag-step.md`다.
-- 2026-10-04 검수 화면 taxonomy 재검토 요청: 근거는 `.omc/plans/autopilot-impl.md`(8절 Critic 반영 우선)와 `.omc/autopilot/spec.md`다. 검수 화면의 재검토 요청(교정 파일 `revisits`)을 작업 DB `revisit_requests`로 반영하고 `reports/taxonomy_revisit.md`·`.jsonl`로 낸다. 라벨·`label_hash`는 바뀌지 않아 Supabase 재적재가 없다. `apply`는 교정 파일별 `SAVEPOINT`를 둔다. 바뀐 곳은 2절(reports 목록, 명령 표, 작업 DB 표), M5 G16·G2 완료 기준, 로그·리포트 비노출 검사, 4절 H6, 후보 처리 흐름이다.
+- 2026-10-04 검수 화면 taxonomy 재검토 요청: 근거는 `.omc/plans/autopilot-impl.md`(8절 Critic 반영 우선)와 `.omc/autopilot/spec.md`다. 검수 화면의 재검토 요청(교정 파일 `revisits`)을 작업 DB `revisit_requests`로 반영하고 `reports/taxonomy_revisit.md`·`.jsonl`로 낸다. 라벨·`label_hash`는 바뀌지 않아 로컬 저장소 재적재가 없다. `apply`는 교정 파일별 `SAVEPOINT`를 둔다. 바뀐 곳은 2절(reports 목록, 명령 표, 작업 DB 표), M5 G16·G2 완료 기준, 로그·리포트 비노출 검사, 4절 H6, 후보 처리 흐름이다.
 - 2026-10-04 2차 검증 질문 생성: 사용자 결정에 따라 2차에 "1차 라벨 검증 질문 생성(LLM)"을 더했다. 승인 질문 매핑은 그대로 두고, 남은 상한만큼 1차 라벨(해당 없음·unknown 제외)마다 O/X 판정 질문을 `prompts/question_gen.md`로 만든다. 질문은 `gen_questions` 표에 남고, 3차 라벨러는 뒷받침=O·반박=X·근거 없음=N/A로 답한다. chunk당 LLM 호출이 2회에서 3회로 늘었다. 바뀐 곳은 2절 디렉터리 구조(`questions.py` 설명), M3(제목, 만드는 파일, 생성 규칙, 완료 기준)다.
 - 2026-10-04 사외 검증 폴더 허용: 사용자 승인에 따라 `parshing test files/`의 현재 파일 해시를 사외 전송 허용 목록(`dummy_hashes.jsonl`)에 더했다(`llm.DUMMY_DIRS`). 이 폴더 파일이 `EXTERNAL_NON_DUMMY`로 막히던 문제를 해결한다. 폴더 단위 허용이므로 이 폴더에 사내 파일을 넣지 않는 것을 운영 규칙으로 둔다. 바뀐 곳은 2절 디렉터리 구조와 M0 G19 사외 전송 조건이다.
 - 2026-10-04 검수 화면 슬라이드 근사 미리보기(B안): 사용자 결정에 따라 렌더링 없이 파서 좌표로 슬라이드 배치를 재구성해 검수 화면에 보여 준다. `pptx_parser.slide_layouts`, `review.py`의 보관본 메모리 재파싱(`layout`·`image_map`), `screens/review.html` 미리보기 카드를 더했다. 바뀐 곳은 M5(P2 항목과 완료 기준 2개)다.

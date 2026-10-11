@@ -29,11 +29,11 @@ def _rule_texts(ws):
 
 
 def _push(ws, con, run_id, pop, labels, blocked):
-    """적재 상태: off(Supabase 꺼짐·URL 없음) | pushed(적재 대상 모두 올라감) | blocked(변경 비율 상한) | pending(미적재)."""
+    """적재 상태: off(로컬 저장 꺼짐) | pushed(적재 대상 모두 올라감) | blocked(변경 비율 상한) | pending(미적재)."""
     from labelbot import vectorpush
 
     pushed = dashboard._pushed(con, pop, labels, ws.config["embedding"]["model"])
-    if not (ws.config.get("supabase") or {}).get("enabled") or not ws.supabase_url():
+    if not (ws.config.get("vector_store") or {}).get("enabled"):
         state = "off"
     elif not vectorpush.unpushed(ws, con, run_id):
         state = "pushed"

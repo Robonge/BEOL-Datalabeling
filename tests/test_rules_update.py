@@ -18,7 +18,8 @@ from labelbot import (axisupdate, embed, feedback, finals, pipeline, rulesdiff, 
 from labelbot.mock import MockChatTransport, MockEmbedTransport
 from labelbot.taxonomy import Question
 from labelbot.workspace import Workspace
-from tests.test_axis_update import SUPABASE, Sink, apply_doc, labels, signal, write_tax
+from tests.test_axis_update import VECTOR_STORE, Sink, apply_doc, labels, signal, write_tax
+from tests.test_axis_update import setUpModule as _store_up, tearDownModule as _store_down
 from tests.test_new_axis_flow import run_cli
 from tests.test_pipeline import DUMMY_DIR, _bucket, responder
 from tests.test_taxonomy import base_sheets, build, tax_row
@@ -82,7 +83,7 @@ def write_rules(ws, rules, examples=()):
 def _config(d):
     return {"taxonomy_path": os.path.join(d, "taxonomy.json"), "input_root": DUMMY_DIR,
             "llm": {"transport": "mock", "model": "mock", "max_retries": 1},
-            "embedding": {"transport": "mock"}, "supabase": {"enabled": False},
+            "embedding": {"transport": "mock"}, "vector_store": {"enabled": False},
             "feedback": {"rules_path": os.path.join(d, "rules.json"), "examples_root": os.path.join(d, "root")}}
 
 
@@ -96,6 +97,7 @@ def clone():
 
 
 def setUpModule():
+    _store_up()  # 로컬 저장소는 임시 폴더(BEOL_RAG_STORE 고정)
     d = tempfile.mkdtemp(prefix="labelbot_ws_")
     with open(os.path.join(d, "taxonomy.json"), "wb") as f:
         f.write(build(base_sheets()))
@@ -130,6 +132,7 @@ def setUpModule():
 
 def tearDownModule():
     shutil.rmtree(BASE["dir"], ignore_errors=True)
+    _store_down()
 
 
 class _Case(unittest.TestCase):
@@ -271,7 +274,7 @@ class RulesUpdateTest(_Case):
         self.assertTrue(self.info["blocked"])
         self.assertGreater(self.info["change_ratio"], 0.3)
         embed.embed(self.ws, self.con, self.run_b, transport=MockEmbedTransport())
-        self.ws.config["supabase"].update(SUPABASE)
+        self.ws.config["vector_store"].update(VECTOR_STORE)
         try:
             sink = Sink()
             self.assertEqual(vectorpush.push(self.ws, self.con, self.run_b, sink=sink)["reason"],
@@ -286,11 +289,11 @@ class RulesUpdateTest(_Case):
                           out.getvalue())
             self.assertTrue(rulesupdate.run_info(self.con, self.run_b)["forced_at"])
         finally:
-            self.ws.config["supabase"].update({"enabled": False, "url": ""})
+            self.ws.config["vector_store"].update({"enabled": False})
         cfg_path = os.path.join(self.dir, "pipeline.json")
         with open(cfg_path, encoding="utf-8") as f:
             cfg = json.load(f)
-        cfg["supabase"] = dict(SUPABASE)
+        cfg["vector_store"] = dict(VECTOR_STORE)
         with open(cfg_path, "w", encoding="utf-8") as f:
             json.dump(cfg, f)
         try:
@@ -660,11 +663,11 @@ class PartialFailThenRulesUpdateTest(_Case):
     def push(self):
         embed.embed(self.ws, self.con, self.run_r, transport=MockEmbedTransport())
         sink = Sink()
-        self.ws.config["supabase"].update(SUPABASE)
+        self.ws.config["vector_store"].update(VECTOR_STORE)
         try:
             vectorpush.push(self.ws, self.con, self.run_r, sink=sink, force=True)
         finally:
-            self.ws.config["supabase"].update({"enabled": False, "url": ""})
+            self.ws.config["vector_store"].update({"enabled": False})
         return {r["chunk_id"] for r in sink.rows}
 
     def test_unfilled_chunk_not_pushed_until_human_fills(self):

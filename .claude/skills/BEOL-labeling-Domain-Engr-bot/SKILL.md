@@ -333,7 +333,7 @@ taxonomy를 직접 보고 고치려면(축·값 트리, 칸 수정, 행 추가·
 - 봇이 답·초안을 대신 확정하는 일, 규칙·사례의 승인·기각을 봇이 정하는 일(사람이 화면에서 확정한 것만 반영한다)
 - taxonomy.json을 사람 확정 없이 고치는 일, L4 도메인 규칙 승인(`draft` → `approved`), labelbot 코드·프롬프트 수정
 - 라벨링 실행: BEOL-labeling
-- 사람 검수 반영과 Supabase 적재: BEOL-labeling-feedback
+- 사람 검수 반영과 로컬 저장소 적재: BEOL-labeling-feedback
 - 저장소 코드와 workflow 검수: BEOL-labeling-Code-Engr-bot
 - `scripts/collect_qa_decisions.py` 실행: 예전 QA 흐름에서 남은 스크립트로, skill 스크립트 계약 스냅샷(`tests/contracts/snapshots/skill_scripts_help.json`)이 그 `--help`를 동결해 지우지 않고 두지만 이 스킬은 더 이상 부르지 않는다.
 

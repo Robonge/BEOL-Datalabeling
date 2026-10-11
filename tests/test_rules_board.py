@@ -57,18 +57,18 @@ class RulesBoardTest(tru._Case):
         r = d["ratio"]
         self.assertEqual((r["changed"], r["relabeled"], r["blocked"]), (info["changed"], info["relabeled"], True))
         self.assertEqual((r["ratio"], r["limit"]), (info["change_ratio"], 0.3))
-        self.assertEqual(d["push"]["state"], "off")  # 합성 설정은 Supabase 꺼짐
+        self.assertEqual(d["push"]["state"], "off")  # 합성 설정은 로컬 저장 꺼짐
         self.assertIsNone(d["push"]["code"])
         self.assertEqual(set(d["push"]), {"state", "pushed_ok", "total", "code"})
         self.assertEqual((d["stage_wide"], d["examples_changed"]), (1, info["examples_changed"]))
         self.assertEqual(set(d["change_labels"]), {"added", "edited", "disabled", "removed"})
 
-    def test_push_blocked_when_supabase_on(self):
-        self.ws.config["supabase"].update(tru.SUPABASE)
+    def test_push_blocked_when_vector_store_on(self):
+        self.ws.config["vector_store"].update(tru.VECTOR_STORE)
         try:
             d = page_data(rulesboard.build_board(self.ws, self.con, self.run_b, self.tax)[0])
         finally:
-            self.ws.config["supabase"].update({"enabled": False, "url": ""})
+            self.ws.config["vector_store"].update({"enabled": False})
             rulesboard.build_board(self.ws, self.con, self.run_b, self.tax)
         self.assertEqual((d["push"]["state"], d["push"]["code"]), ("blocked", rulesupdate.RULES_CHANGE_RATIO_HIGH))
 

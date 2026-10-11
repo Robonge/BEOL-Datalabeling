@@ -11,7 +11,7 @@ from unittest import mock
 import urllib.parse
 import urllib.request
 
-from labelbot import cdp, export, llm, pipeline, review, slideimg, slidepush, store, util
+from labelbot import cdp, export, llm, localstore, pipeline, review, slideimg, slidepush, store, util
 from labelbot.workspace import CODE_ROOT, Workspace
 
 from tests._dummy import DUMMY_DIR  # noqa: E402  저장소 밖 더미 폴더(tests/_dummy.py)
@@ -138,13 +138,16 @@ class _SlideWs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dir = tempfile.mkdtemp(prefix="labelbot_ws_")
+        # 로컬 저장소는 임시 폴더에만 쓴다(실제 workspaces/_rag_store 금지).
+        cls.store_dir = tempfile.mkdtemp(prefix="labelbot_ragstore_")
+        cls.store_env = mock.patch.dict(os.environ, {"BEOL_RAG_STORE": cls.store_dir})
+        cls.store_env.start()
         # 입력은 커밋된 더미 해시 스냅샷의 파일로 고정한다(폴더에 새 파일이 들어와도 결과가 흔들리지 않게).
         with open(llm.DUMMY_HASHES_PATH, encoding="utf-8") as f:
             include = [json.loads(line)["file_id"] for line in f if line.strip()]
         cfg = {"taxonomy_path": TAXONOMY, "input_root": DUMMY_DIR, "include_file_ids": include,
                "llm": {"transport": "mock", "model": "mock"}, "embedding": {"transport": "mock"},
-               "supabase": {"enabled": False, "storage_enabled": True, "url": "https://example.supabase.co",
-                            "table": "beol_chunk_embeddings"}}
+               "vector_store": {"enabled": False, "slides_enabled": True, "path": cls.store_dir}}
         with open(os.path.join(cls.dir, "pipeline.json"), "w", encoding="utf-8") as f:
             json.dump(cfg, f)
         cls.ws = Workspace(cls.dir)
@@ -159,7 +162,9 @@ class _SlideWs(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.con.close()
+        cls.store_env.stop()
         shutil.rmtree(cls.dir, ignore_errors=True)
+        shutil.rmtree(cls.store_dir, ignore_errors=True)
 
 
 class SlideImageTests(_SlideWs):
@@ -250,11 +255,11 @@ class SlideImageTests(_SlideWs):
         self.assertTrue(vals)
         for v in vals:
             self.assertTrue(os.path.isfile(os.path.join(self.ws.path("out"), v["rel_file"])))
-            self.assertNotIn("object_path", v)  # 올리기 전에는 Storage 위치를 적지 않는다
+            self.assertNotIn("object_path", v)  # 저장하기 전에는 로컬 저장소 위치를 적지 않는다
         slidepush.push(self.ws, self.con, self.run_id, sink=FakeSink())
         vals = self._export_vals()
         for v in vals:
-            self.assertEqual(v["bucket"], "BEOL-labeling")
+            self.assertEqual(v["bucket"], slidepush.LOCAL_BUCKET)
             self.assertRegex(v["object_path"], r"^[0-9a-f]{16}/\d{4}\.jpg$")
 
     def _drop(self, n):
@@ -316,31 +321,44 @@ class FakeSink:
 
 
 class SlidePushTests(_SlideWs):
-    """같은 작업 폴더로 Storage 적재를 본다(SlideImageTests의 setUpClass를 재사용)."""
+    """같은 작업 폴더로 로컬 저장소 slides/ 적재를 본다(SlideImageTests의 setUpClass를 재사용)."""
 
     def test_push_idempotent_and_fields(self):
         slideimg.render(self.ws, self.con, self.run_id, browser_factory=lambda: FakeBrowser())
         self.con.execute("DELETE FROM slide_image_push_log")
-        n = self.con.execute("SELECT COUNT(*) FROM slide_images").fetchone()[0]
-        s1 = FakeSink(rows_per_patch=0)
-        r = slidepush.push(self.ws, self.con, self.run_id, sink=s1)
+        root = self.store_dir
+        lcon = localstore.connect(root)
+        lcon.execute("DELETE FROM beol_chunk_embeddings")
+        lcon.commit()
+        lcon.close()
+        imgs = self.con.execute("SELECT * FROM slide_images").fetchall()
+        n = len(imgs)
+        r = slidepush.push(self.ws, self.con, self.run_id)  # sink 없음: LocalSlideSink(임시 저장소)
         self.assertEqual(r["failed"], n)  # 벡터 행이 아직 없으면 ROW_MISSING
         codes = {c for (c,) in self.con.execute("SELECT DISTINCT result_code FROM slide_image_push_log")}
         self.assertEqual(codes, {"ROW_MISSING"})
-        s2 = FakeSink()
-        r = slidepush.push(self.ws, self.con, self.run_id, sink=s2)
+        lcon = localstore.connect(root)
+        localstore.upsert_rows(lcon, [{"chunk_id": i["chunk_id"], "model": "m", "file_id": i["file_id"], "seq": i["seq"],
+                                       "embedding": [0.0, 1.0], "labels": {"axes": {}}} for i in imgs])
+        lcon.close()
+        r = slidepush.push(self.ws, self.con, self.run_id)
         self.assertEqual((r["uploaded"], r["patched"]), (n, n))
-        for bucket, path, head in s2.uploads:
-            self.assertEqual(bucket, "BEOL-labeling")
-            self.assertRegex(path, r"^[0-9a-f]{16}/\d{4}\.jpg$")
-            self.assertEqual(head, b"\xff\xd8\xff")
-        cid, fields = s2.patches[0]
-        self.assertEqual(set(fields), {"slide_image_bucket", "slide_image_path", "slide_image_sha256",
-                                       "slide_image_width", "slide_image_height"})
-        s3 = FakeSink()
-        r = slidepush.push(self.ws, self.con, self.run_id, sink=s3)
+        lcon = localstore.connect(root)
+        try:
+            rows = {x["chunk_id"]: dict(x) for x in lcon.execute("SELECT * FROM beol_chunk_embeddings")}
+        finally:
+            lcon.close()
+        for i in imgs:
+            row = rows[i["chunk_id"]]
+            self.assertEqual(row["slide_image_bucket"], slidepush.LOCAL_BUCKET)
+            self.assertRegex(row["slide_image_path"], r"^[0-9a-f]{16}/\d{4}\.jpg$")
+            self.assertEqual((row["slide_image_sha256"], row["slide_image_width"], row["slide_image_height"]),
+                             (i["jpg_sha256"], i["width"], i["height"]))
+            data = util.read_b64(localstore.slide_path(root, i["jpg_sha256"]))
+            self.assertEqual((data[:3], util.sha256_bytes(data)), (b"\xff\xd8\xff", i["jpg_sha256"]))
+        self.assertFalse([f for f in os.listdir(os.path.join(root, "slides")) if ".part." in f])
+        r = slidepush.push(self.ws, self.con, self.run_id)
         self.assertEqual((r["uploaded"], r["skipped"]), (0, n))
-        self.assertFalse(s3.uploads)
 
     def test_non_dummy_is_sent(self):
         # PoC: 사외·사내 구분 없음(2026-10-05). 더미 해시 밖 파일도 올라간다.
@@ -357,12 +375,12 @@ class SlidePushTests(_SlideWs):
             self.con.execute("UPDATE slide_images SET file_id=? WHERE chunk_id=?", (row["file_id"], row["chunk_id"]))
 
     def test_disabled_does_nothing(self):
-        self.ws.config["supabase"]["storage_enabled"] = False
+        self.ws.config["vector_store"]["slides_enabled"] = False
         try:
             r = slidepush.push(self.ws, self.con, self.run_id, sink=FakeSink())
             self.assertEqual(r["uploaded"], 0)
         finally:
-            self.ws.config["supabase"]["storage_enabled"] = True
+            self.ws.config["vector_store"]["slides_enabled"] = True
 
 
 class TemplateTests(unittest.TestCase):

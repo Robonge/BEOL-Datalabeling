@@ -1,6 +1,6 @@
 ---
 name: BEOL-labeling-run-labeling
-description: BEOL 라벨링 파이프라인(입력 폴더 → BEOL-labeling 파싱·분류·라벨링·검수 대기 → 사람 검수 완료 → BEOL-labeling-feedback 반영·장부·임베딩·Supabase 적재)을 한 번에 이어서 돌리는 트리거 스킬. 사람 손이 필요한 곳(검수 완료)에서만 멈추고, 적재가 끝나면 품질 점검 단계(도메인 질문 /BEOL-labeling-Domain-Engr-bot, taxonomy 보드, 축·규칙 점검 /BEOL-labeling-Code-Engr-bot)를 한 줄로 안내하고 끝낸다. 품질 점검 스킬은 자동으로 부르지 않는다. 사용자가 "라벨링 끝까지 돌려줘", "라벨링부터 적재까지", "flow대로 라벨링 실행", "run-labeling", "run-all"(옛 이름), "전체 라벨링 실행"이라고 하거나 /BEOL-labeling-run-labeling을 부르면 이 스킬을 쓴다. 한 단계만이면 BEOL-labeling 또는 BEOL-labeling-feedback을 쓴다.
+description: BEOL 라벨링 파이프라인(입력 폴더 → BEOL-labeling 파싱·분류·라벨링·검수 대기 → 사람 검수 완료 → BEOL-labeling-feedback 반영·장부·임베딩·로컬 저장소 적재)을 한 번에 이어서 돌리는 트리거 스킬. 사람 손이 필요한 곳(검수 완료)에서만 멈추고, 적재가 끝나면 품질 점검 단계(도메인 질문 /BEOL-labeling-Domain-Engr-bot, taxonomy 보드, 축·규칙 점검 /BEOL-labeling-Code-Engr-bot)를 한 줄로 안내하고 끝낸다. 품질 점검 스킬은 자동으로 부르지 않는다. 사용자가 "라벨링 끝까지 돌려줘", "라벨링부터 적재까지", "flow대로 라벨링 실행", "run-labeling", "run-all"(옛 이름), "전체 라벨링 실행"이라고 하거나 /BEOL-labeling-run-labeling을 부르면 이 스킬을 쓴다. 한 단계만이면 BEOL-labeling 또는 BEOL-labeling-feedback을 쓴다.
 ---
 
 # BEOL-labeling-run-labeling: 입력 → 라벨링 → 검수 → 반영 · 적재
@@ -9,11 +9,11 @@ description: BEOL 라벨링 파이프라인(입력 폴더 → BEOL-labeling 파�
 
 라벨링 파이프라인의 단계 스킬을 **순서대로 부르는 지휘자**다(2026-10-07 `BEOL-labeling-run-all`에서 이름과 범위를 바꿈). 새 로직은 없고, 각 단계의 절차·규칙·"지켜야 할 것"은 해당 스킬 `SKILL.md`를 그대로 따른다(충돌하면 루트 `CLAUDE.md` → 단계 스킬 → 이 파일 순).
 
-범위는 **Supabase 적재까지**다. 도메인 질문(Domain-Engr-bot) · taxonomy 수정 보드 · 축/규칙 변경 재라벨링(Code-Engr-bot → axis-update · rules-update)은 **품질 점검 · 재라벨링** 루프로 옮겼고, 이 스킬은 부르지 않는다. 그 루프는 사람이 필요할 때 따로 시작한다.
+범위는 **로컬 저장소 적재까지**다. 도메인 질문(Domain-Engr-bot) · taxonomy 수정 보드 · 축/규칙 변경 재라벨링(Code-Engr-bot → axis-update · rules-update)은 **품질 점검 · 재라벨링** 루프로 옮겼고, 이 스킬은 부르지 않는다. 그 루프는 사람이 필요할 때 따로 시작한다.
 
 ```
 [1] BEOL-labeling           입력 폴더 → 파싱 → 1~3차 라벨링 → 대시보드          ⏸ 사람: 검수 완료
-[2] BEOL-labeling-feedback  교정 반영 → Domain-Engr-bot 장부 → 임베딩 → Supabase 적재   (자동)
+[2] BEOL-labeling-feedback  교정 반영 → Domain-Engr-bot 장부 → 임베딩 → 로컬 저장소 적재   (자동)
 → 끝. 품질 점검 단계 안내 한 줄
 ```
 

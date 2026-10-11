@@ -204,7 +204,7 @@ def slide_image_meta(con, chunk_id, bucket=None):
     meta = {"kind": "approx_preview", "rel_file": r["rel_file"], "sha256": r["jpg_sha256"],
             "width": r["width"], "height": r["height"]}
     if bucket:
-        # Storage에 실제로 올라간(push-slides OK) 경우에만 객체 위치를 적는다.
+        # 로컬 저장소에 실제로 저장된(push-slides OK) 경우에만 객체 위치를 적는다.
         path = object_path(r["file_id"], r["seq"])
         if con.execute("SELECT 1 FROM slide_image_push_log WHERE chunk_id=? AND jpg_sha256=? AND bucket=? AND object_path=?"
                        " AND result_code='OK'", (chunk_id, r["jpg_sha256"], bucket, path)).fetchone():
@@ -213,5 +213,5 @@ def slide_image_meta(con, chunk_id, bucket=None):
 
 
 def object_path(file_id, seq):
-    """Storage 객체 경로. 파일명·chunk_id 원문(슬래시·콜론)을 쓰지 않는다."""
+    """로컬 저장소 객체 경로. 파일명·chunk_id 원문(슬래시·콜론)을 쓰지 않는다."""
     return "%s/%04d.jpg" % (file_id[:16], int(seq or 0))

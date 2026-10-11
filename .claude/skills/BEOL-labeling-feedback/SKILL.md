@@ -1,13 +1,13 @@
 ---
 name: BEOL-labeling-feedback
-description: 사람이 검수 화면에서 "검수 완료"를 누른 뒤(또는 채팅으로 "검수 끝났어"라고 한 뒤) 교정을 labelbot에 반영하고 화면·리포트를 다시 만들고 임베딩 후 Supabase에 적재한다. BEOL-labeling 대화가 완료 신호를 받으면 이 스킬을 인자(작업 폴더, 실행 ID, 건수)로 부른다. 채팅으로 불러도 된다. 사용자가 "검수 끝났어", "체크 다 했어", "검수 반영해줘", "피드백 반영", "inbox에 넣었어", "교정 없음, 적재해줘", "대조 결과 반영", "Supabase 올려줘"라고 하거나 /BEOL-labeling-feedback을 부르면 이 스킬을 쓴다. 파싱·라벨링을 새로 돌리는 일은 BEOL-labeling이 맡는다.
+description: 사람이 검수 화면에서 "검수 완료"를 누른 뒤(또는 채팅으로 "검수 끝났어"라고 한 뒤) 교정을 labelbot에 반영하고 화면·리포트를 다시 만들고 임베딩 후 로컬 저장소에 적재한다. BEOL-labeling 대화가 완료 신호를 받으면 이 스킬을 인자(작업 폴더, 실행 ID, 건수)로 부른다. 채팅으로 불러도 된다. 사용자가 "검수 끝났어", "체크 다 했어", "검수 반영해줘", "피드백 반영", "inbox에 넣었어", "교정 없음, 적재해줘", "대조 결과 반영", "로컬 저장소에 올려줘"라고 하거나 /BEOL-labeling-feedback을 부르면 이 스킬을 쓴다. 파싱·라벨링을 새로 돌리는 일은 BEOL-labeling이 맡는다.
 ---
 
 # BEOL-labeling-feedback: 검수 반영 → 적재
 
 > 그룹: ① 라벨링 파이프라인 · 상위: /BEOL-labeling-run-labeling · 하위: 없음 · 전체 지도: README.md "스킬 지도"
 
-사람이 검수 화면에서 **검수 완료**를 누른 뒤 쓴다. `/BEOL-labeling`이 완료 신호를 받으면 이 스킬을 부르고, 사용자가 채팅으로 "검수 끝났어"라고 해도 된다. 교정과 대조 기록을 반영하고 확정된 라벨로 Supabase에 올린다. LLM 분류·라벨링은 다시 부르지 않는다(임베딩만 호출).
+사람이 검수 화면에서 **검수 완료**를 누른 뒤 쓴다. `/BEOL-labeling`이 완료 신호를 받으면 이 스킬을 부르고, 사용자가 채팅으로 "검수 끝났어"라고 해도 된다. 교정과 대조 기록을 반영하고 확정된 라벨로 로컬 저장소에 올린다. LLM 분류·라벨링은 다시 부르지 않는다(임베딩만 호출).
 
 ```
 [BEOL-labeling 대화가 완료 신호를 받아 호출 또는 채팅] → 교정 모으기 → 반영 → Domain-Engr-bot 장부·라벨링 규칙 후보 → 화면·리포트 → 임베딩 → 적재 → 보고
@@ -37,7 +37,7 @@ description: 사람이 검수 화면에서 "검수 완료"를 누른 뒤(또는 
 - 교정 JSON은 `python -m labelbot apply`가 `read_input`으로 읽는다. Read 도구, `cat`, `cp`로 열거나 복사하지 않는다. 사람 입력은 한 곳에서만 연다는 `CLAUDE.md` 규칙 때문이다. 완료 신호 파일은 건수만 담은 서버 산출물이므로 `wait_review_done.py`가 읽어도 된다.
 - Downloads → inbox 이동은 `collect_inbox.py`로만 한다. 이 스크립트는 같은 드라이브 안에서 이름만 바꾸고(`os.replace`) 내용은 열지 않는다. `CROSS_DEVICE`가 나오면 복사로 우회하지 말고 사용자에게 옮겨 달라고 안내한다.
 - 검수 화면의 체크는 그 브라우저의 `localStorage`에 있고, 밖으로 나가는 길은 화면 서버의 inbox 자동 저장, **검수 완료** 버튼, **JSON 저장** 버튼(예전 화면은 **JSON 내려받기**)뿐이다. 1-2에서 브라우저 패널의 상태를 볼 때는 건수만 센다. 버튼을 대신 누르는 것은 파일 내려받기이므로 매번 사용자 확인을 받는다.
-- 봇은 `taxonomy.json`을 고치지 않는다. 검수 중 등록한 동의어는 `reports/candidates.md`의 "검수 등록" 행으로만 나오며, taxonomy 보드(`/BEOL-taxonomy-dashboard`)나 편집기에서 사람이 반영하고 다음 실행에 반영된다. 검수 중 남긴 taxonomy 재검토 요청은 `reports/taxonomy_revisit.md`(누적)와, `apply`가 반영한 검수 실행마다 쓰는 `taxonomy/taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`(그 실행분만, taxonomy.json이 있는 폴더 기준, git 추적 대상)으로만 나오며 처리됨 판정은 없다. 라벨과 `label_hash`를 바꾸지 않으므로 Supabase 재적재도 없다.
+- 봇은 `taxonomy.json`을 고치지 않는다. 검수 중 등록한 동의어는 `reports/candidates.md`의 "검수 등록" 행으로만 나오며, taxonomy 보드(`/BEOL-taxonomy-dashboard`)나 편집기에서 사람이 반영하고 다음 실행에 반영된다. 검수 중 남긴 taxonomy 재검토 요청은 `reports/taxonomy_revisit.md`(누적)와, `apply`가 반영한 검수 실행마다 쓰는 `taxonomy/taxonomy_revisit_requests/taxonomy_revisit_<연월일_시분초>.md`·`.html`·`.json`(그 실행분만, taxonomy.json이 있는 폴더 기준, git 추적 대상)으로만 나오며 처리됨 판정은 없다. 라벨과 `label_hash`를 바꾸지 않으므로 로컬 저장소 재적재도 없다.
 - 재검토 메모에는 사내 본문이 들어 있을 수 있다. `reports/taxonomy_revisit.md`·`.jsonl`과 `taxonomy/taxonomy_revisit_requests/`의 파일을 Read·Grep·`cat`으로 열어 보고하지 않는다(파일 수와 위치는 `apply` 출력 줄로만 안다). `revisit_requests`는 `COUNT`와 `reason`별 `GROUP BY`만 조회한다(`SELECT *`, `.dump`, 다른 열 조회 금지). inbox JSON과 `inputs/<sha256>.b64`는 `apply` 밖에서 열거나 디코딩하지 않는다. 검수 탭과 JSON 저장 대체 텍스트 창에는 `get_page_text`·`read_page`·`find`·스크린샷을 쓰지 않는다(1-2의 건수 스니펫과 저장 버튼을 찾는 `find`만 허용하며 `javascript_tool`은 `revisits.length`만 읽는다). 위치와 건수(요약의 `revisits`)만 보고한다.
 - 보고에는 건수, 실행 ID, 사유 코드만 쓴다.
 - Domain-Engr-bot 교정 장부(2-1, `workspaces/_domain_engrbot/ledger/`)의 `golden.jsonl`·`judge_examples.jsonl`에는 본문 인용이 있다. 열거나 조회하지 않고 `domain_engrbot intake` 출력의 건수만 쓴다.
@@ -52,7 +52,7 @@ description: 사람이 검수 화면에서 "검수 완료"를 누른 뒤(또는 
 | 1 | 교정 반영 | `[apply] …` 줄 | 30% |
 | 2 | 화면·리포트 재생성 | `report` 명령 끝 | 45% |
 | 3 | 임베딩·슬라이드 JPG | `embed` 명령 끝과 `[slide-images] …` 줄 | 80% |
-| 4 | Supabase 적재 | `[push-vectors] …`·`[push-slides] …` 줄 | 100% |
+| 4 | 로컬 저장소 적재 | `[push-vectors] …`·`[push-slides] …` 줄 | 100% |
 
 절차의 "0. 대상 정하기", "1. 교정 파일 모으기", "5. 보고"는 실행하되 진행 현황에는 milestone으로 넣지 않는다(사용자 결정, 2026-10-05). 교정 파일 모으기는 milestone 1 "교정 반영"에 딸린 과정으로 보고, 끝나도 블록을 따로 갱신하지 않는다. 그 과정에서 멈추면(1-2의 사용자 조치 대기, `CROSS_DEVICE` 등) milestone 1을 `❌`나 "사용자 조치 대기"로 표시한다. 보고는 milestone 4가 끝난 뒤 마지막 블록 아래에 쓴다.
 
@@ -67,14 +67,14 @@ description: 사람이 검수 화면에서 "검수 완료"를 누른 뒤(또는 
 - ✅ 1. 교정 반영 — 교정 3건
 - ▶️ **2. 화면·리포트 재생성** — 진행 중
 - ⬜ 3. 임베딩·슬라이드 JPG
-- ⬜ 4. Supabase 적재
+- ⬜ 4. 로컬 저장소 적재
 ```
 - 목록에는 milestone 4개를 번호 순서대로 한 줄에 하나씩 항상 모두 쓴다. 단계를 `·`로 가로로 이어 붙이지 않는다. 제목 줄·막대 줄·지금 줄·목록 사이는 빈 줄로 띄운다.
-- `✅` 완료, `▶️` 진행 중, `⬜` 대기, `❌` 실패, `⏭️` 건너뜀(예: 교정 파일이 없어 반영 생략, `supabase.enabled=false`라 적재 생략). `▶️` 줄은 단계 번호·이름을 굵게 쓰고 `— 진행 중`을 붙인다. 건너뛴 단계도 누적%에는 넣고, 막대 줄의 `N/4 완료`는 `✅`와 `⏭️` 줄을 합한 수다.
+- `✅` 완료, `▶️` 진행 중, `⬜` 대기, `❌` 실패, `⏭️` 건너뜀(예: 교정 파일이 없어 반영 생략, `vector_store.enabled=false`라 적재 생략). `▶️` 줄은 단계 번호·이름을 굵게 쓰고 `— 진행 중`을 붙인다. 건너뛴 단계도 누적%에는 넣고, 막대 줄의 `N/4 완료`는 `✅`와 `⏭️` 줄을 합한 수다.
 - 지금 줄(인용 한 줄)에는 `▶️` 단계의 번호와 이름을 굵게 쓴다. 멈췄으면 `> ❌ **N단계 · <이름>에서 멈춤** — <사유 코드>`로, 4단계가 모두 끝났으면 `> ✅ **4단계 모두 완료**`로 쓴다.
 - 단계 줄 끝에는 `—` 뒤에 건수나 사유 코드를 붙일 수 있다(예: `— 교정 3건`, `⏭️` 줄의 `— 교정 파일 없음`, `— 임베딩 21 · JPG 실패 0`).
 - 1-2에서 사용자 확인이나 조치를 기다리면 1번을 `▶️`로 두고 "사용자 조치 대기"라고 적는다. 오류로 멈추면 그 milestone을 `❌`로 둔 블록을 보여 주고 도달한 %를 그대로 둔다.
-- milestone 4는 `[push-slides]`가 `storage_enabled=false: 호출하지 않습니다`를 내면 `✅`가 아니라 `❌ — STORAGE_DISABLED`로 표시한다(절차 4단계 참고).
+- milestone 4는 `[push-slides]`가 `vector_store.slides_enabled=false: 호출하지 않습니다`를 내면 `✅`가 아니라 `❌ — STORAGE_DISABLED`로 표시한다(절차 4단계 참고).
 - 블록에는 건수·실행 ID·사유 코드만 쓴다. 파일명·본문·재검토 메모는 넣지 않는다. 상태가 바뀔 때만 다시 보여 준다.
 
 ## 절차
@@ -167,7 +167,7 @@ python -m labelbot report --workspace "<WS>" --run <RUN>
 ```
 대시보드는 사람 교정이 반영된 확정 라벨로 다시 그려진다.
 
-### 4. 임베딩, 슬라이드 JPG, Supabase 적재
+### 4. 임베딩, 슬라이드 JPG, 로컬 저장소 적재
 
 ```bash
 python -m labelbot embed --workspace "<WS>" --run <RUN>
@@ -179,9 +179,9 @@ python -m labelbot push-slides --workspace "<WS>" --run <RUN>
 - `push-vectors`는 확정 라벨(사람 교정 우선)로 올린다. 이미 같은 라벨로 올라간 chunk는 다시 보내지 않으므로, 두 번째 실행부터는 라벨이 바뀐 chunk만 전송된다.
 - rules-update 실행에서 변경 비율 상한에 걸리면 `push-vectors`는 `[push-vectors] 차단 RULES_CHANGE_RATIO_HIGH …`을 내고 종료 코드 3(적재 보류)으로 끝난다. 실패가 아니며, 확인 뒤 `--force`로 보낸다(`/BEOL-labeling-rules-update` 참고).
 - 전송 실패는 사유 코드로 남고 반영 결과에는 영향이 없다. 실패하면 사유 코드를 보고한다.
-- `supabase.enabled=false`(요약의 `supabase_enabled: false`)면 `push-vectors`가 "호출하지 않습니다"만 출력하고 끝난다. 이 경우에도 `embed`는 돌린다. 로컬 `chunk_embeddings`가 원본이고 Supabase는 사본이므로, 로컬 벡터를 먼저 만들어 두면 나중에 적재를 켰을 때 바로 올릴 수 있다. 보고에는 "Supabase 적재 꺼짐(supabase.enabled=false)"이라고 쓴다.
+- `vector_store.enabled=false`(요약의 `vector_store_enabled: false`)면 `push-vectors`가 "호출하지 않습니다"만 출력하고 끝난다. 이 경우에도 `embed`는 돌린다. 작업 폴더의 `chunk_embeddings`가 원본이고 로컬 저장소(`workspaces/_rag_store`)는 사본이므로, 로컬 벡터를 먼저 만들어 두면 나중에 적재를 켰을 때 바로 올릴 수 있다. 보고에는 "로컬 저장소 적재 꺼짐(vector_store.enabled=false)"이라고 쓴다.
 - `slide-images`는 검수 화면과 같은 슬라이드 근사 미리보기를 headless Edge/Chrome으로 JPG 캡처해 `slide_images/<sha256>.b64`에 두고 `out/labeling.sqlite`의 `chunks.slide_image`를 채운다. LLM 호출 0회이고, 이미 만든 슬라이드는 건너뛴다(BEOL-labeling 4단계에서 검수 썸네일용으로 이미 그렸으면 교정으로 본문이 바뀐 chunk만 다시 그린다). 실패는 사유 코드(`NO_LAYOUT`, `RENDERER_MISSING`, `RENDERER_EXITED`, `RENDERER_PORT_TIMEOUT`, `RENDER_TIMEOUT`, `JPEG_SIGNATURE` 등)로만 보고한다. JPG는 `.b64`로만 둔다. 디코딩해서 `.jpg`로 저장하거나 Read로 열지 않는다.
-- `push-slides`는 `push-vectors` 다음에 돌린다. `supabase.storage_enabled=true`일 때만 Storage `BEOL-labeling` 버킷에 올리고 벡터 행의 `slide_image_*` 열을 채운다. `init_workspace.py`가 새 작업 폴더의 `pipeline.json`에 `storage_enabled: true`를 쓰므로 보통은 켜져 있다. 그래도 "storage_enabled=false: 호출하지 않습니다"가 나오면(예전에 만든 작업 폴더) 적재가 빠진 것이므로 `STORAGE_DISABLED`로 보고하고, `AskUserQuestion`으로 "이 작업 폴더의 `pipeline.json`에 `storage_enabled: true`를 넣고 `push-slides`를 다시 돌릴까요?"를 묻는다. 승인하면 그 키 하나만 바꾸고 `push-slides`만 다시 돌린다(멱등이라 벡터는 다시 보내지 않는다). 버킷이나 `slide_image_*` 열이 없으면 `selfcheck`의 `supabase_storage_bucket`·`supabase_slide_columns`가 FAIL을 내므로 `docs/supabase_schema.md`의 SQL을 실행해 달라고 안내한다. `ROW_MISSING`은 벡터 행이 없다는 뜻이고 다음 실행에서 다시 한다.
+- `push-slides`는 `push-vectors` 다음에 돌린다. `vector_store.slides_enabled=true`일 때만 로컬 저장소의 `slides/<sha>.b64`에 쓰고 벡터 행의 `slide_image_*` 열을 채운다. `init_workspace.py`가 새 작업 폴더의 `pipeline.json`에 `vector_store.slides_enabled: true`를 쓰므로 보통은 켜져 있다. 그래도 "vector_store.slides_enabled=false: 호출하지 않습니다"가 나오면(예전에 만든 작업 폴더) 적재가 빠진 것이므로 `STORAGE_DISABLED`로 보고하고, `AskUserQuestion`으로 "이 작업 폴더의 `pipeline.json`의 `vector_store.slides_enabled`를 `true`로 바꾸고 `push-slides`를 다시 돌릴까요?"를 묻는다. 승인하면 그 값 하나만 바꾸고 `push-slides`만 다시 돌린다(멱등이라 벡터는 다시 보내지 않는다). 로컬 저장소 폴더(`BEOL_RAG_STORE`, 기본 `workspaces/_rag_store`)에 쓸 수 없으면 `selfcheck`가 FAIL을 내므로 폴더 권한과 경로를 확인해 달라고 안내한다. `ROW_MISSING`은 벡터 행이 없다는 뜻이고 다음 실행에서 다시 한다.
 
 ### 5. 보고
 
@@ -189,14 +189,14 @@ python -m labelbot push-slides --workspace "<WS>" --run <RUN>
 python -m labelbot dashboard --workspace "<WS>" --run <RUN>
 python ".claude/skills/BEOL-labeling/scripts/summary.py" --workspace "<WS>" --run <RUN>
 ```
-대시보드를 적재 뒤에 한 번 더 만든다. 검수 반영 뒤 대시보드는 "검수 반영 결과" 화면(검수 전 불량 → 남은 불량, 사유별 전·후, 처리 결과, 많이 바로잡은 축·질문, 임베딩·Supabase 적재 건수)이고, 적재 건수는 만든 시점 기준이라 3단계의 대시보드에는 아직 0으로 나온다.
+대시보드를 적재 뒤에 한 번 더 만든다. 검수 반영 뒤 대시보드는 "검수 반영 결과" 화면(검수 전 불량 → 남은 불량, 사유별 전·후, 처리 결과, 많이 바로잡은 축·질문, 임베딩·로컬 저장소 적재 건수)이고, 적재 건수는 만든 시점 기준이라 3단계의 대시보드에는 아직 0으로 나온다.
 
 먼저 브라우저 패널에 화면 서버가 떠 있으면 `results.html` 탭을 새로고침한다(없으면 연다). 그다음 진행 현황 블록 아래에 아래 형식으로 **짧게** 보고한다. 제목 1줄과 항목 4줄 안팎으로 쓰고, 길어도 6줄을 넘기지 않는다.
 
 ```
 ## 검수 반영 (run_id: <RUN>)
 - 검수 <HH:MM> 완료 · review <코드> n건 · 교정 축 n, 질문 n
-- 적재: Supabase n행(누적 n) · 임베딩 n · 슬라이드 JPG 실패 n · Storage 꺼짐
+- 적재: 로컬 저장소 n행(누적 n) · 임베딩 n · 슬라이드 JPG 실패 n · 슬라이드 저장 꺼짐
 - 재검토 요청 n건(누적 m, <사유 코드>) → [taxonomy_revisit.md](<WS 상대>/reports/taxonomy_revisit.md) · 실행별 k개 → [taxonomy_revisit_requests/](taxonomy/taxonomy_revisit_requests/)
 - [대시보드](http://localhost:<port>/results.html) · [작업 폴더](<WS 상대>)
 ```
@@ -206,7 +206,7 @@ python ".claude/skills/BEOL-labeling/scripts/summary.py" --workspace "<WS>" --ru
 - **0건이거나 기본값인 항목은 쓰지 않는다.** 확인·판단 불가·재검수 필요가 0이면 교정에서 빼고, 차단·건너뜀·실패가 0이면 빼고, 동의어 0건이면 candidates 줄을 빼고, 대조를 안 했으면 대조 줄을 뺀다. Downloads에서 옮긴 파일이 0이면 "모은 파일"도 쓰지 않는다.
 - **피드백 줄은 2-2를 돌렸으면 한 줄 쓴다.** `라벨링 피드백: 규칙 후보 k개(상충 c)·사례 후보 p개 → [labeling_candidates.md](workspaces/_domain_engrbot/ledger/labeling_candidates.md) · /BEOL-labeling-Domain-Engr-bot으로 도메인 질문에 답하면 다음 라벨링에 반영된다`. 출처는 2-2의 `[labeling-rules]` 줄이고, 실패했으면 `라벨링 피드백: <사유 코드>`로 쓴다.
 - **Domain-Engr-bot 장부 줄은 2-1을 돌렸으면 한 줄 쓴다.** `Domain-Engr-bot 장부: 사례 n(교정 n, 확인 n) → 누적 골든 n · judge 예시 n · L4 후보 n(draft)`. 출처는 2-1의 `[intake]`·`[ledger]` 줄이고, 실패했으면 `Domain-Engr-bot 장부: <사유 코드>`로 쓴다.
-- **조건부 줄은 해당될 때만 한 줄씩 붙인다.** 파싱 대조(`대조: 이상 없음 n, 이상 있음 n`), 동의어(`동의어 n → [candidates.md](…) "검수 등록" 행을 taxonomy 보드에서`), `REVISIT_*`·`HOST_UNCERTAIN`·전송 실패 같은 사유 코드, Supabase 적재 꺼짐(`supabase.enabled=false`), 1-2에서 대신 내려받은 경우.
+- **조건부 줄은 해당될 때만 한 줄씩 붙인다.** 파싱 대조(`대조: 이상 없음 n, 이상 있음 n`), 동의어(`동의어 n → [candidates.md](…) "검수 등록" 행을 taxonomy 보드에서`), `REVISIT_*`·`HOST_UNCERTAIN`·전송 실패 같은 사유 코드, 로컬 저장소 적재 꺼짐(`vector_store.enabled=false`), 1-2에서 대신 내려받은 경우.
 - taxonomy 반영 방법(taxonomy 보드 또는 편집기)은 재검토 요청이 있을 때 재검토 줄 끝에 괄호로 짧게만 적는다.
 - 보고 뒤에 설명 문단을 덧붙이지 않는다. 이번 대화에서 설정을 바꾼 것(포트 변경 등)처럼 사용자가 꼭 알아야 할 일만 `※` 한 줄로 쓴다.
 

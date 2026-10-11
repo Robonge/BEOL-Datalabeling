@@ -322,19 +322,13 @@
       "max_change_ratio": 0.3,
       "min_relabels": 10
     },
-    "supabase": {
+    "taxonomy_path": null,
+    "vector_store": {
       "batch_size": 100,
-      "ca_file": null,
       "enabled": false,
-      "key_env": "SUPABASE_SERVICE_KEY",
-      "storage_bucket": "BEOL-labeling",
-      "storage_enabled": false,
-      "table": "chunk_embeddings",
-      "timeout": 60,
-      "url": "",
-      "url_env": "SUPABASE_URL"
-    },
-    "taxonomy_path": null
+      "path": "",
+      "slides_enabled": false
+    }
   },
   "labelbot.workspace.Workspace.SUBDIRS": [
     "inputs",

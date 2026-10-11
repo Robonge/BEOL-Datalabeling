@@ -204,7 +204,7 @@ const DATA = /*__DATA__*/null;
     if (st === "pushed"){ pill = h("span", {class:"pill ok", text:"적재됨"}); note = "지금 확정 라벨 그대로 올라간 chunk 수"; }
     else if (st === "blocked"){ pill = h("span", {class:"pill warn", text:"보류 " + (P.code || "")});
       note = "변경 비율이 상한을 넘었습니다. 바뀐 슬라이드를 확인한 뒤 push-vectors --force로 보냅니다."; }
-    else if (st === "off"){ pill = h("span", {class:"pill off", text:"Supabase 꺼짐"}); note = "적재하지 않는 설정입니다."; }
+    else if (st === "off"){ pill = h("span", {class:"pill off", text:"로컬 저장 꺼짐"}); note = "적재하지 않는 설정입니다."; }
     else { pill = h("span", {class:"pill", text:"미적재"}); note = "embed → push-vectors 뒤에 이 화면을 다시 만들면 채워집니다."; }
     return h("section", {class:"panel" + (st === "blocked" ? " warn" : ""), "aria-labelledby":"h-push"}, [
       h("h2", {id:"h-push", text:"적재 상태"}),

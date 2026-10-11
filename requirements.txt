@@ -6,7 +6,7 @@
 #
 #   pip install -r requirements.txt
 #
-# 사외 PoC에서 쓰는 SDK(OpenAI, Supabase, dotenv)는 requirements-poc.txt에 있다.
+# 사외 PoC에서 쓰는 SDK(OpenAI, dotenv)는 requirements-poc.txt에 있다.
 #   pip install -r requirements-poc.txt
 #
 # 사내 반입본은 설치 없이 실행한다(python -m labelbot <명령> --workspace <작업 폴더>).

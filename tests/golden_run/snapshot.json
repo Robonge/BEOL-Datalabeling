@@ -133,10 +133,10 @@
    "[embed] 호출 1회, 저장 28, 건너뜀 0, 차단 0"
   ],
   "push-slides": [
-   "[push-slides] supabase.storage_enabled=false: 호출하지 않습니다."
+   "[push-slides] vector_store.slides_enabled=false: 저장하지 않습니다."
   ],
   "push-vectors": [
-   "[push-vectors] supabase.enabled=false: 호출하지 않습니다."
+   "[push-vectors] vector_store.enabled=false: 저장하지 않습니다."
   ],
   "report": [
    "[report] reports/baseline_<RUN>.md",

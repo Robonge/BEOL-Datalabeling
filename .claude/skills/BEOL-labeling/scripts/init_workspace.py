@@ -45,9 +45,8 @@ PIPELINE = {
         "workers": 6,
     },
     "embedding": {"model": _D["embedding"]["model"]},
-    # storage_enabled: 슬라이드 JPG를 Storage에 올린다(push-slides). 빠지면 workspace 기본값 False로 적재가 꺼진다.
-    "supabase": {"enabled": True, "table": "beol_chunk_embeddings",
-                 "storage_enabled": True, "storage_bucket": _D["supabase"]["storage_bucket"]},
+    # slides_enabled: 슬라이드 JPG를 로컬 저장소 slides/에 저장한다(push-slides). 빠지면 workspace 기본값 False로 저장이 꺼진다.
+    "vector_store": {"enabled": True, "slides_enabled": True},
 }
 
 

@@ -39,7 +39,7 @@ def _outcome(d, status, edits, changes):
 
 
 def _pushed(con, pop, labels, model):
-    """확정 라벨(사람 교정 반영) 그대로 Supabase에 올라간 chunk 수. push-vectors와 같은 label_hash로 본다."""
+    """확정 라벨(사람 교정 반영) 그대로 로컬 저장소에 올라간 chunk 수. push-vectors와 같은 label_hash로 본다."""
     from labelbot.vectorpush import load_doc_meta, load_file_names, push_label_hash
 
     doc_meta, names, n = load_doc_meta(con), load_file_names(con), 0

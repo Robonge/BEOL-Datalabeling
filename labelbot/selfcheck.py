@@ -4,10 +4,9 @@ import os
 import shutil
 import sqlite3
 import sys
-import urllib.parse
 
 from labelbot import util
-from labelbot.llm import CallFailed, get_json, read_key
+from labelbot.llm import CallFailed, read_key
 
 EXTS = (".b64", ".sqlite", ".json", ".jsonl", ".html", ".md", ".log")
 PROBE_SENTENCE = "Reply with JSON {\"ok\": true}"
@@ -76,8 +75,9 @@ def run(ws, probe_llm=False, out=print):
     out("  write_roundtrip은 필요조건일 뿐이며 M7 게이트의 수동 확인이 필요하다.")
     if probe_llm and llm.get("transport") != "mock":
         _probe_llm(ws, llm, item)
-    if ws.config["supabase"].get("enabled"):
-        _check_supabase(ws, item, out)
+    vs = ws.config.get("vector_store") or {}
+    if vs.get("enabled"):
+        _check_vector_store(vs, item)
     failed = [n for n, ok in items if not ok]
     out("결과: %s" % ("전 항목 PASS" if not failed else "FAIL %d개" % len(failed)))
     return not failed, items
@@ -149,34 +149,15 @@ def _probe_llm(ws, llm, item):
         con.close()
 
 
-def _check_supabase(ws, item, out):
-    """supabase.enabled일 때만 부른다. 키, 표, slide_image_* 열, Storage 버킷을 확인한다."""
-    sb = ws.config["supabase"]
-    key = read_key(sb.get("key_env"))
-    item("supabase_key_env", bool(key), sb.get("key_env") or "")
-    if key and ws.supabase_url():
-        base = ws.supabase_url().rstrip("/")
-        hdrs = {"apikey": key, "Authorization": "Bearer " + key}
-        timeout = sb.get("timeout") or 60
-        try:
-            get_json("%s/rest/v1/%s?select=chunk_id&limit=1" % (base, sb["table"]), hdrs, timeout, sb.get("ca_file"))
-            item("supabase_table", True, sb["table"])
-        except CallFailed as e:
-            item("supabase_table", False, e.reason_code)
-        # push-slides가 쓰는 slide_image_* 열과 Storage 버킷을 미리 확인한다(docs/supabase_schema.md).
-        if sb.get("storage_enabled"):
-            bucket = sb.get("storage_bucket") or "BEOL-labeling"
-            try:
-                get_json("%s/rest/v1/%s?select=slide_image_path&limit=1" % (base, sb["table"]), hdrs, timeout,
-                         sb.get("ca_file"))
-                item("supabase_slide_columns", True, "slide_image_*")
-            except CallFailed as e:
-                item("supabase_slide_columns", False, e.reason_code)
-            try:
-                get_json("%s/storage/v1/bucket/%s" % (base, urllib.parse.quote(bucket, safe="")), hdrs, timeout,
-                         sb.get("ca_file"))
-                item("supabase_storage_bucket", True, bucket)
-            except CallFailed as e:
-                item("supabase_storage_bucket", False, e.reason_code)
-    if not sb.get("storage_enabled"):
-        out("%-28s -    supabase.storage_enabled=false(슬라이드 JPG 적재 꺼짐)" % "supabase_storage")
+def _check_vector_store(vs, item):
+    """vector_store.enabled일 때만 부른다. 로컬 저장소 폴더에 쓸 수 있는지 본다(파일을 남기지 않는다)."""
+    from labelbot import localstore
+
+    root = localstore.store_root(vs)
+    probe = os.path.join(root, "_selfcheck.log")
+    try:
+        util.write_text(probe, "ok\n")
+        os.remove(probe)
+        item("vector_store", True, "slides=%s" % ("on" if vs.get("slides_enabled") else "off"))
+    except OSError:
+        item("vector_store", False, "STORE_NOT_WRITABLE")

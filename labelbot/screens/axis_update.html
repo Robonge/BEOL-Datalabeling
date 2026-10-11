@@ -252,7 +252,7 @@ const DATA = /*__DATA__*/null;
       h("li", {}, [h("span", {class:"k", text:"이어받지 않음"}), h("span", {class:"v"}, [
         "대상 축 질문 답 ", h("b", {text:String(DATA.dropped_answers || 0)}), "건 · 삭제·변경 축 이전 교정 ",
         h("b", {text:String(DATA.dropped_corrections || 0)}), "건"])]),
-      h("li", {}, [h("span", {class:"k", text:"Supabase 적재"}), h("span", {class:"v"}, [
+      h("li", {}, [h("span", {class:"k", text:"로컬 저장"}), h("span", {class:"v"}, [
         h("b", {text:String(push.pushed_ok || 0)}), " / " + (push.total || 0) + " chunk (지금 확정 라벨 그대로 올라간 수)"])])
     ]);
   }

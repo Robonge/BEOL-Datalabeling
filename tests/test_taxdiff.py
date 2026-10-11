@@ -127,7 +127,7 @@ class WorkspaceCase(unittest.TestCase):
         with open(self.tax_path, "wb") as f:
             f.write(build(base_sheets()))
         cfg = {"taxonomy_path": self.tax_path, "llm": {"transport": "mock", "model": "mock"},
-               "embedding": {"transport": "mock"}, "supabase": {"enabled": False}}
+               "embedding": {"transport": "mock"}, "vector_store": {"enabled": False}}
         with open(os.path.join(self.dir, "pipeline.json"), "w", encoding="utf-8") as f:
             json.dump(cfg, f)
         self.ws = Workspace(self.dir)

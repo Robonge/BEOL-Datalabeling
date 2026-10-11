@@ -8,6 +8,7 @@ import sqlite3
 import tempfile
 import threading
 import unittest
+from unittest import mock
 
 from labelbot import finals, llm, pipeline, review, store, util
 from labelbot.ingest import read_input
@@ -51,7 +52,7 @@ class _Ws:
         self.dir = tempfile.mkdtemp(prefix="labelbot_ws_")
         cfg = {"taxonomy_path": TAXONOMY, "input_root": DUMMY_DIR,
                "llm": {"transport": "mock", "model": "mock", "max_retries": 1},
-               "embedding": {"transport": "mock"}, "supabase": {"enabled": False}}
+               "embedding": {"transport": "mock"}, "vector_store": {"enabled": False}}
         cfg.update(extra or {})
         with open(os.path.join(self.dir, "pipeline.json"), "w", encoding="utf-8") as f:
             json.dump(cfg, f)
@@ -203,25 +204,30 @@ class PipelineTest(unittest.TestCase):
         self.assertGreater(r1["stored"], 0)
         self.assertEqual(r2["called"], 0)
 
-        class Sink:
-            def __init__(self):
-                self.rows = []
+        from labelbot import localstore
 
-            def send(self, rows):
-                self.rows += rows
-
-        self.ws.config["supabase"].update({"enabled": True, "url": "https://example-proj.supabase.co"})
+        # 임시 로컬 저장소에 두 번 적재한다. 두 번째는 vector_push_log로 모두 건너뛴다(실제 workspaces/_rag_store 금지).
+        store_dir = tempfile.mkdtemp(prefix="labelbot_ragstore_")
+        self.ws.config["vector_store"].update({"enabled": True, "path": store_dir})
         try:
-            s1 = Sink()
-            vectorpush.push(self.ws, self.con, self.run_id, sink=s1)
-            s2 = Sink()
-            vectorpush.push(self.ws, self.con, self.run_id, sink=s2)
+            with mock.patch.dict(os.environ, {"BEOL_RAG_STORE": store_dir}):
+                p1 = vectorpush.push(self.ws, self.con, self.run_id)
+                p2 = vectorpush.push(self.ws, self.con, self.run_id)
+            lcon = localstore.connect(store_dir)
+            try:
+                rows = [dict(r) for r in lcon.execute("SELECT * FROM beol_chunk_embeddings")]
+            finally:
+                lcon.close()
+            self.assertTrue(os.path.isfile(os.path.join(store_dir, "rag_config.json")))
         finally:
-            self.ws.config["supabase"].update({"enabled": False, "url": ""})
-        self.assertGreater(len(s1.rows), 0)
-        self.assertEqual(len(s2.rows), 0)
+            self.ws.config["vector_store"].update({"enabled": False, "path": ""})
+            shutil.rmtree(store_dir, ignore_errors=True)
+        self.assertGreater(p1["sent"], 0)
+        self.assertEqual((p2["called"], p2["sent"]), (0, 0))
+        self.assertEqual(len(rows), p1["sent"])
         names = {r[0]: r[1] for r in self.con.execute("SELECT file_id, file_name FROM files")}
-        self.assertTrue(all(r["file_name"] == names[r["file_id"]] and "rel_path" not in r for r in s1.rows))
+        self.assertTrue(all(r["file_name"] == names[r["file_id"]] and "rel_path" not in r for r in rows))
+        self.assertTrue(all(r["dim"] * 4 == len(r["embedding"]) and "axes" in json.loads(r["labels"]) for r in rows))
 
 
 class SafetyTest(unittest.TestCase):
@@ -326,6 +332,72 @@ class SafetyTest(unittest.TestCase):
         self.assertIn("UNKNOWN_HIGH", review.judge_chunk(chunk, bot(50, 100, 0.9), False, False, cfg, {})[0])
         self.assertIn("LOW_CONFIDENCE", review.judge_chunk(chunk, bot(0, 2, 0.69), False, False, cfg, {})[0])
         self.assertNotIn("LOW_CONFIDENCE", review.judge_chunk(chunk, bot(0, 2, 0.7), False, False, cfg, {})[0])
+
+
+class ChatOnceTest(unittest.TestCase):
+    """llm.chat_once: 로컬 가짜 서버로 (본문, finish_reason)과 실패 사유 코드를 확인한다. 실제 키·API를 쓰지 않는다."""
+    KEY_ENV = "LABELBOT_TEST_CHAT_ONCE_KEY"
+
+    def setUp(self):
+        state = self.state = {"reply": None, "bodies": [], "auth": []}
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                n = int(self.headers.get("Content-Length") or 0)
+                state["bodies"].append(json.loads(self.rfile.read(n).decode("utf-8")))
+                state["auth"].append(self.headers.get("Authorization"))
+                data = json.dumps(state["reply"]).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+            def log_message(self, *a):  # code_engrbot: allow C4_PLACEHOLDER 테스트 서버 접속 로그를 끄려고 비운 오버라이드
+                pass
+
+        self.srv = http.server.HTTPServer(("localhost", 0), H)
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+        self.cfg = {"base_url": "http://localhost:%d/v1/" % self.srv.server_port, "chat_path": "/chat/completions",
+                    "model": "m-test", "api_key_env": self.KEY_ENV, "temperature": 0}
+        self.env = mock.patch.dict(os.environ, {self.KEY_ENV: "fake-test-key"})
+        self.env.start()
+
+    def tearDown(self):
+        self.env.stop()
+        self.srv.shutdown()
+        self.srv.server_close()
+
+    def _reply(self, content, reason):
+        return {"choices": [{"message": {"role": "assistant", "content": content}, "finish_reason": reason}]}
+
+    def test_ok_stop(self):
+        self.state["reply"] = self._reply("답변", "stop")
+        msgs = [{"role": "user", "content": "q"}]
+        self.assertEqual(llm.chat_once(self.cfg, msgs, 400, 5), ("답변", "stop"))
+        body = self.state["bodies"][0]
+        self.assertEqual(body, {"model": "m-test", "messages": msgs, "max_completion_tokens": 400})
+        self.assertNotIn("temperature", body)
+        self.assertEqual(self.state["auth"][0], "Bearer fake-test-key")
+
+    def test_length(self):
+        self.state["reply"] = self._reply("잘린 답", "length")
+        self.assertEqual(llm.chat_once(self.cfg, [], 6000, 5), ("잘린 답", "length"))
+        self.assertEqual(self.state["bodies"][0]["max_completion_tokens"], 6000)
+
+    def test_no_choices_is_response_shape(self):
+        self.state["reply"] = {"error": {"message": "x"}}
+        with self.assertRaises(llm.CallFailed) as cm:
+            llm.chat_once(self.cfg, [], 10, 5)
+        self.assertEqual(cm.exception.reason_code, "RESPONSE_SHAPE")
+
+    def test_key_missing(self):
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop(self.KEY_ENV, None)
+            with self.assertRaises(llm.CallFailed) as cm:
+                llm.chat_once(self.cfg, [], 10, 5)
+        self.assertEqual(cm.exception.reason_code, "KEY_MISSING")
+        self.assertEqual(self.state["bodies"], [])
 
 
 if __name__ == "__main__":
