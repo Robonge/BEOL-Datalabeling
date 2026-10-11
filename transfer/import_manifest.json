@@ -1,7 +1,7 @@
 {
- "release_label": "beol-import-20261010-1ab9e3b",
- "source_commit": "1ab9e3bca053ddb49d02778ea622bdcaf93e36ea",
- "created_at": "2026-10-09T16:51:25Z",
+ "release_label": "beol-import-20261011-77aa43a",
+ "source_commit": "77aa43a27235293d47d21a03dbea100e767aa84a",
+ "created_at": "2026-10-11T08:10:19Z",
  "files": [
   {
    "path": ".claude/launch.json",
@@ -4240,6 +4240,12 @@
    "class": "code"
   },
   {
+   "path": "tests/test_transformation_anchors.py",
+   "size": 1570,
+   "sha256": "4283eadf5b1437d71c53116c802ebd4208a5df510bb790ff74c9e81209e365f1",
+   "class": "code"
+  },
+  {
    "path": "tests/tools/dump_taxonomy_fixture.py",
    "size": 2082,
    "sha256": "77272a9baea30bdf1ff7ae6d67d702583c57038303e2167ff9f14591b1ed2b37",
@@ -4315,6 +4321,12 @@
    "path": "transfer/prepush_allow.json",
    "size": 317,
    "sha256": "355f410ec747ad7d5286b75db6e00857c9c5238cfee4d0dacfc9f097eb4d2cda",
+   "class": "code"
+  },
+  {
+   "path": "transformation.md",
+   "size": 24311,
+   "sha256": "f70abbf777e56cb921d6fe1024250abb6d127e95cc8447ee2de040632d11ba48",
    "class": "code"
   }
  ],
@@ -4436,7 +4448,8 @@
   "tests/test_taxdiff.py",
   "tests/test_taxonomy.py",
   "tests/test_taxonomy_store.py",
-  "tests/test_trace.py"
+  "tests/test_trace.py",
+  "tests/test_transformation_anchors.py"
  ],
  "download_list_sha256": "114ca210c4d854def7c7b7f155fbd26928950b8ab657d3006934c4c537d07c41"
 }
